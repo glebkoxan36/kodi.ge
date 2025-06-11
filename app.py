@@ -23,7 +23,7 @@ API_KEY = os.getenv('API_KEY')
 
 # Конфигурация MongoDB
 client = MongoClient(MONGODB_URI)
-db = client.get_database()
+db = client['imei_checker']  # Явное указание базы данных
 checks_collection = db['results']
 
 # Конфигурация API проверки
