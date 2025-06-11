@@ -1,23 +1,89 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>kodi.ge — Проверка IMEI</title>
-  <link rel="stylesheet" href="/static/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iPhone IMEI Check</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>kodi.ge — Проверка IMEI iPhone</h1>
-    <form action="/create-checkout-session" method="post">
-      <label for="imei">Введите IMEI:</label>
-      <input type="text" id="imei" name="imei" required>
-      <label for="tier">Выберите тип проверки:</label>
-      <select name="tier" id="tier">
-        <option value="4">Стандарт — 2 ₾</option>
-        <option value="205">Премиум — 5 ₾</option>
-      </select>
-      <button type="submit">Оплатить и проверить</button>
-    </form>
-  </div>
+    <div class="container">
+        <h1>iPhone IMEI Check</h1>
+        <form id="check-form">
+            <div class="form-group">
+                <label for="imei">Enter IMEI:</label>
+                <input type="text" id="imei" name="imei" required 
+                       pattern="[0-9]{15}" title="15-digit number">
+            </div>
+            
+            <div class="form-group">
+                <label>Check Type:</label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="service_type" value="free" checked>
+                        Free (Basic)
+                    </label>
+                    <label>
+                        <input type="radio" name="service_type" value="paid">
+                        Paid ($4.99)
+                    </label>
+                    <label>
+                        <input type="radio" name="service_type" value="premium">
+                        Premium ($9.99)
+                    </label>
+                </div>
+            </div>
+            
+            <button type="submit">Check</button>
+        </form>
+    </div>
+
+    <script>
+        const stripe = Stripe('{{ stripe_public_key }}');
+        const form = document.getElementById('check-form');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const imei = document.getElementById('imei').value;
+            const serviceType = document.querySelector('input[name="service_type"]:checked').value;
+            
+            // Free check
+            if (serviceType === 'free') {
+                window.location.href = `/perform_check?imei=${imei}&service_type=${serviceType}`;
+                return;
+            }
+            
+            // Paid check
+            try {
+                const response = await fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ imei, service_type: serviceType })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                const result = await stripe.redirectToCheckout({
+                    sessionId: data.id
+                });
+                
+                if (result.error) {
+                    alert(result.error.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Payment processing error');
+            }
+        });
+    </script>
 </body>
 </html>

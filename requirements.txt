@@ -1,4 +1,6 @@
-flask
-stripe
-python-dotenv
-requests
+Flask==3.0.2
+stripe==7.17.0
+pymongo==4.6.1
+requests==2.31.0
+python-dotenv==1.0.0
+gunicorn==21.2.0
