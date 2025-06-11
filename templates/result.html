@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Результат проверки</title>
+</head>
+<body>
+  <div class="container">
+    <h1>Результат для IMEI {{ imei }}</h1>
+    {% if result.success %}
+      <pre>{{ result.data | tojson(indent=2) }}</pre>
+    {% else %}
+      <p>Ошибка: {{ result.error }}</p>
+    {% endif %}
+    <a href="/">Новая проверка</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>kodi.ge — Проверка IMEI</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>kodi.ge — Проверка IMEI iPhone</h1>
+    <form action="/create-checkout-session" method="post">
+      <label for="imei">Введите IMEI:</label>
+      <input type="text" id="imei" name="imei" required>
+      <label for="tier">Выберите тип проверки:</label>
+      <select name="tier" id="tier">
+        <option value="4">Стандарт — 2 ₾</option>
+        <option value="205">Премиум — 5 ₾</option>
+      </select>
+      <button type="submit">Оплатить и проверить</button>
+    </form>
+  </div>
+</body>
+</html>
