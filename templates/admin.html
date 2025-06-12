@@ -1,1 +1,306 @@
-
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel - IMEI Checker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+        }
+        .card {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 12px 20px;
+        }
+        .stat-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 1rem;
+        }
+        .revenue {
+            color: #27ae60;
+        }
+        .table th {
+            background-color: #e9ecef;
+        }
+        .price-form {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        .price-history {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .history-item {
+            border-left: 3px solid #3498db;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+        }
+        .paid-price {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .premium-price {
+            color: #2980b9;
+            font-weight: bold;
+        }
+        .history-meta {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+        }
+        .form-section {
+            margin-bottom: 25px;
+        }
+        .input-group-price {
+            max-width: 250px;
+        }
+        .paid-badge {
+            background-color: #27ae60;
+        }
+        .free-badge {
+            background-color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Admin Dashboard</h1>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-value">{{ total_checks }}</div>
+                    <div class="stat-label">Total Checks</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-value text-success">{{ paid_checks }}</div>
+                    <div class="stat-label">Paid Checks</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-value">{{ free_checks }}</div>
+                    <div class="stat-label">Free Checks</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-value revenue">${{ "%.2f"|format(total_revenue) }}</div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Блок управления ценами -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Price Management</h5>
+                    </div>
+                    <div class="card-body">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                        
+                        <form method="POST">
+                            <div class="form-section">
+                                <h6>Paid Service</h6>
+                                <div class="input-group input-group-price mb-3">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" min="0.99" max="99.99" 
+                                           class="form-control" 
+                                           name="paid_price" 
+                                           value="{{ current_prices.paid }}" 
+                                           required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h6>Premium Service</h6>
+                                <div class="input-group input-group-price mb-4">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" min="0.99" max="99.99" 
+                                           class="form-control" 
+                                           name="premium_price" 
+                                           value="{{ current_prices.premium }}" 
+                                           required>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-save me-1"></i> Update Prices
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- История изменений цен -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Price Change History</h5>
+                    </div>
+                    <div class="card-body price-history">
+                        {% if price_history %}
+                            {% for item in price_history %}
+                            <div class="history-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <span class="paid-price">Paid: ${{ "%.2f"|format(item.paid) }}</span>
+                                        <span class="premium-price ms-2">Premium: ${{ "%.2f"|format(item.premium) }}</span>
+                                    </div>
+                                    <div class="history-meta">
+                                        {{ item.changed_at }}
+                                    </div>
+                                </div>
+                                <div class="history-meta">
+                                    Changed by: {{ item.changed_by }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center text-muted py-3">
+                                No price history available
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Блок с проверками -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Recent Checks</h5>
+                        <div>
+                            <span class="badge paid-badge me-1">Paid: ${{ "%.2f"|format(current_prices.paid) }}</span>
+                            <span class="badge bg-primary">Premium: ${{ "%.2f"|format(current_prices.premium) }}</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form class="row g-3 mb-4" method="get">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control" name="imei" 
+                                       placeholder="Search by IMEI..." value="{{ imei_query }}">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">Search</button>
+                            </div>
+                            <div class="col-md-2">
+                                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary w-100">Reset</a>
+                            </div>
+                        </form>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>IMEI</th>
+                                        <th>Service</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for check in checks %}
+                                    <tr>
+                                        <td>{{ check.timestamp }}</td>
+                                        <td>{{ check.imei }}</td>
+                                        <td>
+                                            <span class="badge {% if check.service_type == 'premium' %}bg-primary{% else %}bg-info{% endif %}">
+                                                {{ check.service_type|capitalize }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if check.paid %}
+                                                <span class="text-success fw-bold">{{ check.amount }}</span>
+                                            {% else %}
+                                                <span class="text-muted">Free</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if check.paid %}
+                                                <span class="badge bg-success">{{ check.payment_status|capitalize }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">No records found</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <nav>
+                            <ul class="pagination justify-content-center">
+                                {% if page > 1 %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page-1 }}&imei={{ imei_query }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page }}</span>
+                                </li>
+                                
+                                {% if checks|length == per_page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page+1 }}&imei={{ imei_query }}">Next</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
