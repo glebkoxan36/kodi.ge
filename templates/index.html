@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>iPhone IMEI შემოწმება</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://js.stripe.com/v3/"></script>
     <style>
         :root {
             --primary: #2c3e50;
@@ -806,68 +807,8 @@
                 <div class="imei-display">IMEI: <span id="result-imei">123456789012345</span></div>
             </div>
             
-            <div class="result-details">
-                <div class="result-item">
-                    <span class="result-label">მოდელი:</span>
-                    <span class="result-value" id="model">iPhone 13 Pro Max</span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">სერიული ნომერი:</span>
-                    <span class="result-value" id="serial">ABCD1234EFGH</span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">ფერი:</span>
-                    <span class="result-value" id="color">გრაფიტისფერი</span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">მეხსიერება:</span>
-                    <span class="result-value" id="storage">512 GB</span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">აქტივაციის სტატუსი:</span>
-                    <span class="result-value" id="activation">აქტივირებულია</span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">გარანტია:</span>
-                    <span class="result-value" id="warranty">2023-12-31</span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">ჩაკეტვის სტატუსი:</span>
-                    <span class="result-value" id="lock">უფასო</span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">ქვეყანა/რეგიონი:</span>
-                    <span class="result-value" id="region">აშშ</span>
-                </div>
-                <div class="result-item">
-                    <span class="result-label">სარემონტო ისტორია:</span>
-                    <span class="result-value" id="repair">არ არის</span>
-                </div>
-                <!-- Additional fields for paid/premium checks -->
-                <div class="result-item" id="carrier-row" style="display: none;">
-                    <span class="result-label">ოპერატორი:</span>
-                    <span class="result-value" id="carrier"></span>
-                </div>
-                <div class="result-item" id="purchaseDate-row" style="display: none;">
-                    <span class="result-label">შეძენის თარიღი:</span>
-                    <span class="result-value" id="purchaseDate"></span>
-                </div>
-                <div class="result-item" id="batteryHealth-row" style="display: none;">
-                    <span class="result-label">ბატარეის მდგომარეობა:</span>
-                    <span class="result-value" id="batteryHealth"></span>
-                </div>
-                <div class="result-item" id="lastActivation-row" style="display: none;">
-                    <span class="result-label">ბოლო აქტივაცია:</span>
-                    <span class="result-value" id="lastActivation"></span>
-                </div>
-                <div class="result-item" id="findMyStatus-row" style="display: none;">
-                    <span class="result-label">Find My სტატუსი:</span>
-                    <span class="result-value" id="findMyStatus"></span>
-                </div>
-                <div class="result-item" id="recommendations-row" style="display: none;">
-                    <span class="result-label">რეკომენდაციები:</span>
-                    <span class="result-value" id="recommendations"></span>
-                </div>
+            <div class="result-details" id="result-details">
+                <!-- Results will be populated dynamically here -->
             </div>
             
             <div class="btn-group">
@@ -889,6 +830,9 @@
     </div>
 
     <script>
+        // Инициализируем Stripe с публичным ключом
+        const stripe = Stripe('{{ stripe_public_key }}');
+        
         // Mobile Navigation
         const hamburger = document.getElementById('hamburger');
         const sidebar = document.getElementById('sidebar');
@@ -927,6 +871,7 @@
         const loadingModal = document.getElementById('loading-modal');
         const closeModal = document.querySelector('.close-modal');
         const closeResultBtn = document.getElementById('close-result');
+        const resultDetails = document.getElementById('result-details');
         
         // Navigation Functions
         function showPage(pageId) {
@@ -995,13 +940,12 @@
             }
         });
         
-        // IMEI Validation - Improved version
+        // IMEI Validation
         function validateIMEI(imei) {
             // Clean input: remove spaces and non-digit characters
             const cleaned = imei.replace(/\s+/g, '').replace(/\D/g, '');
-            
-            // Check length (14 or 15 digits)
-            return cleaned.length === 14 || cleaned.length === 15;
+            // Check length (15 digits)
+            return cleaned.length === 15;
         }
         
         // Show loading modal
@@ -1014,168 +958,197 @@
             loadingModal.classList.remove('active');
         }
         
-        // Generate realistic device data
-        function generateDeviceData(imei) {
-            const models = [
-                "iPhone 15 Pro Max", "iPhone 14", "iPhone SE (2022)", 
-                "iPhone 13 mini", "iPhone 12 Pro", "iPhone 11 Pro",
-                "iPhone XS Max", "iPhone XR", "iPhone 8 Plus"
-            ];
+        // Create result item
+        function createResultItem(label, value) {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'result-item';
             
-            const colors = ["შავი", "თეთრი", "წითელი", "ზღვის ლურჯი", "ვარდისფერი", "ოქროსფერი", "ბრინჯაო"];
-            const storages = ["64 GB", "128 GB", "256 GB", "512 GB", "1 TB"];
-            const regions = ["აშშ", "ევროპა", "იაპონია", "საქართველო", "ავსტრალია", "ჩინეთი"];
-            const carriers = ["Magti", "Silknet", "Beeline", "Ucom", "AT&T", "Verizon", "T-Mobile"];
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'result-label';
+            labelSpan.textContent = label;
             
-            return {
-                model: models[Math.floor(Math.random() * models.length)],
-                serial: "C" + Math.random().toString(36).substr(2, 10).toUpperCase(),
-                color: colors[Math.floor(Math.random() * colors.length)],
-                storage: storages[Math.floor(Math.random() * storages.length)],
-                activation: Math.random() > 0.2 ? 'აქტივირებულია' : 'არააქტივირებული',
-                warranty: new Date(Date.now() + Math.floor(Math.random() * 365 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
-                lock: Math.random() > 0.7 ? 'ჩაკეტილია' : 'უფასო',
-                region: regions[Math.floor(Math.random() * regions.length)],
-                repair: Math.random() > 0.8 ? 'არის სარემონტო ისტორია' : 'არ არის',
-                carrier: carriers[Math.floor(Math.random() * carriers.length)],
-                purchaseDate: new Date(Date.now() - Math.floor(Math.random() * 365 * 3 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
-                batteryHealth: (80 + Math.floor(Math.random() * 20)) + '%',
-                lastActivation: new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
-                findMyStatus: Math.random() > 0.5 ? 'ჩართულია' : 'გამორთულია',
-                recommendations: [
-                    "ბატარეის შეცვლა რეკომენდირებულია",
-                    "განაახლეთ iOS უახლეს ვერსიაზე",
-                    "შეამოწმეთ დამტენის პორტი",
-                    "მოწყობილობა შესანიშნავ მდგომარეობაშია",
-                    "გირჩევთ გააკეთოთ სრული დიაგნოსტიკა"
-                ][Math.floor(Math.random() * 5)]
-            };
+            const valueSpan = document.createElement('span');
+            valueSpan.className = 'result-value';
+            valueSpan.textContent = value;
+            
+            resultItem.appendChild(labelSpan);
+            resultItem.appendChild(valueSpan);
+            return resultItem;
         }
         
         // Show result modal with data
         function showResult(imei, data) {
             document.getElementById('result-imei').textContent = imei;
+            resultDetails.innerHTML = '';
             
-            // Set result values from data
-            document.getElementById('model').textContent = data.model || 'ინფორმაცია არ მოიძებნა';
-            document.getElementById('serial').textContent = data.serial || 'ინფორმაცია არ მოიძებნა';
-            document.getElementById('color').textContent = data.color || 'ინფორმაცია არ მოიძებნა';
-            document.getElementById('storage').textContent = data.storage || 'ინფორმაცია არ მოიძებნა';
-            document.getElementById('activation').textContent = data.activation || 'ინფორმაცია არ მოიძებნა';
-            document.getElementById('warranty').textContent = data.warranty || 'ინფორმაცია არ მოიძებნა';
-            document.getElementById('lock').textContent = data.lock || 'ინფორმაცია არ მოიძებნა';
-            document.getElementById('region').textContent = data.region || 'ინფორმაცია არ მოიძებნა';
-            document.getElementById('repair').textContent = data.repair || 'ინფორმაცია არ მოიძებნა';
+            // Check if API returned an error
+            if (data.error) {
+                resultDetails.appendChild(createResultItem('შეცდომა', data.error));
+                resultModal.classList.add('active');
+                return;
+            }
             
-            // Set additional fields if available
-            const additionalFields = [
-                'carrier', 'purchaseDate', 'batteryHealth', 
-                'lastActivation', 'findMyStatus', 'recommendations'
-            ];
+            // Add all fields from API response
+            const fieldsMapping = {
+                'model': 'მოდელი',
+                'serial': 'სერიული ნომერი',
+                'color': 'ფერი',
+                'storage': 'მეხსიერება',
+                'activation': 'აქტივაციის სტატუსი',
+                'warranty': 'გარანტია',
+                'lock': 'ჩაკეტვის სტატუსი',
+                'region': 'ქვეყანა/რეგიონი',
+                'repair': 'სარემონტო ისტორია',
+                'carrier': 'ოპერატორი',
+                'purchaseDate': 'შეძენის თარიღი',
+                'batteryHealth': 'ბატარეის მდგომარეობა',
+                'lastActivation': 'ბოლო აქტივაცია',
+                'findMyStatus': 'Find My სტატუსი',
+                'recommendations': 'რეკომენდაციები'
+            };
             
-            additionalFields.forEach(field => {
-                const element = document.getElementById(field);
-                const row = document.getElementById(`${field}-row`);
-                
-                if (element && data[field]) {
-                    element.textContent = data[field];
-                    row.style.display = 'flex';
-                } else if (row) {
-                    row.style.display = 'none';
+            for (const [key, label] of Object.entries(fieldsMapping)) {
+                if (data[key]) {
+                    resultDetails.appendChild(createResultItem(label, data[key]));
                 }
-            });
+            }
             
             resultModal.classList.add('active');
         }
         
-        // Free Check Handler - Fixed
+        // Free Check Handler
         document.getElementById('free-check-btn').addEventListener('click', () => {
             const inputElement = document.getElementById('free-imei');
             const imei = inputElement.value.trim();
             
             if (!validateIMEI(imei)) {
-                alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (14 ან 15 ციფრი)');
+                alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (15 ციფრი)');
                 inputElement.focus();
                 return;
             }
             
             showLoading();
             
-            // Simulate API request with realistic data
-            setTimeout(() => {
-                const cleanedImei = imei.replace(/\D/g, ''); // Keep only digits
-                const result = generateDeviceData(cleanedImei);
-                
-                // For free check, only include basic fields
-                const freeResult = {
-                    model: result.model,
-                    serial: result.serial,
-                    color: result.color,
-                    storage: result.storage,
-                    activation: result.activation,
-                    lock: result.lock
-                };
-                
-                hideLoading();
-                showResult(cleanedImei, freeResult);
-            }, 1500);
+            // Send request to backend API
+            fetch(`/perform_check?imei=${imei}&service_type=free`)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    showResult(imei, data);
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Error:', error);
+                    alert('შეცდომა შემოწმების დროს');
+                });
         });
         
-        // Paid Check Handler - Fixed
+        // Paid Check Handler
         document.getElementById('paid-check-btn').addEventListener('click', () => {
             const inputElement = document.getElementById('paid-imei');
             const imei = inputElement.value.trim();
             
             if (!validateIMEI(imei)) {
-                alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (14 ან 15 ციფრი)');
+                alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (15 ციფრი)');
                 inputElement.focus();
                 return;
             }
             
             showLoading();
             
-            // Simulate payment processing
-            setTimeout(() => {
-                const cleanedImei = imei.replace(/\D/g, '');
-                const result = generateDeviceData(cleanedImei);
-                
-                // Include additional fields for paid check
-                const paidResult = {
-                    ...result,
-                    warranty: result.warranty,
-                    region: result.region,
-                    repair: result.repair,
-                    carrier: result.carrier,
-                    purchaseDate: result.purchaseDate
-                };
-                
+            // Create payment session
+            fetch('/create-checkout-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    imei: imei,
+                    service_type: 'paid'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                // Redirect to Stripe payment
+                return stripe.redirectToCheckout({ sessionId: data.id });
+            })
+            .catch(error => {
                 hideLoading();
-                showResult(cleanedImei, paidResult);
-            }, 2000);
+                console.error('Error:', error);
+                alert('გადახდის სესიის შექმნის შეცდომა: ' + error.message);
+            });
         });
         
-        // Premium Check Handler - Fixed
+        // Premium Check Handler
         document.getElementById('premium-check-btn').addEventListener('click', () => {
             const inputElement = document.getElementById('premium-imei');
             const imei = inputElement.value.trim();
             
             if (!validateIMEI(imei)) {
-                alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (14 ან 15 ციფრი)');
+                alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (15 ციფრი)');
                 inputElement.focus();
                 return;
             }
             
             showLoading();
             
-            // Simulate premium check
-            setTimeout(() => {
-                const cleanedImei = imei.replace(/\D/g, '');
-                const result = generateDeviceData(cleanedImei);
-                
-                // Include all fields for premium check
+            // Create payment session
+            fetch('/create-checkout-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    imei: imei,
+                    service_type: 'premium'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                // Redirect to Stripe payment
+                return stripe.redirectToCheckout({ sessionId: data.id });
+            })
+            .catch(error => {
                 hideLoading();
-                showResult(cleanedImei, result);
-            }, 2500);
+                console.error('Error:', error);
+                alert('გადახდის სესიის შექმნის შეცდომა: ' + error.message);
+            });
+        });
+        
+        // Check for session_id in URL after payment
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('session_id');
+            
+            if (sessionId) {
+                showLoading();
+                
+                // Get check result from backend
+                fetch(`/get_check_result?session_id=${sessionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        hideLoading();
+                        if (data.error) {
+                            alert(data.error);
+                        } else {
+                            showResult(data.imei, data.result);
+                        }
+                        // Clean URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    })
+                    .catch(error => {
+                        hideLoading();
+                        console.error('Error:', error);
+                        alert('შედეგის ჩატვირთვის შეცდომა');
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    });
+            }
         });
         
         // Save Report Handler
