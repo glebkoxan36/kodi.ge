@@ -843,6 +843,31 @@
                     <span class="result-label">სარემონტო ისტორია:</span>
                     <span class="result-value" id="repair">არ არის</span>
                 </div>
+                <!-- Additional fields for paid/premium checks -->
+                <div class="result-item" id="carrier-row" style="display: none;">
+                    <span class="result-label">ოპერატორი:</span>
+                    <span class="result-value" id="carrier"></span>
+                </div>
+                <div class="result-item" id="purchaseDate-row" style="display: none;">
+                    <span class="result-label">შეძენის თარიღი:</span>
+                    <span class="result-value" id="purchaseDate"></span>
+                </div>
+                <div class="result-item" id="batteryHealth-row" style="display: none;">
+                    <span class="result-label">ბატარეის მდგომარეობა:</span>
+                    <span class="result-value" id="batteryHealth"></span>
+                </div>
+                <div class="result-item" id="lastActivation-row" style="display: none;">
+                    <span class="result-label">ბოლო აქტივაცია:</span>
+                    <span class="result-value" id="lastActivation"></span>
+                </div>
+                <div class="result-item" id="findMyStatus-row" style="display: none;">
+                    <span class="result-label">Find My სტატუსი:</span>
+                    <span class="result-value" id="findMyStatus"></span>
+                </div>
+                <div class="result-item" id="recommendations-row" style="display: none;">
+                    <span class="result-label">რეკომენდაციები:</span>
+                    <span class="result-value" id="recommendations"></span>
+                </div>
             </div>
             
             <div class="btn-group">
@@ -970,9 +995,13 @@
             }
         });
         
-        // IMEI Validation
+        // IMEI Validation - Improved version
         function validateIMEI(imei) {
-            return imei.length === 15 && /^\d+$/.test(imei);
+            // Clean input: remove spaces and non-digit characters
+            const cleaned = imei.replace(/\s+/g, '').replace(/\D/g, '');
+            
+            // Check length (14 or 15 digits)
+            return cleaned.length === 14 || cleaned.length === 15;
         }
         
         // Show loading modal
@@ -983,6 +1012,44 @@
         // Hide loading modal
         function hideLoading() {
             loadingModal.classList.remove('active');
+        }
+        
+        // Generate realistic device data
+        function generateDeviceData(imei) {
+            const models = [
+                "iPhone 15 Pro Max", "iPhone 14", "iPhone SE (2022)", 
+                "iPhone 13 mini", "iPhone 12 Pro", "iPhone 11 Pro",
+                "iPhone XS Max", "iPhone XR", "iPhone 8 Plus"
+            ];
+            
+            const colors = ["შავი", "თეთრი", "წითელი", "ზღვის ლურჯი", "ვარდისფერი", "ოქროსფერი", "ბრინჯაო"];
+            const storages = ["64 GB", "128 GB", "256 GB", "512 GB", "1 TB"];
+            const regions = ["აშშ", "ევროპა", "იაპონია", "საქართველო", "ავსტრალია", "ჩინეთი"];
+            const carriers = ["Magti", "Silknet", "Beeline", "Ucom", "AT&T", "Verizon", "T-Mobile"];
+            
+            return {
+                model: models[Math.floor(Math.random() * models.length)],
+                serial: "C" + Math.random().toString(36).substr(2, 10).toUpperCase(),
+                color: colors[Math.floor(Math.random() * colors.length)],
+                storage: storages[Math.floor(Math.random() * storages.length)],
+                activation: Math.random() > 0.2 ? 'აქტივირებულია' : 'არააქტივირებული',
+                warranty: new Date(Date.now() + Math.floor(Math.random() * 365 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+                lock: Math.random() > 0.7 ? 'ჩაკეტილია' : 'უფასო',
+                region: regions[Math.floor(Math.random() * regions.length)],
+                repair: Math.random() > 0.8 ? 'არის სარემონტო ისტორია' : 'არ არის',
+                carrier: carriers[Math.floor(Math.random() * carriers.length)],
+                purchaseDate: new Date(Date.now() - Math.floor(Math.random() * 365 * 3 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+                batteryHealth: (80 + Math.floor(Math.random() * 20)) + '%',
+                lastActivation: new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+                findMyStatus: Math.random() > 0.5 ? 'ჩართულია' : 'გამორთულია',
+                recommendations: [
+                    "ბატარეის შეცვლა რეკომენდირებულია",
+                    "განაახლეთ iOS უახლეს ვერსიაზე",
+                    "შეამოწმეთ დამტენის პორტი",
+                    "მოწყობილობა შესანიშნავ მდგომარეობაშია",
+                    "გირჩევთ გააკეთოთ სრული დიაგნოსტიკა"
+                ][Math.floor(Math.random() * 5)]
+            };
         }
         
         // Show result modal with data
@@ -1000,45 +1067,68 @@
             document.getElementById('region').textContent = data.region || 'ინფორმაცია არ მოიძებნა';
             document.getElementById('repair').textContent = data.repair || 'ინფორმაცია არ მოიძებნა';
             
+            // Set additional fields if available
+            const additionalFields = [
+                'carrier', 'purchaseDate', 'batteryHealth', 
+                'lastActivation', 'findMyStatus', 'recommendations'
+            ];
+            
+            additionalFields.forEach(field => {
+                const element = document.getElementById(field);
+                const row = document.getElementById(`${field}-row`);
+                
+                if (element && data[field]) {
+                    element.textContent = data[field];
+                    row.style.display = 'flex';
+                } else if (row) {
+                    row.style.display = 'none';
+                }
+            });
+            
             resultModal.classList.add('active');
         }
         
-        // Free Check Handler
+        // Free Check Handler - Fixed
         document.getElementById('free-check-btn').addEventListener('click', () => {
-            const imei = document.getElementById('free-imei').value.trim();
+            const inputElement = document.getElementById('free-imei');
+            const imei = inputElement.value.trim();
             
             if (!validateIMEI(imei)) {
-                alert('გთხოვთ შეიყვანოთ სწორი 15-ნიშნა IMEI ნომერი');
+                alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (14 ან 15 ციფრი)');
+                inputElement.focus();
                 return;
             }
             
             showLoading();
             
-            // Simulate API request
+            // Simulate API request with realistic data
             setTimeout(() => {
-                const result = {
-                    model: 'iPhone 13 Pro Max',
-                    serial: 'ABCD1234EFGH',
-                    color: 'გრაფიტისფერი',
-                    storage: '512 GB',
-                    activation: 'აქტივირებულია',
-                    warranty: '2023-12-31',
-                    lock: 'უფასო',
-                    region: 'აშშ',
-                    repair: 'არ არის'
+                const cleanedImei = imei.replace(/\D/g, ''); // Keep only digits
+                const result = generateDeviceData(cleanedImei);
+                
+                // For free check, only include basic fields
+                const freeResult = {
+                    model: result.model,
+                    serial: result.serial,
+                    color: result.color,
+                    storage: result.storage,
+                    activation: result.activation,
+                    lock: result.lock
                 };
                 
                 hideLoading();
-                showResult(imei, result);
+                showResult(cleanedImei, freeResult);
             }, 1500);
         });
         
-        // Paid Check Handler
+        // Paid Check Handler - Fixed
         document.getElementById('paid-check-btn').addEventListener('click', () => {
-            const imei = document.getElementById('paid-imei').value.trim();
+            const inputElement = document.getElementById('paid-imei');
+            const imei = inputElement.value.trim();
             
             if (!validateIMEI(imei)) {
-                alert('გთხოვთ შეიყვანოთ სწორი 15-ნიშნა IMEI ნომერი');
+                alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (14 ან 15 ციფრი)');
+                inputElement.focus();
                 return;
             }
             
@@ -1046,29 +1136,32 @@
             
             // Simulate payment processing
             setTimeout(() => {
-                const result = {
-                    model: 'iPhone 13 Pro Max',
-                    serial: 'ABCD1234EFGH',
-                    color: 'გრაფიტისფერი',
-                    storage: '512 GB',
-                    activation: 'აქტივირებულია',
-                    warranty: '2023-12-31',
-                    lock: 'უფასო',
-                    region: 'აშშ',
-                    repair: 'არ არის'
+                const cleanedImei = imei.replace(/\D/g, '');
+                const result = generateDeviceData(cleanedImei);
+                
+                // Include additional fields for paid check
+                const paidResult = {
+                    ...result,
+                    warranty: result.warranty,
+                    region: result.region,
+                    repair: result.repair,
+                    carrier: result.carrier,
+                    purchaseDate: result.purchaseDate
                 };
                 
                 hideLoading();
-                showResult(imei, result);
+                showResult(cleanedImei, paidResult);
             }, 2000);
         });
         
-        // Premium Check Handler
+        // Premium Check Handler - Fixed
         document.getElementById('premium-check-btn').addEventListener('click', () => {
-            const imei = document.getElementById('premium-imei').value.trim();
+            const inputElement = document.getElementById('premium-imei');
+            const imei = inputElement.value.trim();
             
             if (!validateIMEI(imei)) {
-                alert('გთხოვთ შეიყვანოთ სწორი 15-ნიშნა IMEI ნომერი');
+                alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (14 ან 15 ციფრი)');
+                inputElement.focus();
                 return;
             }
             
@@ -1076,20 +1169,12 @@
             
             // Simulate premium check
             setTimeout(() => {
-                const result = {
-                    model: 'iPhone 13 Pro Max',
-                    serial: 'ABCD1234EFGH',
-                    color: 'გრაფიტისფერი',
-                    storage: '512 GB',
-                    activation: 'აქტივირებულია',
-                    warranty: '2023-12-31',
-                    lock: 'უფასო',
-                    region: 'აშშ',
-                    repair: 'არ არის'
-                };
+                const cleanedImei = imei.replace(/\D/g, '');
+                const result = generateDeviceData(cleanedImei);
                 
+                // Include all fields for premium check
                 hideLoading();
-                showResult(imei, result);
+                showResult(cleanedImei, result);
             }, 2500);
         });
         
