@@ -36,7 +36,6 @@ STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 MONGODB_URI = os.getenv('MONGODB_URI')
 API_KEY = os.getenv('API_KEY')
 
-# Конфигурация админ-панели
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'securepassword')
 
@@ -46,10 +45,9 @@ db = client['imei_checker']
 checks_collection = db['results']
 prices_collection = db['prices']
 
-# Инициализация цен
 DEFAULT_PRICES = {
-    'paid': 499,    # $4.99
-    'premium': 999  # $9.99
+    'paid': 499,
+    'premium': 999
 }
 
 if prices_collection.count_documents({'type': 'current'}) == 0:
@@ -60,7 +58,6 @@ if prices_collection.count_documents({'type': 'current'}) == 0:
         'updated_at': datetime.utcnow()
     })
 
-# Конфигурация API проверки
 API_URL = "https://api.ifreeicloud.co.uk"
 SERVICE_TYPES = {
     'free': 0,
@@ -76,7 +73,6 @@ def get_current_prices():
 
 @app.route('/')
 def index():
-    app.logger.info('Serving index page')
     prices = get_current_prices()
     return render_template('index.html', 
                            stripe_public_key=STRIPE_PUBLIC_KEY,
@@ -91,10 +87,7 @@ def create_checkout_session():
         service_type = data.get('service_type')
         
         if not validate_imei(imei):
-            app.logger.warning(f'Invalid IMEI format: {imei}')
             return jsonify({'error': 'Invalid IMEI'}), 400
-        
-        app.logger.info(f'Creating checkout session for IMEI: {imei}, service: {service_type}')
         
         prices = get_current_prices()
         
@@ -119,31 +112,31 @@ def create_checkout_session():
             cancel_url=url_for('index', _external=True),
         )
         
-        app.logger.info(f'Checkout session created: {session.id}')
         return jsonify({'id': session.id})
     
     except Exception as e:
-        app.logger.error(f'Stripe session creation error: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
 @app.route('/success')
 def payment_success():
     session_id = request.args.get('session_id')
     if not session_id:
-        app.logger.warning('Payment success accessed without session_id')
         return render_template('error.html', error="Session ID missing"), 400
     
     try:
-        app.logger.info(f'Processing payment success for session: {session_id}')
         session = stripe.checkout.Session.retrieve(session_id)
         imei = session.metadata.get('imei')
         service_type = session.metadata.get('service_type')
         
         if not imei or not service_type:
-            app.logger.error(f'Invalid session data for session: {session_id}')
             return render_template('error.html', error="Invalid session data"), 400
         
         result = perform_api_check(imei, service_type)
+        
+        # Проверка на пустой результат
+        if not result or 'error' in result:
+            error_msg = result.get('error', 'No data available for this IMEI')
+            return render_template('error.html', error=error_msg)
         
         record = {
             'stripe_session_id': session_id,
@@ -158,11 +151,9 @@ def payment_success():
         }
         checks_collection.insert_one(record)
         
-        app.logger.info(f'Payment processed successfully for IMEI: {imei}')
         return redirect(url_for('index', session_id=session_id))
     
     except Exception as e:
-        app.logger.error(f'Payment processing error: {str(e)}')
         return render_template('error.html', error=str(e)), 500
 
 @app.route('/get_check_result')
@@ -186,12 +177,15 @@ def perform_check():
     service_type = request.args.get('service_type')
     
     if not validate_imei(imei):
-        app.logger.warning(f'Invalid IMEI format in perform_check: {imei}')
         return jsonify({'error': 'Invalid IMEI format'}), 400
     
     try:
-        app.logger.info(f'Performing API check for IMEI: {imei}, service: {service_type}')
         result = perform_api_check(imei, service_type)
+        
+        # Проверка на пустой результат
+        if not result or 'error' in result:
+            error_msg = result.get('error', 'No data available for this IMEI')
+            return jsonify({'error': error_msg})
         
         if service_type == 'free':
             record = {
@@ -206,32 +200,7 @@ def perform_check():
         return jsonify(result)
     
     except Exception as e:
-        app.logger.error(f'API check error: {str(e)}')
         return jsonify({'error': str(e)}), 500
-
-@app.route('/stripe_webhook', methods=['POST'])
-def stripe_webhook():
-    payload = request.data
-    sig_header = request.headers.get('Stripe-Signature')
-    event = None
-
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, STRIPE_WEBHOOK_SECRET
-        )
-        app.logger.info(f'Stripe webhook received: {event["type"]}')
-    except ValueError as e:
-        app.logger.error(f'Invalid payload in webhook: {str(e)}')
-        return jsonify({'error': 'Invalid payload'}), 400
-    except stripe.error.SignatureVerificationError as e:
-        app.logger.error(f'Invalid signature in webhook: {str(e)}')
-        return jsonify({'error': 'Invalid signature'}), 400
-
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        app.logger.info(f"Payment succeeded: {session['id']}")
-    
-    return jsonify({'status': 'success'})
 
 def validate_imei(imei):
     return len(imei) == 15 and imei.isdigit()
@@ -245,22 +214,45 @@ def perform_api_check(imei, service_type):
     }
     
     try:
-        app.logger.debug(f'Sending API request for IMEI: {imei}')
         response = requests.post(API_URL, data=data, timeout=30)
         
         if response.status_code != 200:
-            error_msg = f"API Error: {response.status_code}"
-            app.logger.error(error_msg)
-            return {'error': error_msg}
+            return {'error': f"API Error: {response.status_code}"}
         
         result = response.json()
-        app.logger.debug(f'API response received for IMEI: {imei}')
+        
+        # Проверка на пустой ответ
+        if not result or ('error' in result and result['error']):
+            return {'error': 'No information found for this IMEI'}
+        
+        # Фильтрация демонстрационных данных
+        if 'example' in json.dumps(result).lower():
+            return {'error': 'Service unavailable'}
+            
         return result
     
     except Exception as e:
-        error_msg = f"Service error: {str(e)}"
-        app.logger.error(error_msg)
-        return {'error': error_msg}
+        return {'error': f"Service error: {str(e)}"}
+
+@app.route('/stripe_webhook', methods=['POST'])
+def stripe_webhook():
+    payload = request.data
+    sig_header = request.headers.get('Stripe-Signature')
+    event = None
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError as e:
+        return jsonify({'error': 'Invalid payload'}), 400
+    except stripe.error.SignatureVerificationError as e:
+        return jsonify({'error': 'Invalid signature'}), 400
+
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+    
+    return jsonify({'status': 'success'})
 
 def admin_required(f):
     @wraps(f)
@@ -302,13 +294,10 @@ def admin_dashboard():
                     }}
                 )
                 
-                app.logger.info(f"Prices updated by {request.authorization.username}: paid={paid_price}, premium={premium_price}")
                 flash('Prices updated successfully!', 'success')
-                
                 return redirect(url_for('admin_dashboard'))
                 
             except Exception as e:
-                app.logger.error(f'Price update error: {str(e)}')
                 flash(f'Error updating prices: {str(e)}', 'danger')
         
         page = int(request.args.get('page', 1))
@@ -370,20 +359,16 @@ def admin_dashboard():
             price_history=price_history
         )
     except Exception as e:
-        app.logger.error(f'Admin dashboard error: {str(e)}')
         return render_template('error.html', error="Admin error"), 500
 
 @app.errorhandler(404)
 def page_not_found(e):
-    app.logger.warning(f'Page not found: {request.url}')
     return render_template('error.html', error="Page not found"), 404
 
 @app.errorhandler(500)
 def internal_server_error(e):
-    app.logger.error(f'Internal server error: {str(e)}')
     return render_template('error.html', error="Server error"), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.logger.info(f'Starting server on port {port}')
     app.run(host='0.0.0.0', port=port)
