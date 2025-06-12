@@ -288,7 +288,7 @@ def admin_dashboard():
         if request.method == 'POST':
             try:
                 paid_price = int(float(request.form.get('paid_price')) * 100)
-                premium_price = int(float(request.form.get('premium_price')) * 100
+                premium_price = int(float(request.form.get('premium_price')) * 100)
                 
                 # Получаем текущие цены
                 current_doc = prices_collection.find_one({'type': 'current'})
