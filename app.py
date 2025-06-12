@@ -7,16 +7,11 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, R
 from pymongo import MongoClient
 import stripe
 from datetime import datetime
-from flask_caching import Cache
 from functools import wraps
 from bson.objectid import ObjectId
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
-
-# Конфигурация кэширования
-cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
-cache.init_app(app)
 
 # Настройка расширенного логирования
 logging.basicConfig(level=logging.INFO)
@@ -80,9 +75,8 @@ def get_current_prices():
         return price_doc['prices']
     return DEFAULT_PRICES
 
-# Главная страница с кэшированием на 1 час
+# Главная страница
 @app.route('/')
-@cache.cached(timeout=3600)
 def index():
     app.logger.info('Serving index page')
     prices = get_current_prices()
@@ -178,9 +172,8 @@ def payment_success():
         app.logger.error(f'Payment processing error: {str(e)}')
         return render_template('error.html', error=str(e)), 500
 
-# Выполнение проверки IMEI с кэшированием
+# Выполнение проверки IMEI
 @app.route('/perform_check')
-@cache.cached(timeout=600, query_string=True)  # Кэш на 10 минут
 def perform_check():
     imei = request.args.get('imei')
     service_type = request.args.get('service_type')
