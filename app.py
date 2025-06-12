@@ -4,6 +4,7 @@ import requests
 import logging
 from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, redirect, url_for, jsonify, Response, flash
+from flask_cors import CORS  # Добавлен CORS
 from pymongo import MongoClient
 import stripe
 from datetime import datetime
@@ -11,6 +12,7 @@ from functools import wraps
 from bson.objectid import ObjectId
 
 app = Flask(__name__)
+CORS(app)  # Разрешаем CORS для API
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 
 # Настройка расширенного логирования
@@ -106,7 +108,7 @@ def create_checkout_session():
             payment_method_types=['card'],
             line_items=[{
                 'price_data': {
-                    'currency': 'gel',
+                    'currency': 'usd',
                     'product_data': {
                         'name': f'iPhone Check ({service_type.capitalize()})',
                     },
@@ -130,7 +132,7 @@ def create_checkout_session():
         app.logger.error(f'Stripe session creation error: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
-# Успешная оплата
+# Успешная оплата (перенаправление на главную)
 @app.route('/success')
 def payment_success():
     session_id = request.args.get('session_id')
@@ -166,13 +168,30 @@ def payment_success():
         checks_collection.insert_one(record)
         
         app.logger.info(f'Payment processed successfully for IMEI: {imei}')
-        return render_template('result.html', result=result, imei=imei)
+        # Перенаправляем на главную с session_id
+        return redirect(url_for('index', session_id=session_id))
     
     except Exception as e:
         app.logger.error(f'Payment processing error: {str(e)}')
         return render_template('error.html', error=str(e)), 500
 
-# Выполнение проверки IMEI
+# Новый endpoint для получения результатов
+@app.route('/get_check_result')
+def get_check_result():
+    session_id = request.args.get('session_id')
+    if not session_id:
+        return jsonify({'error': 'Missing session_id'}), 400
+    
+    record = checks_collection.find_one({'stripe_session_id': session_id})
+    if not record:
+        return jsonify({'error': 'Result not found'}), 404
+    
+    return jsonify({
+        'imei': record['imei'],
+        'result': record['result']
+    })
+
+# Выполнение бесплатной проверки IMEI (возвращает JSON)
 @app.route('/perform_check')
 def perform_check():
     imei = request.args.get('imei')
@@ -180,7 +199,7 @@ def perform_check():
     
     if not validate_imei(imei):
         app.logger.warning(f'Invalid IMEI format in perform_check: {imei}')
-        return render_template('error.html', error="Invalid IMEI format"), 400
+        return jsonify({'error': 'Invalid IMEI format'}), 400
     
     try:
         app.logger.info(f'Performing API check for IMEI: {imei}, service: {service_type}')
@@ -197,11 +216,11 @@ def perform_check():
             }
             checks_collection.insert_one(record)
         
-        return render_template('result.html', result=result, imei=imei)
+        return jsonify(result)
     
     except Exception as e:
         app.logger.error(f'API check error: {str(e)}')
-        return render_template('error.html', error=str(e)), 500
+        return jsonify({'error': str(e)}), 500
 
 # Вебхук Stripe
 @app.route('/stripe_webhook', methods=['POST'])
