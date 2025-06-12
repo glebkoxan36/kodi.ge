@@ -831,6 +831,7 @@
 
     <script>
         // Инициализируем Stripe с публичным ключом
+         <script>
         const stripe = Stripe('{{ stripe_public_key }}');
         
         // Mobile Navigation
@@ -844,7 +845,6 @@
             mainContent.classList.toggle('full-width');
         });
         
-        // Close sidebar when clicking outside on mobile
         document.addEventListener('click', (e) => {
             if (window.innerWidth <= 768 && 
                 !sidebar.contains(e.target) && 
@@ -875,15 +875,12 @@
         
         // Navigation Functions
         function showPage(pageId) {
-            // Hide all pages
             Object.values(pages).forEach(page => {
                 page.classList.remove('active');
             });
             
-            // Show selected page
             pages[pageId].classList.add('active');
             
-            // Update menu active state
             menuItems.forEach(item => {
                 item.classList.remove('active');
                 if (item.dataset.page === pageId) {
@@ -891,14 +888,12 @@
                 }
             });
             
-            // Close sidebar on mobile after navigation
             if (window.innerWidth <= 768) {
                 sidebar.classList.remove('sidebar-visible');
                 sidebar.classList.add('sidebar-hidden');
                 mainContent.classList.add('full-width');
             }
             
-            // Scroll to top
             window.scrollTo(0, 0);
         }
         
@@ -930,7 +925,6 @@
             resultModal.classList.remove('active');
         });
         
-        // Close modal when clicking outside
         window.addEventListener('click', (e) => {
             if (e.target === resultModal) {
                 resultModal.classList.remove('active');
@@ -942,9 +936,7 @@
         
         // IMEI Validation
         function validateIMEI(imei) {
-            // Clean input: remove spaces and non-digit characters
             const cleaned = imei.replace(/\s+/g, '').replace(/\D/g, '');
-            // Check length (15 digits)
             return cleaned.length === 15;
         }
         
@@ -981,14 +973,28 @@
             document.getElementById('result-imei').textContent = imei;
             resultDetails.innerHTML = '';
             
-            // Check if API returned an error
+            // Обработка HTML/текстовых ответов
+            if (data.raw_data) {
+                const rawDataItem = document.createElement('div');
+                rawDataItem.className = 'result-item';
+                rawDataItem.innerHTML = `
+                    <div style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace;">
+                        ${data.raw_data}
+                    </div>
+                `;
+                resultDetails.appendChild(rawDataItem);
+                resultModal.classList.add('active');
+                return;
+            }
+            
+            // Обработка ошибок
             if (data.error) {
                 resultDetails.appendChild(createResultItem('შეცდომა', data.error));
                 resultModal.classList.add('active');
                 return;
             }
             
-            // Add all fields from API response
+            // Отображение стандартных данных
             const fieldsMapping = {
                 'model': 'მოდელი',
                 'serial': 'სერიული ნომერი',
@@ -1013,6 +1019,11 @@
                 }
             }
             
+            // Если нет данных вообще
+            if (resultDetails.children.length === 0) {
+                resultDetails.appendChild(createResultItem('ინფორმაცია', 'მონაცემები არ მოიძებნა'));
+            }
+            
             resultModal.classList.add('active');
         }
         
@@ -1029,7 +1040,6 @@
             
             showLoading();
             
-            // Send request to backend API
             fetch(`/perform_check?imei=${imei}&service_type=free`)
                 .then(response => response.json())
                 .then(data => {
@@ -1056,7 +1066,6 @@
             
             showLoading();
             
-            // Create payment session
             fetch('/create-checkout-session', {
                 method: 'POST',
                 headers: {
@@ -1072,7 +1081,6 @@
                 if (data.error) {
                     throw new Error(data.error);
                 }
-                // Redirect to Stripe payment
                 return stripe.redirectToCheckout({ sessionId: data.id });
             })
             .catch(error => {
@@ -1095,7 +1103,6 @@
             
             showLoading();
             
-            // Create payment session
             fetch('/create-checkout-session', {
                 method: 'POST',
                 headers: {
@@ -1111,7 +1118,6 @@
                 if (data.error) {
                     throw new Error(data.error);
                 }
-                // Redirect to Stripe payment
                 return stripe.redirectToCheckout({ sessionId: data.id });
             })
             .catch(error => {
@@ -1129,7 +1135,6 @@
             if (sessionId) {
                 showLoading();
                 
-                // Get check result from backend
                 fetch(`/get_check_result?session_id=${sessionId}`)
                     .then(response => response.json())
                     .then(data => {
@@ -1139,7 +1144,6 @@
                         } else {
                             showResult(data.imei, data.result);
                         }
-                        // Clean URL
                         window.history.replaceState({}, document.title, window.location.pathname);
                     })
                     .catch(error => {
