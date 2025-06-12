@@ -1,88 +1,960 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ka">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iPhone IMEI Check</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>iPhone IMEI შემოწმება</title>
     <script src="https://js.stripe.com/v3/"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --dark: #1a1a2e;
+            --light: #f5f7fa;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --gray: #7f8c8d;
+            --sidebar-width: 280px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: var(--light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 2rem 0;
+            height: 100vh;
+            position: fixed;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 100;
+        }
+
+        .logo {
+            text-align: center;
+            padding: 0 1.5rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(to right, #3498db, #e74c3c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo p {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .menu {
+            padding: 2rem 0;
+        }
+
+        .menu-item {
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition);
+            border-left: 4px solid transparent;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid var(--secondary);
+        }
+
+        .menu-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            border-left: 4px solid var(--accent);
+        }
+
+        .menu-item i {
+            font-size: 1.2rem;
+            margin-right: 1rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .menu-item span {
+            font-size: 1.1rem;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-header h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            background: linear-gradient(to right, #3498db, #e74c3c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #bdc3c7;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--secondary), #2980b9);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent), #c0392b);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #219653);
+        }
+
+        .service-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .service-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            border-color: rgba(52, 152, 219, 0.3);
+        }
+
+        .service-card i {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            color: var(--secondary);
+        }
+
+        .service-card.premium i {
+            color: gold;
+        }
+
+        .service-card.paid i {
+            color: var(--success);
+        }
+
+        .service-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .service-card .price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 1.5rem 0;
+            background: linear-gradient(to right, #3498db, #e74c3c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .service-card ul {
+            text-align: left;
+            margin: 1.5rem 0;
+            padding-left: 1.5rem;
+        }
+
+        .service-card ul li {
+            margin-bottom: 0.8rem;
+            line-height: 1.5;
+        }
+
+        /* Result Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a2e;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            color: var(--gray);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .close-modal:hover {
+            color: var(--accent);
+        }
+
+        .result-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .result-header h3 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: var(--secondary);
+        }
+
+        .imei-display {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            display: inline-block;
+            font-family: monospace;
+            letter-spacing: 2px;
+            margin: 1rem 0;
+        }
+
+        .result-details {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: #bdc3c7;
+            font-weight: 500;
+        }
+
+        .result-value {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-top: 5px solid var(--secondary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 80px;
+            }
+            .sidebar .logo h1, .sidebar .logo p, .menu-item span {
+                display: none;
+            }
+            .menu-item {
+                justify-content: center;
+            }
+            .menu-item i {
+                margin-right: 0;
+                font-size: 1.5rem;
+            }
+            .main-content {
+                margin-left: 80px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 1rem 0;
+            }
+            .menu {
+                display: flex;
+                padding: 0;
+            }
+            .menu-item {
+                flex: 1;
+                padding: 1rem;
+                border-left: none;
+                border-bottom: 4px solid transparent;
+                justify-content: center;
+            }
+            .menu-item:hover, .menu-item.active {
+                border-left: none;
+                border-bottom: 4px solid var(--accent);
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            .service-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>iPhone IMEI Check</h1>
-        <form id="check-form">
-            <div class="form-group">
-                <label for="imei">Enter IMEI:</label>
-                <input type="text" id="imei" name="imei" required 
-                       pattern="[0-9]{15}" title="15-digit number">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>iPhone IMEI Checker</h1>
+                <p>შეამოწმეთ თქვენი iPhone სის სტატუსი</p>
             </div>
             
-            <div class="form-group">
-                <label>Check Type:</label>
-                <div class="radio-group">
-                    <label>
-                        <input type="radio" name="service_type" value="free" checked>
-                        Free (Basic)
-                    </label>
-                    <label>
-                        <input type="radio" name="service_type" value="paid">
-                        Paid (₾2.00)
-                    </label>
-                    <label>
-                        <input type="radio" name="service_type" value="premium">
-                        Premium (₾4.00)
-                    </label>
+            <div class="menu">
+                <div class="menu-item active" data-page="home">
+                    <i class="fas fa-home"></i>
+                    <span>მთავარი გვერდი</span>
+                </div>
+                <div class="menu-item" data-page="free">
+                    <i class="fas fa-search"></i>
+                    <span>უფასო შემოწმება</span>
+                </div>
+                <div class="menu-item" data-page="paid">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span>პლატა შემოწმება</span>
+                </div>
+                <div class="menu-item" data-page="premium">
+                    <i class="fas fa-crown"></i>
+                    <span>პრემიუმ შემოწმება</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Home Page -->
+            <div class="page active" id="home-page">
+                <div class="page-header">
+                    <h2>მოგესალმებით iPhone IMEI შემოწმების სერვისში</h2>
+                </div>
+                
+                <div class="card">
+                    <h3>რა არის IMEI?</h3>
+                    <p>IMEI (International Mobile Equipment Identity) არის უნიკალური 15-ნიშნა კოდი, რომელიც ყველა მობილურ ტელეფონს აქვს. ეს კოდი საშუალებას გაძლევთ შეამოწმოთ თქვენი მოწყობილობის სტატუსი, ისტორია და დამატებითი ინფორმაცია.</p>
+                </div>
+                
+                <div class="card">
+                    <h3>რატომ შეამოწმოთ IMEI?</h3>
+                    <p>IMEI შემოწმება დაგეხმარებათ:</p>
+                    <ul>
+                        <li>გაიგოთ არის თუ არა მოწყობილობა ჩაკეტილი ან მოპარული</li>
+                        <li>შეამოწმოთ გარანტიის სტატუსი</li>
+                        <li>მიიღოთ დეტალური ინფორმაცია მოწყობილობის მახასიათებლებზე</li>
+                        <li>დარწმუნდეთ, რომ მოწყობილობა არის ორიგინალური</li>
+                    </ul>
+                </div>
+                
+                <div class="service-cards">
+                    <div class="service-card">
+                        <i class="fas fa-search"></i>
+                        <h3>უფასო შემოწმება</h3>
+                        <p>ძირითადი ინფორმაცია თქვენი iPhone-ის შესახებ</p>
+                        <div class="price">0 ₾</div>
+                        <button class="btn" data-page="free">შემოწმების დაწყება</button>
+                    </div>
+                    
+                    <div class="service-card paid">
+                        <i class="fas fa-dollar-sign"></i>
+                        <h3>პლატა შემოწმება</h3>
+                        <p>დეტალური ინფორმაცია და დამატებითი მონაცემები</p>
+                        <div class="price">{{ paid_price }} ₾</div>
+                        <button class="btn btn-success" data-page="paid">შემოწმების დაწყება</button>
+                    </div>
+                    
+                    <div class="service-card premium">
+                        <i class="fas fa-crown"></i>
+                        <h3>პრემიუმ შემოწმება</h3>
+                        <p>სრული ანალიზი და დაწვრილებითი ანგარიში</p>
+                        <div class="price">{{ premium_price }} ₾</div>
+                        <button class="btn btn-accent" data-page="premium">შემოწმების დაწყება</button>
+                    </div>
                 </div>
             </div>
             
-            <button type="submit">Check</button>
-        </form>
+            <!-- Free Check Page -->
+            <div class="page" id="free-page">
+                <div class="page-header">
+                    <h2>უფასო IMEI შემოწმება</h2>
+                    <button class="btn" id="back-to-home"><i class="fas fa-arrow-left"></i> მთავარ გვერდზე დაბრუნება</button>
+                </div>
+                
+                <div class="card">
+                    <p>შეიყვანეთ თქვენი iPhone-ის IMEI ნომერი ქვემოთ მოცემულ ველში. ჩვენი სისტემა მოგაწვდით ძირითად ინფორმაციას თქვენი მოწყობილობის შესახებ.</p>
+                    
+                    <div class="form-group">
+                        <label for="free-imei">IMEI ნომერი</label>
+                        <input type="text" id="free-imei" class="form-control" placeholder="შეიყვანეთ 15-ნიშნა IMEI ნომერი" maxlength="15">
+                        <small class="text-muted">IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში ან ამოტივტივებულ ყუთზე</small>
+                    </div>
+                    
+                    <button class="btn" id="free-check-btn">შემოწმების დაწყება</button>
+                </div>
+                
+                <div class="card">
+                    <h3>რა ინფორმაციას მივიღებ უფასო შემოწმებით?</h3>
+                    <ul>
+                        <li>მოწყობილობის მოდელი</li>
+                        <li>სერიული ნომერი</li>
+                        <li>ძირითადი სტატუსი (აქტივირებული/ჩაკეტილი)</li>
+                        <li>მოწყობილობის ფერი და მეხსიერება</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Paid Check Page -->
+            <div class="page" id="paid-page">
+                <div class="page-header">
+                    <h2>პლატა IMEI შემოწმება</h2>
+                    <button class="btn" id="back-to-home-paid"><i class="fas fa-arrow-left"></i> მთავარ გვერდზე დაბრუნება</button>
+                </div>
+                
+                <div class="card">
+                    <p>პლატა შემოწმებით მიიღებთ დეტალურ ინფორმაციას თქვენი iPhone-ის შესახებ, მათ შორის გარანტიის სტატუსს, ქვეყნის რეგიონს და მრავალი სხვა მნიშვნელოვანი მონაცემი.</p>
+                    
+                    <div class="form-group">
+                        <label for="paid-imei">IMEI ნომერი</label>
+                        <input type="text" id="paid-imei" class="form-control" placeholder="შეიყვანეთ 15-ნიშნა IMEI ნომერი" maxlength="15">
+                    </div>
+                    
+                    <button class="btn btn-success" id="paid-check-btn">
+                        გადახდა და შემოწმება ({{ paid_price }} ₾)
+                    </button>
+                </div>
+                
+                <div class="card">
+                    <h3>პლატა შემოწმების უპირატესობები</h3>
+                    <ul>
+                        <li>დეტალური ინფორმაცია მოწყობილობის ისტორიაზე</li>
+                        <li>გარანტიის სტატუსის დადგენა</li>
+                        <li>ქვეყნის რეგიონის განსაზღვრა</li>
+                        <li>სარემონტო ისტორიის შემოწმება</li>
+                        <li>მოწყობილობის ორიგინალურობის დადასტურება</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Premium Check Page -->
+            <div class="page" id="premium-page">
+                <div class="page-header">
+                    <h2>პრემიუმ IMEI შემოწმება</h2>
+                    <button class="btn" id="back-to-home-premium"><i class="fas fa-arrow-left"></i> მთავარ გვერდზე დაბრუნება</button>
+                </div>
+                
+                <div class="card">
+                    <p>პრემიუმ შემოწმებით მიიღებთ სრულ ანალიზს თქვენი iPhone-ის შესახებ, რომელიც მოიცავს ყველა შესაძლო მონაცემს და დეტალებს, რომელიც მხოლოდ Apple-ის სერვისებშია ხელმისაწვდომი.</p>
+                    
+                    <div class="form-group">
+                        <label for="premium-imei">IMEI ნომერი</label>
+                        <input type="text" id="premium-imei" class="form-control" placeholder="შეიყვანეთ 15-ნიშნა IMEI ნომერი" maxlength="15">
+                    </div>
+                    
+                    <button class="btn btn-accent" id="premium-check-btn">
+                        გადახდა და შემოწმება ({{ premium_price }} ₾)
+                    </button>
+                </div>
+                
+                <div class="card">
+                    <h3>პრემიუმ შემოწმების ექსკლუზიური უპირატესობები</h3>
+                    <ul>
+                        <li>სრული ანალიზი Apple-ის მონაცემთა ბაზიდან</li>
+                        <li>დაწვრილებითი ანგარიში მოწყობილობის ისტორიაზე</li>
+                        <li>ჩაკეტვის სტატუსის დეტალური შემოწმება</li>
+                        <li>სარემონტო ისტორიის სრული ჩვენება</li>
+                        <li>მომავალი განახლებების პროგნოზირება</li>
+                        <li>ექსპერტის რეკომენდაციები მოწყობილობის მდგომარეობის მიხედვით</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Result Modal -->
+    <div class="modal" id="result-modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            
+            <div class="result-header">
+                <h3>შემოწმების შედეგები</h3>
+                <p>თქვენი მოწყობილობის ინფორმაცია</p>
+                <div class="imei-display">IMEI: <span id="result-imei">123456789012345</span></div>
+            </div>
+            
+            <div class="result-details">
+                <div class="result-item">
+                    <span class="result-label">მოდელი:</span>
+                    <span class="result-value" id="model">iPhone 13 Pro Max</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">სერიული ნომერი:</span>
+                    <span class="result-value" id="serial">ABCD1234EFGH</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">ფერი:</span>
+                    <span class="result-value" id="color">გრაფიტისფერი</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">მეხსიერება:</span>
+                    <span class="result-value" id="storage">512 GB</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">აქტივაციის სტატუსი:</span>
+                    <span class="result-value" id="activation">აქტივირებულია</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">გარანტია:</span>
+                    <span class="result-value" id="warranty">2023-12-31</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">ჩაკეტვის სტატუსი:</span>
+                    <span class="result-value" id="lock">უფასო</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">ქვეყანა/რეგიონი:</span>
+                    <span class="result-value" id="region">აშშ</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">სარემონტო ისტორია:</span>
+                    <span class="result-value" id="repair">არ არის</span>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <button class="btn" id="close-result">დახურვა</button>
+                <button class="btn btn-accent" id="save-report">ანგარიშის შენახვა PDF-ში</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Modal -->
+    <div class="modal" id="loading-modal">
+        <div class="modal-content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <h3>მიმდინარეობს შემოწმება...</h3>
+                <p>გთხოვთ მოიცადოთ, თქვენი მოთხოვნა მუშავდება</p>
+            </div>
+        </div>
     </div>
 
     <script>
+        // Initialize Stripe with key from backend
         const stripe = Stripe('{{ stripe_public_key }}');
-        const form = document.getElementById('check-form');
         
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // DOM Elements
+        const pages = {
+            home: document.getElementById('home-page'),
+            free: document.getElementById('free-page'),
+            paid: document.getElementById('paid-page'),
+            premium: document.getElementById('premium-page')
+        };
+        
+        const menuItems = document.querySelectorAll('.menu-item');
+        const serviceButtons = document.querySelectorAll('.service-cards .btn');
+        const backButtons = document.querySelectorAll('[id^="back-to-home"]');
+        const resultModal = document.getElementById('result-modal');
+        const loadingModal = document.getElementById('loading-modal');
+        const closeModal = document.querySelector('.close-modal');
+        const closeResultBtn = document.getElementById('close-result');
+        
+        // Navigation Functions
+        function showPage(pageId) {
+            // Hide all pages
+            Object.values(pages).forEach(page => {
+                page.classList.remove('active');
+            });
             
-            const imei = document.getElementById('imei').value;
-            const serviceType = document.querySelector('input[name="service_type"]:checked').value;
+            // Show selected page
+            pages[pageId].classList.add('active');
             
-            // Free check
-            if (serviceType === 'free') {
-                window.location.href = `/perform_check?imei=${imei}&service_type=${serviceType}`;
+            // Update menu active state
+            menuItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.page === pageId) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+        
+        // Event Listeners
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                showPage(item.dataset.page);
+            });
+        });
+        
+        serviceButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                showPage(button.dataset.page);
+            });
+        });
+        
+        backButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                showPage('home');
+            });
+        });
+        
+        // Result Modal Handling
+        closeModal.addEventListener('click', () => {
+            resultModal.classList.remove('active');
+        });
+        
+        closeResultBtn.addEventListener('click', () => {
+            resultModal.classList.remove('active');
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === resultModal) {
+                resultModal.classList.remove('active');
+            }
+            if (e.target === loadingModal) {
+                loadingModal.classList.remove('active');
+            }
+        });
+        
+        // IMEI Validation
+        function validateIMEI(imei) {
+            return imei.length === 15 && /^\d+$/.test(imei);
+        }
+        
+        // Show loading modal
+        function showLoading() {
+            loadingModal.classList.add('active');
+        }
+        
+        // Hide loading modal
+        function hideLoading() {
+            loadingModal.classList.remove('active');
+        }
+        
+        // Show result modal with data
+        function showResult(imei, data) {
+            document.getElementById('result-imei').textContent = imei;
+            
+            // Set result values from data
+            document.getElementById('model').textContent = data.model || 'ინფორმაცია არ მოიძებნა';
+            document.getElementById('serial').textContent = data.serial || 'ინფორმაცია არ მოიძებნა';
+            document.getElementById('color').textContent = data.color || 'ინფორმაცია არ მოიძებნა';
+            document.getElementById('storage').textContent = data.storage || 'ინფორმაცია არ მოიძებნა';
+            document.getElementById('activation').textContent = data.activation || 'ინფორმაცია არ მოიძებნა';
+            document.getElementById('warranty').textContent = data.warranty || 'ინფორმაცია არ მოიძებნა';
+            document.getElementById('lock').textContent = data.lock || 'ინფორმაცია არ მოიძებნა';
+            document.getElementById('region').textContent = data.region || 'ინფორმაცია არ მოიძებნა';
+            document.getElementById('repair').textContent = data.repair || 'ინფორმაცია არ მოიძებნა';
+            
+            resultModal.classList.add('active');
+        }
+        
+        // Handle URL parameters on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('session_id');
+            
+            if (sessionId) {
+                loadCheckResult(sessionId);
+            }
+            
+            // Set focus on the first input field when navigating to a page
+            document.querySelectorAll('.form-control').forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentNode.classList.add('focused');
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentNode.classList.remove('focused');
+                });
+            });
+        });
+        
+        // Function to load check result after payment
+        async function loadCheckResult(sessionId) {
+            showLoading();
+            
+            try {
+                // Call backend to get check result
+                const response = await fetch(`/get_check_result?session_id=${sessionId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load results');
+                }
+                
+                const data = await response.json();
+                showResult(data.imei, data.result);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error loading results: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Free Check Handler
+        document.getElementById('free-check-btn').addEventListener('click', async () => {
+            const imei = document.getElementById('free-imei').value.trim();
+            
+            if (!validateIMEI(imei)) {
+                alert('გთხოვთ შეიყვანოთ სწორი 15-ნიშნა IMEI ნომერი');
                 return;
             }
             
-            // Paid check
+            showLoading();
+            
             try {
-                const response = await fetch('/create-checkout-session', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ imei, service_type: serviceType })
-                });
-                
-                const data = await response.json();
-                
-                if (data.error) {
-                    alert(data.error);
-                    return;
+                const response = await fetch(`/perform_check?imei=${imei}&service_type=free`);
+                if (!response.ok) {
+                    throw new Error(await response.text());
                 }
                 
+                const result = await response.json();
+                showResult(imei, result);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Check error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        });
+        
+        // Paid Check Handler
+        document.getElementById('paid-check-btn').addEventListener('click', async () => {
+            const imei = document.getElementById('paid-imei').value.trim();
+            
+            if (!validateIMEI(imei)) {
+                alert('გთხოვთ შეიყვანოთ სწორი 15-ნიშნა IMEI ნომერი');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                // Create checkout session
+                const response = await fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        imei: imei,
+                        service_type: 'paid'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+                
+                const session = await response.json();
+                
+                // Redirect to Stripe Checkout
                 const result = await stripe.redirectToCheckout({
-                    sessionId: data.id
+                    sessionId: session.id
                 });
                 
                 if (result.error) {
-                    alert(result.error.message);
+                    throw new Error(result.error.message);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Payment processing error');
+                alert('Payment error: ' + error.message);
+                hideLoading();
             }
+        });
+        
+        // Premium Check Handler
+        document.getElementById('premium-check-btn').addEventListener('click', async () => {
+            const imei = document.getElementById('premium-imei').value.trim();
+            
+            if (!validateIMEI(imei)) {
+                alert('გთხოვთ შეიყვანოთ სწორი 15-ნიშნა IMEI ნომერი');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                // Create checkout session
+                const response = await fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        imei: imei,
+                        service_type: 'premium'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+                
+                const session = await response.json();
+                
+                // Redirect to Stripe Checkout
+                const result = await stripe.redirectToCheckout({
+                    sessionId: session.id
+                });
+                
+                if (result.error) {
+                    throw new Error(result.error.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Payment error: ' + error.message);
+                hideLoading();
+            }
+        });
+        
+        // Save Report Handler
+        document.getElementById('save-report').addEventListener('click', () => {
+            alert('ანგარიში შენახულია PDF ფორმატში');
         });
     </script>
 </body>
