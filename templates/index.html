@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>iPhone IMEI შემოწმება</title>
-    <script src="https://js.stripe.com/v3/"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -37,18 +36,60 @@
         .app-container {
             display: flex;
             min-height: 100vh;
+            flex-direction: column;
+        }
+
+        /* Header Styles */
+        .mobile-header {
+            display: none;
+            background: rgba(26, 26, 46, 0.95);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mobile-header .logo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mobile-header .logo h1 {
+            font-size: 1.4rem;
+            background: linear-gradient(to right, #3498db, #e74c3c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+        }
+
+        .mobile-header .logo p {
+            display: none;
+        }
+
+        .hamburger {
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
         }
 
         /* Sidebar Styles */
         .sidebar {
             width: var(--sidebar-width);
-            background: rgba(26, 26, 46, 0.8);
+            background: rgba(26, 26, 46, 0.95);
             backdrop-filter: blur(10px);
             padding: 2rem 0;
             height: 100vh;
             position: fixed;
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.sidebar-hidden {
+            transform: translateX(-100%);
         }
 
         .logo {
@@ -109,8 +150,13 @@
         /* Main Content Styles */
         .main-content {
             flex: 1;
-            margin-left: var(--sidebar-width);
             padding: 2rem;
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.full-width {
+            margin-left: 0;
         }
 
         .page {
@@ -132,6 +178,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .page-header h2 {
@@ -141,13 +188,14 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+            margin-bottom: 1rem;
         }
 
         .card {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
-            padding: 2rem;
-            margin-bottom: 2rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -183,7 +231,7 @@
 
         .btn {
             display: inline-block;
-            padding: 1rem 2rem;
+            padding: 0.9rem 1.5rem;
             background: linear-gradient(135deg, var(--secondary), #2980b9);
             color: white;
             border: none;
@@ -194,6 +242,7 @@
             transition: var(--transition);
             text-align: center;
             text-decoration: none;
+            white-space: nowrap;
         }
 
         .btn:hover {
@@ -212,14 +261,14 @@
         .service-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
         }
 
         .service-card {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
-            padding: 2rem;
+            padding: 1.5rem;
             text-align: center;
             transition: var(--transition);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -233,7 +282,7 @@
 
         .service-card i {
             font-size: 3rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
             color: var(--secondary);
         }
 
@@ -246,14 +295,14 @@
         }
 
         .service-card h3 {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             margin-bottom: 1rem;
         }
 
         .service-card .price {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             font-weight: 700;
-            margin: 1.5rem 0;
+            margin: 1.2rem 0;
             background: linear-gradient(to right, #3498db, #e74c3c);
             -webkit-background-clip: text;
             background-clip: text;
@@ -262,12 +311,13 @@
 
         .service-card ul {
             text-align: left;
-            margin: 1.5rem 0;
-            padding-left: 1.5rem;
+            margin: 1.2rem 0;
+            padding-left: 1.2rem;
+            font-size: 0.95rem;
         }
 
         .service-card ul li {
-            margin-bottom: 0.8rem;
+            margin-bottom: 0.6rem;
             line-height: 1.5;
         }
 
@@ -284,6 +334,7 @@
             justify-content: center;
             align-items: center;
             animation: fadeIn 0.3s ease;
+            overflow: auto;
         }
 
         .modal.active {
@@ -293,11 +344,11 @@
         .modal-content {
             background: #1a1a2e;
             border-radius: 15px;
-            width: 90%;
+            width: 95%;
             max-width: 700px;
             max-height: 90vh;
             overflow-y: auto;
-            padding: 2rem;
+            padding: 1.5rem;
             position: relative;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
@@ -319,11 +370,11 @@
 
         .result-header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .result-header h3 {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             margin-bottom: 0.5rem;
             color: var(--secondary);
         }
@@ -336,20 +387,26 @@
             font-family: monospace;
             letter-spacing: 2px;
             margin: 1rem 0;
+            font-size: 0.9rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
         }
 
         .result-details {
             background: rgba(255, 255, 255, 0.03);
             border-radius: 10px;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
+            padding: 1.2rem;
+            margin-top: 1.2rem;
+            font-size: 0.95rem;
         }
 
         .result-item {
             display: flex;
             justify-content: space-between;
-            padding: 0.8rem 0;
+            padding: 0.7rem 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            flex-wrap: wrap;
         }
 
         .result-item:last-child {
@@ -359,23 +416,25 @@
         .result-label {
             color: #bdc3c7;
             font-weight: 500;
+            width: 50%;
         }
 
         .result-value {
             text-align: right;
             font-weight: 600;
+            width: 50%;
         }
 
         .loading {
             text-align: center;
-            padding: 3rem;
+            padding: 2rem;
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(255, 255, 255, 0.1);
-            border-top: 5px solid var(--secondary);
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--secondary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 0 auto 1.5rem;
@@ -386,8 +445,22 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Button Group */
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+            min-width: 140px;
+        }
+
         /* Responsive Design */
-        @media (max-width: 992px) {
+        @media (max-width: 1200px) {
             .sidebar {
                 width: 80px;
             }
@@ -396,6 +469,7 @@
             }
             .menu-item {
                 justify-content: center;
+                padding: 1rem 0.5rem;
             }
             .menu-item i {
                 margin-right: 0;
@@ -406,42 +480,148 @@
             }
         }
 
+        @media (max-width: 992px) {
+            .service-cards {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+            .service-card .price {
+                font-size: 2rem;
+            }
+        }
+
         @media (max-width: 768px) {
+            .mobile-header {
+                display: block;
+            }
+            
             .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-                padding: 1rem 0;
+                width: 280px;
+                transform: translateX(-100%);
             }
-            .menu {
-                display: flex;
-                padding: 0;
+            
+            .sidebar.sidebar-visible {
+                transform: translateX(0);
             }
-            .menu-item {
-                flex: 1;
-                padding: 1rem;
-                border-left: none;
-                border-bottom: 4px solid transparent;
-                justify-content: center;
-            }
-            .menu-item:hover, .menu-item.active {
-                border-left: none;
-                border-bottom: 4px solid var(--accent);
-            }
+            
             .main-content {
                 margin-left: 0;
                 padding: 1rem;
             }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .page-header .btn {
+                width: 100%;
+                margin-top: 0.5rem;
+            }
+            
             .service-cards {
                 grid-template-columns: 1fr;
+            }
+            
+            .logo h1 {
+                font-size: 1.5rem;
+            }
+            
+            .menu-item span {
+                display: block;
+            }
+            
+            .modal-content {
+                padding: 1rem;
+            }
+            
+            .result-header h3 {
+                font-size: 1.4rem;
+            }
+            
+            .result-item {
+                flex-direction: column;
+            }
+            
+            .result-label, .result-value {
+                width: 100%;
+                text-align: left;
+            }
+            
+            .result-value {
+                margin-top: 0.3rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .card {
+                padding: 1.2rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-top: 0.5rem;
+            }
+            
+            .service-card {
+                padding: 1.2rem;
+            }
+            
+            .service-card .price {
+                font-size: 1.8rem;
+            }
+            
+            .page-header h2 {
+                font-size: 1.7rem;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn-group .btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .page-header h2 {
+                font-size: 1.5rem;
+            }
+            
+            .service-card h3 {
+                font-size: 1.3rem;
+            }
+            
+            .form-control {
+                padding: 0.8rem;
+            }
+            
+            .result-header h3 {
+                font-size: 1.3rem;
+            }
+            
+            .imei-display {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="app-container">
+        <!-- Mobile Header -->
+        <div class="mobile-header">
+            <div class="logo">
+                <h1>iPhone IMEI Checker</h1>
+                <p>შეამოწმეთ თქვენი iPhone სის სტატუსი</p>
+                <div class="hamburger" id="hamburger">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </div>
+        
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar sidebar-hidden" id="sidebar">
             <div class="logo">
                 <h1>iPhone IMEI Checker</h1>
                 <p>შეამოწმეთ თქვენი iPhone სის სტატუსი</p>
@@ -468,7 +648,7 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="main-content full-width" id="main-content">
             <!-- Home Page -->
             <div class="page active" id="home-page">
                 <div class="page-header">
@@ -504,7 +684,7 @@
                         <i class="fas fa-dollar-sign"></i>
                         <h3>პლატა შემოწმება</h3>
                         <p>დეტალური ინფორმაცია და დამატებითი მონაცემები</p>
-                        <div class="price">{{ paid_price }} ₾</div>
+                        <div class="price">4.99 ₾</div>
                         <button class="btn btn-success" data-page="paid">შემოწმების დაწყება</button>
                     </div>
                     
@@ -512,7 +692,7 @@
                         <i class="fas fa-crown"></i>
                         <h3>პრემიუმ შემოწმება</h3>
                         <p>სრული ანალიზი და დაწვრილებითი ანგარიში</p>
-                        <div class="price">{{ premium_price }} ₾</div>
+                        <div class="price">9.99 ₾</div>
                         <button class="btn btn-accent" data-page="premium">შემოწმების დაწყება</button>
                     </div>
                 </div>
@@ -564,7 +744,7 @@
                     </div>
                     
                     <button class="btn btn-success" id="paid-check-btn">
-                        გადახდა და შემოწმება ({{ paid_price }} ₾)
+                        გადახდა და შემოწმება (4.99 ₾)
                     </button>
                 </div>
                 
@@ -596,7 +776,7 @@
                     </div>
                     
                     <button class="btn btn-accent" id="premium-check-btn">
-                        გადახდა და შემოწმება ({{ premium_price }} ₾)
+                        გადახდა და შემოწმება (9.99 ₾)
                     </button>
                 </div>
                 
@@ -665,7 +845,7 @@
                 </div>
             </div>
             
-            <div class="text-center mt-4">
+            <div class="btn-group">
                 <button class="btn" id="close-result">დახურვა</button>
                 <button class="btn btn-accent" id="save-report">ანგარიშის შენახვა PDF-ში</button>
             </div>
@@ -684,8 +864,28 @@
     </div>
 
     <script>
-        // Initialize Stripe with key from backend
-        const stripe = Stripe('{{ stripe_public_key }}');
+        // Mobile Navigation
+        const hamburger = document.getElementById('hamburger');
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        
+        hamburger.addEventListener('click', () => {
+            sidebar.classList.toggle('sidebar-visible');
+            sidebar.classList.toggle('sidebar-hidden');
+            mainContent.classList.toggle('full-width');
+        });
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(e.target) && 
+                !hamburger.contains(e.target) &&
+                sidebar.classList.contains('sidebar-visible')) {
+                sidebar.classList.remove('sidebar-visible');
+                sidebar.classList.add('sidebar-hidden');
+                mainContent.classList.add('full-width');
+            }
+        });
         
         // DOM Elements
         const pages = {
@@ -720,6 +920,13 @@
                     item.classList.add('active');
                 }
             });
+            
+            // Close sidebar on mobile after navigation
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('sidebar-visible');
+                sidebar.classList.add('sidebar-hidden');
+                mainContent.classList.add('full-width');
+            }
             
             // Scroll to top
             window.scrollTo(0, 0);
@@ -796,51 +1003,8 @@
             resultModal.classList.add('active');
         }
         
-        // Handle URL parameters on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            // Check URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const sessionId = urlParams.get('session_id');
-            
-            if (sessionId) {
-                loadCheckResult(sessionId);
-            }
-            
-            // Set focus on the first input field when navigating to a page
-            document.querySelectorAll('.form-control').forEach(input => {
-                input.addEventListener('focus', function() {
-                    this.parentNode.classList.add('focused');
-                });
-                
-                input.addEventListener('blur', function() {
-                    this.parentNode.classList.remove('focused');
-                });
-            });
-        });
-        
-        // Function to load check result after payment
-        async function loadCheckResult(sessionId) {
-            showLoading();
-            
-            try {
-                // Call backend to get check result
-                const response = await fetch(`/get_check_result?session_id=${sessionId}`);
-                if (!response.ok) {
-                    throw new Error('Failed to load results');
-                }
-                
-                const data = await response.json();
-                showResult(data.imei, data.result);
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error loading results: ' + error.message);
-            } finally {
-                hideLoading();
-            }
-        }
-        
         // Free Check Handler
-        document.getElementById('free-check-btn').addEventListener('click', async () => {
+        document.getElementById('free-check-btn').addEventListener('click', () => {
             const imei = document.getElementById('free-imei').value.trim();
             
             if (!validateIMEI(imei)) {
@@ -850,24 +1014,27 @@
             
             showLoading();
             
-            try {
-                const response = await fetch(`/perform_check?imei=${imei}&service_type=free`);
-                if (!response.ok) {
-                    throw new Error(await response.text());
-                }
+            // Simulate API request
+            setTimeout(() => {
+                const result = {
+                    model: 'iPhone 13 Pro Max',
+                    serial: 'ABCD1234EFGH',
+                    color: 'გრაფიტისფერი',
+                    storage: '512 GB',
+                    activation: 'აქტივირებულია',
+                    warranty: '2023-12-31',
+                    lock: 'უფასო',
+                    region: 'აშშ',
+                    repair: 'არ არის'
+                };
                 
-                const result = await response.json();
-                showResult(imei, result);
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Check error: ' + error.message);
-            } finally {
                 hideLoading();
-            }
+                showResult(imei, result);
+            }, 1500);
         });
         
         // Paid Check Handler
-        document.getElementById('paid-check-btn').addEventListener('click', async () => {
+        document.getElementById('paid-check-btn').addEventListener('click', () => {
             const imei = document.getElementById('paid-imei').value.trim();
             
             if (!validateIMEI(imei)) {
@@ -877,40 +1044,27 @@
             
             showLoading();
             
-            try {
-                // Create checkout session
-                const response = await fetch('/create-checkout-session', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        imei: imei,
-                        service_type: 'paid'
-                    })
-                });
+            // Simulate payment processing
+            setTimeout(() => {
+                const result = {
+                    model: 'iPhone 13 Pro Max',
+                    serial: 'ABCD1234EFGH',
+                    color: 'გრაფიტისფერი',
+                    storage: '512 GB',
+                    activation: 'აქტივირებულია',
+                    warranty: '2023-12-31',
+                    lock: 'უფასო',
+                    region: 'აშშ',
+                    repair: 'არ არის'
+                };
                 
-                if (!response.ok) {
-                    throw new Error(await response.text());
-                }
-                
-                const session = await response.json();
-                
-                // Redirect to Stripe Checkout
-                const result = await stripe.redirectToCheckout({
-                    sessionId: session.id
-                });
-                
-                if (result.error) {
-                    throw new Error(result.error.message);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Payment error: ' + error.message);
                 hideLoading();
-            }
+                showResult(imei, result);
+            }, 2000);
         });
         
         // Premium Check Handler
-        document.getElementById('premium-check-btn').addEventListener('click', async () => {
+        document.getElementById('premium-check-btn').addEventListener('click', () => {
             const imei = document.getElementById('premium-imei').value.trim();
             
             if (!validateIMEI(imei)) {
@@ -920,36 +1074,23 @@
             
             showLoading();
             
-            try {
-                // Create checkout session
-                const response = await fetch('/create-checkout-session', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        imei: imei,
-                        service_type: 'premium'
-                    })
-                });
+            // Simulate premium check
+            setTimeout(() => {
+                const result = {
+                    model: 'iPhone 13 Pro Max',
+                    serial: 'ABCD1234EFGH',
+                    color: 'გრაფიტისფერი',
+                    storage: '512 GB',
+                    activation: 'აქტივირებულია',
+                    warranty: '2023-12-31',
+                    lock: 'უფასო',
+                    region: 'აშშ',
+                    repair: 'არ არის'
+                };
                 
-                if (!response.ok) {
-                    throw new Error(await response.text());
-                }
-                
-                const session = await response.json();
-                
-                // Redirect to Stripe Checkout
-                const result = await stripe.redirectToCheckout({
-                    sessionId: session.id
-                });
-                
-                if (result.error) {
-                    throw new Error(result.error.message);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Payment error: ' + error.message);
                 hideLoading();
-            }
+                showResult(imei, result);
+            }, 2500);
         });
         
         // Save Report Handler
