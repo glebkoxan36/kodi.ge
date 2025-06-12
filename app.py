@@ -106,7 +106,7 @@ def create_checkout_session():
             payment_method_types=['card'],
             line_items=[{
                 'price_data': {
-                    'currency': 'usd',
+                    'currency': 'gel',
                     'product_data': {
                         'name': f'iPhone Check ({service_type.capitalize()})',
                     },
