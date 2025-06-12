@@ -4,7 +4,7 @@ import requests
 import logging
 from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, redirect, url_for, jsonify, Response, flash
-from flask_cors import CORS  # Добавлен CORS
+from flask_cors import CORS
 from pymongo import MongoClient
 import stripe
 from datetime import datetime
@@ -12,17 +12,16 @@ from functools import wraps
 from bson.objectid import ObjectId
 
 app = Flask(__name__)
-CORS(app)  # Разрешаем CORS для API
+CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 
-# Настройка расширенного логирования
+# Настройка логирования
 logging.basicConfig(level=logging.INFO)
 app.logger.setLevel(logging.INFO)
 
-# Создаем обработчик для ротации логов
 log_handler = RotatingFileHandler(
     'app.log', 
-    maxBytes=1024 * 1024 * 5,  # 5 MB
+    maxBytes=1024 * 1024 * 5,
     backupCount=3
 )
 log_handler.setFormatter(logging.Formatter(
@@ -30,7 +29,7 @@ log_handler.setFormatter(logging.Formatter(
 ))
 app.logger.addHandler(log_handler)
 
-# Конфигурация из переменных окружения
+# Конфигурация
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
@@ -41,19 +40,18 @@ API_KEY = os.getenv('API_KEY')
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'securepassword')
 
-# Конфигурация MongoDB
+# MongoDB
 client = MongoClient(MONGODB_URI)
 db = client['imei_checker']
 checks_collection = db['results']
 prices_collection = db['prices']
 
-# Инициализация цен по умолчанию
+# Инициализация цен
 DEFAULT_PRICES = {
     'paid': 499,    # $4.99
     'premium': 999  # $9.99
 }
 
-# Убедимся, что цены инициализированы в базе
 if prices_collection.count_documents({'type': 'current'}) == 0:
     prices_collection.insert_one({
         'type': 'current',
@@ -70,14 +68,12 @@ SERVICE_TYPES = {
     'premium': 205
 }
 
-# Функция для получения текущих цен
 def get_current_prices():
     price_doc = prices_collection.find_one({'type': 'current'})
     if price_doc:
         return price_doc['prices']
     return DEFAULT_PRICES
 
-# Главная страница
 @app.route('/')
 def index():
     app.logger.info('Serving index page')
@@ -87,7 +83,6 @@ def index():
                            paid_price=prices['paid'] / 100,
                            premium_price=prices['premium'] / 100)
 
-# Создание сессии оплаты
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
     try:
@@ -101,7 +96,6 @@ def create_checkout_session():
         
         app.logger.info(f'Creating checkout session for IMEI: {imei}, service: {service_type}')
         
-        # Получаем актуальные цены
         prices = get_current_prices()
         
         session = stripe.checkout.Session.create(
@@ -132,7 +126,6 @@ def create_checkout_session():
         app.logger.error(f'Stripe session creation error: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
-# Успешная оплата (перенаправление на главную)
 @app.route('/success')
 def payment_success():
     session_id = request.args.get('session_id')
@@ -150,10 +143,8 @@ def payment_success():
             app.logger.error(f'Invalid session data for session: {session_id}')
             return render_template('error.html', error="Invalid session data"), 400
         
-        # Проверка IMEI через API
         result = perform_api_check(imei, service_type)
         
-        # Сохранение в базу данных
         record = {
             'stripe_session_id': session_id,
             'imei': imei,
@@ -168,14 +159,12 @@ def payment_success():
         checks_collection.insert_one(record)
         
         app.logger.info(f'Payment processed successfully for IMEI: {imei}')
-        # Перенаправляем на главную с session_id
         return redirect(url_for('index', session_id=session_id))
     
     except Exception as e:
         app.logger.error(f'Payment processing error: {str(e)}')
         return render_template('error.html', error=str(e)), 500
 
-# Новый endpoint для получения результатов
 @app.route('/get_check_result')
 def get_check_result():
     session_id = request.args.get('session_id')
@@ -191,7 +180,6 @@ def get_check_result():
         'result': record['result']
     })
 
-# Выполнение бесплатной проверки IMEI (возвращает JSON)
 @app.route('/perform_check')
 def perform_check():
     imei = request.args.get('imei')
@@ -205,7 +193,6 @@ def perform_check():
         app.logger.info(f'Performing API check for IMEI: {imei}, service: {service_type}')
         result = perform_api_check(imei, service_type)
         
-        # Сохранение в базу данных только для бесплатных проверок
         if service_type == 'free':
             record = {
                 'imei': imei,
@@ -222,7 +209,6 @@ def perform_check():
         app.logger.error(f'API check error: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
-# Вебхук Stripe
 @app.route('/stripe_webhook', methods=['POST'])
 def stripe_webhook():
     payload = request.data
@@ -247,11 +233,9 @@ def stripe_webhook():
     
     return jsonify({'status': 'success'})
 
-# Функция валидации IMEI
 def validate_imei(imei):
     return len(imei) == 15 and imei.isdigit()
 
-# Функция выполнения API проверки
 def perform_api_check(imei, service_type):
     service_code = SERVICE_TYPES.get(service_type, 0)
     data = {
@@ -278,7 +262,6 @@ def perform_api_check(imei, service_type):
         app.logger.error(error_msg)
         return {'error': error_msg}
 
-# Базовый мидлвейр для аутентификации
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -291,22 +274,18 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# Панель администратора
 @app.route('/admin', methods=['GET', 'POST'])
 @admin_required
 def admin_dashboard():
     try:
-        # Обработка изменения цен
         if request.method == 'POST':
             try:
                 paid_price = int(float(request.form.get('paid_price')) * 100)
                 premium_price = int(float(request.form.get('premium_price')) * 100)
                 
-                # Получаем текущие цены
                 current_doc = prices_collection.find_one({'type': 'current'})
                 current_prices = current_doc['prices']
                 
-                # Сохраняем текущие цены в историю
                 prices_collection.insert_one({
                     'type': 'history',
                     'prices': current_prices,
@@ -314,7 +293,6 @@ def admin_dashboard():
                     'changed_by': request.authorization.username
                 })
                 
-                # Обновляем текущие цены
                 prices_collection.update_one(
                     {'type': 'current'},
                     {'$set': {
@@ -324,7 +302,6 @@ def admin_dashboard():
                     }}
                 )
                 
-                # Логируем изменение
                 app.logger.info(f"Prices updated by {request.authorization.username}: paid={paid_price}, premium={premium_price}")
                 flash('Prices updated successfully!', 'success')
                 
@@ -334,26 +311,21 @@ def admin_dashboard():
                 app.logger.error(f'Price update error: {str(e)}')
                 flash(f'Error updating prices: {str(e)}', 'danger')
         
-        # Параметры пагинации
         page = int(request.args.get('page', 1))
         per_page = 50
         
-        # Поиск по IMEI если указан
         imei_query = request.args.get('imei', '')
         query = {'imei': {'$regex': f'^{imei_query}'}} if imei_query else {}
         
-        # Статистика
         total_checks = checks_collection.count_documents({})
         paid_checks = checks_collection.count_documents({'paid': True})
         free_checks = total_checks - paid_checks
         
-        # Получение данных с пагинацией
         checks = list(checks_collection.find(query)
             .sort('timestamp', -1)
             .skip((page - 1) * per_page)
             .limit(per_page))
         
-        # Форматирование данных для отображения
         for check in checks:
             check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
             if check.get('paid'):
@@ -361,10 +333,8 @@ def admin_dashboard():
             else:
                 check['amount'] = 'Free'
         
-        # Получаем текущие цены
         current_prices = get_current_prices()
         
-        # Рассчитываем общую выручку
         revenue_cursor = checks_collection.aggregate([
             {"$match": {"paid": True}},
             {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
@@ -372,18 +342,15 @@ def admin_dashboard():
         revenue_data = list(revenue_cursor)
         total_revenue = revenue_data[0]['total'] if revenue_data else 0
         
-        # Получаем историю цен (последние 5 записей)
         price_history = list(prices_collection.find({'type': 'history'})
             .sort('changed_at', -1)
             .limit(5))
         
-        # Форматируем историю цен
         for item in price_history:
             item['changed_at'] = item['changed_at'].strftime('%Y-%m-%d %H:%M')
             item['paid'] = item['prices']['paid'] / 100
             item['premium'] = item['prices']['premium'] / 100
         
-        # Форматируем текущие цены для формы
         formatted_prices = {
             'paid': current_prices['paid'] / 100,
             'premium': current_prices['premium'] / 100
@@ -406,7 +373,6 @@ def admin_dashboard():
         app.logger.error(f'Admin dashboard error: {str(e)}')
         return render_template('error.html', error="Admin error"), 500
 
-# Обработка ошибок
 @app.errorhandler(404)
 def page_not_found(e):
     app.logger.warning(f'Page not found: {request.url}')
