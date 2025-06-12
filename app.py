@@ -9,7 +9,7 @@ from pymongo import MongoClient
 import stripe
 from datetime import datetime
 from functools import wraps
-from bson.objectid import ObjectId
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 CORS(app)
@@ -75,9 +75,9 @@ def get_current_prices():
 def index():
     prices = get_current_prices()
     return render_template('index.html', 
-                           stripe_public_key=STRIPE_PUBLIC_KEY,
-                           paid_price=prices['paid'] / 100,
-                           premium_price=prices['premium'] / 100)
+                         stripe_public_key=STRIPE_PUBLIC_KEY,
+                         paid_price=prices['paid'] / 100,
+                         premium_price=prices['premium'] / 100)
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
@@ -133,7 +133,6 @@ def payment_success():
         
         result = perform_api_check(imei, service_type)
         
-        # Проверка на пустой результат
         if not result or 'error' in result:
             error_msg = result.get('error', 'No data available for this IMEI')
             return render_template('error.html', error=error_msg)
@@ -182,7 +181,6 @@ def perform_check():
     try:
         result = perform_api_check(imei, service_type)
         
-        # Проверка на пустой результат
         if not result or 'error' in result:
             error_msg = result.get('error', 'No data available for this IMEI')
             return jsonify({'error': error_msg})
@@ -216,20 +214,29 @@ def perform_api_check(imei, service_type):
     try:
         response = requests.post(API_URL, data=data, timeout=30)
         
-        if response.status_code != 200:
-            return {'error': f"API Error: {response.status_code}"}
+        content_type = response.headers.get('Content-Type', '')
         
-        result = response.json()
+        if 'application/json' in content_type:
+            result = response.json()
+            if not result or ('error' in result and result['error']):
+                return {'error': 'No information found for this IMEI'}
+            return result
         
-        # Проверка на пустой ответ
-        if not result or ('error' in result and result['error']):
-            return {'error': 'No information found for this IMEI'}
-        
-        # Фильтрация демонстрационных данных
-        if 'example' in json.dumps(result).lower():
-            return {'error': 'Service unavailable'}
+        elif 'text/html' in content_type:
+            soup = BeautifulSoup(response.text, 'html.parser')
             
-        return result
+            for script in soup(["script", "style"]):
+                script.decompose()
+            
+            text = soup.get_text()
+            lines = (line.strip() for line in text.splitlines())
+            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+            clean_text = '\n'.join(chunk for chunk in chunks if chunk)
+            
+            return {'raw_data': clean_text}
+        
+        else:
+            return {'error': f'Unsupported content type: {content_type}'}
     
     except Exception as e:
         return {'error': f"Service error: {str(e)}"}
