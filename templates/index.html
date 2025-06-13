@@ -28,15 +28,6 @@
             overflow-x: hidden;
         }
         
-        /* Улучшенная читаемость текста */
-        .card-body, .modal-body, .stat-card, .service-card, .hero-section, #about, #imei-info, #unlock-info {
-            color: #e9ecef !important;
-        }
-        
-        .result-label {
-            color: #a0aec0 !important;
-        }
-        
         /* Sidebar styling */
         .sidebar {
             background: rgba(10, 14, 23, 0.9);
@@ -442,7 +433,7 @@
         
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link active" href="#" onclick="showHome()">
+                <a class="nav-link active" href="#">
                     <i class="fas fa-home"></i>
                     <span>მთავარი</span>
                 </a>
@@ -466,25 +457,25 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" onclick="showSection('about')">
+                <a class="nav-link" href="#about">
                     <i class="fas fa-info-circle"></i>
                     <span>საიტის შესახებ</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" onclick="showSection('imei-info')">
+                <a class="nav-link" href="#imei-info">
                     <i class="fas fa-qrcode"></i>
                     <span>რა არის IMEI?</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" onclick="showSection('unlock-info')">
+                <a class="nav-link" href="#unlock-info">
                     <i class="fas fa-unlock-alt"></i>
                     <span>ტელეფონის განბლოკვა</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" onclick="showSection('pricing')">
+                <a class="nav-link" href="#pricing">
                     <i class="fas fa-tags"></i>
                     <span>ფასები</span>
                 </a>
@@ -549,7 +540,7 @@
         </div>
         
         <!-- About Section -->
-        <div id="about" class="card mt-5 d-none">
+        <div id="about" class="card mt-5">
             <div class="card-header">
                 <i class="fas fa-info-circle me-2"></i>
                 Kodi.ge-ს შესახებ
@@ -562,7 +553,7 @@
         </div>
         
         <!-- IMEI Info Section -->
-        <div id="imei-info" class="card mt-5 d-none">
+        <div id="imei-info" class="card mt-5">
             <div class="card-header">
                 <i class="fas fa-qrcode me-2"></i>
                 რა არის IMEI?
@@ -580,7 +571,7 @@
         </div>
         
         <!-- Unlock Info Section -->
-        <div id="unlock-info" class="card mt-5 d-none">
+        <div id="unlock-info" class="card mt-5">
             <div class="card-header">
                 <i class="fas fa-unlock-alt me-2"></i>
                 ტელეფონის განბლოკვა
@@ -598,7 +589,7 @@
         </div>
         
         <!-- Pricing Section -->
-        <div id="pricing" class="mt-5 d-none">
+        <div id="pricing" class="mt-5">
             <h2 class="section-title">ჩვენი სერვისები</h2>
             <div class="row">
                 <div class="col-md-4 mb-4">
@@ -630,7 +621,7 @@
                             <li>მოპარვის/დაკარგვის სტატუსი</li>
                             <li>სერვისის სტატუსი</li>
                         </ul>
-                        <div class="service-price" id="paid-price">5.99 ₾</div>
+                        <div class="service-price">5.99 ₾</div>
                         <button class="btn btn-outline-warning btn-service" onclick="showCheck('paid')">
                             აირჩიე
                         </button>
@@ -648,7 +639,7 @@
                             <li>გარანტია განბლოკვაზე</li>
                             <li>24/7 პრიორიტეტული მხარდაჭერა</li>
                         </ul>
-                        <div class="service-price" id="premium-price">9.99 ₾</div>
+                        <div class="service-price">9.99 ₾</div>
                         <button class="btn btn-outline-success btn-service" onclick="showCheck('premium')">
                             აირჩიე
                         </button>
@@ -709,16 +700,22 @@
     
     <script>
         // Initialize Stripe
-        const stripe = Stripe("YOUR_STRIPE_PUBLIC_KEY");
+        const stripe = Stripe("pk_test_51P...");
         let currentServiceType = null;
+        
+        // Simulated stats data
+        const statsData = {
+            daily: 1248,
+            weekly: 8721,
+            monthly: 34215
+        };
         
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
-            // Load stats
-            fetchStats();
-            
-            // Load prices
-            fetchPrices();
+            // Animate stats counters
+            animateValue("daily-checks", 0, statsData.daily, 2000);
+            animateValue("weekly-checks", 0, statsData.weekly, 2000);
+            animateValue("monthly-checks", 0, statsData.monthly, 2000);
             
             // Mobile menu toggle
             const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
@@ -735,75 +732,43 @@
             const sessionId = urlParams.get('session_id');
             
             if(sessionId) {
-                getCheckResult(sessionId);
+                showSpinner(true);
+                fetch(`/get_check_result?session_id=${sessionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        showSpinner(false);
+                        if(data.error) {
+                            displayResult({ error: data.error });
+                        } else {
+                            displayResult(data.result);
+                        }
+                    })
+                    .catch(error => {
+                        showSpinner(false);
+                        displayResult({ error: 'Failed to get result: ' + error.message });
+                    });
             }
         });
         
-        // Fetch statistics from backend
-        function fetchStats() {
-            fetch('/get_stats')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('daily-checks').textContent = data.daily;
-                    document.getElementById('weekly-checks').textContent = data.weekly;
-                    document.getElementById('monthly-checks').textContent = data.monthly;
-                })
-                .catch(error => {
-                    console.error('Error fetching stats:', error);
-                });
-        }
-        
-        // Fetch prices from backend
-        function fetchPrices() {
-            fetch('/get_prices')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('paid-price').textContent = data.paid + ' ₾';
-                    document.getElementById('premium-price').textContent = data.premium + ' ₾';
-                })
-                .catch(error => {
-                    console.error('Error fetching prices:', error);
-                });
-        }
-        
-        // Show home page
-        function showHome() {
-            hideAllSections();
-            document.querySelector('.hero-section').classList.remove('d-none');
-            document.querySelector('.stats-container').classList.remove('d-none');
-            document.querySelector('footer').classList.remove('d-none');
-        }
-        
-        // Show specific section
-        function showSection(sectionId) {
-            hideAllSections();
-            document.getElementById(sectionId).classList.remove('d-none');
-            document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' });
-        }
-        
-        // Hide all sections
-        function hideAllSections() {
-            const sections = [
-                '.hero-section',
-                '.stats-container',
-                '#check-section',
-                '#about',
-                '#imei-info',
-                '#unlock-info',
-                '#pricing',
-                'footer'
-            ];
-            
-            sections.forEach(selector => {
-                const el = document.querySelector(selector);
-                if (el) el.classList.add('d-none');
-            });
+        // Function to animate value counters
+        function animateValue(id, start, end, duration) {
+            const element = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const value = Math.floor(progress * (end - start) + start);
+                element.innerHTML = value.toLocaleString();
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
         }
         
         // Show check form based on service type
         function showCheck(serviceType) {
             currentServiceType = serviceType;
-            hideAllSections();
             const checkSection = document.getElementById('check-section');
             const checkTitle = document.getElementById('check-title');
             const checkButton = document.getElementById('check-button');
@@ -856,37 +821,33 @@
             showSpinner(true);
             
             if(currentServiceType === 'free') {
-                performFreeCheck(imei);
+                // Free check
+                fetch('/perform_check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imei: imei,
+                        service_type: 'free'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showSpinner(false);
+                    displayResult(data);
+                })
+                .catch(error => {
+                    showSpinner(false);
+                    displayResult({ error: 'Request failed: ' + error.message });
+                });
             } else {
+                // Paid check
                 createCheckoutSession(imei, currentServiceType);
             }
         }
         
-        // Perform free check
-        function performFreeCheck(imei) {
-            fetch('/perform_check', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    imei: imei,
-                    service_type: 'free'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                displayResult(data);
-                showSpinner(false);
-            })
-            .catch(error => {
-                console.error('Error performing free check:', error);
-                displayResult({ error: 'Check failed. Please try again.' });
-                showSpinner(false);
-            });
-        }
-        
-        // Create checkout session for paid/premium
+        // Create checkout session
         function createCheckoutSession(imei, serviceType) {
             fetch('/create-checkout-session', {
                 method: 'POST',
@@ -900,43 +861,21 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.id) {
-                    stripe.redirectToCheckout({ sessionId: data.id })
-                        .then(result => {
-                            if (result.error) {
-                                alert(result.error.message);
-                                showSpinner(false);
-                            }
-                        });
-                } else {
-                    throw new Error('Failed to create checkout session');
+                if(data.error) {
+                    throw new Error(data.error);
+                }
+                return stripe.redirectToCheckout({ sessionId: data.id });
+            })
+            .then(result => {
+                if(result.error) {
+                    showSpinner(false);
+                    alert(result.error.message);
                 }
             })
             .catch(error => {
-                console.error('Error creating checkout session:', error);
-                displayResult({ error: 'Payment setup failed. Please try again.' });
                 showSpinner(false);
+                displayResult({ error: error.message });
             });
-        }
-        
-        // Get check result after payment
-        function getCheckResult(sessionId) {
-            showSpinner(true);
-            fetch(`/get_check_result?session_id=${sessionId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.result) {
-                        displayResult(data.result);
-                    } else {
-                        displayResult({ error: data.error || 'Unknown error' });
-                    }
-                    showSpinner(false);
-                })
-                .catch(error => {
-                    console.error('Error fetching check result:', error);
-                    displayResult({ error: 'Failed to get check result.' });
-                    showSpinner(false);
-                });
         }
         
         // Display result in modal
@@ -954,20 +893,19 @@
                     <div class="alert alert-success mb-4">
                         <i class="fas fa-check-circle me-2"></i> შემოწმება წარმატებით დასრულდა!
                     </div>
-                    <div class="result-item">
-                        <div class="result-label">IMEI ნომერი:</div>
-                        <div class="result-value">${data.imei}</div>
-                    </div>
                 `;
                 
                 for(const [key, value] of Object.entries(data)) {
-                    if(key === 'imei') continue;
-                    html += `
-                        <div class="result-item">
-                            <div class="result-label">${formatLabel(key)}:</div>
-                            <div class="result-value">${value}</div>
-                        </div>
-                    `;
+                    if(key === 'html_content') {
+                        html += `<div class="mt-4">${value}</div>`;
+                    } else {
+                        html += `
+                            <div class="result-item">
+                                <div class="result-label">${formatLabel(key)}:</div>
+                                <div class="result-value">${value}</div>
+                            </div>
+                        `;
+                    }
                 }
                 
                 modalContent.innerHTML = html;
@@ -989,11 +927,15 @@
                 'purchase_date': 'შეძენის თარიღი',
                 'activation_status': 'აქტივაციის სტატუსი',
                 'carrier': 'ოპერატორი',
-                'country': 'ქვეყანა'
+                'country': 'ქვეყანა',
+                'device': 'მოწყობილობა',
+                'imei': 'IMEI ნომერი',
+                'iccid': 'ICCID',
+                'blacklist_status': 'შავი სიის სტატუსი'
             };
             
             return labels[key] || key;
         }
     </script>
 </body>
-    </html>
+</html>
