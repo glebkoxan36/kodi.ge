@@ -34,10 +34,10 @@ app.logger.addHandler(log_handler)
 # -------------------------
 # Используйте следующие данные, полученные из панели Dhru/GSM Fusion:
 #
-# API Title   : iFreeiCloud
-# Username    : glebkoxan1
-# URL         : https://api.ifreeicloud.co.uk
-# Dhru API Key: ZBL-CI9-93S-00S-BY3-CH9-CLH-0L1
+API Title   : iFreeiCloud
+ Username    : glebkoxan1
+ URL         : https://api.ifreeicloud.co.uk
+ Dhru API Key: ZBL-CI9-93S-00S-BY3-CH9-CLH-0L1
 #
 # В настройках вашего бэкэнда обязательно заполните все поля, затем нажмите "Verify Connection"
 # и синхронизируйте API. Если переменные окружения не заданы, здесь используются значения по умолчанию.
