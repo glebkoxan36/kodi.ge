@@ -831,7 +831,6 @@
 
     <script>
         // Инициализируем Stripe с публичным ключом
-         <script>
         const stripe = Stripe('{{ stripe_public_key }}');
         
         // Mobile Navigation
@@ -1028,20 +1027,27 @@
         }
         
         // Free Check Handler
-        document.getElementById('free-check-btn').addEventListener('click', () => {
+        document.getElementById('free-check-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            
             const inputElement = document.getElementById('free-imei');
             const imei = inputElement.value.trim();
             
             if (!validateIMEI(imei)) {
                 alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (15 ციფრი)');
                 inputElement.focus();
-                return;
+                return false;
             }
             
             showLoading();
             
             fetch(`/perform_check?imei=${imei}&service_type=free`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     hideLoading();
                     showResult(imei, data);
@@ -1049,19 +1055,23 @@
                 .catch(error => {
                     hideLoading();
                     console.error('Error:', error);
-                    alert('შეცდომა შემოწმების დროს');
+                    alert('შეცდომა შემოწმების დროს: ' + error.message);
                 });
+            
+            return false;
         });
         
         // Paid Check Handler
-        document.getElementById('paid-check-btn').addEventListener('click', () => {
+        document.getElementById('paid-check-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            
             const inputElement = document.getElementById('paid-imei');
             const imei = inputElement.value.trim();
             
             if (!validateIMEI(imei)) {
                 alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (15 ციფრი)');
                 inputElement.focus();
-                return;
+                return false;
             }
             
             showLoading();
@@ -1076,7 +1086,12 @@
                     service_type: 'paid'
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.error) {
                     throw new Error(data.error);
@@ -1088,17 +1103,21 @@
                 console.error('Error:', error);
                 alert('გადახდის სესიის შექმნის შეცდომა: ' + error.message);
             });
+            
+            return false;
         });
         
         // Premium Check Handler
-        document.getElementById('premium-check-btn').addEventListener('click', () => {
+        document.getElementById('premium-check-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            
             const inputElement = document.getElementById('premium-imei');
             const imei = inputElement.value.trim();
             
             if (!validateIMEI(imei)) {
                 alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (15 ციფრი)');
                 inputElement.focus();
-                return;
+                return false;
             }
             
             showLoading();
@@ -1113,7 +1132,12 @@
                     service_type: 'premium'
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.error) {
                     throw new Error(data.error);
@@ -1125,6 +1149,8 @@
                 console.error('Error:', error);
                 alert('გადახდის სესიის შექმნის შეცდომა: ' + error.message);
             });
+            
+            return false;
         });
         
         // Check for session_id in URL after payment
