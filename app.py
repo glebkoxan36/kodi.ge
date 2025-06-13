@@ -380,7 +380,8 @@ def admin_dashboard():
     try:
         if request.method == 'POST':
             try:
-                paid_price = int(float(request.form.get('paid_price')) * 100)
+                # ИСПРАВЛЕНО: убраны лишние скобки
+                paid_price = int(float(request.form.get('paid_price')) * 100
                 premium_price = int(float(request.form.get('premium_price')) * 100
                 
                 current_doc = prices_collection.find_one({'type': 'current'})
