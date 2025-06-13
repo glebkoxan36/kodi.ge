@@ -29,26 +29,12 @@ log_handler.setFormatter(logging.Formatter(
 ))
 app.logger.addHandler(log_handler)
 
-# -------------------------
-# Dhru API Setup Integration
-# -------------------------
-# Используйте следующие данные, полученные из панели Dhru/GSM Fusion:
-#
-API Title   : iFreeiCloud
- Username    : glebkoxan1
- URL         : https://api.ifreeicloud.co.uk
- Dhru API Key: ZBL-CI9-93S-00S-BY3-CH9-CLH-0L1
-#
-# В настройках вашего бэкэнда обязательно заполните все поля, затем нажмите "Verify Connection"
-# и синхронизируйте API. Если переменные окружения не заданы, здесь используются значения по умолчанию.
-API_URL = os.getenv('DHru_API_URL', 'https://api.ifreeicloud.co.uk')
-API_KEY = os.getenv('DHru_API_KEY', 'ZBL-CI9-93S-00S-BY3-CH9-CLH-0L1')
-
-# Остальные настройки
+# Конфигурация
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 MONGODB_URI = os.getenv('MONGODB_URI')
+API_KEY = os.getenv('API_KEY', 'ZBL-CI9-93S-00S-BY3-CH9-CLH-0L1')  # Updated default key
 
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'securepassword')
@@ -72,6 +58,7 @@ if prices_collection.count_documents({'type': 'current'}) == 0:
         'updated_at': datetime.utcnow()
     })
 
+API_URL = "https://api.ifreeicloud.co.uk"
 SERVICE_TYPES = {
     'free': 0,
     'paid': 4,
@@ -88,9 +75,9 @@ def get_current_prices():
 def index():
     prices = get_current_prices()
     return render_template('index.html', 
-                           stripe_public_key=STRIPE_PUBLIC_KEY,
-                           paid_price=prices['paid'] / 100,
-                           premium_price=prices['premium'] / 100)
+                         stripe_public_key=STRIPE_PUBLIC_KEY,
+                         paid_price=prices['paid'] / 100,
+                         premium_price=prices['premium'] / 100)
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
@@ -231,28 +218,52 @@ def perform_api_check(imei, service_type):
     }
     
     try:
-        response = requests.post(API_URL, data=data, timeout=30)
+        response = requests.post(API_URL, data=data, timeout=60)  # Increased timeout to 60 seconds
+        
+        # Check HTTP status code first
+        if response.status_code != 200:
+            return {'error': f'API returned HTTP code {response.status_code}'}
+        
         content_type = response.headers.get('Content-Type', '')
         
         if 'application/json' in content_type:
             result = response.json()
+            
+            # Check for success flag like in PHP code
+            if 'success' in result and not result['success']:
+                return {'error': result.get('error', 'API request failed')}
+            
             if not result or ('error' in result and result['error']):
                 return {'error': 'No information found for this IMEI'}
+            
+            # Add raw response similar to PHP version
+            result['raw_response'] = response.text
             return result
         
         elif 'text/html' in content_type:
             soup = BeautifulSoup(response.text, 'html.parser')
+            
             for script in soup(["script", "style"]):
                 script.decompose()
+            
             text = soup.get_text()
             lines = (line.strip() for line in text.splitlines())
             chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
             clean_text = '\n'.join(chunk for chunk in chunks if chunk)
-            return {'raw_data': clean_text}
+            
+            return {
+                'raw_data': clean_text,
+                'raw_response': response.text
+            }
         
         else:
-            return {'error': f'Unsupported content type: {content_type}'}
+            return {
+                'error': f'Unsupported content type: {content_type}',
+                'raw_response': response.text
+            }
     
+    except requests.exceptions.RequestException as e:
+        return {'error': f"Request error: {str(e)}"}
     except Exception as e:
         return {'error': f"Service error: {str(e)}"}
 
