@@ -170,10 +170,13 @@ def get_check_result():
         'result': record['result']
     })
 
-@app.route('/perform_check')
+@app.route('/perform_check', methods=['GET'])
 def perform_check():
     imei = request.args.get('imei')
     service_type = request.args.get('service_type')
+    
+    if not imei or not service_type:
+        return jsonify({'error': 'Missing parameters'}), 400
     
     if not validate_imei(imei):
         return jsonify({'error': 'Invalid IMEI format'}), 400
@@ -181,9 +184,11 @@ def perform_check():
     try:
         result = perform_api_check(imei, service_type)
         
-        if not result or 'error' in result:
-            error_msg = result.get('error', 'No data available for this IMEI')
-            return jsonify({'error': error_msg})
+        if not result:
+            return jsonify({'error': 'Empty response from API'}), 500
+        
+        if 'error' in result:
+            return jsonify(result), 400
         
         if service_type == 'free':
             record = {
@@ -198,6 +203,7 @@ def perform_check():
         return jsonify(result)
     
     except Exception as e:
+        app.logger.error(f'Check error: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
 def validate_imei(imei):
