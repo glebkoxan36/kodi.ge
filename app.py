@@ -9,7 +9,8 @@ from pymongo import MongoClient
 import stripe
 from datetime import datetime
 from functools import wraps
-from bson import ObjectId
+from bs4 import BeautifulSoup
+import re
 
 app = Flask(__name__)
 CORS(app)
@@ -47,20 +48,12 @@ client = MongoClient(MONGODB_URI)
 db = client['imei_checker']
 checks_collection = db['results']
 prices_collection = db['prices']
-stats_collection = db['stats']
 
 DEFAULT_PRICES = {
     'paid': 499,    # $4.99
     'premium': 999  # $9.99
 }
 
-DEFAULT_STATS = {
-    'daily': 1248,
-    'weekly': 8721,
-    'monthly': 34215
-}
-
-# Initialize collections
 if prices_collection.count_documents({'type': 'current'}) == 0:
     prices_collection.insert_one({
         'type': 'current',
@@ -69,18 +62,11 @@ if prices_collection.count_documents({'type': 'current'}) == 0:
         'updated_at': datetime.utcnow()
     })
 
-if stats_collection.count_documents({'type': 'current'}) == 0:
-    stats_collection.insert_one({
-        'type': 'current',
-        'stats': DEFAULT_STATS,
-        'updated_at': datetime.utcnow()
-    })
-
 # Типы сервисов
 SERVICE_TYPES = {
-    'free': 0,     # Бесплатная проверка
-    'paid': 205,    # Платная проверка
-    'premium': 242  # Премиум проверка
+    'free': 0,
+    'paid': 205,
+    'premium': 242
 }
 
 def get_current_prices():
@@ -89,12 +75,6 @@ def get_current_prices():
         return price_doc['prices']
     return DEFAULT_PRICES
 
-def get_current_stats():
-    stats_doc = stats_collection.find_one({'type': 'current'})
-    if stats_doc:
-        return stats_doc['stats']
-    return DEFAULT_STATS
-
 @app.route('/')
 def index():
     prices = get_current_prices()
@@ -102,19 +82,6 @@ def index():
                          stripe_public_key=STRIPE_PUBLIC_KEY,
                          paid_price=prices['paid'] / 100,
                          premium_price=prices['premium'] / 100)
-
-@app.route('/get_prices')
-def get_prices_endpoint():
-    prices = get_current_prices()
-    return jsonify({
-        'paid': prices['paid'] / 100,
-        'premium': prices['premium'] / 100
-    })
-
-@app.route('/get_stats')
-def get_stats():
-    stats = get_current_stats()
-    return jsonify(stats)
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
@@ -169,12 +136,19 @@ def payment_success():
         if not imei or not service_type:
             return render_template('error.html', error="Invalid session data"), 400
         
-        # Perform actual check
         result = perform_api_check(imei, service_type)
         
         if not result or 'error' in result:
             error_msg = result.get('error', 'No data available for this IMEI')
             return render_template('error.html', error=error_msg)
+        
+        # Для бесплатных проверок обрабатываем HTML
+        if service_type == 'free' and 'html_content' in result:
+            parsed_data = parse_free_html(result['html_content'])
+            if parsed_data:
+                result = parsed_data
+            else:
+                result = {'error': 'Failed to parse HTML response'}
         
         record = {
             'stripe_session_id': session_id,
@@ -188,9 +162,6 @@ def payment_success():
             'result': result
         }
         checks_collection.insert_one(record)
-        
-        # Update stats
-        update_stats()
         
         return redirect(url_for('index', session_id=session_id))
     
@@ -215,7 +186,7 @@ def get_check_result():
 
 @app.route('/perform_check', methods=['POST'])
 def perform_check():
-    data = request.json
+    data = request.get_json()
     imei = data.get('imei')
     service_type = data.get('service_type')
     
@@ -234,6 +205,14 @@ def perform_check():
         if 'error' in result:
             return jsonify(result), 400
         
+        # Для бесплатных проверок обрабатываем HTML
+        if service_type == 'free' and 'html_content' in result:
+            parsed_data = parse_free_html(result['html_content'])
+            if parsed_data:
+                result = parsed_data
+            else:
+                result = {'error': 'Failed to parse HTML response'}
+        
         if service_type == 'free':
             record = {
                 'imei': imei,
@@ -243,7 +222,6 @@ def perform_check():
                 'result': result
             }
             checks_collection.insert_one(record)
-            update_stats()
         
         return jsonify(result)
     
@@ -255,42 +233,61 @@ def validate_imei(imei):
     return len(imei) == 15 and imei.isdigit()
 
 def perform_api_check(imei, service_type):
-    # Simulate API response
-    models = ['iPhone 15 Pro Max', 'iPhone 14 Pro', 'iPhone 13', 'iPhone 12 mini']
-    statuses = ['აქტიური', 'ქულდებაში', 'დაკარგული/მოპარული', 'გაუქმებული']
-    carriers = ['Magti', 'Geocell', 'Beeline', 'Unlocked']
-    countries = ['საქართველო', 'აშშ', 'გერმანია', 'გაერთიანებული სამეფო']
-    
-    return {
-        'imei': imei,
-        'model': models[0],
-        'serial': 'C8P' + imei[-9:],
-        'status': statuses[0],
-        'fmi': 'ჩართულია',
-        'blacklist': 'არ არის',
-        'simlock': 'განბლოკილი',
-        'warranty': 'მოქმედებს',
-        'purchase_date': datetime.now().strftime('%d/%m/%Y'),
-        'activation_status': 'აქტივირებული',
-        'carrier': carriers[0],
-        'country': countries[0]
+    data = {
+        "service": SERVICE_TYPES[service_type],
+        "imei": imei,
+        "key": API_KEY
     }
-
-def update_stats():
-    today = datetime.utcnow().date()
-    stats_doc = stats_collection.find_one({'type': 'current'})
     
-    if stats_doc:
-        new_stats = {
-            'daily': stats_doc['stats']['daily'] + 1,
-            'weekly': stats_doc['stats']['weekly'] + 1,
-            'monthly': stats_doc['stats']['monthly'] + 1
-        }
+    try:
+        app.logger.info(f"Sending API request to {API_URL} with data: {data}")
+        response = requests.post(API_URL, data=data, timeout=60)
         
-        stats_collection.update_one(
-            {'type': 'current'},
-            {'$set': {'stats': new_stats, 'updated_at': datetime.utcnow()}}
-        )
+        if response.status_code != 200:
+            return {'error': f'API returned HTTP code {response.status_code}'}
+        
+        try:
+            result = response.json()
+        except json.JSONDecodeError:
+            return {'error': 'Invalid JSON response from API'}
+        
+        if not result.get('success', False):
+            return {'error': result.get('error', 'Unknown API error')}
+        
+        if service_type == 'free':
+            return {
+                'html_content': result.get('response', ''),
+                'raw_response': response.text
+            }
+        else:
+            return result.get('object', {})
+    
+    except requests.exceptions.RequestException as e:
+        return {'error': f"Request error: {str(e)}"}
+    except Exception as e:
+        return {'error': f"Service error: {str(e)}"}
+
+def parse_free_html(html_content):
+    try:
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        result = {}
+        labels = [
+            "Device", "Model", "Serial", "IMEI", "ICCID", 
+            "FMI", "Activation Status", "Blacklist Status"
+        ]
+        
+        for label in labels:
+            element = soup.find(string=re.compile(rf'{label}.*', re.IGNORECASE))
+            if element and element.parent and element.parent.find_next_sibling():
+                value = element.parent.find_next_sibling().get_text(strip=True)
+                result[label.replace(" ", "_").lower()] = value
+        
+        return result
+    
+    except Exception as e:
+        app.logger.error(f"HTML parsing error: {str(e)}")
+        return {'html_content': html_content}
 
 @app.route('/stripe_webhook', methods=['POST'])
 def stripe_webhook():
@@ -309,7 +306,7 @@ def stripe_webhook():
 
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
-        # Handle successful payment
+        # Обработка успешного платежа
     
     return jsonify({'status': 'success'})
 
@@ -431,4 +428,4 @@ def internal_server_error(e):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port)
