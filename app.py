@@ -270,24 +270,63 @@ def perform_api_check(imei, service_type):
 def parse_free_html(html_content):
     try:
         soup = BeautifulSoup(html_content, 'html.parser')
-        
         result = {}
+        
+        # Поиск в таблицах
+        tables = soup.find_all('table')
+        for table in tables:
+            rows = table.find_all('tr')
+            for row in rows:
+                cols = row.find_all('td')
+                if len(cols) == 2:
+                    key = cols[0].get_text(strip=True).replace(':', '').replace(' ', '_').lower()
+                    value = cols[1].get_text(strip=True)
+                    result[key] = value
+        
+        # Поиск по меткам в других структурах
         labels = [
             "Device", "Model", "Serial", "IMEI", "ICCID", 
             "FMI", "Activation Status", "Blacklist Status"
         ]
         
         for label in labels:
+            # Поиск элемента с текстом метки
             element = soup.find(string=re.compile(rf'{label}.*', re.IGNORECASE))
-            if element and element.parent and element.parent.find_next_sibling():
-                value = element.parent.find_next_sibling().get_text(strip=True)
-                result[label.replace(" ", "_").lower()] = value
+            if not element:
+                continue
+                
+            # Поиск значения
+            value_element = None
+            
+            # Вариант 1: значение в соседнем элементе
+            if element.parent and element.parent.find_next_sibling():
+                value_element = element.parent.find_next_sibling()
+            
+            # Вариант 2: значение в том же элементе после <br>
+            if not value_element and element.parent and element.parent.find('br'):
+                value_element = element.parent
+                
+            # Вариант 3: значение после двоеточия в том же элементе
+            if not value_element and ':' in element:
+                value_element = element.split(':', 1)[-1].strip()
+            
+            if value_element:
+                if isinstance(value_element, str):
+                    value = value_element
+                else:
+                    value = value_element.get_text(strip=True)
+                
+                # Очистка значения от лишних символов
+                value = re.sub(r'[^a-zA-Z0-9\s]', '', value).strip()
+                if value:
+                    result[label.replace(" ", "_").lower()] = value
         
         return result
     
     except Exception as e:
         app.logger.error(f"HTML parsing error: {str(e)}")
-        return {'html_content': html_content}
+        app.logger.error(f"HTML content: {html_content[:500]}")  # Логируем часть HTML для отладки
+        return None
 
 @app.route('/stripe_webhook', methods=['POST'])
 def stripe_webhook():
