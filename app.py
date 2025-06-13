@@ -10,6 +10,7 @@ import stripe
 from datetime import datetime
 from functools import wraps
 from bs4 import BeautifulSoup
+import re
 
 app = Flask(__name__)
 CORS(app)
@@ -35,9 +36,9 @@ STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 MONGODB_URI = os.getenv('MONGODB_URI')
 
-# Обновленные данные API iFreeiCloud
+# Данные для PHP API
 API_URL = "https://api.ifreeicloud.co.uk"
-API_KEY = os.getenv('API_KEY', 'ZBL-CI9-93S-00S-BY3-CH9-CLH-0L1')  # Новый ключ
+API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')  # PHP API Key
 
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'securepassword')
@@ -61,10 +62,11 @@ if prices_collection.count_documents({'type': 'current'}) == 0:
         'updated_at': datetime.utcnow()
     })
 
+# Типы сервисов
 SERVICE_TYPES = {
-    'free': 0,
-    'paid': 4,
-    'premium': 205
+    'free': 'free',
+    'paid': 'paid',
+    'premium': 'premium'
 }
 
 def get_current_prices():
@@ -117,6 +119,7 @@ def create_checkout_session():
         return jsonify({'id': session.id})
     
     except Exception as e:
+        app.logger.error(f"Error creating checkout session: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/success')
@@ -139,6 +142,14 @@ def payment_success():
             error_msg = result.get('error', 'No data available for this IMEI')
             return render_template('error.html', error=error_msg)
         
+        # Если это HTML ответ, преобразуем его в JSON-совместимый формат
+        if 'html_content' in result:
+            parsed_data = parse_free_html(result['html_content'])
+            if parsed_data:
+                result = parsed_data
+            else:
+                result = {'error': 'Failed to parse HTML response'}
+        
         record = {
             'stripe_session_id': session_id,
             'imei': imei,
@@ -155,6 +166,7 @@ def payment_success():
         return redirect(url_for('index', session_id=session_id))
     
     except Exception as e:
+        app.logger.error(f"Payment success error: {str(e)}")
         return render_template('error.html', error=str(e)), 500
 
 @app.route('/get_check_result')
@@ -172,10 +184,15 @@ def get_check_result():
         'result': record['result']
     })
 
-@app.route('/perform_check', methods=['GET'])
+@app.route('/perform_check', methods=['GET', 'POST'])
 def perform_check():
-    imei = request.args.get('imei')
-    service_type = request.args.get('service_type')
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or request.form
+        imei = data.get('imei')
+        service_type = data.get('service_type')
+    else:
+        imei = request.args.get('imei')
+        service_type = request.args.get('service_type')
     
     if not imei or not service_type:
         return jsonify({'error': 'Missing parameters'}), 400
@@ -191,6 +208,14 @@ def perform_check():
         
         if 'error' in result:
             return jsonify(result), 400
+        
+        # Для бесплатных проверок парсим HTML
+        if service_type == 'free' and 'html_content' in result:
+            parsed_data = parse_free_html(result['html_content'])
+            if parsed_data:
+                result = parsed_data
+            else:
+                result = {'error': 'Failed to parse HTML response'}
         
         if service_type == 'free':
             record = {
@@ -212,59 +237,109 @@ def validate_imei(imei):
     return len(imei) == 15 and imei.isdigit()
 
 def perform_api_check(imei, service_type):
-    service_code = SERVICE_TYPES.get(service_type, 0)
     data = {
-        "service": service_code,
+        "service": SERVICE_TYPES[service_type],
         "imei": imei,
         "key": API_KEY
     }
     
     try:
+        app.logger.info(f"Sending API request to {API_URL} with data: {data}")
         response = requests.post(API_URL, data=data, timeout=60)
+        app.logger.info(f"Received response with status: {response.status_code}")
         
         if response.status_code != 200:
+            app.logger.error(f"API returned HTTP code {response.status_code}")
             return {'error': f'API returned HTTP code {response.status_code}'}
         
         content_type = response.headers.get('Content-Type', '')
         
+        # Обработка JSON ответа (для платных проверок)
         if 'application/json' in content_type:
-            result = response.json()
-            
-            if 'success' in result and not result['success']:
-                return {'error': result.get('error', 'API request failed')}
-            
-            if not result or ('error' in result and result['error']):
-                return {'error': 'No information found for this IMEI'}
-            
-            result['raw_response'] = response.text
-            return result
+            try:
+                result = response.json()
+                app.logger.info("JSON response received")
+                
+                if 'success' in result and not result['success']:
+                    return {'error': result.get('error', 'API request failed')}
+                
+                if not result or ('error' in result and result['error']):
+                    return {'error': 'No information found for this IMEI'}
+                
+                return result
+            except json.JSONDecodeError:
+                app.logger.warning("Failed to parse JSON, treating as HTML")
+                # Продолжаем обработку как HTML
         
-        elif 'text/html' in content_type:
-            soup = BeautifulSoup(response.text, 'html.parser')
-            
-            for script in soup(["script", "style"]):
-                script.decompose()
-            
-            text = soup.get_text()
-            lines = (line.strip() for line in text.splitlines())
-            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-            clean_text = '\n'.join(chunk for chunk in chunks if chunk)
-            
+        # Обработка HTML ответа (для бесплатных проверок)
+        if 'text/html' in content_type or service_type == 'free':
+            app.logger.info("HTML response received")
             return {
-                'raw_data': clean_text,
+                'html_content': response.text,
                 'raw_response': response.text
             }
         
-        else:
-            return {
-                'error': f'Unsupported content type: {content_type}',
-                'raw_response': response.text
-            }
+        # Обработка других типов контента
+        app.logger.warning(f"Unsupported content type: {content_type}")
+        return {
+            'error': f'Unsupported content type: {content_type}',
+            'raw_response': response.text
+        }
     
     except requests.exceptions.RequestException as e:
+        app.logger.error(f"Request error: {str(e)}")
         return {'error': f"Request error: {str(e)}"}
     except Exception as e:
+        app.logger.error(f"Service error: {str(e)}")
         return {'error': f"Service error: {str(e)}"}
+
+def parse_free_html(html_content):
+    """Парсит HTML ответ для бесплатной проверки и извлекает данные"""
+    try:
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # Удаляем ненужные элементы
+        for script in soup(["script", "style", "head", "title", "meta", "link"]):
+            script.decompose()
+        
+        # Извлекаем основной контент
+        content_div = soup.find('div', class_='container')
+        if not content_div:
+            return None
+        
+        # Удаляем кнопки и формы
+        for btn in content_div.find_all(['button', 'form', 'input']):
+            btn.decompose()
+        
+        # Удаляем пустые элементы
+        for element in content_div.find_all():
+            if len(element.get_text(strip=True)) == 0:
+                element.decompose()
+        
+        # Создаем чистый HTML для отображения
+        clean_html = str(content_div)
+        
+        # Извлекаем ключевую информацию
+        result = {}
+        labels = [
+            "Device", "Model", "Serial", "IMEI", "ICCID", 
+            "FMI", "Activation Status", "Blacklist Status"
+        ]
+        
+        for label in labels:
+            element = soup.find(string=re.compile(rf'{label}.*', re.IGNORECASE))
+            if element and element.parent and element.parent.find_next_sibling():
+                value = element.parent.find_next_sibling().get_text(strip=True)
+                result[label.replace(" ", "_").lower()] = value
+        
+        # Добавляем чистый HTML в результат
+        result['html_content'] = clean_html
+        
+        return result
+    
+    except Exception as e:
+        app.logger.error(f"HTML parsing error: {str(e)}")
+        return None
 
 @app.route('/stripe_webhook', methods=['POST'])
 def stripe_webhook():
@@ -283,6 +358,7 @@ def stripe_webhook():
 
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
+        # Обработка успешного платежа
     
     return jsonify({'status': 'success'})
 
@@ -305,7 +381,7 @@ def admin_dashboard():
         if request.method == 'POST':
             try:
                 paid_price = int(float(request.form.get('paid_price')) * 100)
-                premium_price = int(float(request.form.get('premium_price')) * 100)
+                premium_price = int(float(request.form.get('premium_price')) * 100
                 
                 current_doc = prices_collection.find_one({'type': 'current'})
                 current_prices = current_doc['prices']
@@ -391,6 +467,7 @@ def admin_dashboard():
             price_history=price_history
         )
     except Exception as e:
+        app.logger.error(f"Admin dashboard error: {str(e)}")
         return render_template('error.html', error="Admin error"), 500
 
 @app.errorhandler(404)
@@ -403,4 +480,4 @@ def internal_server_error(e):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)
