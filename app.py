@@ -34,7 +34,10 @@ stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 MONGODB_URI = os.getenv('MONGODB_URI')
-API_KEY = os.getenv('API_KEY', 'ZBL-CI9-93S-00S-BY3-CH9-CLH-0L1')  # Updated default key
+
+# Обновленные данные API iFreeiCloud
+API_URL = "https://api.ifreeicloud.co.uk"
+API_KEY = os.getenv('API_KEY', 'ZBL-CI9-93S-00S-BY3-CH9-CLH-0L1')  # Новый ключ
 
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'securepassword')
@@ -58,7 +61,6 @@ if prices_collection.count_documents({'type': 'current'}) == 0:
         'updated_at': datetime.utcnow()
     })
 
-API_URL = "https://api.ifreeicloud.co.uk"
 SERVICE_TYPES = {
     'free': 0,
     'paid': 4,
@@ -218,9 +220,8 @@ def perform_api_check(imei, service_type):
     }
     
     try:
-        response = requests.post(API_URL, data=data, timeout=60)  # Increased timeout to 60 seconds
+        response = requests.post(API_URL, data=data, timeout=60)
         
-        # Check HTTP status code first
         if response.status_code != 200:
             return {'error': f'API returned HTTP code {response.status_code}'}
         
@@ -229,14 +230,12 @@ def perform_api_check(imei, service_type):
         if 'application/json' in content_type:
             result = response.json()
             
-            # Check for success flag like in PHP code
             if 'success' in result and not result['success']:
                 return {'error': result.get('error', 'API request failed')}
             
             if not result or ('error' in result and result['error']):
                 return {'error': 'No information found for this IMEI'}
             
-            # Add raw response similar to PHP version
             result['raw_response'] = response.text
             return result
         
