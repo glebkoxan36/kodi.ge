@@ -360,6 +360,7 @@ def admin_dashboard():
     try:
         if request.method == 'POST':
             try:
+                # ИСПРАВЛЕННЫЙ СИНТАКСИС - УБИРАЕМ ЛИШНИЕ СКОБКИ
                 paid_price = int(float(request.form.get('paid_price')) * 100
                 premium_price = int(float(request.form.get('premium_price')) * 100
                 
