@@ -34,7 +34,7 @@ stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 MONGODB_URI = os.getenv('MONGODB_URI')
-API_KEY = os.getenv('API_KEY')
+API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')  # Default key from PHP code
 
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'securepassword')
@@ -218,14 +218,26 @@ def perform_api_check(imei, service_type):
     }
     
     try:
-        response = requests.post(API_URL, data=data, timeout=30)
+        response = requests.post(API_URL, data=data, timeout=60)  # Increased timeout to 60 seconds
+        
+        # Check HTTP status code first
+        if response.status_code != 200:
+            return {'error': f'API returned HTTP code {response.status_code}'}
         
         content_type = response.headers.get('Content-Type', '')
         
         if 'application/json' in content_type:
             result = response.json()
+            
+            # Check for success flag like in PHP code
+            if 'success' in result and not result['success']:
+                return {'error': result.get('error', 'API request failed')}
+            
             if not result or ('error' in result and result['error']):
                 return {'error': 'No information found for this IMEI'}
+            
+            # Add raw response similar to PHP version
+            result['raw_response'] = response.text
             return result
         
         elif 'text/html' in content_type:
@@ -239,11 +251,19 @@ def perform_api_check(imei, service_type):
             chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
             clean_text = '\n'.join(chunk for chunk in chunks if chunk)
             
-            return {'raw_data': clean_text}
+            return {
+                'raw_data': clean_text,
+                'raw_response': response.text
+            }
         
         else:
-            return {'error': f'Unsupported content type: {content_type}'}
+            return {
+                'error': f'Unsupported content type: {content_type}',
+                'raw_response': response.text
+            }
     
+    except requests.exceptions.RequestException as e:
+        return {'error': f"Request error: {str(e)}"}
     except Exception as e:
         return {'error': f"Service error: {str(e)}"}
 
