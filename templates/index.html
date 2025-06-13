@@ -1,1190 +1,180 @@
 <!DOCTYPE html>
-<html lang="ka">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iPhone IMEI შემოწმება</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>IMEI Checker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://js.stripe.com/v3/"></script>
     <style>
-        :root {
-            --primary: #2c3e50;
-            --secondary: #3498db;
-            --accent: #e74c3c;
-            --dark: #1a1a2e;
-            --light: #f5f7fa;
-            --success: #27ae60;
-            --warning: #f39c12;
-            --gray: #7f8c8d;
-            --sidebar-width: 280px;
-            --transition: all 0.3s ease;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: var(--light);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .app-container {
-            display: flex;
-            min-height: 100vh;
-            flex-direction: column;
-        }
-
-        /* Header Styles */
-        .mobile-header {
-            display: none;
-            background: rgba(26, 26, 46, 0.95);
-            padding: 1rem;
-            position: sticky;
-            top: 0;
-            z-index: 200;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .mobile-header .logo {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .mobile-header .logo h1 {
-            font-size: 1.4rem;
-            background: linear-gradient(to right, #3498db, #e74c3c);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            font-weight: 700;
-        }
-
-        .mobile-header .logo p {
-            display: none;
-        }
-
-        .hamburger {
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        /* Sidebar Styles */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: rgba(26, 26, 46, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 2rem 0;
-            height: 100vh;
-            position: fixed;
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 100;
-            transition: transform 0.3s ease;
-        }
-
-        .sidebar.sidebar-hidden {
-            transform: translateX(-100%);
-        }
-
-        .logo {
-            text-align: center;
-            padding: 0 1.5rem 2rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .logo h1 {
-            font-size: 1.8rem;
-            background: linear-gradient(to right, #3498db, #e74c3c);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .logo p {
-            color: var(--gray);
-            font-size: 0.9rem;
-        }
-
-        .menu {
-            padding: 2rem 0;
-        }
-
-        .menu-item {
-            padding: 1rem 1.5rem;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            transition: var(--transition);
-            border-left: 4px solid transparent;
-        }
-
-        .menu-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-left: 4px solid var(--secondary);
-        }
-
-        .menu-item.active {
-            background: rgba(255, 255, 255, 0.1);
-            border-left: 4px solid var(--accent);
-        }
-
-        .menu-item i {
-            font-size: 1.2rem;
-            margin-right: 1rem;
-            width: 24px;
-            text-align: center;
-        }
-
-        .menu-item span {
-            font-size: 1.1rem;
-        }
-
-        /* Main Content Styles */
-        .main-content {
-            flex: 1;
-            padding: 2rem;
-            margin-left: var(--sidebar-width);
-            transition: margin-left 0.3s ease;
-        }
-
-        .main-content.full-width {
-            margin-left: 0;
-        }
-
-        .page {
-            display: none;
-            animation: fadeIn 0.5s ease;
-        }
-
-        .page.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .page-header {
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .page-header h2 {
-            font-size: 2rem;
-            font-weight: 600;
-            background: linear-gradient(to right, #3498db, #e74c3c);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            margin-bottom: 1rem;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #bdc3c7;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            color: white;
-            font-size: 1rem;
-            transition: var(--transition);
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--secondary);
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 0.9rem 1.5rem;
-            background: linear-gradient(135deg, var(--secondary), #2980b9);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            text-align: center;
-            text-decoration: none;
-            white-space: nowrap;
-        }
-
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-accent {
-            background: linear-gradient(135deg, var(--accent), #c0392b);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--success), #219653);
-        }
-
-        .service-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1.5rem;
-        }
-
-        .service-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 1.5rem;
-            text-align: center;
-            transition: var(--transition);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .service-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-            border-color: rgba(52, 152, 219, 0.3);
-        }
-
-        .service-card i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: var(--secondary);
-        }
-
-        .service-card.premium i {
-            color: gold;
-        }
-
-        .service-card.paid i {
-            color: var(--success);
-        }
-
-        .service-card h3 {
-            font-size: 1.4rem;
-            margin-bottom: 1rem;
-        }
-
-        .service-card .price {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin: 1.2rem 0;
-            background: linear-gradient(to right, #3498db, #e74c3c);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .service-card ul {
-            text-align: left;
-            margin: 1.2rem 0;
-            padding-left: 1.2rem;
-            font-size: 0.95rem;
-        }
-
-        .service-card ul li {
-            margin-bottom: 0.6rem;
-            line-height: 1.5;
-        }
-
-        /* Result Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            animation: fadeIn 0.3s ease;
-            overflow: auto;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: #1a1a2e;
-            border-radius: 15px;
-            width: 95%;
-            max-width: 700px;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 1.5rem;
-            position: relative;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            font-size: 1.5rem;
-            color: var(--gray);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .close-modal:hover {
-            color: var(--accent);
-        }
-
-        .result-header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .result-header h3 {
-            font-size: 1.6rem;
-            margin-bottom: 0.5rem;
-            color: var(--secondary);
-        }
-
-        .imei-display {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 0.5rem 1rem;
-            border-radius: 30px;
-            display: inline-block;
-            font-family: monospace;
-            letter-spacing: 2px;
-            margin: 1rem 0;
-            font-size: 0.9rem;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-        }
-
-        .result-details {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 10px;
-            padding: 1.2rem;
-            margin-top: 1.2rem;
-            font-size: 0.95rem;
-        }
-
-        .result-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.7rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            flex-wrap: wrap;
-        }
-
-        .result-item:last-child {
-            border-bottom: none;
-        }
-
-        .result-label {
-            color: #bdc3c7;
-            font-weight: 500;
-            width: 50%;
-        }
-
-        .result-value {
-            text-align: right;
-            font-weight: 600;
-            width: 50%;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top: 4px solid var(--secondary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1.5rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Button Group */
-        .btn-group {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 1.5rem;
-        }
-
-        .btn-group .btn {
-            flex: 1;
-            min-width: 140px;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 1200px) {
-            .sidebar {
-                width: 80px;
-            }
-            .sidebar .logo h1, .sidebar .logo p, .menu-item span {
-                display: none;
-            }
-            .menu-item {
-                justify-content: center;
-                padding: 1rem 0.5rem;
-            }
-            .menu-item i {
-                margin-right: 0;
-                font-size: 1.5rem;
-            }
-            .main-content {
-                margin-left: 80px;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .service-cards {
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            }
-            .service-card .price {
-                font-size: 2rem;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .mobile-header {
-                display: block;
-            }
-            
-            .sidebar {
-                width: 280px;
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.sidebar-visible {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0;
-                padding: 1rem;
-            }
-            
-            .page-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .page-header .btn {
-                width: 100%;
-                margin-top: 0.5rem;
-            }
-            
-            .service-cards {
-                grid-template-columns: 1fr;
-            }
-            
-            .logo h1 {
-                font-size: 1.5rem;
-            }
-            
-            .menu-item span {
-                display: block;
-            }
-            
-            .modal-content {
-                padding: 1rem;
-            }
-            
-            .result-header h3 {
-                font-size: 1.4rem;
-            }
-            
-            .result-item {
-                flex-direction: column;
-            }
-            
-            .result-label, .result-value {
-                width: 100%;
-                text-align: left;
-            }
-            
-            .result-value {
-                margin-top: 0.3rem;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .card {
-                padding: 1.2rem;
-            }
-            
-            .btn {
-                width: 100%;
-                margin-top: 0.5rem;
-            }
-            
-            .service-card {
-                padding: 1.2rem;
-            }
-            
-            .service-card .price {
-                font-size: 1.8rem;
-            }
-            
-            .page-header h2 {
-                font-size: 1.7rem;
-            }
-            
-            .btn-group {
-                flex-direction: column;
-            }
-            
-            .btn-group .btn {
-                width: 100%;
-            }
-        }
-
-        @media (max-width: 400px) {
-            .page-header h2 {
-                font-size: 1.5rem;
-            }
-            
-            .service-card h3 {
-                font-size: 1.3rem;
-            }
-            
-            .form-control {
-                padding: 0.8rem;
-            }
-            
-            .result-header h3 {
-                font-size: 1.3rem;
-            }
-            
-            .imei-display {
-                font-size: 0.8rem;
-                padding: 0.4rem 0.8rem;
-            }
-        }
+        body { background-color: #f8f9fa; }
+        .card { border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .result-card { display: none; }
+        .spinner { display: none; }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Mobile Header -->
-        <div class="mobile-header">
-            <div class="logo">
-                <h1>iPhone IMEI Checker</h1>
-                <p>შეამოწმეთ თქვენი iPhone სის სტატუსი</p>
-                <div class="hamburger" id="hamburger">
-                    <i class="fas fa-bars"></i>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Sidebar -->
-        <aside class="sidebar sidebar-hidden" id="sidebar">
-            <div class="logo">
-                <h1>iPhone IMEI Checker</h1>
-                <p>შეამოწმეთ თქვენი iPhone სის სტატუსი</p>
-            </div>
-            
-            <div class="menu">
-                <div class="menu-item active" data-page="home">
-                    <i class="fas fa-home"></i>
-                    <span>მთავარი გვერდი</span>
-                </div>
-                <div class="menu-item" data-page="free">
-                    <i class="fas fa-search"></i>
-                    <span>უფასო შემოწმება</span>
-                </div>
-                <div class="menu-item" data-page="paid">
-                    <i class="fas fa-dollar-sign"></i>
-                    <span>პლატა შემოწმება</span>
-                </div>
-                <div class="menu-item" data-page="premium">
-                    <i class="fas fa-crown"></i>
-                    <span>პრემიუმ შემოწმება</span>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content full-width" id="main-content">
-            <!-- Home Page -->
-            <div class="page active" id="home-page">
-                <div class="page-header">
-                    <h2>მოგესალმებით iPhone IMEI შემოწმების სერვისში</h2>
-                </div>
-                
-                <div class="card">
-                    <h3>რა არის IMEI?</h3>
-                    <p>IMEI (International Mobile Equipment Identity) არის უნიკალური 15-ნიშნა კოდი, რომელიც ყველა მობილურ ტელეფონს აქვს. ეს კოდი საშუალებას გაძლევთ შეამოწმოთ თქვენი მოწყობილობის სტატუსი, ისტორია და დამატებითი ინფორმაცია.</p>
-                </div>
-                
-                <div class="card">
-                    <h3>რატომ შეამოწმოთ IMEI?</h3>
-                    <p>IMEI შემოწმება დაგეხმარებათ:</p>
-                    <ul>
-                        <li>გაიგოთ არის თუ არა მოწყობილობა ჩაკეტილი ან მოპარული</li>
-                        <li>შეამოწმოთ გარანტიის სტატუსი</li>
-                        <li>მიიღოთ დეტალური ინფორმაცია მოწყობილობის მახასიათებლებზე</li>
-                        <li>დარწმუნდეთ, რომ მოწყობილობა არის ორიგინალური</li>
-                    </ul>
-                </div>
-                
-                <div class="service-cards">
-                    <div class="service-card">
-                        <i class="fas fa-search"></i>
-                        <h3>უფასო შემოწმება</h3>
-                        <p>ძირითადი ინფორმაცია თქვენი iPhone-ის შესახებ</p>
-                        <div class="price">0 ₾</div>
-                        <button class="btn" data-page="free">შემოწმების დაწყება</button>
-                    </div>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card p-4 mb-4">
+                    <h1 class="text-center mb-4">IMEI Checker</h1>
+                    <form id="imeiForm">
+                        <div class="mb-3">
+                            <label for="imeiInput" class="form-label">Enter IMEI Number</label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="imeiInput" 
+                                placeholder="15-digit IMEI" 
+                                required
+                                pattern="[0-9]{15}"
+                                title="15-digit IMEI number">
+                        </div>
+                        
+                        <div class="d-grid gap-2 mb-3">
+                            <button type="button" class="btn btn-primary" onclick="checkImei('free')">
+                                Free Check
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="checkImei('paid')">
+                                Paid Check - $<span id="paidPrice">{{ paid_price }}</span>
+                            </button>
+                            <button type="button" class="btn btn-warning" onclick="checkImei('premium')">
+                                Premium Check - $<span id="premiumPrice">{{ premium_price }}</span>
+                            </button>
+                        </div>
+                    </form>
                     
-                    <div class="service-card paid">
-                        <i class="fas fa-dollar-sign"></i>
-                        <h3>პლატა შემოწმება</h3>
-                        <p>დეტალური ინფორმაცია და დამატებითი მონაცემები</p>
-                        <div class="price">4.99 ₾</div>
-                        <button class="btn btn-success" data-page="paid">შემოწმების დაწყება</button>
-                    </div>
-                    
-                    <div class="service-card premium">
-                        <i class="fas fa-crown"></i>
-                        <h3>პრემიუმ შემოწმება</h3>
-                        <p>სრული ანალიზი და დაწვრილებითი ანგარიში</p>
-                        <div class="price">9.99 ₾</div>
-                        <button class="btn btn-accent" data-page="premium">შემოწმების დაწყება</button>
+                    <div class="d-flex justify-content-center spinner">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Free Check Page -->
-            <div class="page" id="free-page">
-                <div class="page-header">
-                    <h2>უფასო IMEI შემოწმება</h2>
-                    <button class="btn" id="back-to-home"><i class="fas fa-arrow-left"></i> მთავარ გვერდზე დაბრუნება</button>
-                </div>
                 
-                <div class="card">
-                    <p>შეიყვანეთ თქვენი iPhone-ის IMEI ნომერი ქვემოთ მოცემულ ველში. ჩვენი სისტემა მოგაწვდით ძირითად ინფორმაციას თქვენი მოწყობილობის შესახებ.</p>
-                    
-                    <div class="form-group">
-                        <label for="free-imei">IMEI ნომერი</label>
-                        <input type="text" id="free-imei" class="form-control" placeholder="შეიყვანეთ 15-ნიშნა IMEI ნომერი" maxlength="15">
-                        <small class="text-muted">IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში ან ამოტივტივებულ ყუთზე</small>
-                    </div>
-                    
-                    <button class="btn" id="free-check-btn">შემოწმების დაწყება</button>
+                <div class="card p-4 result-card" id="resultCard">
+                    <h2 class="text-center mb-4">Check Result</h2>
+                    <div id="resultContent"></div>
                 </div>
-                
-                <div class="card">
-                    <h3>რა ინფორმაციას მივიღებ უფასო შემოწმებით?</h3>
-                    <ul>
-                        <li>მოწყობილობის მოდელი</li>
-                        <li>სერიული ნომერი</li>
-                        <li>ძირითადი სტატუსი (აქტივირებული/ჩაკეტილი)</li>
-                        <li>მოწყობილობის ფერი და მეხსიერება</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <!-- Paid Check Page -->
-            <div class="page" id="paid-page">
-                <div class="page-header">
-                    <h2>პლატა IMEI შემოწმება</h2>
-                    <button class="btn" id="back-to-home-paid"><i class="fas fa-arrow-left"></i> მთავარ გვერდზე დაბრუნება</button>
-                </div>
-                
-                <div class="card">
-                    <p>პლატა შემოწმებით მიიღებთ დეტალურ ინფორმაციას თქვენი iPhone-ის შესახებ, მათ შორის გარანტიის სტატუსს, ქვეყნის რეგიონს და მრავალი სხვა მნიშვნელოვანი მონაცემი.</p>
-                    
-                    <div class="form-group">
-                        <label for="paid-imei">IMEI ნომერი</label>
-                        <input type="text" id="paid-imei" class="form-control" placeholder="შეიყვანეთ 15-ნიშნა IMEI ნომერი" maxlength="15">
-                    </div>
-                    
-                    <button class="btn btn-success" id="paid-check-btn">
-                        გადახდა და შემოწმება (4.99 ₾)
-                    </button>
-                </div>
-                
-                <div class="card">
-                    <h3>პლატა შემოწმების უპირატესობები</h3>
-                    <ul>
-                        <li>დეტალური ინფორმაცია მოწყობილობის ისტორიაზე</li>
-                        <li>გარანტიის სტატუსის დადგენა</li>
-                        <li>ქვეყნის რეგიონის განსაზღვრა</li>
-                        <li>სარემონტო ისტორიის შემოწმება</li>
-                        <li>მოწყობილობის ორიგინალურობის დადასტურება</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <!-- Premium Check Page -->
-            <div class="page" id="premium-page">
-                <div class="page-header">
-                    <h2>პრემიუმ IMEI შემოწმება</h2>
-                    <button class="btn" id="back-to-home-premium"><i class="fas fa-arrow-left"></i> მთავარ გვერდზე დაბრუნება</button>
-                </div>
-                
-                <div class="card">
-                    <p>პრემიუმ შემოწმებით მიიღებთ სრულ ანალიზს თქვენი iPhone-ის შესახებ, რომელიც მოიცავს ყველა შესაძლო მონაცემს და დეტალებს, რომელიც მხოლოდ Apple-ის სერვისებშია ხელმისაწვდომი.</p>
-                    
-                    <div class="form-group">
-                        <label for="premium-imei">IMEI ნომერი</label>
-                        <input type="text" id="premium-imei" class="form-control" placeholder="შეიყვანეთ 15-ნიშნა IMEI ნომერი" maxlength="15">
-                    </div>
-                    
-                    <button class="btn btn-accent" id="premium-check-btn">
-                        გადახდა და შემოწმება (9.99 ₾)
-                    </button>
-                </div>
-                
-                <div class="card">
-                    <h3>პრემიუმ შემოწმების ექსკლუზიური უპირატესობები</h3>
-                    <ul>
-                        <li>სრული ანალიზი Apple-ის მონაცემთა ბაზიდან</li>
-                        <li>დაწვრილებითი ანგარიში მოწყობილობის ისტორიაზე</li>
-                        <li>ჩაკეტვის სტატუსის დეტალური შემოწმება</li>
-                        <li>სარემონტო ისტორიის სრული ჩვენება</li>
-                        <li>მომავალი განახლებების პროგნოზირება</li>
-                        <li>ექსპერტის რეკომენდაციები მოწყობილობის მდგომარეობის მიხედვით</li>
-                    </ul>
-                </div>
-            </div>
-        </main>
-    </div>
-    
-    <!-- Result Modal -->
-    <div class="modal" id="result-modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            
-            <div class="result-header">
-                <h3>შემოწმების შედეგები</h3>
-                <p>თქვენი მოწყობილობის ინფორმაცია</p>
-                <div class="imei-display">IMEI: <span id="result-imei">123456789012345</span></div>
-            </div>
-            
-            <div class="result-details" id="result-details">
-                <!-- Results will be populated dynamically here -->
-            </div>
-            
-            <div class="btn-group">
-                <button class="btn" id="close-result">დახურვა</button>
-                <button class="btn btn-accent" id="save-report">ანგარიშის შენახვა PDF-ში</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Loading Modal -->
-    <div class="modal" id="loading-modal">
-        <div class="modal-content">
-            <div class="loading">
-                <div class="spinner"></div>
-                <h3>მიმდინარეობს შემოწმება...</h3>
-                <p>გთხოვთ მოიცადოთ, თქვენი მოთხოვნა მუშავდება</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Инициализируем Stripe с публичным ключом
-        const stripe = Stripe('{{ stripe_public_key }}');
-        
-        // Mobile Navigation
-        const hamburger = document.getElementById('hamburger');
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('main-content');
-        
-        hamburger.addEventListener('click', () => {
-            sidebar.classList.toggle('sidebar-visible');
-            sidebar.classList.toggle('sidebar-hidden');
-            mainContent.classList.toggle('full-width');
-        });
-        
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 768 && 
-                !sidebar.contains(e.target) && 
-                !hamburger.contains(e.target) &&
-                sidebar.classList.contains('sidebar-visible')) {
-                sidebar.classList.remove('sidebar-visible');
-                sidebar.classList.add('sidebar-hidden');
-                mainContent.classList.add('full-width');
-            }
-        });
-        
-        // DOM Elements
-        const pages = {
-            home: document.getElementById('home-page'),
-            free: document.getElementById('free-page'),
-            paid: document.getElementById('paid-page'),
-            premium: document.getElementById('premium-page')
-        };
-        
-        const menuItems = document.querySelectorAll('.menu-item');
-        const serviceButtons = document.querySelectorAll('.service-cards .btn');
-        const backButtons = document.querySelectorAll('[id^="back-to-home"]');
-        const resultModal = document.getElementById('result-modal');
-        const loadingModal = document.getElementById('loading-modal');
-        const closeModal = document.querySelector('.close-modal');
-        const closeResultBtn = document.getElementById('close-result');
-        const resultDetails = document.getElementById('result-details');
-        
-        // Navigation Functions
-        function showPage(pageId) {
-            Object.values(pages).forEach(page => {
-                page.classList.remove('active');
-            });
-            
-            pages[pageId].classList.add('active');
-            
-            menuItems.forEach(item => {
-                item.classList.remove('active');
-                if (item.dataset.page === pageId) {
-                    item.classList.add('active');
-                }
-            });
-            
-            if (window.innerWidth <= 768) {
-                sidebar.classList.remove('sidebar-visible');
-                sidebar.classList.add('sidebar-hidden');
-                mainContent.classList.add('full-width');
-            }
-            
-            window.scrollTo(0, 0);
-        }
-        
-        // Event Listeners
-        menuItems.forEach(item => {
-            item.addEventListener('click', () => {
-                showPage(item.dataset.page);
-            });
-        });
-        
-        serviceButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                showPage(button.dataset.page);
-            });
-        });
-        
-        backButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                showPage('home');
-            });
-        });
-        
-        // Result Modal Handling
-        closeModal.addEventListener('click', () => {
-            resultModal.classList.remove('active');
-        });
-        
-        closeResultBtn.addEventListener('click', () => {
-            resultModal.classList.remove('active');
-        });
-        
-        window.addEventListener('click', (e) => {
-            if (e.target === resultModal) {
-                resultModal.classList.remove('active');
-            }
-            if (e.target === loadingModal) {
-                loadingModal.classList.remove('active');
-            }
-        });
-        
-        // IMEI Validation
-        function validateIMEI(imei) {
-            const cleaned = imei.replace(/\s+/g, '').replace(/\D/g, '');
-            return cleaned.length === 15;
-        }
-        
-        // Show loading modal
-        function showLoading() {
-            loadingModal.classList.add('active');
-        }
-        
-        // Hide loading modal
-        function hideLoading() {
-            loadingModal.classList.remove('active');
-        }
-        
-        // Create result item
-        function createResultItem(label, value) {
-            const resultItem = document.createElement('div');
-            resultItem.className = 'result-item';
-            
-            const labelSpan = document.createElement('span');
-            labelSpan.className = 'result-label';
-            labelSpan.textContent = label;
-            
-            const valueSpan = document.createElement('span');
-            valueSpan.className = 'result-value';
-            valueSpan.textContent = value;
-            
-            resultItem.appendChild(labelSpan);
-            resultItem.appendChild(valueSpan);
-            return resultItem;
-        }
-        
-        // Show result modal with data
-        function showResult(imei, data) {
-            document.getElementById('result-imei').textContent = imei;
-            resultDetails.innerHTML = '';
-            
-            // Обработка HTML/текстовых ответов
-            if (data.raw_data) {
-                const rawDataItem = document.createElement('div');
-                rawDataItem.className = 'result-item';
-                rawDataItem.innerHTML = `
-                    <div style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace;">
-                        ${data.raw_data}
-                    </div>
-                `;
-                resultDetails.appendChild(rawDataItem);
-                resultModal.classList.add('active');
-                return;
-            }
-            
-            // Обработка ошибок
-            if (data.error) {
-                resultDetails.appendChild(createResultItem('შეცდომა', data.error));
-                resultModal.classList.add('active');
-                return;
-            }
-            
-            // Отображение стандартных данных
-            const fieldsMapping = {
-                'model': 'მოდელი',
-                'serial': 'სერიული ნომერი',
-                'color': 'ფერი',
-                'storage': 'მეხსიერება',
-                'activation': 'აქტივაციის სტატუსი',
-                'warranty': 'გარანტია',
-                'lock': 'ჩაკეტვის სტატუსი',
-                'region': 'ქვეყანა/რეგიონი',
-                'repair': 'სარემონტო ისტორია',
-                'carrier': 'ოპერატორი',
-                'purchaseDate': 'შეძენის თარიღი',
-                'batteryHealth': 'ბატარეის მდგომარეობა',
-                'lastActivation': 'ბოლო აქტივაცია',
-                'findMyStatus': 'Find My სტატუსი',
-                'recommendations': 'რეკომენდაციები'
-            };
-            
-            for (const [key, label] of Object.entries(fieldsMapping)) {
-                if (data[key]) {
-                    resultDetails.appendChild(createResultItem(label, data[key]));
-                }
-            }
-            
-            // Если нет данных вообще
-            if (resultDetails.children.length === 0) {
-                resultDetails.appendChild(createResultItem('ინფორმაცია', 'მონაცემები არ მოიძებნა'));
-            }
-            
-            resultModal.classList.add('active');
-        }
-        
-        // Free Check Handler
-        document.getElementById('free-check-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const inputElement = document.getElementById('free-imei');
-            const imei = inputElement.value.trim();
-            
-            if (!validateIMEI(imei)) {
-                alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (15 ციფრი)');
-                inputElement.focus();
-                return false;
-            }
-            
-            showLoading();
-            
-            fetch(`/perform_check?imei=${imei}&service_type=free`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    hideLoading();
-                    showResult(imei, data);
-                })
-                .catch(error => {
-                    hideLoading();
-                    console.error('Error:', error);
-                    alert('შეცდომა შემოწმების დროს: ' + error.message);
-                });
-            
-            return false;
-        });
-        
-        // Paid Check Handler
-        document.getElementById('paid-check-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const inputElement = document.getElementById('paid-imei');
-            const imei = inputElement.value.trim();
-            
-            if (!validateIMEI(imei)) {
-                alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (15 ციფრი)');
-                inputElement.focus();
-                return false;
-            }
-            
-            showLoading();
-            
-            fetch('/create-checkout-session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    imei: imei,
-                    service_type: 'paid'
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                return stripe.redirectToCheckout({ sessionId: data.id });
-            })
-            .catch(error => {
-                hideLoading();
-                console.error('Error:', error);
-                alert('გადახდის სესიის შექმნის შეცდომა: ' + error.message);
-            });
-            
-            return false;
-        });
-        
-        // Premium Check Handler
-        document.getElementById('premium-check-btn').addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const inputElement = document.getElementById('premium-imei');
-            const imei = inputElement.value.trim();
-            
-            if (!validateIMEI(imei)) {
-                alert('გთხოვთ შეიყვანოთ სწორი IMEI ნომერი (15 ციფრი)');
-                inputElement.focus();
-                return false;
-            }
-            
-            showLoading();
-            
-            fetch('/create-checkout-session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    imei: imei,
-                    service_type: 'premium'
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                return stripe.redirectToCheckout({ sessionId: data.id });
-            })
-            .catch(error => {
-                hideLoading();
-                console.error('Error:', error);
-                alert('გადახდის სესიის შექმნის შეცდომა: ' + error.message);
-            });
-            
-            return false;
-        });
-        
+        const stripe = Stripe("{{ stripe_public_key }}");
+        let currentSessionId = null;
+
         // Check for session_id in URL after payment
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const sessionId = urlParams.get('session_id');
             
-            if (sessionId) {
-                showLoading();
-                
-                fetch(`/get_check_result?session_id=${sessionId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        hideLoading();
-                        if (data.error) {
-                            alert(data.error);
-                        } else {
-                            showResult(data.imei, data.result);
-                        }
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    })
-                    .catch(error => {
-                        hideLoading();
-                        console.error('Error:', error);
-                        alert('შედეგის ჩატვირთვის შეცდომა');
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    });
+            if(sessionId) {
+                currentSessionId = sessionId;
+                getCheckResult();
             }
         });
-        
-        // Save Report Handler
-        document.getElementById('save-report').addEventListener('click', () => {
-            alert('ანგარიში შენახულია PDF ფორმატში');
-        });
+
+        function checkImei(serviceType) {
+            const imei = document.getElementById('imeiInput').value.trim();
+            
+            if(!imei || imei.length !== 15 || !/^\d+$/.test(imei)) {
+                alert('Please enter a valid 15-digit IMEI number');
+                return;
+            }
+            
+            showSpinner(true);
+            
+            if(serviceType === 'free') {
+                performFreeCheck(imei);
+            } else {
+                createCheckoutSession(imei, serviceType);
+            }
+        }
+
+        function performFreeCheck(imei) {
+            fetch(`/perform_check?imei=${imei}&service_type=free`)
+                .then(response => response.json())
+                .then(data => displayResult(data))
+                .catch(error => showError(error))
+                .finally(() => showSpinner(false));
+        }
+
+        function createCheckoutSession(imei, serviceType) {
+            fetch('/create-checkout-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imei, service_type: serviceType })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.error) throw new Error(data.error);
+                return stripe.redirectToCheckout({ sessionId: data.id });
+            })
+            .catch(error => {
+                showError(error.message);
+                showSpinner(false);
+            });
+        }
+
+        function getCheckResult() {
+            if(!currentSessionId) return;
+            
+            showSpinner(true);
+            
+            fetch(`/get_check_result?session_id=${currentSessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if(data.error) throw new Error(data.error);
+                    displayResult(data.result);
+                })
+                .catch(error => showError(error.message))
+                .finally(() => showSpinner(false));
+        }
+
+        function displayResult(data) {
+            const resultCard = document.getElementById('resultCard');
+            const resultContent = document.getElementById('resultContent');
+            
+            // Clear previous results
+            resultContent.innerHTML = '';
+            
+            if(data.error) {
+                resultContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        Error: ${data.error}
+                    </div>
+                `;
+            } 
+            // Handle parsed HTML results
+            else if(data.html_content) {
+                resultContent.innerHTML = data.html_content;
+            } 
+            // Handle JSON results
+            else {
+                let html = '<dl class="row">';
+                for(const [key, value] of Object.entries(data)) {
+                    if(value && typeof value === 'object') continue;
+                    html += `
+                        <dt class="col-sm-4">${key.replace(/_/g, ' ')}</dt>
+                        <dd class="col-sm-8">${value || 'N/A'}</dd>
+                    `;
+                }
+                html += '</dl>';
+                resultContent.innerHTML = html;
+            }
+            
+            resultCard.style.display = 'block';
+            resultCard.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showError(message) {
+            alert(`Error: ${message}`);
+        }
+
+        function showSpinner(show) {
+            document.querySelector('.spinner').style.display = show ? 'flex' : 'none';
+        }
     </script>
 </body>
 </html>
