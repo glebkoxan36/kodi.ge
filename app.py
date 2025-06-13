@@ -50,8 +50,8 @@ checks_collection = db['results']
 prices_collection = db['prices']
 
 DEFAULT_PRICES = {
-    'paid': 499,
-    'premium': 999
+    'paid': 499,    # $4.99
+    'premium': 999  # $9.99
 }
 
 if prices_collection.count_documents({'type': 'current'}) == 0:
@@ -62,11 +62,11 @@ if prices_collection.count_documents({'type': 'current'}) == 0:
         'updated_at': datetime.utcnow()
     })
 
-# Типы сервисов
+# Типы сервисов (обновлено согласно документации API)
 SERVICE_TYPES = {
-    'free': 'free',
-    'paid': 'paid',
-    'premium': 'premium'
+    'free': 0,     # Бесплатная проверка
+    'paid': 205,    # Платная проверка
+    'premium': 242  # Премиум проверка
 }
 
 def get_current_prices():
@@ -142,8 +142,8 @@ def payment_success():
             error_msg = result.get('error', 'No data available for this IMEI')
             return render_template('error.html', error=error_msg)
         
-        # Если это HTML ответ, преобразуем его в JSON-совместимый формат
-        if 'html_content' in result:
+        # Для бесплатных проверок обрабатываем HTML
+        if service_type == 'free' and 'html_content' in result:
             parsed_data = parse_free_html(result['html_content'])
             if parsed_data:
                 result = parsed_data
@@ -209,7 +209,7 @@ def perform_check():
         if 'error' in result:
             return jsonify(result), 400
         
-        # Для бесплатных проверок парсим HTML
+        # Для бесплатных проверок обрабатываем HTML
         if service_type == 'free' and 'html_content' in result:
             parsed_data = parse_free_html(result['html_content'])
             if parsed_data:
@@ -234,6 +234,7 @@ def perform_check():
         return jsonify({'error': str(e)}), 500
 
 def validate_imei(imei):
+    # Базовая валидация IMEI
     return len(imei) == 15 and imei.isdigit()
 
 def perform_api_check(imei, service_type):
@@ -246,75 +247,53 @@ def perform_api_check(imei, service_type):
     try:
         app.logger.info(f"Sending API request to {API_URL} with data: {data}")
         response = requests.post(API_URL, data=data, timeout=60)
-        app.logger.info(f"Received response with status: {response.status_code}")
+        
+        # Логируем первые 500 символов ответа для отладки
+        log_msg = f"API response: status={response.status_code}, body={response.text[:500]}"
+        app.logger.info(log_msg)
         
         if response.status_code != 200:
-            app.logger.error(f"API returned HTTP code {response.status_code}")
             return {'error': f'API returned HTTP code {response.status_code}'}
         
-        content_type = response.headers.get('Content-Type', '')
+        try:
+            result = response.json()
+        except json.JSONDecodeError:
+            return {'error': 'Invalid JSON response from API'}
         
-        # Обработка JSON ответа (для платных проверок)
-        if 'application/json' in content_type:
-            try:
-                result = response.json()
-                app.logger.info("JSON response received")
-                
-                if 'success' in result and not result['success']:
-                    return {'error': result.get('error', 'API request failed')}
-                
-                if not result or ('error' in result and result['error']):
-                    return {'error': 'No information found for this IMEI'}
-                
-                return result
-            except json.JSONDecodeError:
-                app.logger.warning("Failed to parse JSON, treating as HTML")
-                # Продолжаем обработку как HTML
+        # Обработка ошибок API
+        if not result.get('success', False):
+            return {'error': result.get('error', 'Unknown API error')}
         
-        # Обработка HTML ответа (для бесплатных проверок)
-        if 'text/html' in content_type or service_type == 'free':
-            app.logger.info("HTML response received")
+        # Обработка разных типов ответов
+        if service_type == 'free':
+            # Для бесплатной проверки возвращаем HTML
             return {
-                'html_content': response.text,
+                'html_content': result.get('response', ''),
                 'raw_response': response.text
             }
-        
-        # Обработка других типов контента
-        app.logger.warning(f"Unsupported content type: {content_type}")
-        return {
-            'error': f'Unsupported content type: {content_type}',
-            'raw_response': response.text
-        }
+        else:
+            # Для платных проверок возвращаем структурированные данные
+            return result.get('object', {})
     
     except requests.exceptions.RequestException as e:
-        app.logger.error(f"Request error: {str(e)}")
         return {'error': f"Request error: {str(e)}"}
     except Exception as e:
-        app.logger.error(f"Service error: {str(e)}")
         return {'error': f"Service error: {str(e)}"}
 
 def parse_free_html(html_content):
-    """Парсит HTML ответ для бесплатной проверки и извлекает данные"""
+    """Парсит HTML ответ для бесплатной проверки"""
     try:
         soup = BeautifulSoup(html_content, 'html.parser')
         
         # Удаляем ненужные элементы
-        for script in soup(["script", "style", "head", "title", "meta", "link"]):
-            script.decompose()
+        for tag in ["script", "style", "head", "title", "meta", "link", "button", "form", "input"]:
+            for element in soup(tag):
+                element.decompose()
         
         # Извлекаем основной контент
         content_div = soup.find('div', class_='container')
         if not content_div:
-            return None
-        
-        # Удаляем кнопки и формы
-        for btn in content_div.find_all(['button', 'form', 'input']):
-            btn.decompose()
-        
-        # Удаляем пустые элементы
-        for element in content_div.find_all():
-            if len(element.get_text(strip=True)) == 0:
-                element.decompose()
+            return {'html_content': html_content}
         
         # Создаем чистый HTML для отображения
         clean_html = str(content_div)
@@ -339,7 +318,7 @@ def parse_free_html(html_content):
     
     except Exception as e:
         app.logger.error(f"HTML parsing error: {str(e)}")
-        return None
+        return {'html_content': html_content}
 
 @app.route('/stripe_webhook', methods=['POST'])
 def stripe_webhook():
@@ -359,6 +338,7 @@ def stripe_webhook():
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
         # Обработка успешного платежа
+        # Можно добавить дополнительную логику здесь
     
     return jsonify({'status': 'success'})
 
@@ -380,9 +360,8 @@ def admin_dashboard():
     try:
         if request.method == 'POST':
             try:
-                # ИСПРАВЛЕННЫЙ СИНТАКСИС
-                paid_price = int(float(request.form.get('paid_price')) * 100)
-                premium_price = int(float(request.form.get('premium_price')) * 100)
+                paid_price = int(float(request.form.get('paid_price')) * 100
+                premium_price = int(float(request.form.get('premium_price')) * 100
                 
                 current_doc = prices_collection.find_one({'type': 'current'})
                 current_prices = current_doc['prices']
