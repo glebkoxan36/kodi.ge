@@ -33,20 +33,20 @@
         .mobile-menu-btn {
             display: none;
             position: fixed;
-            top: 20px;
-            left: 20px;
+            top: 15px;
+            left: 15px;
             z-index: 1010;
             background: var(--accent-color);
             color: white;
             border: none;
-            width: 60px;
-            height: 60px;
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
-            font-size: 1.8rem;
+            font-size: 1.4rem;
             cursor: pointer;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 20px rgba(0, 198, 255, 0.7);
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.7);
             animation: neonPulse 2s infinite alternate;
         }
 
@@ -612,7 +612,7 @@
     <div class="gradient-bg gradient-2"></div>
     
     <!-- Mobile menu button -->
-    <button class="mobile-menu-btn">
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
         <i class="fas fa-bars"></i>
     </button>
     
@@ -924,7 +924,7 @@
             });
             
             // Mobile menu toggle
-            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
             const sidebar = document.querySelector('.sidebar');
             
             if (mobileMenuBtn) {
