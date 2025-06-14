@@ -12,8 +12,8 @@
             --primary-color: #0a0e17;
             --secondary-color: #1a2138;
             --accent-color: #00c6ff;
-            --text-color: #ffffff;
-            --text-secondary: #a0aec0;
+            --text-color: #f0f0f0; /* Более яркий белый для лучшей читаемости */
+            --text-secondary: #c0c0d0; /* Более светлый серый */
             --card-bg: #121a2b;
             --success-color: #00d68f;
             --warning-color: #ffaa00;
@@ -26,11 +26,12 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
             overflow-x: hidden;
+            font-weight: 450; /* Улучшенная толщина шрифта */
         }
         
         /* Sidebar styling */
         .sidebar {
-            background: rgba(10, 14, 23, 0.9);
+            background: rgba(10, 14, 23, 0.98); /* Менее прозрачный фон */
             backdrop-filter: blur(10px);
             height: 100vh;
             position: fixed;
@@ -43,6 +44,7 @@
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             /* Hide scrollbar but keep functionality */
             scrollbar-width: none; /* Firefox */
+            transition: transform 0.4s ease;
         }
         
         /* Hide scrollbar for Chrome, Safari and Opera */
@@ -65,12 +67,13 @@
         }
         
         .nav-link {
-            color: var(--text-color); /* Changed to light text */
+            color: var(--text-color);
             padding: 12px 25px;
             margin: 5px 15px;
             border-radius: 8px;
             transition: all 0.3s ease;
-            font-weight: 500;
+            font-weight: 500; /* Жирнее */
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Тень для лучшей читаемости */
         }
         
         .nav-link i {
@@ -99,7 +102,7 @@
             text-decoration: line-through;
             opacity: 0.7;
             pointer-events: none;
-            color: var(--text-secondary); /* Keep disabled items gray */
+            color: var(--text-secondary);
         }
         
         /* Main content */
@@ -372,9 +375,8 @@
         
         @media (max-width: 576px) {
             .sidebar {
-                width: 250px; /* Always visible on mobile */
+                width: 280px; /* Шире для удобства */
                 transform: translateX(-100%);
-                transition: transform 0.3s ease;
             }
             
             .sidebar.active {
@@ -386,7 +388,7 @@
             }
             
             .mobile-menu-btn {
-                display: block;
+                display: flex; /* Всегда показываем кнопку */
                 position: fixed;
                 top: 20px;
                 left: 20px;
@@ -394,16 +396,34 @@
                 background: var(--accent-color);
                 color: var(--primary-color);
                 border: none;
-                width: 50px;
-                height: 50px;
+                width: 60px; /* Увеличиваем размер */
+                height: 60px;
                 border-radius: 50%;
-                font-size: 1.5rem;
+                font-size: 1.8rem; /* Увеличиваем иконку */
                 cursor: pointer;
-                box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 0 20px rgba(0, 198, 255, 0.7); /* Более заметная тень */
             }
 
             .carousel-item {
                 height: 200px;
+            }
+            
+            /* Увеличиваем шрифт в меню */
+            .nav-link {
+                font-size: 1.1rem;
+                padding: 15px 25px;
+            }
+            
+            /* Улучшаем видимость подменю */
+            .submenu .nav-link {
+                font-size: 1rem;
+            }
+            
+            /* Увеличиваем контрастность основного текста */
+            .card-body, .service-card, .stat-label {
+                color: #f5f5f5;
             }
         }
         
@@ -797,8 +817,30 @@
             if (mobileMenuBtn) {
                 mobileMenuBtn.addEventListener('click', () => {
                     sidebar.classList.toggle('active');
+                    // Change menu icon
+                    const icon = mobileMenuBtn.querySelector('i');
+                    if (sidebar.classList.contains('active')) {
+                        icon.classList.remove('fa-bars');
+                        icon.classList.add('fa-times');
+                    } else {
+                        icon.classList.remove('fa-times');
+                        icon.classList.add('fa-bars');
+                    }
                 });
             }
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 576px && 
+                    !sidebar.contains(e.target) && 
+                    !mobileMenuBtn.contains(e.target) &&
+                    sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                    const icon = mobileMenuBtn.querySelector('i');
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            });
             
             // Handle session_id after payment
             const urlParams = new URLSearchParams(window.location.search);
