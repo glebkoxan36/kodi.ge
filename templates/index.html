@@ -43,7 +43,7 @@
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             scrollbar-width: none;
-            transition: transform 0.4s ease;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
         }
         
         .sidebar::-webkit-scrollbar {
@@ -154,6 +154,7 @@
             opacity: 0.8;
             animation: neonGlow 3s infinite alternate;
             pointer-events: none;
+            z-index: 0; /* Ensure it's behind content */
         }
         
         .stat-card::before {
@@ -166,13 +167,13 @@
         
         @keyframes neonGlow {
             0% {
-                box-shadow: 0 0 5px rgba(0, 198, 255, 0.2);
+                box-shadow: 0 0 10px rgba(0, 198, 255, 0.4);
             }
             50% {
-                box-shadow: 0 0 20px rgba(0, 198, 255, 0.4);
+                box-shadow: 0 0 25px rgba(0, 198, 255, 0.7);
             }
             100% {
-                box-shadow: 0 0 10px rgba(0, 198, 255, 0.3);
+                box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
             }
         }
         
@@ -192,13 +193,13 @@
             font-weight: 600;
             color: var(--accent-color);
             position: relative;
-            z-index: 1;
+            z-index: 1; /* Ensure content is above glow */
         }
         
         .card-body {
             padding: 20px;
             position: relative;
-            z-index: 1;
+            z-index: 1; /* Ensure content is above glow */
         }
         
         /* Stats styling */
@@ -298,6 +299,7 @@
             opacity: 0.8;
             animation: neonGlow 3s infinite alternate;
             pointer-events: none;
+            z-index: 0;
         }
         
         @keyframes modalAppear {
@@ -444,6 +446,7 @@
             
             .sidebar.active {
                 transform: translateX(0);
+                box-shadow: 0 0 50px rgba(0, 198, 255, 0.5);
             }
             
             .main-content {
@@ -457,7 +460,7 @@
                 left: 20px;
                 z-index: 1010;
                 background: var(--accent-color);
-                color: var(--primary-color);
+                color: white; /* White text for better contrast */
                 border: none;
                 width: 60px;
                 height: 60px;
@@ -468,6 +471,11 @@
                 justify-content: center;
                 box-shadow: 0 0 20px rgba(0, 198, 255, 0.7);
                 animation: neonPulse 2s infinite alternate;
+            }
+
+            .mobile-menu-btn i {
+                color: white; /* Ensure icon is white */
+                text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
             }
 
             @keyframes neonPulse {
@@ -481,7 +489,7 @@
             }
 
             .carousel-item {
-                height: 200px;
+                height: 250px; /* Increased height */
             }
             
             .nav-link {
@@ -496,20 +504,25 @@
             .card-body, .service-card, .stat-label {
                 color: #f5f5f5;
             }
-        }
-        
-        .mobile-menu-btn {
-            display: none;
-        }
-        
-        /* Animation for stats */
-        @keyframes countUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animated-stat {
-            animation: countUp 1s ease forwards;
+            
+            /* Enhanced neon glow for mobile */
+            .card::before {
+                box-shadow: 0 0 15px rgba(0, 198, 255, 0.5) !important;
+                animation: neonGlow 1.5s infinite alternate;
+            }
+            
+            .stat-card::before {
+                box-shadow: 0 0 20px rgba(0, 198, 255, 0.6) !important;
+            }
+            
+            .service-card::before {
+                box-shadow: 0 0 25px rgba(0, 198, 255, 0.7) !important;
+            }
+            
+            /* Ensure pseudo-elements are visible */
+            .card {
+                overflow: visible;
+            }
         }
         
         /* Gradient background elements */
@@ -585,6 +598,11 @@
             100% {
                 box-shadow: 0 0 15px rgba(0, 198, 255, 0.6);
             }
+        }
+        
+        /* Mobile menu button - moved to the end */
+        .mobile-menu-btn {
+            display: none;
         }
     </style>
 </head>
@@ -1188,4 +1206,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
