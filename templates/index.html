@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ka">
 <head>
@@ -29,25 +30,32 @@
             font-weight: 450;
         }
         
-        /* Mobile menu button - fixed */
-        .mobile-menu-btn {
+        /* Bottom mobile menu button */
+        .mobile-menu-bottom {
             display: none;
             position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 1010;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .mobile-menu-btn {
             background: var(--accent-color);
             color: white;
             border: none;
-            width: 45px;
-            height: 45px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            font-size: 1.4rem;
+            font-size: 1.6rem;
             cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.7);
+            animation: neonPulse 2s infinite alternate;
+            display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 15px rgba(0, 198, 255, 0.7);
-            animation: neonPulse 2s infinite alternate;
+            margin: 0 auto;
         }
 
         .mobile-menu-btn i {
@@ -508,6 +516,108 @@
                 box-shadow: 0 0 15px rgba(0, 198, 255, 0.6);
             }
         }
+
+        /* Mobile Menu Modal */
+        .mobile-menu-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1100;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .mobile-menu-modal .modal-content {
+            background: var(--card-bg);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid rgba(0, 198, 255, 0.3);
+            box-shadow: 0 0 30px rgba(0, 198, 255, 0.4);
+            animation: scaleIn 0.3s ease-out;
+            position: relative;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .mobile-menu-modal .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .mobile-menu-modal .modal-title {
+            color: var(--accent-color);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mobile-menu-modal .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .menu-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            aspect-ratio: 1/1;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+        }
+
+        .menu-item:hover {
+            background: rgba(0, 198, 255, 0.15);
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .menu-item i {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+        }
+
+        .menu-item span {
+            font-size: 0.85rem;
+            line-height: 1.2;
+        }
         
         /* Responsive design */
         @media (max-width: 992px) {
@@ -550,26 +660,21 @@
         }
         
         @media (max-width: 576px) {
-            .mobile-menu-btn {
-                display: flex !important;
+            .mobile-menu-bottom {
+                display: block;
             }
             
             .sidebar {
-                width: 280px;
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.active {
-                transform: translateX(0);
-                box-shadow: 0 0 50px rgba(0, 198, 255, 0.5);
+                display: none;
             }
             
             .main-content {
                 margin-left: 0;
+                padding-bottom: 80px; /* Space for bottom menu */
             }
 
             .carousel-item {
-                height: 250px; /* Increased height */
+                height: 250px;
             }
             
             .nav-link {
@@ -611,10 +716,12 @@
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
     
-    <!-- Mobile menu button -->
-    <button class="mobile-menu-btn" id="mobileMenuBtn">
-        <i class="fas fa-bars"></i>
-    </button>
+    <!-- Bottom mobile menu button -->
+    <div class="mobile-menu-bottom" id="mobileMenuBottom">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
     
     <!-- Sidebar -->
     <div class="sidebar">
@@ -890,6 +997,23 @@
         </div>
     </div>
     
+    <!-- Mobile Menu Modal -->
+    <div class="mobile-menu-modal" id="mobileMenuModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">მენიუ</h3>
+                <button class="close-modal" onclick="closeMobileMenu()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="menu-grid">
+                    <!-- Menu items will be added here dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Spinner -->
     <div class="spinner-container" id="spinner">
         <div class="spinner"></div>
@@ -923,35 +1047,22 @@
                 ride: 'carousel'
             });
             
+            // Create mobile menu items
+            createMobileMenu();
+            
             // Mobile menu toggle
             const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const sidebar = document.querySelector('.sidebar');
-            
             if (mobileMenuBtn) {
-                mobileMenuBtn.addEventListener('click', () => {
-                    sidebar.classList.toggle('active');
-                    // Change menu icon
-                    const icon = mobileMenuBtn.querySelector('i');
-                    if (sidebar.classList.contains('active')) {
-                        icon.classList.remove('fa-bars');
-                        icon.classList.add('fa-times');
-                    } else {
-                        icon.classList.remove('fa-times');
-                        icon.classList.add('fa-bars');
-                    }
-                });
+                mobileMenuBtn.addEventListener('click', openMobileMenu);
             }
             
             // Close menu when clicking outside
             document.addEventListener('click', (e) => {
-                if (window.innerWidth <= 576px && 
-                    !sidebar.contains(e.target) && 
-                    !mobileMenuBtn.contains(e.target) &&
-                    sidebar.classList.contains('active')) {
-                    sidebar.classList.remove('active');
-                    const icon = mobileMenuBtn.querySelector('i');
-                    icon.classList.remove('fa-times');
-                    icon.classList.add('fa-bars');
+                const modal = document.getElementById('mobileMenuModal');
+                if (modal.style.display === 'flex' && 
+                    !modal.contains(e.target) && 
+                    !mobileMenuBtn.contains(e.target)) {
+                    closeMobileMenu();
                 }
             });
             
@@ -1204,6 +1315,54 @@
             
             return labels[key] || key;
         }
+        
+        // Mobile menu functions
+        function openMobileMenu() {
+            document.getElementById('mobileMenuModal').style.display = 'flex';
+        }
+        
+        function closeMobileMenu() {
+            document.getElementById('mobileMenuModal').style.display = 'none';
+        }
+        
+        // Create mobile menu items
+        function createMobileMenu() {
+            const menuItems = [
+                {icon: 'fas fa-home', text: 'მთავარი', action: () => { window.scrollTo(0,0); closeMobileMenu(); }},
+                {icon: 'fas fa-mobile-alt', text: 'Apple შემოწმება', action: () => { showCheck('free'); closeMobileMenu(); }},
+                {icon: 'fas fa-shopping-cart', text: 'პლატანი შემოწმება', action: () => { showCheck('paid'); closeMobileMenu(); }},
+                {icon: 'fas fa-crown', text: 'პრემიუმ შემოწმება', action: () => { showCheck('premium'); closeMobileMenu(); }},
+                {icon: 'fab fa-android', text: 'Android შემოწმება'},
+                {icon: 'fas fa-unlock-alt', text: 'ტელეფონის განბლოკვა'},
+                {icon: 'fas fa-exchange-alt', text: 'ტელეფონების შედარება'},
+                {icon: 'fas fa-book', text: 'ცოდნის ბაზა'},
+                {icon: 'fas fa-address-card', text: 'კონტაქტი', action: () => { 
+                    document.getElementById('contacts').scrollIntoView({behavior: 'smooth'}); 
+                    closeMobileMenu(); 
+                }},
+                {icon: 'fas fa-shield-alt', text: 'კონფიდენციალურობა'},
+                {icon: 'fas fa-undo', text: 'დაბრუნების პოლიტიკა'},
+                {icon: 'fas fa-times', text: 'დახურვა', action: closeMobileMenu}
+            ];
+
+            const menuGrid = document.querySelector('.menu-grid');
+            menuGrid.innerHTML = '';
+            
+            menuItems.forEach(item => {
+                const menuItem = document.createElement('div');
+                menuItem.className = 'menu-item';
+                if (item.action) {
+                    menuItem.onclick = item.action;
+                }
+                
+                menuItem.innerHTML = `
+                    <i class="${item.icon}"></i>
+                    <span>${item.text}</span>
+                `;
+                
+                menuGrid.appendChild(menuItem);
+            });
+        }
     </script>
 </body>
-</html>
+    </html>
