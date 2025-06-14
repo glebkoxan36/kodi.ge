@@ -621,7 +621,7 @@
                             <li>მოპარვის/დაკარგვის სტატუსი</li>
                             <li>სერვისის სტატუსი</li>
                         </ul>
-                        <div class="service-price">5.99 ₾</div>
+                        <div class="service-price">{{ paid_price }} ₾</div>
                         <button class="btn btn-outline-warning btn-service" onclick="showCheck('paid')">
                             აირჩიე
                         </button>
@@ -639,7 +639,7 @@
                             <li>გარანტია განბლოკვაზე</li>
                             <li>24/7 პრიორიტეტული მხარდაჭერა</li>
                         </ul>
-                        <div class="service-price">9.99 ₾</div>
+                        <div class="service-price">{{ premium_price }} ₾</div>
                         <button class="btn btn-outline-success btn-service" onclick="showCheck('premium')">
                             აირჩიე
                         </button>
@@ -700,7 +700,7 @@
     
     <script>
         // Initialize Stripe
-        const stripe = Stripe("pk_test_51P...");
+        const stripe = Stripe("{{ stripe_public_key }}");
         let currentServiceType = null;
         
         // Simulated stats data
@@ -786,13 +786,13 @@
                     break;
                 case 'paid':
                     checkTitle.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>პლატანი შემოწმება';
-                    checkButton.textContent = 'გადახდა: 5.99 ₾';
+                    checkButton.textContent = `გადახდა: {{ paid_price }} ₾`;
                     checkButton.classList.remove('btn-info', 'btn-success');
                     checkButton.classList.add('btn-warning');
                     break;
                 case 'premium':
                     checkTitle.innerHTML = '<i class="fas fa-crown me-2"></i>პრემიუმ შემოწმება';
-                    checkButton.textContent = 'გადახდა: 9.99 ₾';
+                    checkButton.textContent = `გადახდა: {{ premium_price }} ₾`;
                     checkButton.classList.remove('btn-info', 'btn-warning');
                     checkButton.classList.add('btn-success');
                     break;
@@ -843,39 +843,34 @@
                 });
             } else {
                 // Paid check
-                createCheckoutSession(imei, currentServiceType);
-            }
-        }
-        
-        // Create checkout session
-        function createCheckoutSession(imei, serviceType) {
-            fetch('/create-checkout-session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    imei: imei,
-                    service_type: serviceType
+                fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imei: imei,
+                        service_type: currentServiceType
+                    })
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.error) {
-                    throw new Error(data.error);
-                }
-                return stripe.redirectToCheckout({ sessionId: data.id });
-            })
-            .then(result => {
-                if(result.error) {
+                .then(response => response.json())
+                .then(data => {
+                    if(data.error) {
+                        throw new Error(data.error);
+                    }
+                    return stripe.redirectToCheckout({ sessionId: data.id });
+                })
+                .then(result => {
+                    if(result.error) {
+                        showSpinner(false);
+                        alert(result.error.message);
+                    }
+                })
+                .catch(error => {
                     showSpinner(false);
-                    alert(result.error.message);
-                }
-            })
-            .catch(error => {
-                showSpinner(false);
-                displayResult({ error: error.message });
-            });
+                    alert('Payment failed: ' + error.message);
+                });
+            }
         }
         
         // Display result in modal
