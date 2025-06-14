@@ -950,7 +950,7 @@
                             <li>მოპარვის/დაკარგვის სტატუსი</li>
                             <li>სერვისის სტატუსი</li>
                         </ul>
-                        <div class="service-price">2.99 ₾</div>
+                        <div class="service-price">{{ paid_price }} ₾</div>
                         <div class="service-instruction">
                             <i class="fas fa-arrow-left me-1"></i>
                             გამოიყენეთ მარცხენა მენიუ შესამოწმებლად
@@ -969,7 +969,7 @@
                             <li>გარანტია განბლოკვაზე</li>
                             <li>24/7 პრიორიტეტული მხარდაჭერა</li>
                         </ul>
-                        <div class="service-price">4.99 ₾</div>
+                        <div class="service-price">{{ premium_price }} ₾</div>
                         <div class="service-instruction">
                             <i class="fas fa-arrow-left me-1"></i>
                             გამოიყენეთ მარცხენა მენიუ შესამოწმებლად
@@ -1137,14 +1137,14 @@
     
     <script>
         // Initialize Stripe
-        const stripe = Stripe("pk_test_51P...");
+        const stripe = Stripe("{{ stripe_public_key }}");
         let currentServiceType = null;
         
         // Stats data
         const statsData = {
-            daily: 128,
-            weekly: 896,
-            monthly: 3584
+            daily: 0,
+            weekly: 0,
+            monthly: 0
         };
         
         // Initialize page
@@ -1181,6 +1181,28 @@
                     closeAppleSubmenu();
                 }
             });
+            
+            // Handle session_id after payment
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('session_id');
+            
+            if(sessionId) {
+                showSpinner(true);
+                fetch(`/get_check_result?session_id=${sessionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        showSpinner(false);
+                        if(data.error) {
+                            displayResult({ error: data.error });
+                        } else {
+                            displayResult(data.result);
+                        }
+                    })
+                    .catch(error => {
+                        showSpinner(false);
+                        displayResult({ error: 'Failed to get result: ' + error.message });
+                    });
+            }
         });
         
         // Function to animate value counters
@@ -1225,13 +1247,13 @@
                     break;
                 case 'paid':
                     checkTitle.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>პლატანი შემოწმება';
-                    checkButton.textContent = `გადახდა: 2.99 ₾`;
+                    checkButton.textContent = `გადახდა: {{ paid_price }} ₾`;
                     checkButton.classList.remove('btn-info', 'btn-success');
                     checkButton.classList.add('btn-warning');
                     break;
                 case 'premium':
                     checkTitle.innerHTML = '<i class="fas fa-crown me-2"></i>პრემიუმ შემოწმება';
-                    checkButton.textContent = `გადახდა: 4.99 ₾`;
+                    checkButton.textContent = `გადახდა: {{ premium_price }} ₾`;
                     checkButton.classList.remove('btn-info', 'btn-warning');
                     checkButton.classList.add('btn-success');
                     break;
@@ -1300,22 +1322,54 @@
             
             if(currentServiceType === 'free') {
                 // Free check
-                setTimeout(() => {
+                fetch('/perform_check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imei: imei,
+                        service_type: 'free'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
                     showSpinner(false);
-                    displayResult({
-                        model: "iPhone 13 Pro",
-                        serial: "F17K3C5JHP6G",
-                        status: "აქტიური",
-                        fmi: "გამორთულია",
-                        blacklist: "არ არის შავ სიაში",
-                        simlock: "უფასო",
-                        warranty: "გარანტია ამოიწურა"
-                    });
-                }, 1500);
+                    displayResult(data);
+                })
+                .catch(error => {
+                    showSpinner(false);
+                    displayResult({ error: 'Request failed: ' + error.message });
+                });
             } else {
                 // Paid check
-                alert('გადახდის სისტემა დროებით მიუწვდომელია');
-                showSpinner(false);
+                fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imei: imei,
+                        service_type: currentServiceType
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.error) {
+                        throw new Error(data.error);
+                    }
+                    return stripe.redirectToCheckout({ sessionId: data.id });
+                })
+                .then(result => {
+                    if(result.error) {
+                        showSpinner(false);
+                        alert(result.error.message);
+                    }
+                })
+                .catch(error => {
+                    showSpinner(false);
+                    alert('Payment failed: ' + error.message);
+                });
             }
         }
         
@@ -1337,12 +1391,16 @@
                 `;
                 
                 for(const [key, value] of Object.entries(data)) {
-                    html += `
-                        <div class="result-item">
-                            <div class="result-label">${formatLabel(key)}:</div>
-                            <div class="result-value">${value}</div>
-                        </div>
-                    `;
+                    if(key === 'html_content') {
+                        html += `<div class="mt-4">${value}</div>`;
+                    } else {
+                        html += `
+                            <div class="result-item">
+                                <div class="result-label">${formatLabel(key)}:</div>
+                                <div class="result-value">${value}</div>
+                            </div>
+                        `;
+                    }
                 }
                 
                 modalContent.innerHTML = html;
@@ -1421,4 +1479,4 @@
         }
     </script>
 </body>
-                        </html>
+    </html>
