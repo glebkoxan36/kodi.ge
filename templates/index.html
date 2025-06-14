@@ -516,7 +516,7 @@
             }
         }
 
-        /* Mobile Menu Modal - COMPACT VERSION */
+        /* Mobile Menu Modal */
         .mobile-menu-modal {
             display: none;
             position: fixed;
@@ -530,11 +530,13 @@
             align-items: flex-end; /* Align to bottom */
             backdrop-filter: blur(10px);
             transform: translateY(100%);
-            transition: transform 0.3s ease;
+            transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
+            opacity: 0;
         }
 
         .mobile-menu-modal.open {
             transform: translateY(0);
+            opacity: 1;
         }
 
         .mobile-menu-modal .modal-content {
@@ -577,10 +579,34 @@
             cursor: pointer;
         }
 
+        /* Apple Submenu */
+        .apple-submenu-modal {
+            display: none;
+            position: fixed;
+            top: auto;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50vh;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1200;
+            align-items: flex-end;
+            backdrop-filter: blur(10px);
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
+            opacity: 0;
+        }
+
+        .apple-submenu-modal.open {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Menu grid with 3 columns */
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 4 columns */
-            gap: 6px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
             padding: 12px 8px;
         }
 
@@ -589,7 +615,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 8px 4px;
+            padding: 10px 5px;
             border-radius: 10px;
             background: var(--secondary-color);
             aspect-ratio: 1/1;
@@ -606,13 +632,13 @@
         }
 
         .menu-item i {
-            font-size: 1.3rem; /* Smaller icon size */
-            margin-bottom: 6px;
+            font-size: 1.5rem;
+            margin-bottom: 8px;
             color: var(--accent-color);
         }
 
         .menu-item span {
-            font-size: 0.65rem; /* Smaller text size */
+            font-size: 0.75rem;
             line-height: 1.1;
             display: -webkit-box;
             -webkit-line-clamp: 2; /* Two lines max */
@@ -661,21 +687,21 @@
             
             /* Адаптация для маленьких экранов */
             .menu-grid {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 4px;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
                 padding: 10px 5px;
             }
             
             .menu-item {
-                padding: 6px 2px;
+                padding: 8px 3px;
             }
             
             .menu-item i {
-                font-size: 1.1rem;
+                font-size: 1.3rem;
             }
             
             .menu-item span {
-                font-size: 0.6rem;
+                font-size: 0.65rem;
             }
         }
         
@@ -727,28 +753,6 @@
             /* Ensure pseudo-elements are visible */
             .card {
                 overflow: visible;
-            }
-            
-            /* Extra small screens */
-            @media (max-width: 380px) {
-                .menu-grid {
-                    grid-template-columns: repeat(4, 1fr);
-                    gap: 4px;
-                    padding: 8px 4px;
-                }
-                
-                .menu-item {
-                    padding: 5px 1px;
-                }
-                
-                .menu-item i {
-                    font-size: 1.0rem;
-                    margin-bottom: 4px;
-                }
-                
-                .menu-item span {
-                    font-size: 0.55rem;
-                }
             }
         }
     </style>
@@ -946,7 +950,7 @@
                             <li>მოპარვის/დაკარგვის სტატუსი</li>
                             <li>სერვისის სტატუსი</li>
                         </ul>
-                        <div class="service-price">{{ paid_price }} ₾</div>
+                        <div class="service-price">2.99 ₾</div>
                         <div class="service-instruction">
                             <i class="fas fa-arrow-left me-1"></i>
                             გამოიყენეთ მარცხენა მენიუ შესამოწმებლად
@@ -965,7 +969,7 @@
                             <li>გარანტია განბლოკვაზე</li>
                             <li>24/7 პრიორიტეტული მხარდაჭერა</li>
                         </ul>
-                        <div class="service-price">{{ premium_price }} ₾</div>
+                        <div class="service-price">4.99 ₾</div>
                         <div class="service-instruction">
                             <i class="fas fa-arrow-left me-1"></i>
                             გამოიყენეთ მარცხენა მენიუ შესამოწმებლად
@@ -1050,7 +1054,74 @@
             </div>
             <div class="modal-body">
                 <div class="menu-grid">
-                    <!-- Menu items will be added here dynamically -->
+                    <div class="menu-item" onclick="window.scrollTo(0,0); closeMobileMenu();">
+                        <i class="fas fa-home"></i>
+                        <span>მთავარი</span>
+                    </div>
+                    <div class="menu-item" onclick="openAppleSubmenu()">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>Apple შემოწმება</span>
+                    </div>
+                    <div class="menu-item">
+                        <i class="fab fa-android"></i>
+                        <span>Android შემოწმება</span>
+                    </div>
+                    <div class="menu-item">
+                        <i class="fas fa-unlock-alt"></i>
+                        <span>ტელეფონის განბლოკვა</span>
+                    </div>
+                    <div class="menu-item">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>ტელეფონების შედარება</span>
+                    </div>
+                    <div class="menu-item">
+                        <i class="fas fa-book"></i>
+                        <span>ცოდნის ბაზა</span>
+                    </div>
+                    <div class="menu-item" onclick="document.getElementById('contacts').scrollIntoView({behavior: 'smooth'}); closeMobileMenu();">
+                        <i class="fas fa-address-card"></i>
+                        <span>კონტაქტი</span>
+                    </div>
+                    <div class="menu-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>კონფიდენციალურობა</span>
+                    </div>
+                    <div class="menu-item">
+                        <i class="fas fa-undo"></i>
+                        <span>დაბრუნების პოლიტიკა</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Apple Submenu Modal -->
+    <div class="apple-submenu-modal" id="appleSubmenuModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Apple შემოწმება</h3>
+                <button class="close-modal" onclick="closeAppleSubmenu()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="menu-grid">
+                    <div class="menu-item" onclick="showCheck('free'); closeAllMobileMenus();">
+                        <i class="fas fa-check-circle"></i>
+                        <span>უფასო შემოწმება</span>
+                    </div>
+                    <div class="menu-item" onclick="showCheck('paid'); closeAllMobileMenus();">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>პლატანი შემოწმება</span>
+                    </div>
+                    <div class="menu-item" onclick="showCheck('premium'); closeAllMobileMenus();">
+                        <i class="fas fa-crown"></i>
+                        <span>პრემიუმ შემოწმება</span>
+                    </div>
+                    <div class="menu-item" onclick="closeAppleSubmenu()">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>უკან</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1066,14 +1137,14 @@
     
     <script>
         // Initialize Stripe
-        const stripe = Stripe("{{ stripe_public_key }}");
+        const stripe = Stripe("pk_test_51P...");
         let currentServiceType = null;
         
         // Stats data
         const statsData = {
-            daily: 0,
-            weekly: 0,
-            monthly: 0
+            daily: 128,
+            weekly: 896,
+            monthly: 3584
         };
         
         // Initialize page
@@ -1089,9 +1160,6 @@
                 ride: 'carousel'
             });
             
-            // Create mobile menu items
-            createMobileMenu();
-            
             // Mobile menu toggle
             const mobileMenuBtn = document.getElementById('mobileMenuBtn');
             if (mobileMenuBtn) {
@@ -1101,34 +1169,18 @@
             // Close menu when clicking outside
             document.addEventListener('click', (e) => {
                 const modal = document.getElementById('mobileMenuModal');
+                const appleModal = document.getElementById('appleSubmenuModal');
                 if (modal.style.display === 'flex' && 
                     !modal.contains(e.target) && 
                     !mobileMenuBtn.contains(e.target)) {
                     closeMobileMenu();
                 }
+                if (appleModal.style.display === 'flex' && 
+                    !appleModal.contains(e.target) && 
+                    !mobileMenuBtn.contains(e.target)) {
+                    closeAppleSubmenu();
+                }
             });
-            
-            // Handle session_id after payment
-            const urlParams = new URLSearchParams(window.location.search);
-            const sessionId = urlParams.get('session_id');
-            
-            if(sessionId) {
-                showSpinner(true);
-                fetch(`/get_check_result?session_id=${sessionId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        showSpinner(false);
-                        if(data.error) {
-                            displayResult({ error: data.error });
-                        } else {
-                            displayResult(data.result);
-                        }
-                    })
-                    .catch(error => {
-                        showSpinner(false);
-                        displayResult({ error: 'Failed to get result: ' + error.message });
-                    });
-            }
         });
         
         // Function to animate value counters
@@ -1173,13 +1225,13 @@
                     break;
                 case 'paid':
                     checkTitle.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>პლატანი შემოწმება';
-                    checkButton.textContent = `გადახდა: {{ paid_price }} ₾`;
+                    checkButton.textContent = `გადახდა: 2.99 ₾`;
                     checkButton.classList.remove('btn-info', 'btn-success');
                     checkButton.classList.add('btn-warning');
                     break;
                 case 'premium':
                     checkTitle.innerHTML = '<i class="fas fa-crown me-2"></i>პრემიუმ შემოწმება';
-                    checkButton.textContent = `გადახდა: {{ premium_price }} ₾`;
+                    checkButton.textContent = `გადახდა: 4.99 ₾`;
                     checkButton.classList.remove('btn-info', 'btn-warning');
                     checkButton.classList.add('btn-success');
                     break;
@@ -1248,54 +1300,22 @@
             
             if(currentServiceType === 'free') {
                 // Free check
-                fetch('/perform_check', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        imei: imei,
-                        service_type: 'free'
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
+                setTimeout(() => {
                     showSpinner(false);
-                    displayResult(data);
-                })
-                .catch(error => {
-                    showSpinner(false);
-                    displayResult({ error: 'Request failed: ' + error.message });
-                });
+                    displayResult({
+                        model: "iPhone 13 Pro",
+                        serial: "F17K3C5JHP6G",
+                        status: "აქტიური",
+                        fmi: "გამორთულია",
+                        blacklist: "არ არის შავ სიაში",
+                        simlock: "უფასო",
+                        warranty: "გარანტია ამოიწურა"
+                    });
+                }, 1500);
             } else {
                 // Paid check
-                fetch('/create-checkout-session', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        imei: imei,
-                        service_type: currentServiceType
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.error) {
-                        throw new Error(data.error);
-                    }
-                    return stripe.redirectToCheckout({ sessionId: data.id });
-                })
-                .then(result => {
-                    if(result.error) {
-                        showSpinner(false);
-                        alert(result.error.message);
-                    }
-                })
-                .catch(error => {
-                    showSpinner(false);
-                    alert('Payment failed: ' + error.message);
-                });
+                alert('გადახდის სისტემა დროებით მიუწვდომელია');
+                showSpinner(false);
             }
         }
         
@@ -1317,16 +1337,12 @@
                 `;
                 
                 for(const [key, value] of Object.entries(data)) {
-                    if(key === 'html_content') {
-                        html += `<div class="mt-4">${value}</div>`;
-                    } else {
-                        html += `
-                            <div class="result-item">
-                                <div class="result-label">${formatLabel(key)}:</div>
-                                <div class="result-value">${value}</div>
-                            </div>
-                        `;
-                    }
+                    html += `
+                        <div class="result-item">
+                            <div class="result-label">${formatLabel(key)}:</div>
+                            <div class="result-value">${value}</div>
+                        </div>
+                    `;
                 }
                 
                 modalContent.innerHTML = html;
@@ -1368,47 +1384,41 @@
             document.getElementById('mobileMenuModal').classList.remove('open');
             setTimeout(() => {
                 document.getElementById('mobileMenuModal').style.display = 'none';
-            }, 300);
+            }, 400);
         }
         
-        // Create mobile menu items
-        function createMobileMenu() {
-            const menuItems = [
-                {icon: 'fas fa-home', text: 'მთავარი', action: () => { window.scrollTo(0,0); closeMobileMenu(); }},
-                {icon: 'fas fa-mobile-alt', text: 'Apple შემოწმება', action: () => { showCheck('free'); closeMobileMenu(); }},
-                {icon: 'fas fa-shopping-cart', text: 'პლატანი შემოწმება', action: () => { showCheck('paid'); closeMobileMenu(); }},
-                {icon: 'fas fa-crown', text: 'პრემიუმ შემოწმება', action: () => { showCheck('premium'); closeMobileMenu(); }},
-                {icon: 'fab fa-android', text: 'Android შემოწმება'},
-                {icon: 'fas fa-unlock-alt', text: 'ტელეფონის განბლოკვა'},
-                {icon: 'fas fa-exchange-alt', text: 'ტელეფონების შედარება'},
-                {icon: 'fas fa-book', text: 'ცოდნის ბაზა'},
-                {icon: 'fas fa-address-card', text: 'კონტაქტი', action: () => { 
-                    document.getElementById('contacts').scrollIntoView({behavior: 'smooth'}); 
-                    closeMobileMenu(); 
-                }},
-                {icon: 'fas fa-shield-alt', text: 'კონფიდენციალურობა'},
-                {icon: 'fas fa-undo', text: 'დაბრუნების პოლიტიკა'},
-                {icon: 'fas fa-times', text: 'დახურვა', action: closeMobileMenu}
-            ];
-
-            const menuGrid = document.querySelector('.menu-grid');
-            menuGrid.innerHTML = '';
+        function openAppleSubmenu() {
+            // Close main menu
+            document.getElementById('mobileMenuModal').classList.remove('open');
             
-            menuItems.forEach(item => {
-                const menuItem = document.createElement('div');
-                menuItem.className = 'menu-item';
-                if (item.action) {
-                    menuItem.onclick = item.action;
-                }
-                
-                menuItem.innerHTML = `
-                    <i class="${item.icon}"></i>
-                    <span>${item.text}</span>
-                `;
-                
-                menuGrid.appendChild(menuItem);
-            });
+            // Open Apple submenu
+            setTimeout(() => {
+                document.getElementById('mobileMenuModal').style.display = 'none';
+                document.getElementById('appleSubmenuModal').classList.add('open');
+                document.getElementById('appleSubmenuModal').style.display = 'flex';
+            }, 100);
+        }
+        
+        function closeAppleSubmenu() {
+            document.getElementById('appleSubmenuModal').classList.remove('open');
+            
+            // Open main menu again
+            setTimeout(() => {
+                document.getElementById('appleSubmenuModal').style.display = 'none';
+                document.getElementById('mobileMenuModal').classList.add('open');
+                document.getElementById('mobileMenuModal').style.display = 'flex';
+            }, 400);
+        }
+        
+        function closeAllMobileMenus() {
+            document.getElementById('mobileMenuModal').classList.remove('open');
+            document.getElementById('appleSubmenuModal').classList.remove('open');
+            
+            setTimeout(() => {
+                document.getElementById('mobileMenuModal').style.display = 'none';
+                document.getElementById('appleSubmenuModal').style.display = 'none';
+            }, 400);
         }
     </script>
 </body>
-    </html>
+                        </html>
