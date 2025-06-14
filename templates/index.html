@@ -524,7 +524,8 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 50vh; /* Half screen height */
+            height: 60vh; /* Increased height */
+            max-height: 90%;
             background: rgba(0, 0, 0, 0.95);
             z-index: 1100;
             align-items: flex-end; /* Align to bottom */
@@ -544,7 +545,9 @@
             border-radius: 20px 20px 0 0;
             width: 100%;
             height: 100%;
-            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             border: 1px solid rgba(0, 198, 255, 0.3);
             box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.4);
             position: relative;
@@ -579,7 +582,13 @@
             cursor: pointer;
         }
 
-        /* Apple Submenu */
+        .mobile-menu-modal .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        /* Apple Submenu Modal */
         .apple-submenu-modal {
             display: none;
             position: fixed;
@@ -587,7 +596,8 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 50vh;
+            height: 60vh; /* Increased height */
+            max-height: 90%;
             background: rgba(0, 0, 0, 0.95);
             z-index: 1200;
             align-items: flex-end;
@@ -602,12 +612,52 @@
             opacity: 1;
         }
 
+        .apple-submenu-modal .modal-content {
+            background: var(--card-bg);
+            border-radius: 20px 20px 0 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(0, 198, 255, 0.3);
+            box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.4);
+            position: relative;
+        }
+
+        .apple-submenu-modal .modal-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            position: sticky;
+            top: 0;
+            background: var(--card-bg);
+            z-index: 10;
+        }
+
+        .apple-submenu-modal .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.3rem;
+            cursor: pointer;
+        }
+
+        .apple-submenu-modal .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
         /* Menu grid with 3 columns */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 8px;
-            padding: 12px 8px;
+            padding: 12px 8px 20px; /* Added bottom padding */
         }
 
         .menu-item {
@@ -646,6 +696,16 @@
             overflow: hidden;
         }
         
+        /* Scrollbar styling */
+        .modal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .modal-body::-webkit-scrollbar-thumb {
+            background-color: var(--accent-color);
+            border-radius: 3px;
+        }
+        
         /* Responsive design */
         @media (max-width: 992px) {
             .sidebar {
@@ -679,6 +739,7 @@
             
             .main-content {
                 padding: 20px 15px;
+                padding-bottom: 80px; /* Space for bottom menu */
             }
 
             .carousel-item {
@@ -738,35 +799,36 @@
         }
 
         /* FIXES FOR MOBILE MENU */
-        .mobile-menu-modal .modal-body {
-            padding-bottom: 20px;
-        }
-
         @media (max-width: 400px) {
             .menu-grid {
                 grid-template-columns: repeat(3, 1fr);
-                gap: 4px;
-                padding: 8px 4px;
+                gap: 6px;
+                padding: 10px 6px 20px;
             }
             
             .menu-item {
-                padding: 6px 2px;
+                padding: 8px 4px;
                 border-radius: 8px;
             }
             
             .menu-item i {
-                font-size: 1.2rem;
-                margin-bottom: 4px;
+                font-size: 1.3rem;
+                margin-bottom: 5px;
             }
             
             .menu-item span {
-                font-size: 0.6rem;
+                font-size: 0.65rem;
+                line-height: 1.2;
             }
         }
 
         @media (max-width: 340px) {
             .menu-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .menu-item {
+                aspect-ratio: 1/1.2;
             }
         }
     </style>
@@ -1493,4 +1555,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
