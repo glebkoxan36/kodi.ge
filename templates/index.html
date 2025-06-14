@@ -12,8 +12,8 @@
             --primary-color: #0a0e17;
             --secondary-color: #1a2138;
             --accent-color: #00c6ff;
-            --text-color: #f0f0f0; /* Более яркий белый для лучшей читаемости */
-            --text-secondary: #c0c0d0; /* Более светлый серый */
+            --text-color: #f0f0f0;
+            --text-secondary: #c0c0d0;
             --card-bg: #121a2b;
             --success-color: #00d68f;
             --warning-color: #ffaa00;
@@ -26,12 +26,12 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
             overflow-x: hidden;
-            font-weight: 450; /* Улучшенная толщина шрифта */
+            font-weight: 450;
         }
         
         /* Sidebar styling */
         .sidebar {
-            background: rgba(10, 14, 23, 0.98); /* Менее прозрачный фон */
+            background: rgba(10, 14, 23, 0.98);
             backdrop-filter: blur(10px);
             height: 100vh;
             position: fixed;
@@ -42,12 +42,10 @@
             padding: 20px 0;
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            /* Hide scrollbar but keep functionality */
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: none;
             transition: transform 0.4s ease;
         }
         
-        /* Hide scrollbar for Chrome, Safari and Opera */
         .sidebar::-webkit-scrollbar {
             display: none;
         }
@@ -72,8 +70,8 @@
             margin: 5px 15px;
             border-radius: 8px;
             transition: all 0.3s ease;
-            font-weight: 500; /* Жирнее */
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Тень для лучшей читаемости */
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
         
         .nav-link i {
@@ -131,7 +129,7 @@
             border-radius: 3px;
         }
         
-        /* Card styling */
+        /* Card styling with neon glow */
         .card {
             background: var(--card-bg);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -140,11 +138,51 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             margin-bottom: 25px;
             overflow: hidden;
+            position: relative;
+        }
+        
+        /* Neon glow animation */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0, 198, 255, 0.2);
+            opacity: 0.8;
+            animation: neonGlow 3s infinite alternate;
+            pointer-events: none;
+        }
+        
+        .stat-card::before {
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
+        }
+        
+        .service-card::before {
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.4);
+        }
+        
+        @keyframes neonGlow {
+            0% {
+                box-shadow: 0 0 5px rgba(0, 198, 255, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(0, 198, 255, 0.4);
+            }
+            100% {
+                box-shadow: 0 0 10px rgba(0, 198, 255, 0.3);
+            }
         }
         
         .card:hover {
             transform: translateY(-5px);
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .card:hover::before {
+            animation: neonGlow 1.5s infinite alternate;
         }
         
         .card-header {
@@ -153,10 +191,14 @@
             padding: 15px 20px;
             font-weight: 600;
             color: var(--accent-color);
+            position: relative;
+            z-index: 1;
         }
         
         .card-body {
             padding: 20px;
+            position: relative;
+            z-index: 1;
         }
         
         /* Stats styling */
@@ -173,6 +215,7 @@
             padding: 20px;
             text-align: center;
             border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
         }
         
         .stat-value {
@@ -193,6 +236,7 @@
         .service-card {
             text-align: center;
             padding: 30px 20px;
+            position: relative;
         }
         
         .service-icon {
@@ -239,6 +283,21 @@
             border: 1px solid rgba(0, 198, 255, 0.3);
             box-shadow: 0 0 30px rgba(0, 198, 255, 0.2);
             animation: modalAppear 0.5s ease;
+            position: relative;
+        }
+        
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.4);
+            opacity: 0.8;
+            animation: neonGlow 3s infinite alternate;
+            pointer-events: none;
         }
         
         @keyframes modalAppear {
@@ -250,6 +309,7 @@
             padding: 20px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             position: relative;
+            z-index: 1;
         }
         
         .modal-title {
@@ -267,6 +327,7 @@
             font-size: 1.5rem;
             cursor: pointer;
             transition: color 0.3s ease;
+            z-index: 2;
         }
         
         .close-modal:hover {
@@ -275,6 +336,8 @@
         
         .modal-body {
             padding: 20px;
+            position: relative;
+            z-index: 1;
         }
         
         .result-item {
@@ -375,7 +438,7 @@
         
         @media (max-width: 576px) {
             .sidebar {
-                width: 280px; /* Шире для удобства */
+                width: 280px;
                 transform: translateX(-100%);
             }
             
@@ -388,40 +451,48 @@
             }
             
             .mobile-menu-btn {
-                display: flex; /* Всегда показываем кнопку */
+                display: flex;
                 position: fixed;
                 top: 20px;
                 left: 20px;
-                z-index: 101;
+                z-index: 1010;
                 background: var(--accent-color);
                 color: var(--primary-color);
                 border: none;
-                width: 60px; /* Увеличиваем размер */
+                width: 60px;
                 height: 60px;
                 border-radius: 50%;
-                font-size: 1.8rem; /* Увеличиваем иконку */
+                font-size: 1.8rem;
                 cursor: pointer;
                 align-items: center;
                 justify-content: center;
-                box-shadow: 0 0 20px rgba(0, 198, 255, 0.7); /* Более заметная тень */
+                box-shadow: 0 0 20px rgba(0, 198, 255, 0.7);
+                animation: neonPulse 2s infinite alternate;
+            }
+
+            @keyframes neonPulse {
+                0% {
+                    box-shadow: 0 0 10px rgba(0, 198, 255, 0.7);
+                }
+                100% {
+                    box-shadow: 0 0 20px rgba(0, 198, 255, 1), 
+                                0 0 30px rgba(0, 198, 255, 0.8);
+                }
             }
 
             .carousel-item {
                 height: 200px;
             }
             
-            /* Увеличиваем шрифт в меню */
             .nav-link {
                 font-size: 1.1rem;
                 padding: 15px 25px;
             }
             
-            /* Улучшаем видимость подменю */
             .submenu .nav-link {
                 font-size: 1rem;
             }
             
-            /* Увеличиваем контрастность основного текста */
             .card-body, .service-card, .stat-label {
                 color: #f5f5f5;
             }
@@ -483,6 +554,16 @@
             justify-content: center;
             font-weight: bold;
             font-size: 24px;
+            animation: neonLogo 3s infinite alternate;
+        }
+        
+        @keyframes neonLogo {
+            0% {
+                box-shadow: 0 0 5px rgba(0, 198, 255, 0.5);
+            }
+            100% {
+                box-shadow: 0 0 15px rgba(0, 198, 255, 0.8);
+            }
         }
         
         /* Service instruction */
@@ -490,6 +571,20 @@
             color: var(--text-secondary);
             font-size: 0.9rem;
             margin-top: 15px;
+        }
+        
+        /* Form button styling */
+        #check-button {
+            animation: neonButton 3s infinite alternate;
+        }
+        
+        @keyframes neonButton {
+            0% {
+                box-shadow: 0 0 5px rgba(0, 198, 255, 0.3);
+            }
+            100% {
+                box-shadow: 0 0 15px rgba(0, 198, 255, 0.6);
+            }
         }
     </style>
 </head>
