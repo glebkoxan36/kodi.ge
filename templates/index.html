@@ -77,6 +77,23 @@
             background: rgba(0, 198, 255, 0.15);
             color: var(--accent-color);
         }
+
+        /* Submenu styling */
+        .submenu {
+            padding-left: 30px;
+        }
+
+        .submenu .nav-link {
+            padding: 8px 15px;
+            margin: 3px 0;
+        }
+
+        /* Disabled menu items */
+        .nav-link.disabled {
+            text-decoration: line-through;
+            opacity: 0.7;
+            pointer-events: none;
+        }
         
         /* Main content */
         .main-content {
@@ -313,6 +330,17 @@
             to { transform: rotate(360deg); }
         }
         
+        /* Carousel styling */
+        .carousel-item {
+            height: 400px;
+        }
+        
+        .carousel-item img {
+            height: 100%;
+            object-fit: cover;
+            width: 100%;
+        }
+        
         /* Responsive design */
         @media (max-width: 992px) {
             .sidebar {
@@ -347,6 +375,10 @@
             .main-content {
                 padding: 20px 15px;
             }
+
+            .carousel-item {
+                height: 300px;
+            }
         }
         
         @media (max-width: 576px) {
@@ -374,6 +406,10 @@
                 font-size: 1.5rem;
                 cursor: pointer;
                 box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
+            }
+
+            .carousel-item {
+                height: 200px;
             }
         }
         
@@ -413,6 +449,27 @@
             bottom: -200px;
             left: -200px;
         }
+
+        /* Logo styling */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .logo-img {
+            width: 50px;
+            height: 50px;
+            background: var(--accent-color);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+        }
     </style>
 </head>
 <body>
@@ -427,8 +484,10 @@
     
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="sidebar-logo">
-            <h2>Kodi.ge</h2>
+        <!-- Logo -->
+        <div class="logo-container">
+            <div class="logo-img">K</div>
+            <h2>KODI.GE</h2>
         </div>
         
         <ul class="nav flex-column">
@@ -439,45 +498,68 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" onclick="showCheck('free')">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#appleSubmenu">
                     <i class="fas fa-mobile-alt"></i>
-                    <span>უფასო შემოწმება</span>
+                    <span>შემოწმება Apple</span>
+                    <i class="fas fa-chevron-down float-end"></i>
+                </a>
+                <div class="collapse" id="appleSubmenu">
+                    <div class="submenu">
+                        <a class="nav-link" href="#" onclick="showCheck('free')">
+                            <i class="fas fa-check-circle"></i>
+                            <span>უფასო შემოწმება</span>
+                        </a>
+                        <a class="nav-link" href="#" onclick="showCheck('paid')">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span>პლატანი შემოწმება</span>
+                        </a>
+                        <a class="nav-link" href="#" onclick="showCheck('premium')">
+                            <i class="fas fa-crown"></i>
+                            <span>პრემიუმ შემოწმება</span>
+                        </a>
+                    </div>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link disabled" href="#">
+                    <i class="fab fa-android"></i>
+                    <span>შემოწმება Android</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#" onclick="showCheck('paid')">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span>პლატანი შემოწმება</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#" onclick="showCheck('premium')">
-                    <i class="fas fa-crown"></i>
-                    <span>პრემიუმ შემოწმება</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#about">
-                    <i class="fas fa-info-circle"></i>
-                    <span>საიტის შესახებ</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#imei-info">
-                    <i class="fas fa-qrcode"></i>
-                    <span>რა არის IMEI?</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#unlock-info">
+                <a class="nav-link disabled" href="#">
                     <i class="fas fa-unlock-alt"></i>
                     <span>ტელეფონის განბლოკვა</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#pricing">
-                    <i class="fas fa-tags"></i>
-                    <span>ფასები</span>
+                <a class="nav-link disabled" href="#">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>ტელეფონების შედარება</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link disabled" href="#">
+                    <i class="fas fa-book"></i>
+                    <span>ცოდნის ბაზა</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#contacts">
+                    <i class="fas fa-address-card"></i>
+                    <span>კონტაქტი</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>კონფიდენციალურობის პოლიტიკა</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-undo"></i>
+                    <span>დაბრუნების პოლიტიკა</span>
                 </a>
             </li>
         </ul>
@@ -485,62 +567,39 @@
     
     <!-- Main content -->
     <div class="main-content">
-        <!-- Hero Section -->
+        <!-- Hero Section with Logo and Carousel -->
         <div class="hero-section mb-5">
-            <h1 class="display-4 fw-bold mb-3">iPhone IMEI შემოწმების სერვისი</h1>
-            <p class="lead mb-4">ჩვენი პროფესიონალური სერვისი დაგეხმარებათ შეამოწმოთ თქვენი iPhone-ის სტატუსი, ბლოკირება და სხვა მნიშვნელოვანი ინფორმაცია მხოლოდ IMEI ნომრის საფუძველზე.</p>
-        </div>
-        
-        <!-- Stats Section -->
-        <div class="stats-container">
-            <div class="stat-card">
-                <i class="fas fa-sync fa-2x"></i>
-                <div class="stat-value animated-stat" id="daily-checks">0</div>
-                <div class="stat-label">შემოწმება დღეში</div>
+            <div class="logo-container mb-4">
+                <div class="logo-img">K</div>
+                <h1 class="display-4 fw-bold">KODI.GE</h1>
             </div>
-            <div class="stat-card">
-                <i class="fas fa-calendar-week fa-2x"></i>
-                <div class="stat-value animated-stat" id="weekly-checks">0</div>
-                <div class="stat-label">შემოწმება კვირაში</div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-calendar-alt fa-2x"></i>
-                <div class="stat-value animated-stat" id="monthly-checks">0</div>
-                <div class="stat-label">შემოწმება თვეში</div>
-            </div>
-        </div>
-        
-        <!-- IMEI Check Section (Hidden by default) -->
-        <div id="check-section" class="card d-none">
-            <div class="card-header">
-                <i class="fas fa-mobile-alt me-2"></i>
-                <span id="check-title">IMEI შემოწმება</span>
-            </div>
-            <div class="card-body">
-                <form id="imeiForm">
-                    <div class="mb-4">
-                        <label for="imeiInput" class="form-label">შეიყვანეთ IMEI ნომერი</label>
-                        <input 
-                            type="text" 
-                            class="form-control bg-dark text-light" 
-                            id="imeiInput" 
-                            placeholder="15-ნიშნა IMEI" 
-                            required
-                            pattern="[0-9]{15}"
-                            title="15-ნიშნა IMEI ნომერი">
+            
+            <!-- Carousel -->
+            <div id="mainCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
+                <div class="carousel-inner rounded">
+                    <div class="carousel-item active">
+                        <img src="https://via.placeholder.com/1200x400/1a2138/00c6ff?text=iPhone+IMEI+შემოწმება" class="d-block w-100" alt="Slide 1">
                     </div>
-                    
-                    <div class="d-grid gap-3">
-                        <button type="button" class="btn btn-lg btn-service" id="check-button" onclick="checkImei()">
-                            შემოწმების დაწყება
-                        </button>
+                    <div class="carousel-item">
+                        <img src="https://via.placeholder.com/1200x400/121a2b/00d68f?text=პროფესიონალური+სერვისი" class="d-block w-100" alt="Slide 2">
                     </div>
-                </form>
+                    <div class="carousel-item">
+                        <img src="https://via.placeholder.com/1200x400/0a0e17/ffaa00?text=ტელეფონის+განბლოკვა" class="d-block w-100" alt="Slide 3">
+                    </div>
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
             </div>
         </div>
         
         <!-- About Section -->
-        <div id="about" class="card mt-5">
+        <div id="about" class="card">
             <div class="card-header">
                 <i class="fas fa-info-circle me-2"></i>
                 Kodi.ge-ს შესახებ
@@ -566,24 +625,6 @@
                     <li>გაიგოთ დაბლოკილია თუ არა მოწყობილობა</li>
                     <li>გაიგოთ მოწყობილობის სტატუსი (ქულდებაში, მოპარული, უკანონო)</li>
                     <li>გაიგოთ ტელეფონის მოდელი და სერიული ნომერი</li>
-                </ul>
-            </div>
-        </div>
-        
-        <!-- Unlock Info Section -->
-        <div id="unlock-info" class="card mt-5">
-            <div class="card-header">
-                <i class="fas fa-unlock-alt me-2"></i>
-                ტელეფონის განბლოკვა
-            </div>
-            <div class="card-body">
-                <p>ტელეფონის განბლოკვა საშუალებას გაძლევთ გამოიყენოთ SIM ბარათები სხვადასხვა ოპერატორისგან.</p>
-                <p>ჩვენი სერვისი გთავაზობთ:</p>
-                <ul>
-                    <li>iPhone-ის განბლოკვას ნებისმიერი ქსელიდან</li>
-                    <li>სრულ იურიდიულ გზით განბლოკვას</li>
-                    <li>სწრაფ და საიმეო სერვისს</li>
-                    <li>24/7 მხარდაჭერას</li>
                 </ul>
             </div>
         </div>
@@ -648,8 +689,27 @@
             </div>
         </div>
         
+        <!-- Stats Section -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <i class="fas fa-sync fa-2x"></i>
+                <div class="stat-value animated-stat" id="daily-checks">0</div>
+                <div class="stat-label">შემოწმება დღეში</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-calendar-week fa-2x"></i>
+                <div class="stat-value animated-stat" id="weekly-checks">0</div>
+                <div class="stat-label">შემოწმება კვირაში</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-calendar-alt fa-2x"></i>
+                <div class="stat-value animated-stat" id="monthly-checks">0</div>
+                <div class="stat-label">შემოწმება თვეში</div>
+            </div>
+        </div>
+        
         <!-- Footer -->
-        <footer class="mt-5 pt-4 border-top border-secondary">
+        <footer id="contacts" class="mt-5 pt-4 border-top border-secondary">
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <h5>Kodi.ge</h5>
@@ -698,24 +758,33 @@
         <div class="spinner"></div>
     </div>
     
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
         // Initialize Stripe
         const stripe = Stripe("{{ stripe_public_key }}");
         let currentServiceType = null;
         
-        // Simulated stats data
+        // Stats data (all zeros as requested)
         const statsData = {
-            daily: 1248,
-            weekly: 8721,
-            monthly: 34215
+            daily: 0,
+            weekly: 0,
+            monthly: 0
         };
         
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
-            // Animate stats counters
-            animateValue("daily-checks", 0, statsData.daily, 2000);
-            animateValue("weekly-checks", 0, statsData.weekly, 2000);
-            animateValue("monthly-checks", 0, statsData.monthly, 2000);
+            // Animate stats counters (to 0)
+            animateValue("daily-checks", 0, statsData.daily, 1000);
+            animateValue("weekly-checks", 0, statsData.weekly, 1000);
+            animateValue("monthly-checks", 0, statsData.monthly, 1000);
+            
+            // Initialize carousel
+            const myCarousel = new bootstrap.Carousel(document.getElementById('mainCarousel'), {
+                interval: 2000,
+                ride: 'carousel'
+            });
             
             // Mobile menu toggle
             const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
@@ -773,8 +842,14 @@
             const checkTitle = document.getElementById('check-title');
             const checkButton = document.getElementById('check-button');
             
-            checkSection.classList.remove('d-none');
-            checkSection.scrollIntoView({ behavior: 'smooth' });
+            // If check section doesn't exist, create it
+            if (!checkSection) {
+                createCheckSection();
+            } else {
+                checkSection.classList.remove('d-none');
+            }
+            
+            document.getElementById('check-section').scrollIntoView({ behavior: 'smooth' });
             
             // Update title and button based on service type
             switch(serviceType) {
@@ -797,6 +872,45 @@
                     checkButton.classList.add('btn-success');
                     break;
             }
+        }
+        
+        // Create check section dynamically
+        function createCheckSection() {
+            const mainContent = document.querySelector('.main-content');
+            const pricingSection = document.getElementById('pricing');
+            
+            const checkSection = document.createElement('div');
+            checkSection.id = 'check-section';
+            checkSection.className = 'card';
+            checkSection.innerHTML = `
+                <div class="card-header">
+                    <i class="fas fa-mobile-alt me-2"></i>
+                    <span id="check-title">IMEI შემოწმება</span>
+                </div>
+                <div class="card-body">
+                    <form id="imeiForm">
+                        <div class="mb-4">
+                            <label for="imeiInput" class="form-label">შეიყვანეთ IMEI ნომერი</label>
+                            <input 
+                                type="text" 
+                                class="form-control bg-dark text-light" 
+                                id="imeiInput" 
+                                placeholder="15-ნიშნა IMEI" 
+                                required
+                                pattern="[0-9]{15}"
+                                title="15-ნიშნა IMEI ნომერი">
+                        </div>
+                        
+                        <div class="d-grid gap-3">
+                            <button type="button" class="btn btn-lg btn-service" id="check-button" onclick="checkImei()">
+                                შემოწმების დაწყება
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            mainContent.insertBefore(checkSection, pricingSection);
         }
         
         // Close modal
@@ -933,4 +1047,4 @@
         }
     </script>
 </body>
-</html>
+                        </html>
