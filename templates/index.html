@@ -17,14 +17,15 @@
             --primary-color: #0a0e17;
             --secondary-color: #1a2138;
             --accent-color: #00c6ff;
-            --accent-color-2: #ff00aa;
-            --accent-color-3: #00ffaa;
             --text-color: #f0f0f0;
             --text-secondary: #c0c0d0;
             --card-bg: #121a2b;
             --success-color: #00d68f;
             --warning-color: #ffaa00;
             --danger-color: #ff3d71;
+            --ring-color-1: #00c6ff;
+            --ring-color-2: #ff3d71;
+            --ring-color-3: #00d68f;
         }
         
         body {
@@ -60,17 +61,7 @@
             transform-style: preserve-3d;
             box-shadow: 0 0 20px rgba(0, 198, 255, 0.6);
             overflow: hidden;
-        }
-
-        .logo-core::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 70%);
-            animation: logoLight 5s linear infinite;
+            z-index: 2;
         }
 
         .logo-letter {
@@ -79,6 +70,7 @@
             color: white;
             text-shadow: 0 0 10px rgba(0,0,0,0.5);
             z-index: 2;
+            transform: translateZ(20px);
         }
 
         .logo-ring {
@@ -86,77 +78,42 @@
             border-radius: 50%;
             opacity: 0.7;
             animation: logoRotate 12s linear infinite;
-            filter: drop-shadow(0 0 3px currentColor);
+            border-style: solid;
         }
 
-        .ring-1 {
+        .logo-ring:nth-child(1) {
             width: 80px;
             height: 80px;
             animation-duration: 15s;
-            border: 1px solid var(--accent-color);
-            border-radius: 45% 55% 40% 60% / 55% 45% 55% 45%;
+            border-width: 1px;
+            border-color: var(--ring-color-1);
+            border-radius: 50% 40% 60% 30% / 60% 50% 70% 40%;
         }
 
-        .ring-2 {
+        .logo-ring:nth-child(2) {
             width: 100px;
             height: 100px;
             animation-duration: 20s;
             animation-direction: reverse;
-            border: 1.5px solid var(--accent-color-2);
-            border-radius: 50% 50% 45% 55% / 60% 40% 60% 40%;
+            border-width: 1.5px;
+            border-color: var(--ring-color-2);
+            border-radius: 40% 60% 30% 70% / 50% 70% 30% 60%;
         }
 
-        .ring-3 {
+        .logo-ring:nth-child(3) {
             width: 120px;
             height: 120px;
             animation-duration: 25s;
-            border: 2px solid var(--accent-color-3);
-            border-radius: 40% 60% 50% 50% / 50% 50% 50% 50%;
+            border-width: 2px;
+            border-color: var(--ring-color-3);
+            border-radius: 60% 30% 70% 40% / 30% 60% 40% 70%;
         }
 
-        .logo-particle {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background: var(--accent-color);
-            border-radius: 50%;
-            animation: logoParticle 4s linear infinite;
-        }
-
-        .logo-particle:nth-child(4) { top: 10%; left: 50%; animation-delay: 0s; }
-        .logo-particle:nth-child(5) { top: 50%; left: 90%; animation-delay: 1s; }
-        .logo-particle:nth-child(6) { top: 90%; left: 50%; animation-delay: 2s; }
-        .logo-particle:nth-child(7) { top: 50%; left: 10%; animation-delay: 3s; }
-
-        /* Анимации логотипа */
         @keyframes logoRotate {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        @keyframes logoParticle {
-            0% { 
-                transform: scale(1); 
-                opacity: 1;
-                box-shadow: 0 0 5px var(--accent-color);
-            }
-            50% { 
-                transform: scale(1.5); 
-                opacity: 0.7;
-                box-shadow: 0 0 10px var(--accent-color);
-            }
-            100% { 
-                transform: scale(1); 
-                opacity: 1;
-                box-shadow: 0 0 5px var(--accent-color);
-            }
-        }
-
-        @keyframes logoLight {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
+        
         /* Bottom mobile menu button */
         .mobile-menu-bottom {
             display: none;
@@ -200,7 +157,7 @@
             }
         }
         
-        /* Sidebar styling - WIDER */
+        /* Sidebar styling */
         .sidebar {
             background: rgba(10, 14, 23, 0.98);
             backdrop-filter: blur(10px);
@@ -208,13 +165,14 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 280px; /* Расширено с 250px */
+            width: 300px;
             z-index: 100;
             padding: 20px 0;
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             scrollbar-width: none;
             transition: transform 0.4s ease, box-shadow 0.4s ease;
+            overflow-y: auto;
         }
         
         .sidebar::-webkit-scrollbar {
@@ -246,19 +204,25 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
             display: flex;
             align-items: center;
+            white-space: nowrap;
         }
         
         .nav-link i {
             width: 25px;
             text-align: center;
             margin-right: 10px;
-            font-size: 1.1em;
+            flex-shrink: 0;
+        }
+        
+        .nav-link span {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .nav-link:hover, .nav-link.active {
             background: rgba(0, 198, 255, 0.15);
             color: var(--accent-color);
-            transform: translateX(5px);
         }
 
         /* Submenu styling */
@@ -269,7 +233,6 @@
         .submenu .nav-link {
             padding: 8px 15px;
             margin: 3px 0;
-            font-size: 0.95em;
         }
 
         /* Disabled menu items */
@@ -282,7 +245,7 @@
         
         /* Main content */
         .main-content {
-            margin-left: 280px; /* Расширено с 250px */
+            margin-left: 300px;
             padding: 30px;
         }
         
@@ -567,12 +530,46 @@
         /* Carousel styling */
         .carousel-item {
             height: 400px;
+            position: relative;
         }
         
         .carousel-item img {
             height: 100%;
             object-fit: cover;
             width: 100%;
+        }
+        
+        .carousel-caption {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .carousel-logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+        }
+        
+        .carousel-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        .carousel-subtitle {
+            font-size: 1.2rem;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
         
         /* Gradient background elements */
@@ -814,6 +811,15 @@
         }
         
         /* Responsive design */
+        @media (max-width: 1199px) {
+            .sidebar {
+                width: 250px;
+            }
+            .main-content {
+                margin-left: 250px;
+            }
+        }
+        
         @media (max-width: 992px) {
             .sidebar {
                 width: 70px;
@@ -853,17 +859,17 @@
                 font-size: 24px;
             }
             
-            .ring-1 {
+            .logo-ring:nth-child(1) {
                 width: 60px;
                 height: 60px;
             }
             
-            .ring-2 {
+            .logo-ring:nth-child(2) {
                 width: 75px;
                 height: 75px;
             }
             
-            .ring-3 {
+            .logo-ring:nth-child(3) {
                 width: 90px;
                 height: 90px;
             }
@@ -949,17 +955,17 @@
                 font-size: 24px;
             }
             
-            .ring-1 {
+            .logo-ring:nth-child(1) {
                 width: 60px;
                 height: 60px;
             }
             
-            .ring-2 {
+            .logo-ring:nth-child(2) {
                 width: 70px;
                 height: 70px;
             }
             
-            .ring-3 {
+            .logo-ring:nth-child(3) {
                 width: 80px;
                 height: 80px;
             }
@@ -990,17 +996,17 @@
                 font-size: 20px;
             }
             
-            .ring-1 {
+            .logo-ring:nth-child(1) {
                 width: 50px;
                 height: 50px;
             }
             
-            .ring-2 {
+            .logo-ring:nth-child(2) {
                 width: 60px;
                 height: 60px;
             }
             
-            .ring-3 {
+            .logo-ring:nth-child(3) {
                 width: 70px;
                 height: 70px;
             }
@@ -1019,18 +1025,14 @@
         </button>
     </div>
     
-    <!-- Sidebar - WIDER 280px -->
+    <!-- Sidebar -->
     <div class="sidebar">
         <!-- Logo -->
         <div class="sidebar-logo">
             <div class="logo-animated">
-                <div class="logo-ring ring-1"></div>
-                <div class="logo-ring ring-2"></div>
-                <div class="logo-ring ring-3"></div>
-                <div class="logo-particle"></div>
-                <div class="logo-particle"></div>
-                <div class="logo-particle"></div>
-                <div class="logo-particle"></div>
+                <div class="logo-ring"></div>
+                <div class="logo-ring"></div>
+                <div class="logo-ring"></div>
                 <div class="logo-core">
                     <div class="logo-letter">K</div>
                 </div>
@@ -1119,13 +1121,9 @@
         <div class="hero-section mb-5">
             <div class="text-center mb-4">
                 <div class="logo-animated">
-                    <div class="logo-ring ring-1"></div>
-                    <div class="logo-ring ring-2"></div>
-                    <div class="logo-ring ring-3"></div>
-                    <div class="logo-particle"></div>
-                    <div class="logo-particle"></div>
-                    <div class="logo-particle"></div>
-                    <div class="logo-particle"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
                     <div class="logo-core">
                         <div class="logo-letter">K</div>
                     </div>
@@ -1139,12 +1137,51 @@
                 <div class="carousel-inner rounded">
                     <div class="carousel-item active">
                         <img src="https://source.unsplash.com/random/1200x400/?iphone,apple" class="d-block w-100" alt="iPhone">
+                        <div class="carousel-caption">
+                            <div class="logo-animated carousel-logo">
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-core">
+                                    <div class="logo-letter">K</div>
+                                </div>
+                            </div>
+                            <h3 class="carousel-title">KODI.GE</h3>
+                            <p class="carousel-subtitle">ტელეფონების პროფესიონალური შემოწმება</p>
+                            <p class="carousel-subtitle">Тут ваша реклама</p>
+                        </div>
                     </div>
                     <div class="carousel-item">
                         <img src="https://source.unsplash.com/random/1200x400/?mobile,security" class="d-block w-100" alt="Security">
+                        <div class="carousel-caption">
+                            <div class="logo-animated carousel-logo">
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-core">
+                                    <div class="logo-letter">K</div>
+                                </div>
+                            </div>
+                            <h3 class="carousel-title">KODI.GE</h3>
+                            <p class="carousel-subtitle">უსაფრთხოება და საიმეო</p>
+                            <p class="carousel-subtitle">Тут ваша реклама</p>
+                        </div>
                     </div>
                     <div class="carousel-item">
                         <img src="https://source.unsplash.com/random/1200x400/?unlock,phone" class="d-block w-100" alt="Unlock">
+                        <div class="carousel-caption">
+                            <div class="logo-animated carousel-logo">
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-core">
+                                    <div class="logo-letter">K</div>
+                                </div>
+                            </div>
+                            <h3 class="carousel-title">KODI.GE</h3>
+                            <p class="carousel-subtitle">ტელეფონების განბლოკვა</p>
+                            <p class="carousel-subtitle">Тут ваша реклама</p>
+                        </div>
                     </div>
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
@@ -1223,7 +1260,7 @@
                             <li>მოპარვის/დაკარგვის სტატუსი</li>
                             <li>სერვისის სტატუსი</li>
                         </ul>
-                        <div class="service-price">5 ₾</div>
+                        <div class="service-price">{{ paid_price }} ₾</div>
                         <div class="service-instruction">
                             <i class="fas fa-arrow-left me-1"></i>
                             გამოიყენეთ მარცხენა მენიუ შესამოწმებლად
@@ -1242,7 +1279,7 @@
                             <li>გარანტია განბლოკვაზე</li>
                             <li>24/7 პრიორიტეტული მხარდაჭერა</li>
                         </ul>
-                        <div class="service-price">10 ₾</div>
+                        <div class="service-price">{{ premium_price }} ₾</div>
                         <div class="service-instruction">
                             <i class="fas fa-arrow-left me-1"></i>
                             გამოიყენეთ მარცხენა მენიუ შესამოწმებლად
@@ -1410,26 +1447,30 @@
     
     <script>
         // Initialize Stripe
-        const stripe = Stripe("pk_test_51MZJZ5Kp7XpJYwYg3z3J7R2XqZ1Q2Q3XqZ1Q2Q3XqZ1Q2Q3XqZ1Q2Q3XqZ1");
+        const stripe = Stripe("{{ stripe_public_key }}");
         let currentServiceType = null;
         
         // Stats data
-        const statsData = {
-            daily: 0,
-            weekly: 0,
-            monthly: 0
+        let statsData = {
+            daily: 125,
+            weekly: 875,
+            monthly: 3750
         };
         
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
-            // Animate stats counters
-            statsData.daily = 127;
-            statsData.weekly = 865;
-            statsData.monthly = 3421;
+            // Load stats from localStorage or use defaults
+            const savedStats = localStorage.getItem('statsData');
+            if (savedStats) {
+                statsData = JSON.parse(savedStats);
+            } else {
+                localStorage.setItem('statsData', JSON.stringify(statsData));
+            }
             
-            animateValue("daily-checks", 0, statsData.daily, 1000);
-            animateValue("weekly-checks", 0, statsData.weekly, 1000);
-            animateValue("monthly-checks", 0, statsData.monthly, 1000);
+            // Set initial stats values
+            document.getElementById('daily-checks').textContent = statsData.daily.toLocaleString();
+            document.getElementById('weekly-checks').textContent = statsData.weekly.toLocaleString();
+            document.getElementById('monthly-checks').textContent = statsData.monthly.toLocaleString();
             
             // Initialize carousel
             const myCarousel = new bootstrap.Carousel(document.getElementById('mainCarousel'), {
@@ -1458,6 +1499,28 @@
                     closeAppleSubmenu();
                 }
             });
+            
+            // Handle session_id after payment
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('session_id');
+            
+            if(sessionId) {
+                showSpinner(true);
+                fetch(`/get_check_result?session_id=${sessionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        showSpinner(false);
+                        if(data.error) {
+                            displayResult({ error: data.error });
+                        } else {
+                            displayResult(data.result);
+                        }
+                    })
+                    .catch(error => {
+                        showSpinner(false);
+                        displayResult({ error: 'Failed to get result: ' + error.message });
+                    });
+            }
         });
         
         // Function to animate value counters
@@ -1502,13 +1565,13 @@
                     break;
                 case 'paid':
                     checkTitle.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>პლატანი შემოწმება';
-                    checkButton.textContent = `გადახდა: 5 ₾`;
+                    checkButton.textContent = `გადახდა: {{ paid_price }} ₾`;
                     checkButton.classList.remove('btn-info', 'btn-success');
                     checkButton.classList.add('btn-warning');
                     break;
                 case 'premium':
                     checkTitle.innerHTML = '<i class="fas fa-crown me-2"></i>პრემიუმ შემოწმება';
-                    checkButton.textContent = `გადახდა: 10 ₾`;
+                    checkButton.textContent = `გადახდა: {{ premium_price }} ₾`;
                     checkButton.classList.remove('btn-info', 'btn-warning');
                     checkButton.classList.add('btn-success');
                     break;
@@ -1573,46 +1636,69 @@
                 return;
             }
             
+            // Update stats
+            statsData.daily++;
+            statsData.weekly++;
+            statsData.monthly++;
+            localStorage.setItem('statsData', JSON.stringify(statsData));
+            
+            // Update stats display
+            document.getElementById('daily-checks').textContent = statsData.daily.toLocaleString();
+            document.getElementById('weekly-checks').textContent = statsData.weekly.toLocaleString();
+            document.getElementById('monthly-checks').textContent = statsData.monthly.toLocaleString();
+            
             showSpinner(true);
             
             if(currentServiceType === 'free') {
                 // Free check
-                setTimeout(() => {
+                fetch('/perform_check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imei: imei,
+                        service_type: 'free'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
                     showSpinner(false);
-                    displayResult({
-                        model: "iPhone 13 Pro",
-                        serial: "F17LL3A1HXXX",
-                        status: "აქტიური",
-                        fmi: "Off",
-                        blacklist: "არა",
-                        simlock: "უფასო",
-                        warranty: "2023-11-15-მდე",
-                        purchase_date: "2022-11-15",
-                        activation_status: "აქტივირებული",
-                        carrier: "MagtiCom",
-                        country: "საქართველო"
-                    });
-                }, 1500);
+                    displayResult(data);
+                })
+                .catch(error => {
+                    showSpinner(false);
+                    displayResult({ error: 'Request failed: ' + error.message });
+                });
             } else {
-                // Paid or premium check
-                setTimeout(() => {
+                // Paid check
+                fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imei: imei,
+                        service_type: currentServiceType
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.error) {
+                        throw new Error(data.error);
+                    }
+                    return stripe.redirectToCheckout({ sessionId: data.id });
+                })
+                .then(result => {
+                    if(result.error) {
+                        showSpinner(false);
+                        alert(result.error.message);
+                    }
+                })
+                .catch(error => {
                     showSpinner(false);
-                    displayResult({
-                        model: "iPhone 13 Pro",
-                        serial: "F17LL3A1HXXX",
-                        status: "აქტიური",
-                        fmi: "Off",
-                        blacklist: "არა",
-                        simlock: "უფასო",
-                        warranty: "2023-11-15-მდე",
-                        purchase_date: "2022-11-15",
-                        activation_status: "აქტივირებული",
-                        carrier: "MagtiCom",
-                        country: "საქართველო",
-                        blacklist_status: "არ არის შავ სიაში",
-                        iccid: "89911012000032045172"
-                    });
-                }, 1500);
+                    alert('Payment failed: ' + error.message);
+                });
             }
         }
         
@@ -1634,12 +1720,16 @@
                 `;
                 
                 for(const [key, value] of Object.entries(data)) {
-                    html += `
-                        <div class="result-item">
-                            <div class="result-label">${formatLabel(key)}:</div>
-                            <div class="result-value">${value}</div>
-                        </div>
-                    `;
+                    if(key === 'html_content') {
+                        html += `<div class="mt-4">${value}</div>`;
+                    } else {
+                        html += `
+                            <div class="result-item">
+                                <div class="result-label">${formatLabel(key)}:</div>
+                                <div class="result-value">${value}</div>
+                            </div>
+                        `;
+                    }
                 }
                 
                 modalContent.innerHTML = html;
