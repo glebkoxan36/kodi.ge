@@ -3,12 +3,12 @@ import sys
 import requests
 import time
 import random
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
-from pymongo import MongoClient
-from datetime import datetime
 import logging
+from datetime import datetime
+from bs4 import BeautifulSoup
+from pymongo import MongoClient
 import re
+from urllib.parse import urljoin
 
 # Настройка логирования
 logging.basicConfig(
@@ -18,16 +18,17 @@ logging.basicConfig(
 logger = logging.getLogger('gsm_parser')
 
 def get_proxies():
-    """Возвращает список прокси из файла или генерирует новые"""
+    """Возвращает список прокси из файла"""
     try:
         with open('ip_addresses.txt', 'r') as f:
-            proxies = f.read().splitlines()
-            return [{'http': p, 'https': p} for p in proxies if p.strip()]
-    except:
+            proxies = [line.strip() for line in f if line.strip()]
+            return [{'http': p, 'https': p} for p in proxies]
+    except FileNotFoundError:
         logger.error("Proxy file not found, using no proxies")
         return [None]
 
 def get_db_connection(uri):
+    """Устанавливает соединение с MongoDB"""
     client = MongoClient(uri)
     db = client['imei_checker']
     return db['phones'], db['parser_logs']
@@ -46,22 +47,32 @@ def scrape_phone_details(url, proxy=None):
         soup = BeautifulSoup(response.content, 'html.parser')
         
         # Основная информация
-        name = soup.find('h1', class_='specs-phone-name-title').text.strip()
-        brand = re.search(r'^[^\s]+', name).group(0)
+        name = soup.find('h1', class_='specs-phone-name-title')
+        if name:
+            name = name.text.strip()
+            brand = re.search(r'^[^\s]+', name).group(0) if name else "Unknown"
+        else:
+            name = "Unknown"
+            brand = "Unknown"
         
-        # Основные характеристики
+        # Спецификации
         specs = {}
         specs_table = soup.find('table', id='specs-list')
-        for row in specs_table.find_all('tr'):
-            if 'ttl' in row.get('class', []) and 'nfo' in row.get('class', []):
-                continue
-                
-            if 'ttl' in row.get('class', []):
-                key = row.text.strip()
-                value_row = row.find_next_sibling('tr')
-                if value_row and 'nfo' in value_row.get('class', []):
-                    value = value_row.text.strip()
-                    specs[key] = value
+        if specs_table:
+            current_category = ""
+            for row in specs_table.find_all('tr'):
+                # Обработка категорий
+                if row.get('class') and 'section-header' in row.get('class'):
+                    current_category = row.find('td').text.strip()
+                    specs[current_category] = {}
+                # Обработка спецификаций
+                elif 'ttl' in row.get('class', []):
+                    feature = row.find('td', class_='ttl').text.strip()
+                    value_cell = row.find('td', class_='nfo')
+                    if value_cell:
+                        # Извлекаем текст, очищаем от лишних пробелов
+                        value = ' '.join(value_cell.text.strip().split())
+                        specs.setdefault(current_category, {})[feature] = value
         
         # Дополнительная информация
         quick_specs = {}
@@ -78,8 +89,12 @@ def scrape_phone_details(url, proxy=None):
         rating = rating_elem.text.strip() if rating_elem else "N/A"
         
         # Изображение
-        img_elem = soup.find('div', class_='specs-photo-main').find('img')
-        image_url = img_elem['src'] if img_elem else None
+        img_elem = soup.find('div', class_='specs-photo-main')
+        if img_elem:
+            img_elem = img_elem.find('img')
+            image_url = img_elem['src'] if img_elem and 'src' in img_elem.attrs else None
+        else:
+            image_url = None
         
         return {
             'url': url,
@@ -98,6 +113,7 @@ def scrape_phone_details(url, proxy=None):
         return None
 
 def main(mongodb_uri):
+    """Основная функция парсера"""
     logger.info("Starting GSM Arena parser")
     
     phones_collection, logs_collection = get_db_connection(mongodb_uri)
@@ -181,7 +197,7 @@ def main(mongodb_uri):
                 'timestamp': datetime.utcnow()
             })
             logger.error(f"[{i+1}/{total}] Error processing {url}: {str(e)}")
-            time.sleep(5)  # Большая пауза при ошибке
+            time.sleep(10)  # Большая пауза при ошибке
     
     logger.info("Parser finished successfully")
 
