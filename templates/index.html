@@ -524,11 +524,11 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 60vh; /* Increased height */
+            height: 60vh;
             max-height: 90%;
             background: rgba(0, 0, 0, 0.95);
             z-index: 1100;
-            align-items: flex-end; /* Align to bottom */
+            align-items: flex-end;
             backdrop-filter: blur(10px);
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
@@ -596,7 +596,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 60vh; /* Increased height */
+            height: 60vh;
             max-height: 90%;
             background: rgba(0, 0, 0, 0.95);
             z-index: 1200;
@@ -652,12 +652,12 @@
             padding-bottom: 20px;
         }
 
-        /* Menu grid with 3 columns */
+        /* Menu grid with 3 columns - ОБЩИЕ СТИЛИ ДЛЯ ВСЕХ МЕНЮ */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 6px;
-            padding: 10px 6px 20px; /* Added bottom padding */
+            padding: 10px 6px 20px;
         }
 
         .menu-item {
@@ -666,7 +666,7 @@
             align-items: center;
             justify-content: center;
             padding: 8px 4px;
-            border-radius: 10px;
+            border-radius: 8px;
             background: var(--secondary-color);
             aspect-ratio: 1/1;
             text-align: center;
@@ -689,9 +689,9 @@
 
         .menu-item span {
             font-size: 0.65rem;
-            line-height: 1.1;
+            line-height: 1.2;
             display: -webkit-box;
-            -webkit-line-clamp: 2; /* Two lines max */
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
@@ -739,7 +739,7 @@
             
             .main-content {
                 padding: 20px 15px;
-                padding-bottom: 80px; /* Space for bottom menu */
+                padding-bottom: 80px;
             }
 
             .carousel-item {
@@ -758,7 +758,7 @@
             
             .main-content {
                 margin-left: 0;
-                padding-bottom: 80px; /* Space for bottom menu */
+                padding-bottom: 80px;
             }
 
             .carousel-item {
@@ -798,30 +798,7 @@
             }
         }
 
-        /* FIXES FOR MOBILE MENU */
-        @media (max-width: 400px) {
-            .menu-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 6px;
-                padding: 10px 6px 20px;
-            }
-            
-            .menu-item {
-                padding: 8px 4px;
-                border-radius: 8px;
-            }
-            
-            .menu-item i {
-                font-size: 1.3rem;
-                margin-bottom: 5px;
-            }
-            
-            .menu-item span {
-                font-size: 0.65rem;
-                line-height: 1.2;
-            }
-        }
-
+        /* Адаптация для очень маленьких экранов */
         @media (max-width: 340px) {
             .menu-grid {
                 grid-template-columns: repeat(2, 1fr);
