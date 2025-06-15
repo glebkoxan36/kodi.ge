@@ -39,6 +39,7 @@ MONGODB_URI = os.getenv('MONGODB_URI')
 # Данные для PHP API
 API_URL = "https://api.ifreeicloud.co.uk"
 API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')  # PHP API Key
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')  # DeepSeek API Key
 
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'securepassword')
@@ -48,6 +49,7 @@ client = MongoClient(MONGODB_URI)
 db = client['imei_checker']
 checks_collection = db['results']
 prices_collection = db['prices']
+comparisons_collection = db['comparisons']  # Новая коллекция для сравнений
 
 DEFAULT_PRICES = {
     'paid': 499,    # $4.99
@@ -456,6 +458,98 @@ def admin_dashboard():
     except Exception as e:
         app.logger.error(f"Admin dashboard error: {str(e)}")
         return render_template('error.html', error="Admin error"), 500
+
+# Новые маршруты для сравнения телефонов
+@app.route('/compare')
+def compare_phones():
+    return render_template('compare.html')
+
+@app.route('/search_phones', methods=['GET'])
+def search_phones():
+    query = request.args.get('query')
+    if not query:
+        return jsonify({'error': 'Query parameter is required'}), 400
+    
+    try:
+        response = requests.get(f'https://api-mobilespecs.azharimm.dev/search?query={query}')
+        response.raise_for_status()
+        return jsonify(response.json())
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Phone search error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/phone_details/<slug>', methods=['GET'])
+def phone_details(slug):
+    try:
+        response = requests.get(f'https://api-mobilespecs.azharimm.dev/{slug}')
+        response.raise_for_status()
+        return jsonify(response.json())
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Phone details error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/ai_analysis', methods=['POST'])
+def ai_analysis():
+    data = request.json
+    phone1 = data.get('phone1')
+    phone2 = data.get('phone2')
+    
+    if not phone1 or not phone2:
+        return jsonify({'error': 'Both phones are required'}), 400
+    
+    try:
+        # Подготовка промпта для AI
+        prompt = f"""
+            გთხოვთ, შეადაროთ ორი სმარტფონი: {phone1.get('phone_name', 'Unknown')} და {phone2.get('phone_name', 'Unknown')}.
+            გაანალიზეთ შემდეგი კატეგორიები:
+            - შესრულება (პროცესორი, RAM, GPU)
+            - დისპლეი (ზომა, გაფართოება, ტექნოლოგია)
+            - კამერები (მთავარი, ფრონტალური, ფუნქციები)
+            - ბატარეის ხანგრძლივობა
+            - დიზაინი და აშენების ხარისხი
+            - დამატებითი ფუნქციები
+            - ფასი და ღირებულება
+            
+            გთხოვთ, მოგვაწოდოთ დეტალური ანალიზი ქართულ ენაზე და გამოავლინოთ რომელი ტელეფონია უკეთესი თითოეულ კატეგორიაში.
+            დასასრულს, გამოაცხადეთ საერთო გამარჯვებული და ახსენით თქვენი არჩევანი.
+        """
+        
+        # Вызов DeepSeek API
+        response = requests.post(
+            'https://api.deepseek.com/v1/chat/completions',
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {DEEPSEEK_API_KEY}'
+            },
+            json={
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.7,
+                "max_tokens": 2000
+            }
+        )
+        response.raise_for_status()
+        
+        ai_response = response.json()
+        content = ai_response['choices'][0]['message']['content']
+        
+        # Сохранение сравнения в БД
+        comparison_record = {
+            'phone1': phone1.get('phone_name'),
+            'phone2': phone2.get('phone_name'),
+            'timestamp': datetime.utcnow(),
+            'ai_response': content
+        }
+        comparisons_collection.insert_one(comparison_record)
+        
+        return jsonify({'response': content})
+    
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"DeepSeek API error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+    except Exception as e:
+        app.logger.error(f"AI analysis error: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 @app.errorhandler(404)
 def page_not_found(e):
