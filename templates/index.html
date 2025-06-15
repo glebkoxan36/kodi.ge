@@ -342,37 +342,6 @@
             z-index: 1; /* Ensure content is above glow */
         }
         
-        /* Stats styling */
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-        
-        .stat-card {
-            background: linear-gradient(135deg, rgba(26, 33, 56, 0.7), rgba(10, 14, 23, 0.9));
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            position: relative;
-        }
-        
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 10px 0;
-            color: var(--accent-color);
-        }
-        
-        .stat-label {
-            font-size: 1rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
         /* Service cards */
         .service-card {
             text-align: center;
@@ -876,10 +845,6 @@
         }
         
         @media (max-width: 768px) {
-            .stats-container {
-                grid-template-columns: 1fr;
-            }
-            
             .main-content {
                 padding: 20px 15px;
                 padding-bottom: 80px;
@@ -925,14 +890,6 @@
             .card::before {
                 box-shadow: 0 0 15px rgba(0, 198, 255, 0.5) !important;
                 animation: neonGlow 1.5s infinite alternate;
-            }
-            
-            .stat-card::before {
-                box-shadow: 0 0 20px rgba(0, 198, 255, 0.6) !important;
-            }
-            
-            .service-card::before {
-                box-shadow: 0 0 25px rgba(0, 198, 255, 0.7) !important;
             }
             
             /* Ensure pseudo-elements are visible */
@@ -1132,7 +1089,7 @@
                 <p class="lead">პროფესიონალური IMEI შემოწმების სერვისი</p>
             </div>
             
-            <!-- Carousel -->
+            <!-- Carousel without arrows and "Тут ваша реклама" -->
             <div id="mainCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
                 <div class="carousel-inner rounded">
                     <div class="carousel-item active">
@@ -1148,7 +1105,6 @@
                             </div>
                             <h3 class="carousel-title">KODI.GE</h3>
                             <p class="carousel-subtitle">ტელეფონების პროფესიონალური შემოწმება</p>
-                            <p class="carousel-subtitle">Тут ваша реклама</p>
                         </div>
                     </div>
                     <div class="carousel-item">
@@ -1164,7 +1120,6 @@
                             </div>
                             <h3 class="carousel-title">KODI.GE</h3>
                             <p class="carousel-subtitle">უსაფრთხოება და საიმეო</p>
-                            <p class="carousel-subtitle">Тут ваша реклама</p>
                         </div>
                     </div>
                     <div class="carousel-item">
@@ -1180,18 +1135,9 @@
                             </div>
                             <h3 class="carousel-title">KODI.GE</h3>
                             <p class="carousel-subtitle">ტელეფონების განბლოკვა</p>
-                            <p class="carousel-subtitle">Тут ваша реклама</p>
                         </div>
                     </div>
                 </div>
-                <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Previous</span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Next</span>
-                </button>
             </div>
         </div>
         
@@ -1286,25 +1232,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Stats Section -->
-        <div class="stats-container">
-            <div class="stat-card">
-                <i class="fas fa-sync fa-2x"></i>
-                <div class="stat-value animated-stat" id="daily-checks">0</div>
-                <div class="stat-label">შემოწმება დღეში</div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-calendar-week fa-2x"></i>
-                <div class="stat-value animated-stat" id="weekly-checks">0</div>
-                <div class="stat-label">შემოწმება კვირაში</div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-calendar-alt fa-2x"></i>
-                <div class="stat-value animated-stat" id="monthly-checks">0</div>
-                <div class="stat-label">შემოწმება თვეში</div>
             </div>
         </div>
         
@@ -1445,33 +1372,17 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Counter functionality moved to separate file -->
+    <script src="counter.js"></script>
+    
+    <!-- Main application logic -->
     <script>
         // Initialize Stripe
         const stripe = Stripe("{{ stripe_public_key }}");
         let currentServiceType = null;
         
-        // Stats data
-        let statsData = {
-            daily: 125,
-            weekly: 875,
-            monthly: 3750
-        };
-        
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
-            // Load stats from localStorage or use defaults
-            const savedStats = localStorage.getItem('statsData');
-            if (savedStats) {
-                statsData = JSON.parse(savedStats);
-            } else {
-                localStorage.setItem('statsData', JSON.stringify(statsData));
-            }
-            
-            // Set initial stats values
-            document.getElementById('daily-checks').textContent = statsData.daily.toLocaleString();
-            document.getElementById('weekly-checks').textContent = statsData.weekly.toLocaleString();
-            document.getElementById('monthly-checks').textContent = statsData.monthly.toLocaleString();
-            
             // Initialize carousel
             const myCarousel = new bootstrap.Carousel(document.getElementById('mainCarousel'), {
                 interval: 2000,
@@ -1522,22 +1433,6 @@
                     });
             }
         });
-        
-        // Function to animate value counters
-        function animateValue(id, start, end, duration) {
-            const element = document.getElementById(id);
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                const value = Math.floor(progress * (end - start) + start);
-                element.innerHTML = value.toLocaleString();
-                if (progress < 1) {
-                    window.requestAnimationFrame(step);
-                }
-            };
-            window.requestAnimationFrame(step);
-        }
         
         // Show check form based on service type
         function showCheck(serviceType) {
@@ -1636,16 +1531,10 @@
                 return;
             }
             
-            // Update stats
-            statsData.daily++;
-            statsData.weekly++;
-            statsData.monthly++;
-            localStorage.setItem('statsData', JSON.stringify(statsData));
-            
-            // Update stats display
-            document.getElementById('daily-checks').textContent = statsData.daily.toLocaleString();
-            document.getElementById('weekly-checks').textContent = statsData.weekly.toLocaleString();
-            document.getElementById('monthly-checks').textContent = statsData.monthly.toLocaleString();
+            // Increment counters using counter.js functionality
+            if (typeof incrementCounters === 'function') {
+                incrementCounters();
+            }
             
             showSpinner(true);
             
@@ -1808,4 +1697,4 @@
         }
     </script>
 </body>
-</html>
+                    </html>
