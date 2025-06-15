@@ -1040,7 +1040,8 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link disabled" href="#">
+                <!-- Активная кнопка сравнения телефонов -->
+                <a class="nav-link" href="compare.html">
                     <i class="fas fa-exchange-alt"></i>
                     <span>ტელეფონების შედარება</span>
                 </a>
@@ -1206,7 +1207,7 @@
                             <li>მოპარვის/დაკარგვის სტატუსი</li>
                             <li>სერვისის სტატუსი</li>
                         </ul>
-                        <div class="service-price">{{ paid_price }} ₾</div>
+                        <div class="service-price">2.99 ₾</div>
                         <div class="service-instruction">
                             <i class="fas fa-arrow-left me-1"></i>
                             გამოიყენეთ მარცხენა მენიუ შესამოწმებლად
@@ -1225,7 +1226,7 @@
                             <li>გარანტია განბლოკვაზე</li>
                             <li>24/7 პრიორიტეტული მხარდაჭერა</li>
                         </ul>
-                        <div class="service-price">{{ premium_price }} ₾</div>
+                        <div class="service-price">4.99 ₾</div>
                         <div class="service-instruction">
                             <i class="fas fa-arrow-left me-1"></i>
                             გამოიყენეთ მარცხენა მენიუ შესამოწმებლად
@@ -1235,23 +1236,31 @@
             </div>
         </div>
         
-<div class="stats-container">
-    <div class="stat-card">
-        <i class="fas fa-sync fa-2x"></i>
-        <div class="stat-value" id="daily-checks">0</div>
-        <div class="stat-label">შემოწმება დღეში</div>
-    </div>
-    <div class="stat-card">
-        <i class="fas fa-calendar-week fa-2x"></i>
-        <div class="stat-value" id="weekly-checks">0</div>
-        <div class="stat-label">შემოწმება კვირაში</div>
-    </div>
-    <div class="stat-card">
-        <i class="fas fa-calendar-alt fa-2x"></i>
-        <div class="stat-value" id="monthly-checks">0</div>
-        <div class="stat-label">შემოწმება თვეში</div>
-    </div>
-</div>
+        <!-- Statistics Section -->
+        <div class="row mt-4">
+            <div class="col-md-4 mb-4">
+                <div class="card text-center p-4 stat-card">
+                    <i class="fas fa-sync fa-2x mb-3"></i>
+                    <div class="stat-value display-4" id="daily-checks">256</div>
+                    <div class="stat-label">შემოწმება დღეში</div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card text-center p-4 stat-card">
+                    <i class="fas fa-calendar-week fa-2x mb-3"></i>
+                    <div class="stat-value display-4" id="weekly-checks">1785</div>
+                    <div class="stat-label">შემოწმება კვირაში</div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card text-center p-4 stat-card">
+                    <i class="fas fa-calendar-alt fa-2x mb-3"></i>
+                    <div class="stat-value display-4" id="monthly-checks">7320</div>
+                    <div class="stat-label">შემოწმება თვეში</div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Footer -->
         <footer id="contacts" class="mt-5 pt-4 border-top border-secondary">
             <div class="row">
@@ -1324,7 +1333,8 @@
                         <i class="fas fa-unlock-alt"></i>
                         <span>განბლოკვა</span>
                     </div>
-                    <div class="menu-item">
+                    <!-- Рабочая кнопка сравнения в мобильном меню -->
+                    <div class="menu-item" onclick="window.location.href='compare.html'; closeAllMobileMenus();">
                         <i class="fas fa-exchange-alt"></i>
                         <span>შედარება</span>
                     </div>
@@ -1389,13 +1399,10 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Counter functionality moved to separate file -->
-    <script src="counter.js"></script>
-    
     <!-- Main application logic -->
     <script>
         // Initialize Stripe
-        const stripe = Stripe("{{ stripe_public_key }}");
+        const stripe = Stripe("pk_test_51P...");
         let currentServiceType = null;
         
         // Initialize page
@@ -1477,13 +1484,13 @@
                     break;
                 case 'paid':
                     checkTitle.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>პლატანი შემოწმება';
-                    checkButton.textContent = `გადახდა: {{ paid_price }} ₾`;
+                    checkButton.textContent = `გადახდა: 2.99 ₾`;
                     checkButton.classList.remove('btn-info', 'btn-success');
                     checkButton.classList.add('btn-warning');
                     break;
                 case 'premium':
                     checkTitle.innerHTML = '<i class="fas fa-crown me-2"></i>პრემიუმ შემოწმება';
-                    checkButton.textContent = `გადახდა: {{ premium_price }} ₾`;
+                    checkButton.textContent = `გადახდა: 4.99 ₾`;
                     checkButton.classList.remove('btn-info', 'btn-warning');
                     checkButton.classList.add('btn-success');
                     break;
@@ -1548,10 +1555,10 @@
                 return;
             }
             
-            // Increment counters using counter.js functionality
-            if (typeof incrementCounters === 'function') {
-                incrementCounters();
-            }
+            // Increment counters
+            document.getElementById('daily-checks').textContent = parseInt(document.getElementById('daily-checks').textContent) + 1;
+            document.getElementById('weekly-checks').textContent = parseInt(document.getElementById('weekly-checks').textContent) + 1;
+            document.getElementById('monthly-checks').textContent = parseInt(document.getElementById('monthly-checks').textContent) + 1;
             
             showSpinner(true);
             
