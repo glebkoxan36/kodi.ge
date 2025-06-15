@@ -8,6 +8,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://js.stripe.com/v3/"></script>
     <style>
+        /* Добавлено: глобальный border-box */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        
         :root {
             --primary-color: #0a0e17;
             --secondary-color: #1a2138;
@@ -582,9 +587,11 @@
             cursor: pointer;
         }
 
+        /* Изменено: добавлено overflow-x: hidden */
         .mobile-menu-modal .modal-body {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden; /* Предотвращает горизонтальный скролл */
             padding-bottom: 20px;
         }
 
@@ -646,18 +653,23 @@
             cursor: pointer;
         }
 
+        /* Изменено: добавлено overflow-x: hidden */
         .apple-submenu-modal .modal-body {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden; /* Предотвращает горизонтальный скролл */
             padding-bottom: 20px;
         }
 
         /* Menu grid with 3 columns - ОБЩИЕ СТИЛИ ДЛЯ ВСЕХ МЕНЮ */
+        /* Изменено: обновлен .menu-grid */
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); /* Адаптивные ячейки */
             gap: 6px;
-            padding: 10px 6px 20px;
+            padding: 10px; /* Упрощенные отступы */
+            width: 100%; /* Занимает всю ширину */
+            box-sizing: border-box; /* Учитываем padding в ширине */
         }
 
         .menu-item {
@@ -801,7 +813,7 @@
         /* Адаптация для очень маленьких экранов */
         @media (max-width: 340px) {
             .menu-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(2, 1fr); /* 2 колонки на маленьких экранах */
             }
             
             .menu-item {
