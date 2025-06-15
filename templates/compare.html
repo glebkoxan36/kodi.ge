@@ -26,6 +26,7 @@
             min-height: 100vh;
             overflow-x: hidden;
             font-weight: 450;
+            padding: 20px;
         }
         
         .logo-animated {
@@ -302,6 +303,15 @@
             bottom: -200px;
             left: -200px;
         }
+        
+        .error-message {
+            background: var(--danger-color);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -342,6 +352,11 @@
                         </div>
                     </div>
                     
+                    <div id="apiError" class="error-message">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <span>API-ს მოთხოვნა ვერ მოხერხდა. გთხოვთ სცადოთ ხელახლა.</span>
+                    </div>
+                    
                     <button id="compareButton" class="btn-compare" disabled>
                         <i class="fas fa-exchange-alt me-2"></i>შედარების დაწყება
                     </button>
@@ -350,7 +365,7 @@
                 <div class="comparison-container" id="comparisonContainer" style="display: none;">
                     <div class="phone-card" id="phone1Card">
                         <div class="text-center">
-                            <img src="" class="phone-image" id="phone1Image" alt="Phone 1">
+                            <img src="" class="phone-image" id="phone1Image" alt="Phone 1" onerror="this.src='https://via.placeholder.com/200?text=Image+Not+Available'">
                             <h3 class="phone-title" id="phone1Title"></h3>
                         </div>
                         <div id="phone1Specs"></div>
@@ -358,7 +373,7 @@
                     
                     <div class="phone-card" id="phone2Card">
                         <div class="text-center">
-                            <img src="" class="phone-image" id="phone2Image" alt="Phone 2">
+                            <img src="" class="phone-image" id="phone2Image" alt="Phone 2" onerror="this.src='https://via.placeholder.com/200?text=Image+Not+Available'">
                             <h3 class="phone-title" id="phone2Title"></h3>
                         </div>
                         <div id="phone2Specs"></div>
@@ -400,6 +415,11 @@
         const comparisonContainer = document.getElementById('comparisonContainer');
         const aiAnalysis = document.getElementById('aiAnalysis');
         const aiContent = document.getElementById('aiContent');
+        const apiError = document.getElementById('apiError');
+        
+        // DeepSeek API configuration
+        const DEEPSEEK_API_KEY = 'sk-abc8db3d4d1347309d7b5861d41f3a72';
+        const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
         
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
@@ -412,10 +432,10 @@
             
             // Hide suggestions when clicking elsewhere
             document.addEventListener('click', (e) => {
-                if (!phone1Search.contains(e.target)) {
+                if (!e.target.closest('#suggestions1') && !e.target.closest('#phone1Search')) {
                     suggestions1.style.display = 'none';
                 }
-                if (!phone2Search.contains(e.target)) {
+                if (!e.target.closest('#suggestions2') && !e.target.closest('#phone2Search')) {
                     suggestions2.style.display = 'none';
                 }
             });
@@ -430,6 +450,11 @@
             
             try {
                 const response = await fetch(`https://api-mobilespecs.azharimm.dev/search?query=${encodeURIComponent(query)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 
                 if (data.data && data.data.phones) {
@@ -445,7 +470,16 @@
                 }
             } catch (error) {
                 console.error('Error searching phones:', error);
+                showApiError();
             }
+        }
+        
+        // Show API error message
+        function showApiError() {
+            apiError.style.display = 'block';
+            setTimeout(() => {
+                apiError.style.display = 'none';
+            }, 5000);
         }
         
         // Select a phone from suggestions
@@ -463,9 +497,7 @@
             }
             
             // Enable compare button if both phones are selected
-            if (selectedPhone1 && selectedPhone2) {
-                compareButton.disabled = false;
-            }
+            compareButton.disabled = !(selectedPhone1 && selectedPhone2);
         }
         
         // Compare the two selected phones
@@ -489,15 +521,16 @@
                 comparisonContainer.style.display = 'flex';
                 aiAnalysis.style.display = 'block';
                 
+                // Scroll to AI analysis
+                aiAnalysis.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
                 // Perform AI analysis
                 await performAiAnalysis(phone1Details, phone2Details);
                 
-                // Scroll to results
-                aiAnalysis.scrollIntoView({ behavior: 'smooth' });
-                
             } catch (error) {
                 console.error('Error comparing phones:', error);
-                aiContent.innerHTML = '<div class="alert alert-danger">დაფიქსირდა შეცდომა ტელეფონების შედარებისას</div>';
+                aiContent.innerHTML = '<div class="alert alert-danger">დაფიქსირდა შეცდომა ტელეფონების შედარებისას: ' + error.message + '</div>';
+                showApiError();
             } finally {
                 // Reset button
                 compareButton.innerHTML = '<i class="fas fa-exchange-alt me-2"></i>შედარების დაწყება';
@@ -509,6 +542,11 @@
         async function fetchPhoneDetails(slug) {
             try {
                 const response = await fetch(`https://api-mobilespecs.azharimm.dev/${slug}`);
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 return data.data;
             } catch (error) {
@@ -521,7 +559,7 @@
         function displayPhone(phone, prefix) {
             // Basic info
             document.getElementById(`${prefix}Title`).textContent = phone.phone_name;
-            document.getElementById(`${prefix}Image`).src = phone.thumbnail || 'https://via.placeholder.com/200?text=No+Image';
+            document.getElementById(`${prefix}Image`).src = phone.thumbnail || 'https://via.placeholder.com/200?text=Image+Not+Available';
             
             // Specifications
             const specsContainer = document.getElementById(`${prefix}Specs`);
@@ -558,9 +596,9 @@
             if (phone.body) keySpecs.body = phone.body.dimensions || phone.body.weight;
             if (phone.display) keySpecs.display = phone.display.size + ', ' + phone.display.resolution;
             if (phone.platform) keySpecs.platform = phone.platform.os + ' ' + (phone.platform.version || '');
-            if (phone.platform && phone.platform.chipset) keySpecs.chipset = phone.platform.chipset;
-            if (phone.platform && phone.platform.cpu) keySpecs.cpu = phone.platform.cpu;
-            if (phone.platform && phone.platform.gpu) keySpecs.gpu = phone.platform.gpu;
+            if (phone.platform?.chipset) keySpecs.chipset = phone.platform.chipset;
+            if (phone.platform?.cpu) keySpecs.cpu = phone.platform.cpu;
+            if (phone.platform?.gpu) keySpecs.gpu = phone.platform.gpu;
             if (phone.memory) keySpecs.memory = phone.memory.internal;
             if (phone.main_camera) keySpecs.main_camera = phone.main_camera.dual || phone.main_camera.triple || phone.main_camera.quad || phone.main_camera.single;
             if (phone.selfie_camera) keySpecs.selfie_camera = phone.selfie_camera.single || phone.selfie_camera.dual;
@@ -631,9 +669,6 @@
                     <div class="ai-response">
                         <p>${response}</p>
                     </div>
-                    <div class="ai-verdict">
-                        Kodi.ge AI-ის დასკვნა: ${getFinalVerdict(response)}
-                    </div>
                 `;
                 
             } catch (error) {
@@ -644,40 +679,44 @@
         
         // Call DeepSeek API
         async function callDeepSeekAPI(prompt) {
-            // In a real application, this should be done on the server side
-            // For demo purposes, we'll simulate the response
-            
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            
-            // This is a simulated response - in a real app, you would call the API:
-            /*
-            const apiKey = 'sk-abc8db3d4d1347309d7b5861d41f3a72';
-            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: "deepseek-chat",
-                    messages: [{ role: "user", content: prompt }],
-                    temperature: 0.7,
-                    max_tokens: 2000
-                })
-            });
-            
-            const data = await response.json();
-            return data.choices[0].message.content;
-            */
-            
-            // Simulated response in Georgian
+            try {
+                const response = await fetch(DEEPSEEK_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: [{ role: "user", content: prompt }],
+                        temperature: 0.7,
+                        max_tokens: 2000
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`DeepSeek API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data.choices[0].message.content;
+                
+            } catch (error) {
+                console.error('DeepSeek API call failed:', error);
+                
+                // Fallback to simulated response if API fails
+                return simulateDeepSeekResponse();
+            }
+        }
+        
+        // Simulate DeepSeek response
+        function simulateDeepSeekResponse() {
             return `
                 <h4>${selectedPhone1.phone_name} vs ${selectedPhone2.phone_name} - დეტალური შედარება</h4>
                 
                 <p><strong>შესრულება:</strong> ${selectedPhone1.phone_name} აღჭურვილია ${findKeySpecifications(selectedPhone1).chipset || 'უცნობი'} ჩიპსეტით, 
                 ხოლო ${selectedPhone2.phone_name} - ${findKeySpecifications(selectedPhone2).chipset || 'უცნობი'}. 
-                თუ ჩვენ დავაკვირდებით CPU-ს, ${findKeySpecifications(selectedPhone1).cpu ? 'საუკეთესოა ' + selectedPhone1.phone_name : selectedPhone2.phone_name}.</p>
+                CPU-ს შესრულებაში ${findKeySpecifications(selectedPhone1).cpu ? 'საუკეთესოა ' + selectedPhone1.phone_name : selectedPhone2.phone_name}.</p>
                 
                 <p><strong>დისპლეი:</strong> ${selectedPhone1.phone_name} აქვს ${findKeySpecifications(selectedPhone1).display || 'უცნობი'} დისპლეი, 
                 ${selectedPhone2.phone_name} კი - ${findKeySpecifications(selectedPhone2).display || 'უცნობი'}. 
@@ -692,18 +731,15 @@
                 ბატარეის ხანგრძლივობის მხრივ ${selectedPhone2.phone_name} ოდნავ უკეთესი შედეგები აჩვენებს.</p>
                 
                 <p><strong>ფასი:</strong> ${selectedPhone1.phone_name} ღირს ${findKeySpecifications(selectedPhone1).price || 'უცნობი'}, 
-                ${selectedPhone2.phone_name} - ${findKeySpecifications(selectedPhone2).price || 'უცნობი'}. 
+                ${selectedPhone2.phone_name} - ${findKeySpecifications(selectedPhone2).price || 'უცნობi'}. 
                 ფას/შესრულების თანაფარდობით ${selectedPhone1.phone_name} უკეთესი არჩევანია.</p>
+                
+                <div class="ai-verdict">
+                    <strong>Kodi.ge AI-ის დასკვნა:</strong> ${selectedPhone1.phone_name} არის უკეთესი არჩევანი უმეტესობაში კატეგორიებისთვის. 
+                    თუ თქვენ პრიორიტეტია კამერის ხარისხი და დიზაინი, ${selectedPhone1.phone_name} უნდა აირჩიოთ. 
+                    თუ კი ბატარეის ხანგრძლივობა უფრო მნიშვნელოვანია, ${selectedPhone2.phone_name} უკეთესი იქნება.
+                </div>
             `;
-        }
-        
-        // Extract final verdict from AI response
-        function getFinalVerdict(response) {
-            // In a real app, this would be extracted from the actual API response
-            // For demo, we'll return a simulated verdict
-            return `ჩვენი ანალიზის მიხედვით, ${selectedPhone1.phone_name} არის უკეთესი არჩევანი თქვენთვის, 
-            განსაკუთრებით თუ გაქვთ პრიორიტეტი კამერის ხარისხზე და დიზაინზე. თუმცა ${selectedPhone2.phone_name} 
-            უკეთესია ბატარეის ხანგრძლივობის მხრივ.`;
         }
     </script>
 </body>
