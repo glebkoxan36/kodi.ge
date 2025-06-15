@@ -7,7 +7,317 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Стили остаются без изменений */
+        /* Глобальные стили из первого файла */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-color: #0a0e17;
+            --secondary-color: #1a2138;
+            --accent-color: #00c6ff;
+            --text-color: #f0f0f0;
+            --text-secondary: #c0c0d0;
+            --card-bg: #121a2b;
+            --success-color: #00d68f;
+            --warning-color: #ffaa00;
+            --danger-color: #ff3d71;
+            --ring-color-1: #00c6ff;
+            --ring-color-2: #ff3d71;
+            --ring-color-3: #00d68f;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-weight: 450;
+        }
+        
+        /* Анимированный логотип */
+        .logo-animated {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            perspective: 1000px;
+        }
+
+        .logo-core {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--accent-color), #0066ff);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-style: preserve-3d;
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.6);
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        .logo-letter {
+            font-weight: bold;
+            font-size: 32px;
+            color: white;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+            z-index: 2;
+            transform: translateZ(20px);
+        }
+
+        .logo-ring {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: logoRotate 12s linear infinite;
+            border-style: solid;
+        }
+
+        .logo-ring:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            animation-duration: 15s;
+            border-width: 1px;
+            border-color: var(--ring-color-1);
+            border-radius: 50% 40% 60% 30% / 60% 50% 70% 40%;
+        }
+
+        .logo-ring:nth-child(2) {
+            width: 100px;
+            height: 100px;
+            animation-duration: 20s;
+            animation-direction: reverse;
+            border-width: 1.5px;
+            border-color: var(--ring-color-2);
+            border-radius: 40% 60% 30% 70% / 50% 70% 30% 60%;
+        }
+
+        .logo-ring:nth-child(3) {
+            width: 120px;
+            height: 120px;
+            animation-duration: 25s;
+            border-width: 2px;
+            border-color: var(--ring-color-3);
+            border-radius: 60% 30% 70% 40% / 30% 60% 40% 70%;
+        }
+
+        @keyframes logoRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Card styling with neon glow */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 25px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Neon glow animation */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0, 198, 255, 0.2);
+            opacity: 0.8;
+            animation: neonGlow 3s infinite alternate;
+            pointer-events: none;
+            z-index: 0; /* Ensure it's behind content */
+        }
+        
+        @keyframes neonGlow {
+            0% {
+                box-shadow: 0 0 10px rgba(0, 198, 255, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 25px rgba(0, 198, 255, 0.7);
+            }
+            100% {
+                box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
+            }
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .card:hover::before {
+            animation: neonGlow 1.5s infinite alternate;
+        }
+        
+        .card-header {
+            background: rgba(0, 198, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px 20px;
+            font-weight: 600;
+            color: var(--accent-color);
+            position: relative;
+            z-index: 1; /* Ensure content is above glow */
+        }
+        
+        .card-body {
+            padding: 20px;
+            position: relative;
+            z-index: 1; /* Ensure content is above glow */
+        }
+        
+        /* Gradient background elements */
+        .gradient-bg {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.15;
+            z-index: -1;
+        }
+        
+        .gradient-1 {
+            background: var(--accent-color);
+            top: -200px;
+            right: -200px;
+        }
+        
+        .gradient-2 {
+            background: var(--success-color);
+            bottom: -200px;
+            left: -200px;
+        }
+        
+        /* Специфические стили для страницы сравнения */
+        .comparison-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .phone-card {
+            flex: 1;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 198, 255, 0.1);
+        }
+        
+        .phone-image {
+            max-width: 100%;
+            height: 200px;
+            object-fit: contain;
+            margin-bottom: 15px;
+        }
+        
+        .phone-title {
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+            text-align: center;
+        }
+        
+        .spec-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .spec-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            flex: 1;
+        }
+        
+        .spec-value {
+            font-weight: 600;
+            text-align: right;
+            flex: 1;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(0, 198, 255, 0.2);
+            border-radius: 8px;
+            color: var(--text-color);
+            font-size: 1rem;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(0, 198, 255, 0.3);
+        }
+        
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 198, 255, 0.2);
+            border-radius: 8px;
+            z-index: 10;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .suggestion-item:hover {
+            background: rgba(0, 198, 255, 0.15);
+            color: var(--accent-color);
+        }
+        
+        .ai-analysis {
+            margin-top: 40px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 198, 255, 0.1);
+        }
+        
+        .ai-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .ai-icon {
+            font-size: 1.8rem;
+            color: var(--accent-color);
+            margin-right: 15px;
+        }
+        
+        .ai-content {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
             border-radius: 8px;
             line-height: 1.6;
             min-height: 200px;
@@ -65,6 +375,16 @@
             border-left: 3px solid var(--accent-color);
         }
         
+        .error-message {
+            background: var(--danger-color);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        /* Responsive design */
         @media (max-width: 768px) {
             .comparison-container {
                 flex-direction: column;
@@ -73,37 +393,77 @@
             .phone-card {
                 width: 100%;
             }
+            
+            .logo-animated {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .logo-core {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .logo-letter {
+                font-size: 24px;
+            }
+            
+            .logo-ring:nth-child(1) {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .logo-ring:nth-child(2) {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .logo-ring:nth-child(3) {
+                width: 80px;
+                height: 80px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .phone-image {
+                height: 150px;
+            }
+            
+            .btn-compare {
+                width: 100%;
+                padding: 12px;
+            }
         }
         
-        .gradient-bg {
-            position: fixed;
-            width: 500px;
-            height: 500px;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.15;
-            z-index: -1;
-        }
-        
-        .gradient-1 {
-            background: var(--accent-color);
-            top: -200px;
-            right: -200px;
-        }
-        
-        .gradient-2 {
-            background: var(--success-color);
-            bottom: -200px;
-            left: -200px;
-        }
-        
-        .error-message {
-            background: var(--danger-color);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            display: none;
+        @media (max-width: 340px) {
+            .logo-animated {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .logo-core {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .logo-letter {
+                font-size: 20px;
+            }
+            
+            .logo-ring:nth-child(1) {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .logo-ring:nth-child(2) {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .logo-ring:nth-child(3) {
+                width: 70px;
+                height: 70px;
+            }
         }
     </style>
 </head>
