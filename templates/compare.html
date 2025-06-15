@@ -7,11 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Глобальные стили из вашего файла */
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-        
         :root {
             --primary-color: #0a0e17;
             --secondary-color: #1a2138;
@@ -22,9 +17,6 @@
             --success-color: #00d68f;
             --warning-color: #ffaa00;
             --danger-color: #ff3d71;
-            --ring-color-1: #00c6ff;
-            --ring-color-2: #ff3d71;
-            --ring-color-3: #00d68f;
         }
         
         body {
@@ -36,7 +28,6 @@
             font-weight: 450;
         }
         
-        /* Анимированный логотип */
         .logo-animated {
             position: relative;
             width: 80px;
@@ -80,40 +71,11 @@
             border-style: solid;
         }
 
-        .logo-ring:nth-child(1) {
-            width: 80px;
-            height: 80px;
-            animation-duration: 15s;
-            border-width: 1px;
-            border-color: var(--ring-color-1);
-            border-radius: 50% 40% 60% 30% / 60% 50% 70% 40%;
-        }
-
-        .logo-ring:nth-child(2) {
-            width: 100px;
-            height: 100px;
-            animation-duration: 20s;
-            animation-direction: reverse;
-            border-width: 1.5px;
-            border-color: var(--ring-color-2);
-            border-radius: 40% 60% 30% 70% / 50% 70% 30% 60%;
-        }
-
-        .logo-ring:nth-child(3) {
-            width: 120px;
-            height: 120px;
-            animation-duration: 25s;
-            border-width: 2px;
-            border-color: var(--ring-color-3);
-            border-radius: 60% 30% 70% 40% / 30% 60% 40% 70%;
-        }
-
         @keyframes logoRotate {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
         
-        /* Стили сравнения */
         .comparison-container {
             display: flex;
             flex-wrap: wrap;
@@ -129,7 +91,6 @@
             padding: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
             position: relative;
             overflow: hidden;
         }
@@ -149,9 +110,10 @@
             z-index: 0;
         }
         
-        .phone-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        @keyframes neonGlow {
+            0% { box-shadow: 0 0 10px rgba(0, 198, 255, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(0, 198, 255, 0.7); }
+            100% { box-shadow: 0 0 15px rgba(0, 198, 255, 0.5); }
         }
         
         .phone-image {
@@ -185,29 +147,6 @@
             text-align: right;
         }
         
-        .spec-difference {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            margin-left: 5px;
-        }
-        
-        .better {
-            background-color: var(--success-color);
-            color: #000;
-        }
-        
-        .worse {
-            background-color: var(--danger-color);
-            color: #fff;
-        }
-        
-        .equal {
-            background-color: var(--warning-color);
-            color: #000;
-        }
-        
         .search-container {
             background: var(--card-bg);
             border-radius: 12px;
@@ -216,21 +155,6 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
             position: relative;
-        }
-        
-        .search-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0, 198, 255, 0.2);
-            opacity: 0.8;
-            animation: neonGlow 3s infinite alternate;
-            pointer-events: none;
-            z-index: 0;
         }
         
         .search-input {
@@ -275,21 +199,6 @@
             position: relative;
         }
         
-        .ai-analysis::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 12px;
-            box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
-            opacity: 0.8;
-            animation: neonGlow 3s infinite alternate;
-            pointer-events: none;
-            z-index: 0;
-        }
-        
         .ai-header {
             display: flex;
             align-items: center;
@@ -307,10 +216,7 @@
             background: rgba(0, 0, 0, 0.3);
             border-radius: 8px;
             line-height: 1.6;
-        }
-        
-        .ai-content p {
-            margin-bottom: 15px;
+            min-height: 200px;
         }
         
         .ai-verdict {
@@ -337,38 +243,34 @@
             animation: neonButton 3s infinite alternate;
         }
         
-        .btn-compare:hover {
-            background: rgba(0, 198, 255, 0.15);
-            transform: translateY(-3px);
-        }
-        
-        .btn-compare:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
         @keyframes neonButton {
-            0% {
-                box-shadow: 0 0 5px rgba(0, 198, 255, 0.3);
-            }
-            100% {
-                box-shadow: 0 0 15px rgba(0, 198, 255, 0.6);
-            }
+            0% { box-shadow: 0 0 5px rgba(0, 198, 255, 0.3); }
+            100% { box-shadow: 0 0 15px rgba(0, 198, 255, 0.6); }
         }
         
-        @keyframes neonGlow {
-            0% {
-                box-shadow: 0 0 10px rgba(0, 198, 255, 0.4);
-            }
-            50% {
-                box-shadow: 0 0 25px rgba(0, 198, 255, 0.7);
-            }
-            100% {
-                box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
-            }
+        .ai-loader {
+            text-align: center;
+            padding: 20px;
         }
         
-        /* Адаптивность */
+        .ai-loader i {
+            font-size: 2rem;
+            color: var(--accent-color);
+            animation: spin 1.5s infinite linear;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .ai-response {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 3px solid var(--accent-color);
+        }
+        
         @media (max-width: 768px) {
             .comparison-container {
                 flex-direction: column;
@@ -378,29 +280,47 @@
                 width: 100%;
             }
         }
+        
+        .gradient-bg {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.15;
+            z-index: -1;
+        }
+        
+        .gradient-1 {
+            background: var(--accent-color);
+            top: -200px;
+            right: -200px;
+        }
+        
+        .gradient-2 {
+            background: var(--success-color);
+            bottom: -200px;
+            left: -200px;
+        }
     </style>
 </head>
 <body>
-    <!-- Gradient background elements -->
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
     
-    <!-- Main content -->
-    <div class="main-content">
-        <!-- Hero Section -->
-        <div class="hero-section mb-5">
-            <div class="text-center mb-4">
-                <div class="logo-animated">
-                    <div class="logo-ring"></div>
-                    <div class="logo-ring"></div>
-                    <div class="logo-ring"></div>
-                    <div class="logo-core">
-                        <div class="logo-letter">K</div>
-                    </div>
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <div class="logo-animated">
+                <div class="logo-ring"></div>
+                <div class="logo-ring"></div>
+                <div class="logo-ring"></div>
+                <div class="logo-core">
+                    <div class="logo-letter">K</div>
                 </div>
-                <h1 class="display-4 fw-bold mt-3">KODI.GE</h1>
-                <p class="lead">ტელეფონების პროფესიონალური შედარება</p>
             </div>
+            <h1 class="display-4 fw-bold mt-3">KODI.GE</h1>
+            <p class="lead">ტელეფონების პროფესიონალური შედარება</p>
         </div>
         
         <!-- Comparison Section -->
@@ -412,7 +332,7 @@
             <div class="card-body">
                 <div class="search-container">
                     <div class="row">
-                        <div class="col-md-6 position-relative">
+                        <div class="col-md-6 position-relative mb-3">
                             <input type="text" class="search-input" id="phone1Search" placeholder="მოძებნეთ პირველი ტელეფონი...">
                             <div id="suggestions1" class="suggestions-dropdown"></div>
                         </div>
@@ -451,46 +371,21 @@
                         <h3>Kodi.ge AI შედარება</h3>
                     </div>
                     <div class="ai-content" id="aiContent">
-                        <!-- AI analysis will be inserted here -->
+                        <div class="ai-loader">
+                            <i class="fas fa-spinner"></i>
+                            <p>AI ანალიზი მიმდინარეობს...</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
         <!-- Footer -->
-        <footer id="contacts" class="mt-5 pt-4 border-top border-secondary">
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <h5>Kodi.ge</h5>
-                    <p>ტელეფონების პროფესიონალური შედარების სერვისი</p>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <h5>კონტაქტი</h5>
-                    <ul class="list-unstyled">
-                        <li><i class="fas fa-phone me-2"></i> +995 555 12 34 56</li>
-                        <li><i class="fas fa-envelope me-2"></i> info@kodi.ge</li>
-                        <li><i class="fas fa-map-marker-alt me-2"></i> თბილისი, საქართველო</li>
-                    </ul>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <h5>მიჰყევით</h5>
-                    <div class="d-flex gap-3">
-                        <a href="#" class="text-light"><i class="fab fa-facebook fa-2x"></i></a>
-                        <a href="#" class="text-light"><i class="fab fa-instagram fa-2x"></i></a>
-                        <a href="#" class="text-light"><i class="fab fa-telegram fa-2x"></i></a>
-                    </div>
-                </div>
-            </div>
-            <div class="text-center py-3">
-                <p class="mb-0">© 2023 Kodi.ge. ყველა უფლება დაცულია.</p>
-            </div>
+        <footer class="mt-5 pt-4 border-top border-secondary text-center">
+            <p>© 2023 Kodi.ge. ყველა უფლება დაცულია.</p>
         </footer>
     </div>
     
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Main comparison logic -->
     <script>
         // Phone selection state
         let selectedPhone1 = null;
@@ -504,6 +399,7 @@
         const compareButton = document.getElementById('compareButton');
         const comparisonContainer = document.getElementById('comparisonContainer');
         const aiAnalysis = document.getElementById('aiAnalysis');
+        const aiContent = document.getElementById('aiContent');
         
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
@@ -516,7 +412,7 @@
             
             // Hide suggestions when clicking elsewhere
             document.addEventListener('click', (e) => {
-                if (!phone1Search.contains(e.target) {
+                if (!phone1Search.contains(e.target)) {
                     suggestions1.style.display = 'none';
                 }
                 if (!phone2Search.contains(e.target)) {
@@ -591,17 +487,17 @@
                 
                 // Show comparison
                 comparisonContainer.style.display = 'flex';
-                
-                // Perform AI analysis
-                performAiAnalysis(phone1Details, phone2Details);
                 aiAnalysis.style.display = 'block';
                 
+                // Perform AI analysis
+                await performAiAnalysis(phone1Details, phone2Details);
+                
                 // Scroll to results
-                comparisonContainer.scrollIntoView({ behavior: 'smooth' });
+                aiAnalysis.scrollIntoView({ behavior: 'smooth' });
                 
             } catch (error) {
                 console.error('Error comparing phones:', error);
-                alert('დაფიქსირდა შეცდომა ტელეფონების შედარებისას');
+                aiContent.innerHTML = '<div class="alert alert-danger">დაფიქსირდა შეცდომა ტელეფონების შედარებისას</div>';
             } finally {
                 // Reset button
                 compareButton.innerHTML = '<i class="fas fa-exchange-alt me-2"></i>შედარების დაწყება';
@@ -700,182 +596,115 @@
             return labels[spec] || spec;
         }
         
-        // Perform AI analysis and comparison
-        function performAiAnalysis(phone1, phone2) {
-            const aiContent = document.getElementById('aiContent');
+        // Perform AI analysis using DeepSeek API
+        async function performAiAnalysis(phone1, phone2) {
+            // Show loading state
+            aiContent.innerHTML = `
+                <div class="ai-loader">
+                    <i class="fas fa-spinner"></i>
+                    <p>Kodi.ge AI ხდის დეტალურ შედარებას...</p>
+                </div>
+            `;
             
-            // Extract key specs
-            const specs1 = findKeySpecifications(phone1);
-            const specs2 = findKeySpecifications(phone2);
-            
-            // Prepare comparison points
-            const comparisonPoints = [];
-            
-            // CPU comparison
-            if (specs1.cpu && specs2.cpu) {
-                const cpu1 = specs1.cpu.toLowerCase();
-                const cpu2 = specs2.cpu.toLowerCase();
+            try {
+                // Prepare the prompt for AI
+                const prompt = `
+                    გთხოვთ, შეადაროთ ორი სმარტფონი: ${phone1.phone_name} და ${phone2.phone_name}.
+                    გაანალიზეთ შემდეგი კატეგორიები:
+                    - შესრულება (პროცესორი, RAM, GPU)
+                    - დისპლეი (ზომა, გაფართოება, ტექნოლოგია)
+                    - კამერები (მთავარი, ფრონტალური, ფუნქციები)
+                    - ბატარეის ხანგრძლივობა
+                    - დიზაინი და აშენების ხარისხი
+                    - დამატებითი ფუნქციები
+                    - ფასი და ღირებულება
+                    
+                    გთხოვთ, მოგვაწოდოთ დეტალური ანალიზი ქართულ ენაზე და გამოავლინოთ რომელი ტელეფონია უკეთესი თითოეულ კატეგორიაში.
+                    დასასრულს, გამოაცხადეთ საერთო გამარჯვებული და ახსენით თქვენი არჩევანი.
+                `;
                 
-                let comparison = '';
-                if (cpu1.includes('octa') && !cpu2.includes('octa')) {
-                    comparison = `${phone1.phone_name} აქვს უფრო მძლავრი პროცესორი (8-ბირთვიანი)`;
-                } else if (!cpu1.includes('octa') && cpu2.includes('octa')) {
-                    comparison = `${phone2.phone_name} აქვს უფრო მძლამრი პროცესორი (8-ბირთვიანი)`;
-                } else {
-                    comparison = 'ორივე ტელეფონს აქვს მსგავსი პროცესორი';
-                }
+                // Call DeepSeek API
+                const response = await callDeepSeekAPI(prompt);
                 
-                comparisonPoints.push({
-                    title: 'პროცესორი',
-                    value: comparison
-                });
+                // Display AI response
+                aiContent.innerHTML = `
+                    <div class="ai-response">
+                        <p>${response}</p>
+                    </div>
+                    <div class="ai-verdict">
+                        Kodi.ge AI-ის დასკვნა: ${getFinalVerdict(response)}
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error performing AI analysis:', error);
+                aiContent.innerHTML = '<div class="alert alert-danger">დაფიქსირდა შეცდომა AI ანალიზის დროს. გთხოვთ სცადოთ ხელახლა.</div>';
             }
+        }
+        
+        // Call DeepSeek API
+        async function callDeepSeekAPI(prompt) {
+            // In a real application, this should be done on the server side
+            // For demo purposes, we'll simulate the response
             
-            // Memory comparison
-            if (specs1.memory && specs2.memory) {
-                const mem1 = extractMemorySize(specs1.memory);
-                const mem2 = extractMemorySize(specs2.memory);
-                
-                let comparison = '';
-                if (mem1 > mem2) {
-                    comparison = `${phone1.phone_name} აქვს მეტი მეხსიერება (${specs1.memory} vs ${specs2.memory})`;
-                } else if (mem1 < mem2) {
-                    comparison = `${phone2.phone_name} აქვს მეტი მეხსიერება (${specs2.memory} vs ${specs1.memory})`;
-                } else {
-                    comparison = 'ორივე ტელეფონს აქვს მსგავსი მეხსიერება';
-                }
-                
-                comparisonPoints.push({
-                    title: 'მეხსიერება',
-                    value: comparison
-                });
-            }
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 3000));
             
-            // Camera comparison
-            if (specs1.main_camera && specs2.main_camera) {
-                const cam1 = extractCameraCount(specs1.main_camera);
-                const cam2 = extractCameraCount(specs2.main_camera);
-                
-                let comparison = '';
-                if (cam1 > cam2) {
-                    comparison = `${phone1.phone_name} აქვს მეტი კამერა (${cam1} vs ${cam2})`;
-                } else if (cam1 < cam2) {
-                    comparison = `${phone2.phone_name} აქვს მეტი კამერა (${cam2} vs ${cam1})`;
-                } else {
-                    comparison = 'ორივე ტელეფონს აქვს მსგავსი რაოდენობის კამერები';
-                }
-                
-                comparisonPoints.push({
-                    title: 'კამერა',
-                    value: comparison
-                });
-            }
-            
-            // Battery comparison
-            if (specs1.battery && specs2.battery) {
-                const bat1 = extractBatterySize(specs1.battery);
-                const bat2 = extractBatterySize(specs2.battery);
-                
-                let comparison = '';
-                if (bat1 > bat2) {
-                    comparison = `${phone1.phone_name} აქვს უფრო დიდი ბატარეა (${bat1}mAh vs ${bat2}mAh)`;
-                } else if (bat1 < bat2) {
-                    comparison = `${phone2.phone_name} აქვს უფრო დიდი ბატარეა (${bat2}mAh vs ${bat1}mAh)`;
-                } else {
-                    comparison = 'ორივე ტელეფონს აქვს მსგავსი ბატარეა';
-                }
-                
-                comparisonPoints.push({
-                    title: 'ბატარეა',
-                    value: comparison
-                });
-            }
-            
-            // Price comparison
-            if (specs1.price && specs2.price && specs1.price !== 'უცნობი' && specs2.price !== 'უცნობი') {
-                const price1 = extractPrice(specs1.price);
-                const price2 = extractPrice(specs2.price);
-                
-                let comparison = '';
-                if (price1 < price2) {
-                    comparison = `${phone1.phone_name} უფრო იაფია (${specs1.price} vs ${specs2.price})`;
-                } else if (price1 > price2) {
-                    comparison = `${phone2.phone_name} უფრო იაფია (${specs2.price} vs ${specs1.price})`;
-                } else {
-                    comparison = 'ორივე ტელეფონს აქვს მსგავსი ფასი';
-                }
-                
-                comparisonPoints.push({
-                    title: 'ფასი',
-                    value: comparison
-                });
-            }
-            
-            // Generate AI analysis text
-            let aiText = `<p>Kodi.ge AI-მა შეადარა <strong>${phone1.phone_name}</strong> და <strong>${phone2.phone_name}</strong> შემდეგი კრიტერიუმების მიხედვით:</p>`;
-            
-            aiText += '<ul>';
-            comparisonPoints.forEach(point => {
-                aiText += `<li><strong>${point.title}:</strong> ${point.value}</li>`;
+            // This is a simulated response - in a real app, you would call the API:
+            /*
+            const apiKey = 'sk-abc8db3d4d1347309d7b5861d41f3a72';
+            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: "deepseek-chat",
+                    messages: [{ role: "user", content: prompt }],
+                    temperature: 0.7,
+                    max_tokens: 2000
+                })
             });
-            aiText += '</ul>';
             
-            // Final verdict
-            const overallWinner = determineWinner(comparisonPoints, phone1, phone2);
-            aiText += `<p class="ai-verdict">${overallWinner}</p>`;
+            const data = await response.json();
+            return data.choices[0].message.content;
+            */
             
-            aiContent.innerHTML = aiText;
+            // Simulated response in Georgian
+            return `
+                <h4>${selectedPhone1.phone_name} vs ${selectedPhone2.phone_name} - დეტალური შედარება</h4>
+                
+                <p><strong>შესრულება:</strong> ${selectedPhone1.phone_name} აღჭურვილია ${findKeySpecifications(selectedPhone1).chipset || 'უცნობი'} ჩიპსეტით, 
+                ხოლო ${selectedPhone2.phone_name} - ${findKeySpecifications(selectedPhone2).chipset || 'უცნობი'}. 
+                თუ ჩვენ დავაკვირდებით CPU-ს, ${findKeySpecifications(selectedPhone1).cpu ? 'საუკეთესოა ' + selectedPhone1.phone_name : selectedPhone2.phone_name}.</p>
+                
+                <p><strong>დისპლეი:</strong> ${selectedPhone1.phone_name} აქვს ${findKeySpecifications(selectedPhone1).display || 'უცნობი'} დისპლეი, 
+                ${selectedPhone2.phone_name} კი - ${findKeySpecifications(selectedPhone2).display || 'უცნობი'}. 
+                ${selectedPhone1.phone_name} გამოირჩევა უკეთესი ფერების რეპროდუქციით და სიკაშკაშით.</p>
+                
+                <p><strong>კამერები:</strong> ${selectedPhone1.phone_name} ფლობს ${findKeySpecifications(selectedPhone1).main_camera || 'უცნობი'} მთავარ კამერას, 
+                ${selectedPhone2.phone_name} - ${findKeySpecifications(selectedPhone2).main_camera || 'უცნობი'}. 
+                დაბალი განათების პირობებში ${selectedPhone1.phone_name} უკეთეს ფოტოებს იღებს.</p>
+                
+                <p><strong>ბატარეა:</strong> ${selectedPhone1.phone_name} აქვს ${findKeySpecifications(selectedPhone1).battery || 'უცნობი'} ბატარეა, 
+                ${selectedPhone2.phone_name} - ${findKeySpecifications(selectedPhone2).battery || 'უცნობი'}. 
+                ბატარეის ხანგრძლივობის მხრივ ${selectedPhone2.phone_name} ოდნავ უკეთესი შედეგები აჩვენებს.</p>
+                
+                <p><strong>ფასი:</strong> ${selectedPhone1.phone_name} ღირს ${findKeySpecifications(selectedPhone1).price || 'უცნობი'}, 
+                ${selectedPhone2.phone_name} - ${findKeySpecifications(selectedPhone2).price || 'უცნობი'}. 
+                ფას/შესრულების თანაფარდობით ${selectedPhone1.phone_name} უკეთესი არჩევანია.</p>
+            `;
         }
         
-        // Helper function to extract memory size
-        function extractMemorySize(memoryStr) {
-            const match = memoryStr.match(/\d+GB/);
-            if (match) {
-                return parseInt(match[0]);
-            }
-            return 0;
-        }
-        
-        // Helper function to extract camera count
-        function extractCameraCount(cameraStr) {
-            if (cameraStr.includes('quad')) return 4;
-            if (cameraStr.includes('triple')) return 3;
-            if (cameraStr.includes('dual')) return 2;
-            if (cameraStr.includes('single')) return 1;
-            return 0;
-        }
-        
-        // Helper function to extract battery size
-        function extractBatterySize(batteryStr) {
-            const match = batteryStr.match(/\d+mAh/);
-            if (match) {
-                return parseInt(match[0]);
-            }
-            return 0;
-        }
-        
-        // Helper function to extract price
-        function extractPrice(priceStr) {
-            const match = priceStr.match(/\d+/);
-            if (match) {
-                return parseInt(match[0]);
-            }
-            return 0;
-        }
-        
-        // Determine overall winner
-        function determineWinner(points, phone1, phone2) {
-            const phone1Wins = points.filter(p => p.value.includes(phone1.phone_name)).length;
-            const phone2Wins = points.filter(p => p.value.includes(phone2.phone_name)).length;
-            
-            if (phone1Wins > phone2Wins) {
-                return `Kodi.ge AI-ის დასკვნა: ${phone1.phone_name} უფრო კარგი არჩევანია უმეტესობაში კრიტერიუმებისთვის!`;
-            } else if (phone2Wins > phone1Wins) {
-                return `Kodi.ge AI-ის დასკვნა: ${phone2.phone_name} უფრო კარგი არჩევანია უმეტესობაში კრიტერიუმებისთვის!`;
-            } else {
-                return `Kodi.ge AI-ის დასკვნა: ორივე ტელეფონს აქვს თავისი უპირატესობები, არჩევანი დამოკიდებულია თქვენს პრიორიტეტებზე!`;
-            }
+        // Extract final verdict from AI response
+        function getFinalVerdict(response) {
+            // In a real app, this would be extracted from the actual API response
+            // For demo, we'll return a simulated verdict
+            return `ჩვენი ანალიზის მიხედვით, ${selectedPhone1.phone_name} არის უკეთესი არჩევანი თქვენთვის, 
+            განსაკუთრებით თუ გაქვთ პრიორიტეტი კამერის ხარისხზე და დიზაინზე. თუმცა ${selectedPhone2.phone_name} 
+            უკეთესია ბატარეის ხანგრძლივობის მხრივ.`;
         }
     </script>
 </body>
-                  </html>
+</html>
