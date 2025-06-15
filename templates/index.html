@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://js.stripe.com/v3/"></script>
     <style>
-        /* Добавлено: глобальный border-box */
+        /* Глобальный border-box */
         *, *::before, *::after {
             box-sizing: border-box;
         }
@@ -34,6 +34,132 @@
             font-weight: 450;
         }
         
+        /* Анимированный логотип */
+        .logo-animated {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            perspective: 1000px;
+        }
+
+        .logo-core {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--accent-color), #0066ff);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-style: preserve-3d;
+            animation: logoFloat 6s ease-in-out infinite;
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.6);
+            overflow: hidden;
+        }
+
+        .logo-core::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 70%);
+            animation: logoLight 5s linear infinite;
+        }
+
+        .logo-letter {
+            font-weight: bold;
+            font-size: 32px;
+            color: white;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+            z-index: 2;
+            transform: translateZ(20px);
+        }
+
+        .logo-ring {
+            position: absolute;
+            border: 2px solid var(--accent-color);
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: logoRotate 12s linear infinite;
+        }
+
+        .logo-ring:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            animation-duration: 15s;
+            border-width: 1px;
+        }
+
+        .logo-ring:nth-child(2) {
+            width: 100px;
+            height: 100px;
+            animation-duration: 20s;
+            animation-direction: reverse;
+            border-width: 1.5px;
+        }
+
+        .logo-ring:nth-child(3) {
+            width: 120px;
+            height: 120px;
+            animation-duration: 25s;
+            border-width: 2px;
+        }
+
+        .logo-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            animation: logoParticle 4s linear infinite;
+        }
+
+        .logo-particle:nth-child(4) { top: 10%; left: 50%; animation-delay: 0s; }
+        .logo-particle:nth-child(5) { top: 50%; left: 90%; animation-delay: 1s; }
+        .logo-particle:nth-child(6) { top: 90%; left: 50%; animation-delay: 2s; }
+        .logo-particle:nth-child(7) { top: 50%; left: 10%; animation-delay: 3s; }
+
+        /* Анимации логотипа */
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0) rotateX(5deg) rotateY(5deg); }
+            50% { transform: translateY(-10px) rotateX(-5deg) rotateY(-5deg); }
+        }
+
+        @keyframes logoRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes logoParticle {
+            0% { 
+                transform: scale(1); 
+                opacity: 1;
+                box-shadow: 0 0 5px var(--accent-color);
+            }
+            50% { 
+                transform: scale(1.5); 
+                opacity: 0.7;
+                box-shadow: 0 0 10px var(--accent-color);
+            }
+            100% { 
+                transform: scale(1); 
+                opacity: 1;
+                box-shadow: 0 0 5px var(--accent-color);
+            }
+        }
+
+        @keyframes logoLight {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Остальные стили... */
         /* Bottom mobile menu button */
         .mobile-menu-bottom {
             display: none;
@@ -468,37 +594,6 @@
             bottom: -200px;
             left: -200px;
         }
-
-        /* Logo styling */
-        .logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            padding: 20px;
-        }
-
-        .logo-img {
-            width: 50px;
-            height: 50px;
-            background: var(--accent-color);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 24px;
-            animation: neonLogo 3s infinite alternate;
-        }
-        
-        @keyframes neonLogo {
-            0% {
-                box-shadow: 0 0 5px rgba(0, 198, 255, 0.5);
-            }
-            100% {
-                box-shadow: 0 0 15px rgba(0, 198, 255, 0.8);
-            }
-        }
         
         /* Service instruction */
         .service-instruction {
@@ -587,11 +682,10 @@
             cursor: pointer;
         }
 
-        /* Изменено: добавлено overflow-x: hidden */
         .mobile-menu-modal .modal-body {
             flex: 1;
             overflow-y: auto;
-            overflow-x: hidden; /* Предотвращает горизонтальный скролл */
+            overflow-x: hidden;
             padding-bottom: 20px;
         }
 
@@ -653,23 +747,21 @@
             cursor: pointer;
         }
 
-        /* Изменено: добавлено overflow-x: hidden */
         .apple-submenu-modal .modal-body {
             flex: 1;
             overflow-y: auto;
-            overflow-x: hidden; /* Предотвращает горизонтальный скролл */
+            overflow-x: hidden;
             padding-bottom: 20px;
         }
 
-        /* Menu grid with 3 columns - ОБЩИЕ СТИЛИ ДЛЯ ВСЕХ МЕНЮ */
-        /* Изменено: обновлен .menu-grid */
+        /* Menu grid with 3 columns */
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); /* Адаптивные ячейки */
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
             gap: 6px;
-            padding: 10px; /* Упрощенные отступы */
-            width: 100%; /* Занимает всю ширину */
-            box-sizing: border-box; /* Учитываем padding в ширине */
+            padding: 10px 6px 20px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .menu-item {
@@ -742,6 +834,36 @@
             .main-content {
                 margin-left: 70px;
             }
+            
+            /* Адаптация логотипа */
+            .logo-animated {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .logo-core {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .logo-letter {
+                font-size: 24px;
+            }
+            
+            .logo-ring:nth-child(1) {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .logo-ring:nth-child(2) {
+                width: 75px;
+                height: 75px;
+            }
+            
+            .logo-ring:nth-child(3) {
+                width: 90px;
+                height: 90px;
+            }
         }
         
         @media (max-width: 768px) {
@@ -808,16 +930,76 @@
             .card {
                 overflow: visible;
             }
+            
+            /* Адаптация логотипа для мобильных */
+            .logo-animated {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .logo-core {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .logo-letter {
+                font-size: 24px;
+            }
+            
+            .logo-ring:nth-child(1) {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .logo-ring:nth-child(2) {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .logo-ring:nth-child(3) {
+                width: 80px;
+                height: 80px;
+            }
         }
 
         /* Адаптация для очень маленьких экранов */
         @media (max-width: 340px) {
             .menu-grid {
-                grid-template-columns: repeat(2, 1fr); /* 2 колонки на маленьких экранах */
+                grid-template-columns: repeat(2, 1fr);
             }
             
             .menu-item {
                 aspect-ratio: 1/1.2;
+            }
+            
+            /* Логотип для очень маленьких экранов */
+            .logo-animated {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .logo-core {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .logo-letter {
+                font-size: 20px;
+            }
+            
+            .logo-ring:nth-child(1) {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .logo-ring:nth-child(2) {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .logo-ring:nth-child(3) {
+                width: 70px;
+                height: 70px;
             }
         }
     </style>
@@ -837,8 +1019,19 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <!-- Logo -->
-        <div class="logo-container">
-            <div class="logo-img">K</div>
+        <div class="sidebar-logo">
+            <div class="logo-animated">
+                <div class="logo-ring"></div>
+                <div class="logo-ring"></div>
+                <div class="logo-ring"></div>
+                <div class="logo-particle"></div>
+                <div class="logo-particle"></div>
+                <div class="logo-particle"></div>
+                <div class="logo-particle"></div>
+                <div class="logo-core">
+                    <div class="logo-letter">K</div>
+                </div>
+            </div>
             <h2>KODI.GE</h2>
         </div>
         
@@ -921,9 +1114,21 @@
     <div class="main-content">
         <!-- Hero Section with Logo and Carousel -->
         <div class="hero-section mb-5">
-            <div class="logo-container mb-4">
-                <div class="logo-img">K</div>
-                <h1 class="display-4 fw-bold">KODI.GE</h1>
+            <div class="text-center mb-4">
+                <div class="logo-animated">
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-particle"></div>
+                    <div class="logo-particle"></div>
+                    <div class="logo-particle"></div>
+                    <div class="logo-particle"></div>
+                    <div class="logo-core">
+                        <div class="logo-letter">K</div>
+                    </div>
+                </div>
+                <h1 class="display-4 fw-bold mt-3">KODI.GE</h1>
+                <p class="lead">პროფესიონალური IMEI შემოწმების სერვისი</p>
             </div>
             
             <!-- Carousel -->
@@ -1544,4 +1749,4 @@
         }
     </script>
 </body>
-    </html>
+                </html>
