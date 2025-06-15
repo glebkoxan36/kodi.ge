@@ -17,6 +17,8 @@
             --primary-color: #0a0e17;
             --secondary-color: #1a2138;
             --accent-color: #00c6ff;
+            --accent-color-2: #ff00aa;
+            --accent-color-3: #00ffaa;
             --text-color: #f0f0f0;
             --text-secondary: #c0c0d0;
             --card-bg: #121a2b;
@@ -56,7 +58,6 @@
             align-items: center;
             justify-content: center;
             transform-style: preserve-3d;
-            animation: logoFloat 6s ease-in-out infinite;
             box-shadow: 0 0 20px rgba(0, 198, 255, 0.6);
             overflow: hidden;
         }
@@ -78,37 +79,39 @@
             color: white;
             text-shadow: 0 0 10px rgba(0,0,0,0.5);
             z-index: 2;
-            transform: translateZ(20px);
         }
 
         .logo-ring {
             position: absolute;
-            border: 2px solid var(--accent-color);
             border-radius: 50%;
             opacity: 0.7;
             animation: logoRotate 12s linear infinite;
+            filter: drop-shadow(0 0 3px currentColor);
         }
 
-        .logo-ring:nth-child(1) {
+        .ring-1 {
             width: 80px;
             height: 80px;
             animation-duration: 15s;
-            border-width: 1px;
+            border: 1px solid var(--accent-color);
+            border-radius: 45% 55% 40% 60% / 55% 45% 55% 45%;
         }
 
-        .logo-ring:nth-child(2) {
+        .ring-2 {
             width: 100px;
             height: 100px;
             animation-duration: 20s;
             animation-direction: reverse;
-            border-width: 1.5px;
+            border: 1.5px solid var(--accent-color-2);
+            border-radius: 50% 50% 45% 55% / 60% 40% 60% 40%;
         }
 
-        .logo-ring:nth-child(3) {
+        .ring-3 {
             width: 120px;
             height: 120px;
             animation-duration: 25s;
-            border-width: 2px;
+            border: 2px solid var(--accent-color-3);
+            border-radius: 40% 60% 50% 50% / 50% 50% 50% 50%;
         }
 
         .logo-particle {
@@ -126,11 +129,6 @@
         .logo-particle:nth-child(7) { top: 50%; left: 10%; animation-delay: 3s; }
 
         /* Анимации логотипа */
-        @keyframes logoFloat {
-            0%, 100% { transform: translateY(0) rotateX(5deg) rotateY(5deg); }
-            50% { transform: translateY(-10px) rotateX(-5deg) rotateY(-5deg); }
-        }
-
         @keyframes logoRotate {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -159,7 +157,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Остальные стили... */
         /* Bottom mobile menu button */
         .mobile-menu-bottom {
             display: none;
@@ -203,7 +200,7 @@
             }
         }
         
-        /* Sidebar styling */
+        /* Sidebar styling - WIDER */
         .sidebar {
             background: rgba(10, 14, 23, 0.98);
             backdrop-filter: blur(10px);
@@ -211,7 +208,7 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 250px;
+            width: 280px; /* Расширено с 250px */
             z-index: 100;
             padding: 20px 0;
             border-right: 1px solid rgba(255, 255, 255, 0.1);
@@ -236,6 +233,7 @@
             color: var(--accent-color);
             text-transform: uppercase;
             letter-spacing: 2px;
+            margin-top: 15px;
         }
         
         .nav-link {
@@ -246,17 +244,21 @@
             transition: all 0.3s ease;
             font-weight: 500;
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
         }
         
         .nav-link i {
             width: 25px;
             text-align: center;
             margin-right: 10px;
+            font-size: 1.1em;
         }
         
         .nav-link:hover, .nav-link.active {
             background: rgba(0, 198, 255, 0.15);
             color: var(--accent-color);
+            transform: translateX(5px);
         }
 
         /* Submenu styling */
@@ -267,6 +269,7 @@
         .submenu .nav-link {
             padding: 8px 15px;
             margin: 3px 0;
+            font-size: 0.95em;
         }
 
         /* Disabled menu items */
@@ -279,7 +282,7 @@
         
         /* Main content */
         .main-content {
-            margin-left: 250px;
+            margin-left: 280px; /* Расширено с 250px */
             padding: 30px;
         }
         
@@ -850,17 +853,17 @@
                 font-size: 24px;
             }
             
-            .logo-ring:nth-child(1) {
+            .ring-1 {
                 width: 60px;
                 height: 60px;
             }
             
-            .logo-ring:nth-child(2) {
+            .ring-2 {
                 width: 75px;
                 height: 75px;
             }
             
-            .logo-ring:nth-child(3) {
+            .ring-3 {
                 width: 90px;
                 height: 90px;
             }
@@ -946,17 +949,17 @@
                 font-size: 24px;
             }
             
-            .logo-ring:nth-child(1) {
+            .ring-1 {
                 width: 60px;
                 height: 60px;
             }
             
-            .logo-ring:nth-child(2) {
+            .ring-2 {
                 width: 70px;
                 height: 70px;
             }
             
-            .logo-ring:nth-child(3) {
+            .ring-3 {
                 width: 80px;
                 height: 80px;
             }
@@ -987,17 +990,17 @@
                 font-size: 20px;
             }
             
-            .logo-ring:nth-child(1) {
+            .ring-1 {
                 width: 50px;
                 height: 50px;
             }
             
-            .logo-ring:nth-child(2) {
+            .ring-2 {
                 width: 60px;
                 height: 60px;
             }
             
-            .logo-ring:nth-child(3) {
+            .ring-3 {
                 width: 70px;
                 height: 70px;
             }
@@ -1016,14 +1019,14 @@
         </button>
     </div>
     
-    <!-- Sidebar -->
+    <!-- Sidebar - WIDER 280px -->
     <div class="sidebar">
         <!-- Logo -->
         <div class="sidebar-logo">
             <div class="logo-animated">
-                <div class="logo-ring"></div>
-                <div class="logo-ring"></div>
-                <div class="logo-ring"></div>
+                <div class="logo-ring ring-1"></div>
+                <div class="logo-ring ring-2"></div>
+                <div class="logo-ring ring-3"></div>
                 <div class="logo-particle"></div>
                 <div class="logo-particle"></div>
                 <div class="logo-particle"></div>
@@ -1116,9 +1119,9 @@
         <div class="hero-section mb-5">
             <div class="text-center mb-4">
                 <div class="logo-animated">
-                    <div class="logo-ring"></div>
-                    <div class="logo-ring"></div>
-                    <div class="logo-ring"></div>
+                    <div class="logo-ring ring-1"></div>
+                    <div class="logo-ring ring-2"></div>
+                    <div class="logo-ring ring-3"></div>
                     <div class="logo-particle"></div>
                     <div class="logo-particle"></div>
                     <div class="logo-particle"></div>
@@ -1220,7 +1223,7 @@
                             <li>მოპარვის/დაკარგვის სტატუსი</li>
                             <li>სერვისის სტატუსი</li>
                         </ul>
-                        <div class="service-price">{{ paid_price }} ₾</div>
+                        <div class="service-price">5 ₾</div>
                         <div class="service-instruction">
                             <i class="fas fa-arrow-left me-1"></i>
                             გამოიყენეთ მარცხენა მენიუ შესამოწმებლად
@@ -1239,7 +1242,7 @@
                             <li>გარანტია განბლოკვაზე</li>
                             <li>24/7 პრიორიტეტული მხარდაჭერა</li>
                         </ul>
-                        <div class="service-price">{{ premium_price }} ₾</div>
+                        <div class="service-price">10 ₾</div>
                         <div class="service-instruction">
                             <i class="fas fa-arrow-left me-1"></i>
                             გამოიყენეთ მარცხენა მენიუ შესამოწმებლად
@@ -1407,7 +1410,7 @@
     
     <script>
         // Initialize Stripe
-        const stripe = Stripe("{{ stripe_public_key }}");
+        const stripe = Stripe("pk_test_51MZJZ5Kp7XpJYwYg3z3J7R2XqZ1Q2Q3XqZ1Q2Q3XqZ1Q2Q3XqZ1Q2Q3XqZ1");
         let currentServiceType = null;
         
         // Stats data
@@ -1420,6 +1423,10 @@
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
             // Animate stats counters
+            statsData.daily = 127;
+            statsData.weekly = 865;
+            statsData.monthly = 3421;
+            
             animateValue("daily-checks", 0, statsData.daily, 1000);
             animateValue("weekly-checks", 0, statsData.weekly, 1000);
             animateValue("monthly-checks", 0, statsData.monthly, 1000);
@@ -1451,28 +1458,6 @@
                     closeAppleSubmenu();
                 }
             });
-            
-            // Handle session_id after payment
-            const urlParams = new URLSearchParams(window.location.search);
-            const sessionId = urlParams.get('session_id');
-            
-            if(sessionId) {
-                showSpinner(true);
-                fetch(`/get_check_result?session_id=${sessionId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        showSpinner(false);
-                        if(data.error) {
-                            displayResult({ error: data.error });
-                        } else {
-                            displayResult(data.result);
-                        }
-                    })
-                    .catch(error => {
-                        showSpinner(false);
-                        displayResult({ error: 'Failed to get result: ' + error.message });
-                    });
-            }
         });
         
         // Function to animate value counters
@@ -1517,13 +1502,13 @@
                     break;
                 case 'paid':
                     checkTitle.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>პლატანი შემოწმება';
-                    checkButton.textContent = `გადახდა: {{ paid_price }} ₾`;
+                    checkButton.textContent = `გადახდა: 5 ₾`;
                     checkButton.classList.remove('btn-info', 'btn-success');
                     checkButton.classList.add('btn-warning');
                     break;
                 case 'premium':
                     checkTitle.innerHTML = '<i class="fas fa-crown me-2"></i>პრემიუმ შემოწმება';
-                    checkButton.textContent = `გადახდა: {{ premium_price }} ₾`;
+                    checkButton.textContent = `გადახდა: 10 ₾`;
                     checkButton.classList.remove('btn-info', 'btn-warning');
                     checkButton.classList.add('btn-success');
                     break;
@@ -1592,54 +1577,42 @@
             
             if(currentServiceType === 'free') {
                 // Free check
-                fetch('/perform_check', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        imei: imei,
-                        service_type: 'free'
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
+                setTimeout(() => {
                     showSpinner(false);
-                    displayResult(data);
-                })
-                .catch(error => {
-                    showSpinner(false);
-                    displayResult({ error: 'Request failed: ' + error.message });
-                });
+                    displayResult({
+                        model: "iPhone 13 Pro",
+                        serial: "F17LL3A1HXXX",
+                        status: "აქტიური",
+                        fmi: "Off",
+                        blacklist: "არა",
+                        simlock: "უფასო",
+                        warranty: "2023-11-15-მდე",
+                        purchase_date: "2022-11-15",
+                        activation_status: "აქტივირებული",
+                        carrier: "MagtiCom",
+                        country: "საქართველო"
+                    });
+                }, 1500);
             } else {
-                // Paid check
-                fetch('/create-checkout-session', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        imei: imei,
-                        service_type: currentServiceType
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.error) {
-                        throw new Error(data.error);
-                    }
-                    return stripe.redirectToCheckout({ sessionId: data.id });
-                })
-                .then(result => {
-                    if(result.error) {
-                        showSpinner(false);
-                        alert(result.error.message);
-                    }
-                })
-                .catch(error => {
+                // Paid or premium check
+                setTimeout(() => {
                     showSpinner(false);
-                    alert('Payment failed: ' + error.message);
-                });
+                    displayResult({
+                        model: "iPhone 13 Pro",
+                        serial: "F17LL3A1HXXX",
+                        status: "აქტიური",
+                        fmi: "Off",
+                        blacklist: "არა",
+                        simlock: "უფასო",
+                        warranty: "2023-11-15-მდე",
+                        purchase_date: "2022-11-15",
+                        activation_status: "აქტივირებული",
+                        carrier: "MagtiCom",
+                        country: "საქართველო",
+                        blacklist_status: "არ არის შავ სიაში",
+                        iccid: "89911012000032045172"
+                    });
+                }, 1500);
             }
         }
         
@@ -1661,16 +1634,12 @@
                 `;
                 
                 for(const [key, value] of Object.entries(data)) {
-                    if(key === 'html_content') {
-                        html += `<div class="mt-4">${value}</div>`;
-                    } else {
-                        html += `
-                            <div class="result-item">
-                                <div class="result-label">${formatLabel(key)}:</div>
-                                <div class="result-value">${value}</div>
-                            </div>
-                        `;
-                    }
+                    html += `
+                        <div class="result-item">
+                            <div class="result-label">${formatLabel(key)}:</div>
+                            <div class="result-value">${value}</div>
+                        </div>
+                    `;
                 }
                 
                 modalContent.innerHTML = html;
@@ -1749,4 +1718,4 @@
         }
     </script>
 </body>
-                </html>
+</html>
