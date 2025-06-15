@@ -1,4 +1,4 @@
-// counter.js - функционал счетчика проверок
+// counter.js
 class Counter {
     constructor(elementId, initialValue = 0) {
         this.element = document.getElementById(elementId);
@@ -35,7 +35,7 @@ class Counter {
     }
 }
 
-// Инициализация счетчиков
+// Инициализация счетчиков (но их нет в HTML, нужно добавить элементы)
 const dailyCounter = new Counter('daily-checks', 125);
 const weeklyCounter = new Counter('weekly-checks', 875);
 const monthlyCounter = new Counter('monthly-checks', 3750);
@@ -64,6 +64,3 @@ document.addEventListener('DOMContentLoaded', () => {
         monthlyCounter.setValue(stats.monthly);
     }
 });
-
-// Экспорт для использования в других модулях
-export { dailyCounter, weeklyCounter, monthlyCounter, incrementCounters };
