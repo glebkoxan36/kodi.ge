@@ -1,0 +1,24 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Document in {{ collection_name }}</h2>
+    <form method="POST">
+        {% for key, value in document.items() %}
+        <div class="mb-3">
+            <label class="form-label">{{ key }}</label>
+            {% if key == '_id' %}
+                <input type="text" class="form-control" 
+                       name="field_{{ key }}" value="{{ value }}" readonly>
+            {% else %}
+                <input type="text" class="form-control" 
+                       name="field_{{ key }}" value="{{ value }}">
+            {% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{{ url_for('collection_view', collection_name=collection_name) }}" 
+           class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
