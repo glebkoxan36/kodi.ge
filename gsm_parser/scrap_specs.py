@@ -81,10 +81,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger('gsm_parser')
 
-except requests.exceptions.SSLError as e:
-        logger.error(f"SSL error: {str(e)}")
-        # ÐŸÐ¾Ð¿Ñ‹Ñ‚ÐºÐ° Ð¾Ð±Ð¾Ð¹Ñ‚Ð¸ Ð¿Ñ€Ð¾Ð±Ð»ÐµÐ¼Ñ‹ Ñ SSL
-        try:
             logger.warning("Trying without SSL verification...")
             response = requests.get(
                 "https://www.gsmarena.com",
