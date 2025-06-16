@@ -17,19 +17,86 @@ logging.basicConfig(
 logger = logging.getLogger('gsm_parser')
 
 def is_gsmarena_available():
-    """Проверяет доступность GSMArena"""
+    """Проверяет доступность GSMArena с улучшенной диагностикой"""
+    user_agents = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1',
+        'Mozilla/5.0 (Linux; Android 12; SM-S906N Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/80.0.3987.119 Mobile Safari/537.36'
+    ]
+    
+    headers = {
+        'User-Agent': random.choice(user_agents),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'DNT': '1',
+        'Upgrade-Insecure-Requests': '1'
+    }
+    
     try:
-        response = requests.get("https://www.gsmarena.com", timeout=10)
-        return response.status_code == 200
+        # Попробуем с проверкой SSL
+        response = requests.get(
+            "https://www.gsmarena.com",
+            headers=headers,
+            timeout=20,
+            allow_redirects=True
+        )
+        
+        if response.status_code == 200:
+            return True
+        
+        # Детальная диагностика статус-кодов
+        logger.warning(f"GSMArena returned status code: {response.status_code}")
+        
+        # Проверка Cloudflare блокировки
+        if response.status_code in [403, 429] and 'cf-ray' in response.headers:
+            logger.error("Blocked by Cloudflare protection")
+            
+        # Проверка редиректов
+        if response.history:
+            redirect_chain = [f"{r.status_code} -> {r.url}" for r in response.history]
+            logger.warning(f"Redirect chain: {' | '.join(redirect_chain)}")
+            logger.warning(f"Final URL: {response.url}")
+            
+        return False
+        
+    except requests.exceptions.SSLError as e:
+        logger.error(f"SSL error: {str(e)}")
+        # Попытка обойти проблемы с SSL
+        try:
+            logger.warning("Trying without SSL verification...")
+            response = requests.get(
+                "https://www.gsmarena.com",
+                headers=headers,
+                timeout=20,
+                verify=False  # Небезопасно, но для диагностики
+            )
+            return response.status_code == 200
+        except Exception as ssl_fallback_error:
+            logger.error(f"SSL fallback failed: {str(ssl_fallback_error)}")
+            return False
+        
+    except requests.exceptions.Timeout:
+        logger.error("Connection to GSMArena timed out")
+        return False
+        
+    except requests.exceptions.ConnectionError as ce:
+        logger.error(f"Connection error: {str(ce)}")
+        return False
+        
     except Exception as e:
-        logger.error(f"GSMArena availability check failed: {str(e)}")
+        # Детальный лог исключений
+        logger.error(f"GSMArena availability check failed: {type(e).__name__}: {str(e)}")
         return False
 
 def get_fresh_proxies():
     """Получает свежий список HTTPS-прокси с SSLProxies.org"""
     try:
         url = "https://sslproxies.org/"
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=15)
         soup = BeautifulSoup(response.content, 'html.parser')
         
         proxies = []
@@ -90,7 +157,17 @@ def scrape_phone_details(url, proxy=None):
     for attempt in range(max_retries):
         try:
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                'User-Agent': random.choice([
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15',
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0'
+                ]),
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'DNT': '1',
+                'Upgrade-Insecure-Requests': '1'
             }
             
             # Упрощенная обработка прокси
@@ -99,10 +176,15 @@ def scrape_phone_details(url, proxy=None):
             response = requests.get(
                 url, 
                 headers=headers, 
-                proxies=proxy_config,  # Передаем напрямую
-                timeout=30
+                proxies=proxy_config,
+                timeout=45  # Увеличенный таймаут
             )
             
+            # Проверка на Cloudflare challenge
+            if "cf-chl-bypass" in response.url:
+                logger.error("Cloudflare challenge detected")
+                return None
+                
             if response.status_code == 429:  # Too Many Requests
                 wait_time = (2 ** attempt) + random.uniform(0, 1)
                 logger.warning(f"Rate limited for {url}. Waiting {wait_time} seconds...")
@@ -191,6 +273,10 @@ def main(mongodb_uri):
     """Основная функция парсера"""
     logger.info("Starting GSM Arena parser")
     
+    # Добавляем задержку перед проверкой доступности
+    logger.info("Waiting 5 seconds before availability check...")
+    time.sleep(5)
+    
     if not is_gsmarena_available():
         logger.error("GSMArena is not available. Aborting parser.")
         return
@@ -268,7 +354,7 @@ def main(mongodb_uri):
                 logger.warning(f"[{i+1}/{total}] Failed to scrape {url}")
             
             # Пауза для избежания блокировки
-            sleep_time = random.uniform(3.0, 7.0)
+            sleep_time = random.uniform(5.0, 15.0)  # Увеличенный диапазон пауз
             logger.info(f"Waiting {sleep_time:.1f} seconds...")
             time.sleep(sleep_time)
             
@@ -280,7 +366,7 @@ def main(mongodb_uri):
                 'timestamp': datetime.utcnow()
             })
             logger.error(f"[{i+1}/{total}] Error processing {url}: {str(e)}")
-            time.sleep(10)  # Большая пауза при ошибке
+            time.sleep(20)  # Большая пауза при ошибке
     
     logger.info("Parser finished successfully")
 
@@ -288,4 +374,9 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("Usage: python scrap_specs.py <MONGODB_URI>")
         sys.exit(1)
+    
+    # Отключаем предупреждения о SSL при использовании verify=False
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    
     main(sys.argv[1])
