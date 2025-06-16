@@ -1,0 +1,15 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Database Management</h2>
+    <div class="list-group mt-3">
+        {% for collection in collections %}
+        <a href="{{ url_for('collection_view', collection_name=collection) }}" 
+           class="list-group-item list-group-item-action">
+            {{ collection }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
