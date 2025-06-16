@@ -384,6 +384,15 @@
             display: none;
         }
         
+        /* Стили для групп спецификаций */
+        .spec-group-header {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #00c6ff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 5px;
+        }
+        
         /* Responsive design */
         @media (max-width: 768px) {
             .comparison-container {
@@ -538,12 +547,7 @@
                         <i class="fas fa-robot ai-icon"></i>
                         <h3>Kodi.ge AI შედარება</h3>
                     </div>
-                    <div class="ai-content" id="aiContent">
-                        <div class="ai-loader">
-                            <i class="fas fa-spinner"></i>
-                            <p>AI ანალიზი მიმდინარეობს...</p>
-                        </div>
-                    </div>
+                    <div class="ai-content" id="aiContent"></div>
                 </div>
             </div>
         </div>
@@ -590,7 +594,7 @@
             });
         });
         
-        // Search phones using API
+        // Search phones using our API
         async function searchPhones(query, suggestionsContainer) {
             if (query.length < 2) {
                 suggestionsContainer.style.display = 'none';
@@ -606,16 +610,18 @@
                 
                 const data = await response.json();
                 
-                if (data.data && data.data.phones) {
+                if (data.data && data.data.length > 0) {
                     suggestionsContainer.innerHTML = '';
-                    data.data.phones.forEach(phone => {
+                    data.data.forEach(phone => {
                         const item = document.createElement('div');
                         item.className = 'suggestion-item';
-                        item.textContent = phone.phone_name;
+                        item.textContent = phone.name;
                         item.onclick = () => selectPhone(phone, suggestionsContainer.id);
                         suggestionsContainer.appendChild(item);
                     });
                     suggestionsContainer.style.display = 'block';
+                } else {
+                    suggestionsContainer.style.display = 'none';
                 }
             } catch (error) {
                 console.error('Error searching phones:', error);
@@ -637,11 +643,11 @@
             
             if (isPhone1) {
                 selectedPhone1 = phone;
-                phone1Search.value = phone.phone_name;
+                phone1Search.value = phone.name;
                 suggestions1.style.display = 'none';
             } else {
                 selectedPhone2 = phone;
-                phone2Search.value = phone.phone_name;
+                phone2Search.value = phone.name;
                 suggestions2.style.display = 'none';
             }
             
@@ -659,8 +665,8 @@
             
             try {
                 // Fetch phone details
-                const phone1Details = await fetchPhoneDetails(selectedPhone1.slug);
-                const phone2Details = await fetchPhoneDetails(selectedPhone2.slug);
+                const phone1Details = await fetchPhoneDetails(selectedPhone1._id);
+                const phone2Details = await fetchPhoneDetails(selectedPhone2._id);
                 
                 // Display phones
                 displayPhone(phone1Details, 'phone1');
@@ -687,17 +693,17 @@
             }
         }
         
-        // Fetch phone details from API
-        async function fetchPhoneDetails(slug) {
+        // Fetch phone details from our API
+        async function fetchPhoneDetails(phoneId) {
             try {
-                const response = await fetch(`/phone_details/${slug}`);
+                const response = await fetch(`/phone_details/${phoneId}`);
                 
                 if (!response.ok) {
                     throw new Error(`API error: ${response.status}`);
                 }
                 
                 const data = await response.json();
-                return data.data;
+                return data;
             } catch (error) {
                 console.error('Error fetching phone details:', error);
                 throw error;
@@ -707,83 +713,65 @@
         // Display phone details
         function displayPhone(phone, prefix) {
             // Basic info
-            document.getElementById(`${prefix}Title`).textContent = phone.phone_name;
-            document.getElementById(`${prefix}Image`).src = phone.thumbnail || 'https://via.placeholder.com/200?text=Image+Not+Available';
+            document.getElementById(`${prefix}Title`).textContent = phone.name;
+            document.getElementById(`${prefix}Image`).src = phone.image_url || 'https://via.placeholder.com/200?text=Image+Not+Available';
             
             // Specifications
             const specsContainer = document.getElementById(`${prefix}Specs`);
             specsContainer.innerHTML = '';
             
-            // Find key specifications
-            const keySpecs = findKeySpecifications(phone);
-            
             // Display each specification
-            for (const [spec, value] of Object.entries(keySpecs)) {
+            displaySpecGroup(specsContainer, 'Network', 'ქსელი', phone);
+            displaySpecGroup(specsContainer, 'Launch', 'გამოშვება', phone);
+            displaySpecGroup(specsContainer, 'Body', 'კორპუსი', phone);
+            displaySpecGroup(specsContainer, 'Display', 'ეკრანი', phone);
+            displaySpecGroup(specsContainer, 'Platform', 'პლატფორმა', phone);
+            displaySpecGroup(specsContainer, 'Memory', 'მეხსიერება', phone);
+            displaySpecGroup(specsContainer, 'Main Camera', 'მთავარი კამერა', phone);
+            displaySpecGroup(specsContainer, 'Selfie camera', 'წინა კამერა', phone);
+            displaySpecGroup(specsContainer, 'Sound', 'ხმა', phone);
+            displaySpecGroup(specsContainer, 'Comms', 'კავშირი', phone);
+            displaySpecGroup(specsContainer, 'Features', 'ფუნქციები', phone);
+            displaySpecGroup(specsContainer, 'Battery', 'ბატარეა', phone);
+            displaySpecGroup(specsContainer, 'Misc', 'დამატებით', phone);
+        }
+        
+        // Display a group of specifications
+        function displaySpecGroup(container, groupKey, groupLabel, phone) {
+            // Check if this group exists in the specs
+            if (!phone.specs || !phone.specs[groupKey]) return;
+            
+            // Create group header
+            const groupHeader = document.createElement('div');
+            groupHeader.className = 'spec-group-header';
+            groupHeader.textContent = groupLabel;
+            groupHeader.style.marginTop = '15px';
+            groupHeader.style.fontWeight = 'bold';
+            groupHeader.style.color = '#00c6ff';
+            groupHeader.style.borderBottom = '1px solid rgba(255, 255, 255, 0.2)';
+            groupHeader.style.paddingBottom = '5px';
+            container.appendChild(groupHeader);
+            
+            // Display each spec in the group
+            for (const [specKey, specValue] of Object.entries(phone.specs[groupKey])) {
                 const specItem = document.createElement('div');
                 specItem.className = 'spec-item';
                 
                 const label = document.createElement('div');
                 label.className = 'spec-label';
-                label.textContent = formatSpecLabel(spec);
+                label.textContent = specKey;
                 
                 const val = document.createElement('div');
                 val.className = 'spec-value';
-                val.textContent = value || 'მონაცემი არ არის';
+                val.textContent = specValue;
                 
                 specItem.appendChild(label);
                 specItem.appendChild(val);
-                specsContainer.appendChild(specItem);
+                container.appendChild(specItem);
             }
         }
         
-        // Find key specifications from phone data
-        function findKeySpecifications(phone) {
-            const keySpecs = {};
-            
-            // Extract important specs
-            if (phone.release) keySpecs.release = phone.release.announced || phone.release.status;
-            if (phone.body) keySpecs.body = phone.body.dimensions || phone.body.weight;
-            if (phone.display) keySpecs.display = phone.display.size + ', ' + phone.display.resolution;
-            if (phone.platform) keySpecs.platform = phone.platform.os + ' ' + (phone.platform.version || '');
-            if (phone.platform?.chipset) keySpecs.chipset = phone.platform.chipset;
-            if (phone.platform?.cpu) keySpecs.cpu = phone.platform.cpu;
-            if (phone.platform?.gpu) keySpecs.gpu = phone.platform.gpu;
-            if (phone.memory) keySpecs.memory = phone.memory.internal;
-            if (phone.main_camera) keySpecs.main_camera = phone.main_camera.dual || phone.main_camera.triple || phone.main_camera.quad || phone.main_camera.single;
-            if (phone.selfie_camera) keySpecs.selfie_camera = phone.selfie_camera.single || phone.selfie_camera.dual;
-            if (phone.sound) keySpecs.sound = phone.sound.loudspeaker ? 'დიაფაგი' : 'არა';
-            if (phone.comms) keySpecs.comms = phone.comms.wlan + ', ' + phone.comms.bluetooth;
-            if (phone.features) keySpecs.features = phone.features.sensors.join(', ');
-            if (phone.battery) keySpecs.battery = phone.battery.type + ' ' + phone.battery.charging;
-            if (phone.misc) keySpecs.price = phone.misc.price || 'უცნობი';
-            
-            return keySpecs;
-        }
-        
-        // Format specification labels
-        function formatSpecLabel(spec) {
-            const labels = {
-                'release': 'გამოშვება',
-                'body': 'ზომები',
-                'display': 'ეკრანი',
-                'platform': 'პლატფორმა',
-                'chipset': 'ჩიპსეტი',
-                'cpu': 'პროცესორი',
-                'gpu': 'გრაფიკა',
-                'memory': 'მეხსიერება',
-                'main_camera': 'მთავარი კამერა',
-                'selfie_camera': 'წინა კამერა',
-                'sound': 'ხმა',
-                'comms': 'კავშირი',
-                'features': 'ფუნქციები',
-                'battery': 'ბატარეა',
-                'price': 'ფასი'
-            };
-            
-            return labels[spec] || spec;
-        }
-        
-        // Perform AI analysis using DeepSeek API
+        // Perform AI analysis using our API
         async function performAiAnalysis(phone1, phone2) {
             // Show loading state
             aiContent.innerHTML = `
@@ -801,8 +789,16 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        phone1: phone1,
-                        phone2: phone2
+                        phone1: {
+                            phone_name: phone1.name,
+                            specs: phone1.specs,
+                            quick_specs: phone1.quick_specs
+                        },
+                        phone2: {
+                            phone_name: phone2.name,
+                            specs: phone2.specs,
+                            quick_specs: phone2.quick_specs
+                        }
                     })
                 });
                 
@@ -826,4 +822,4 @@
         }
     </script>
 </body>
-</html>
+                                </html>
