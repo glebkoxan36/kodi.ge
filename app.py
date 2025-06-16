@@ -55,8 +55,24 @@ comparisons_collection = db['comparisons']
 phones_collection = db['phones']
 parser_logs_collection = db['parser_logs']
 
-# Создаем индексы (ИСПРАВЛЕНО: заменили 'name' на 'Name')
-phones_collection.create_index([('brand', 'text'), ('model', 'text'), ('Name', 'text')])
+# ИСПРАВЛЕНИЕ: Проверка существующих индексов перед созданием
+try:
+    # Проверяем существование текстового индекса
+    existing_indexes = phones_collection.index_information()
+    text_index_exists = any(
+        'text' in index['key'].values() 
+        for index in existing_indexes.values()
+    )
+    
+    # Создаем индекс только если его еще нет
+    if not text_index_exists:
+        phones_collection.create_index([
+            ('brand', 'text'), 
+            ('model', 'text'), 
+            ('Name', 'text')
+        ])
+except Exception as e:
+    app.logger.error(f"Index creation error: {str(e)}")
 
 DEFAULT_PRICES = {
     'paid': 499,    # $4.99
@@ -512,7 +528,7 @@ def admin_dashboard():
         app.logger.error(f"Admin dashboard error: {str(e)}")
         return render_template('error.html', error="Admin error"), 500
 
-# Обновленный маршрут для поиска телефонов (ИСПРАВЛЕНО: заменили name на Name)
+# Обновленный маршрут для поиска телефонов (ИСПРАВЛЕНО: заменили 'name' на 'Name')
 @app.route('/api/search', methods=['GET'])
 def search_phones():
     query = request.args.get('query', '').strip()
