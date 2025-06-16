@@ -11,6 +11,8 @@ from datetime import datetime
 from functools import wraps
 from bs4 import BeautifulSoup
 import re
+import threading
+from bson import ObjectId
 
 app = Flask(__name__)
 CORS(app)
@@ -49,7 +51,12 @@ client = MongoClient(MONGODB_URI)
 db = client['imei_checker']
 checks_collection = db['results']
 prices_collection = db['prices']
-comparisons_collection = db['comparisons']  # Новая коллекция для сравнений
+comparisons_collection = db['comparisons']  # Коллекция для сравнений
+phones_collection = db['phones']  # Коллекция для данных о телефонах
+parser_logs_collection = db['parser_logs']  # Логи парсера
+
+# Создаем индекс для быстрого поиска
+phones_collection.create_index([('brand', 'text'), ('model', 'text'), ('name', 'text')])
 
 DEFAULT_PRICES = {
     'paid': 499,    # $4.99
@@ -368,34 +375,49 @@ def admin_required(f):
 def admin_dashboard():
     try:
         if request.method == 'POST':
-            try:
-                paid_price = int(float(request.form.get('paid_price')) * 100)
-                premium_price = int(float(request.form.get('premium_price')) * 100)
-                
-                current_doc = prices_collection.find_one({'type': 'current'})
-                current_prices = current_doc['prices']
-                
-                prices_collection.insert_one({
-                    'type': 'history',
-                    'prices': current_prices,
-                    'changed_at': datetime.utcnow(),
-                    'changed_by': request.authorization.username
-                })
-                
-                prices_collection.update_one(
-                    {'type': 'current'},
-                    {'$set': {
-                        'prices.paid': paid_price,
-                        'prices.premium': premium_price,
-                        'updated_at': datetime.utcnow()
-                    }}
-                )
-                
-                flash('Prices updated successfully!', 'success')
+            # Если это запрос на обновление цен
+            if 'paid_price' in request.form:
+                try:
+                    paid_price = int(float(request.form.get('paid_price')) * 100)
+                    premium_price = int(float(request.form.get('premium_price')) * 100
+                    
+                    current_doc = prices_collection.find_one({'type': 'current'})
+                    current_prices = current_doc['prices']
+                    
+                    prices_collection.insert_one({
+                        'type': 'history',
+                        'prices': current_prices,
+                        'changed_at': datetime.utcnow(),
+                        'changed_by': request.authorization.username
+                    })
+                    
+                    prices_collection.update_one(
+                        {'type': 'current'},
+                        {'$set': {
+                            'prices.paid': paid_price,
+                            'prices.premium': premium_price,
+                            'updated_at': datetime.utcnow()
+                        }}
+                    )
+                    
+                    flash('Prices updated successfully!', 'success')
+                    return redirect(url_for('admin_dashboard'))
+                    
+                except Exception as e:
+                    flash(f'Error updating prices: {str(e)}', 'danger')
+            
+            # Если это запрос на запуск парсера
+            elif 'run_parser' in request.form:
+                try:
+                    from gsm_parser.scrap_specs import main as run_gsm_parser
+                    # Запуск парсера в фоновом режиме
+                    thread = threading.Thread(target=run_gsm_parser, args=(MONGODB_URI,))
+                    thread.start()
+                    flash('Парсер запущен в фоновом режиме', 'success')
+                except Exception as e:
+                    app.logger.error(f"Parser error: {str(e)}")
+                    flash(f'Ошибка запуска парсера: {str(e)}', 'danger')
                 return redirect(url_for('admin_dashboard'))
-                
-            except Exception as e:
-                flash(f'Error updating prices: {str(e)}', 'danger')
         
         page = int(request.args.get('page', 1))
         per_page = 50
@@ -442,6 +464,18 @@ def admin_dashboard():
             'premium': current_prices['premium'] / 100
         }
         
+        # Получаем последние логи парсера
+        parser_logs = list(parser_logs_collection.find()
+            .sort('timestamp', -1)
+            .limit(10))
+        for log in parser_logs:
+            log['timestamp'] = log['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+            log['_id'] = str(log['_id'])
+        
+        # Статистика телефонов
+        total_phones = phones_collection.count_documents({})
+        brands = phones_collection.distinct("brand")
+        
         return render_template(
             'admin.html',
             checks=checks,
@@ -453,40 +487,53 @@ def admin_dashboard():
             page=page,
             per_page=per_page,
             current_prices=formatted_prices,
-            price_history=price_history
+            price_history=price_history,
+            parser_logs=parser_logs,
+            total_phones=total_phones,
+            brands=brands
         )
     except Exception as e:
         app.logger.error(f"Admin dashboard error: {str(e)}")
         return render_template('error.html', error="Admin error"), 500
 
-# Новые маршруты для сравнения телефонов
+# Новые маршруты для сравнения телефонов с использованием локальной базы
 @app.route('/compare')
 def compare_phones():
     return render_template('compare.html')
 
 @app.route('/search_phones', methods=['GET'])
 def search_phones():
-    query = request.args.get('query')
+    query = request.args.get('query', '').strip()
     if not query:
         return jsonify({'error': 'Query parameter is required'}), 400
     
-    try:
-        response = requests.get(f'https://api-mobilespecs.azharimm.dev/search?query={query}')
-        response.raise_for_status()
-        return jsonify(response.json())
-    except requests.exceptions.RequestException as e:
-        app.logger.error(f"Phone search error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+    # Поиск по нескольким полям с использованием текстового индекса
+    regex_query = {'$regex': query, '$options': 'i'}
+    results = list(phones_collection.find({
+        '$or': [
+            {'brand': regex_query},
+            {'model': regex_query},
+            {'name': regex_query}
+        ]
+    }).limit(20))
+    
+    # Преобразование ObjectId в строки
+    for phone in results:
+        phone['_id'] = str(phone['_id'])
+    
+    return jsonify({'data': results})
 
-@app.route('/phone_details/<slug>', methods=['GET'])
-def phone_details(slug):
+@app.route('/phone_details/<phone_id>', methods=['GET'])
+def phone_details(phone_id):
     try:
-        response = requests.get(f'https://api-mobilespecs.azharimm.dev/{slug}')
-        response.raise_for_status()
-        return jsonify(response.json())
-    except requests.exceptions.RequestException as e:
-        app.logger.error(f"Phone details error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        phone = phones_collection.find_one({'_id': ObjectId(phone_id)})
+        if not phone:
+            return jsonify({'error': 'Phone not found'}), 404
+        
+        phone['_id'] = str(phone['_id'])
+        return jsonify(phone)
+    except Exception as e:
+        return jsonify({'error': 'Invalid phone ID'}), 400
 
 @app.route('/ai_analysis', methods=['POST'])
 def ai_analysis():
