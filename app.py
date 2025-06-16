@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import logging
+import threading
 from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, redirect, url_for, jsonify, Response, flash
 from flask_cors import CORS
@@ -11,7 +12,6 @@ from datetime import datetime
 from functools import wraps
 from bs4 import BeautifulSoup
 import re
-import threading
 from bson import ObjectId
 
 app = Flask(__name__)
@@ -51,11 +51,11 @@ client = MongoClient(MONGODB_URI)
 db = client['imei_checker']
 checks_collection = db['results']
 prices_collection = db['prices']
-comparisons_collection = db['comparisons']  # Коллекция для сравнений
-phones_collection = db['phones']  # Коллекция для данных о телефонах
-parser_logs_collection = db['parser_logs']  # Логи парсера
+comparisons_collection = db['comparisons']
+phones_collection = db['phones']
+parser_logs_collection = db['parser_logs']
 
-# Создаем индекс для быстрого поиска
+# Создаем индексы
 phones_collection.create_index([('brand', 'text'), ('model', 'text'), ('name', 'text')])
 
 DEFAULT_PRICES = {
@@ -375,11 +375,11 @@ def admin_required(f):
 def admin_dashboard():
     try:
         if request.method == 'POST':
-            # Если это запрос на обновление цен
+            # Обработка обновления цен
             if 'paid_price' in request.form:
                 try:
                     paid_price = int(float(request.form.get('paid_price')) * 100)
-                    premium_price = int(float(request.form.get('premium_price')) * 100
+                    premium_price = int(float(request.form.get('premium_price')) * 100)  # Исправлено здесь
                     
                     current_doc = prices_collection.find_one({'type': 'current'})
                     current_prices = current_doc['prices']
@@ -406,17 +406,17 @@ def admin_dashboard():
                 except Exception as e:
                     flash(f'Error updating prices: {str(e)}', 'danger')
             
-            # Если это запрос на запуск парсера
+            # Обработка запуска парсера
             elif 'run_parser' in request.form:
                 try:
                     from gsm_parser.scrap_specs import main as run_gsm_parser
                     # Запуск парсера в фоновом режиме
                     thread = threading.Thread(target=run_gsm_parser, args=(MONGODB_URI,))
                     thread.start()
-                    flash('Парсер запущен в фоновом режиме', 'success')
+                    flash('Parser started in background', 'success')
                 except Exception as e:
                     app.logger.error(f"Parser error: {str(e)}")
-                    flash(f'Ошибка запуска парсера: {str(e)}', 'danger')
+                    flash(f'Error starting parser: {str(e)}', 'danger')
                 return redirect(url_for('admin_dashboard'))
         
         page = int(request.args.get('page', 1))
@@ -496,18 +496,14 @@ def admin_dashboard():
         app.logger.error(f"Admin dashboard error: {str(e)}")
         return render_template('error.html', error="Admin error"), 500
 
-# Новые маршруты для сравнения телефонов с использованием локальной базы
-@app.route('/compare')
-def compare_phones():
-    return render_template('compare.html')
-
+# Маршрут для поиска телефонов
 @app.route('/search_phones', methods=['GET'])
 def search_phones():
     query = request.args.get('query', '').strip()
     if not query:
         return jsonify({'error': 'Query parameter is required'}), 400
     
-    # Поиск по нескольким полям с использованием текстового индекса
+    # Поиск по нескольким полям
     regex_query = {'$regex': query, '$options': 'i'}
     results = list(phones_collection.find({
         '$or': [
@@ -523,6 +519,7 @@ def search_phones():
     
     return jsonify({'data': results})
 
+# Маршрут для получения деталей телефона
 @app.route('/phone_details/<phone_id>', methods=['GET'])
 def phone_details(phone_id):
     try:
@@ -535,6 +532,7 @@ def phone_details(phone_id):
     except Exception as e:
         return jsonify({'error': 'Invalid phone ID'}), 400
 
+# Маршрут для AI анализа
 @app.route('/ai_analysis', methods=['POST'])
 def ai_analysis():
     data = request.json
@@ -597,6 +595,11 @@ def ai_analysis():
     except Exception as e:
         app.logger.error(f"AI analysis error: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
+
+# Новые маршруты для сравнения телефонов
+@app.route('/compare')
+def compare_phones():
+    return render_template('compare.html')
 
 @app.errorhandler(404)
 def page_not_found(e):
