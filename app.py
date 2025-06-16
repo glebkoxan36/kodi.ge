@@ -482,8 +482,7 @@ def admin_dashboard():
         
         # Получаем последние логи парсера
         parser_logs = list(parser_logs_collection.find())
-            .sort('timestamp', -1)
-            .limit(10))
+          .sort('timestamp', -1).limit(10))
         for log in parser_logs:
             log['timestamp'] = log['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
             log['_id'] = str(log['_id'])
