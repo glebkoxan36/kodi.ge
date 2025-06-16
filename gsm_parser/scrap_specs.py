@@ -17,12 +17,41 @@ logging.basicConfig(
 )
 logger = logging.getLogger('gsm_parser')
 
+def is_gsmarena_available():
+    """Проверяет доступность GSMArena"""
+    try:
+        response = requests.get("https://www.gsmarena.com", timeout=10)
+        return response.status_code == 200
+    except Exception as e:
+        logger.error(f"GSMArena availability check failed: {str(e)}")
+        return False
+
 def get_proxies():
-    """Возвращает список прокси из файла"""
+    """Возвращает список рабочих прокси из файла"""
     try:
         with open('ip_addresses.txt', 'r') as f:
             proxies = [line.strip() for line in f if line.strip()]
-            return [{'http': p, 'https': p} for p in proxies]
+            
+            # Проверяем работоспособность прокси
+            working_proxies = []
+            test_url = "https://www.google.com"
+            
+            for proxy in proxies:
+                try:
+                    response = requests.get(
+                        test_url, 
+                        proxies={"http": proxy, "https": proxy},
+                        timeout=5
+                    )
+                    if response.status_code == 200:
+                        working_proxies.append(proxy)
+                        logger.info(f"Proxy {proxy} is working")
+                except Exception as e:
+                    logger.warning(f"Proxy {proxy} failed: {str(e)}")
+            
+            logger.info(f"Found {len(working_proxies)} working proxies")
+            return [{'http': p, 'https': p} for p in working_proxies]
+            
     except FileNotFoundError:
         logger.error("Proxy file not found, using no proxies")
         return [None]
@@ -35,86 +64,106 @@ def get_db_connection(uri):
 
 def scrape_phone_details(url, proxy=None):
     """Собирает детали телефона со страницы"""
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        
-        response = requests.get(url, headers=headers, proxies=proxy, timeout=30)
-        if response.status_code != 200:
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            response = requests.get(url, headers=headers, proxies=proxy, timeout=30)
+            
+            if response.status_code == 429:  # Too Many Requests
+                wait_time = (2 ** attempt) + random.uniform(0, 1)
+                logger.warning(f"Rate limited for {url}. Waiting {wait_time} seconds...")
+                time.sleep(wait_time)
+                continue
+                
+            if response.status_code != 200:
+                logger.warning(f"Non-200 status code {response.status_code} for {url}")
+                return None
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Основная информация
+            name = soup.find('h1', class_='specs-phone-name-title')
+            if name:
+                name = name.text.strip()
+                brand = re.search(r'^[^\s]+', name).group(0) if name else "Unknown"
+            else:
+                name = "Unknown"
+                brand = "Unknown"
+            
+            # Спецификации
+            specs = {}
+            specs_table = soup.find('table', id='specs-list')
+            if specs_table:
+                current_category = ""
+                for row in specs_table.find_all('tr'):
+                    # Обработка категорий
+                    if row.get('class') and 'section-header' in row.get('class'):
+                        current_category = row.find('td').text.strip()
+                        specs[current_category] = {}
+                    # Обработка спецификаций
+                    elif 'ttl' in row.get('class', []):
+                        feature = row.find('td', class_='ttl').text.strip()
+                        value_cell = row.find('td', class_='nfo')
+                        if value_cell:
+                            # Извлекаем текст, очищаем от лишних пробелов
+                            value = ' '.join(value_cell.text.strip().split())
+                            specs.setdefault(current_category, {})[feature] = value
+            
+            # Дополнительная информация
+            quick_specs = {}
+            quick_list = soup.find('div', class_='quick-specs')
+            if quick_list:
+                for li in quick_list.find_all('li'):
+                    text = li.text.strip()
+                    if ':' in text:
+                        key, value = text.split(':', 1)
+                        quick_specs[key.strip()] = value.strip()
+            
+            # Рейтинги
+            rating_elem = soup.find('div', class_='rating-number')
+            rating = rating_elem.text.strip() if rating_elem else "N/A"
+            
+            # Изображение
+            img_elem = soup.find('div', class_='specs-photo-main')
+            if img_elem:
+                img_elem = img_elem.find('img')
+                image_url = img_elem['src'] if img_elem and 'src' in img_elem.attrs else None
+            else:
+                image_url = None
+            
+            return {
+                'url': url,
+                'name': name,
+                'brand': brand,
+                'model': name.replace(brand, '').strip(),
+                'specs': specs,
+                'quick_specs': quick_specs,
+                'rating': rating,
+                'image_url': image_url,
+                'scraped_at': datetime.utcnow()
+            }
+            
+        except (requests.exceptions.RequestException, ConnectionError) as e:
+            logger.warning(f"Attempt {attempt+1} failed for {url}: {str(e)}")
+            time.sleep(5)
+        except Exception as e:
+            logger.error(f"Error scraping {url}: {str(e)}")
             return None
-        
-        soup = BeautifulSoup(response.content, 'html.parser')
-        
-        # Основная информация
-        name = soup.find('h1', class_='specs-phone-name-title')
-        if name:
-            name = name.text.strip()
-            brand = re.search(r'^[^\s]+', name).group(0) if name else "Unknown"
-        else:
-            name = "Unknown"
-            brand = "Unknown"
-        
-        # Спецификации
-        specs = {}
-        specs_table = soup.find('table', id='specs-list')
-        if specs_table:
-            current_category = ""
-            for row in specs_table.find_all('tr'):
-                # Обработка категорий
-                if row.get('class') and 'section-header' in row.get('class'):
-                    current_category = row.find('td').text.strip()
-                    specs[current_category] = {}
-                # Обработка спецификаций
-                elif 'ttl' in row.get('class', []):
-                    feature = row.find('td', class_='ttl').text.strip()
-                    value_cell = row.find('td', class_='nfo')
-                    if value_cell:
-                        # Извлекаем текст, очищаем от лишних пробелов
-                        value = ' '.join(value_cell.text.strip().split())
-                        specs.setdefault(current_category, {})[feature] = value
-        
-        # Дополнительная информация
-        quick_specs = {}
-        quick_list = soup.find('div', class_='quick-specs')
-        if quick_list:
-            for li in quick_list.find_all('li'):
-                text = li.text.strip()
-                if ':' in text:
-                    key, value = text.split(':', 1)
-                    quick_specs[key.strip()] = value.strip()
-        
-        # Рейтинги
-        rating_elem = soup.find('div', class_='rating-number')
-        rating = rating_elem.text.strip() if rating_elem else "N/A"
-        
-        # Изображение
-        img_elem = soup.find('div', class_='specs-photo-main')
-        if img_elem:
-            img_elem = img_elem.find('img')
-            image_url = img_elem['src'] if img_elem and 'src' in img_elem.attrs else None
-        else:
-            image_url = None
-        
-        return {
-            'url': url,
-            'name': name,
-            'brand': brand,
-            'model': name.replace(brand, '').strip(),
-            'specs': specs,
-            'quick_specs': quick_specs,
-            'rating': rating,
-            'image_url': image_url,
-            'scraped_at': datetime.utcnow()
-        }
-        
-    except Exception as e:
-        logger.error(f"Error scraping {url}: {str(e)}")
-        return None
+    
+    logger.error(f"Failed to scrape {url} after {max_retries} attempts")
+    return None
 
 def main(mongodb_uri):
     """Основная функция парсера"""
     logger.info("Starting GSM Arena parser")
+    
+    if not is_gsmarena_available():
+        logger.error("GSMArena is not available. Aborting parser.")
+        return
     
     phones_collection, logs_collection = get_db_connection(mongodb_uri)
     proxies = get_proxies()
@@ -173,7 +222,8 @@ def main(mongodb_uri):
                     'status': 'success',
                     'action': action,
                     'timestamp': datetime.utcnow(),
-                    'duration': time.time() - start_time
+                    'duration': time.time() - start_time,
+                    'phone_name': phone_data.get('name', '')
                 })
                 
                 logger.info(f"[{i+1}/{total}] {action} {phone_data['name']}")
@@ -187,7 +237,7 @@ def main(mongodb_uri):
                 logger.warning(f"[{i+1}/{total}] Failed to scrape {url}")
             
             # Пауза для избежания блокировки
-            time.sleep(random.uniform(1.0, 3.0))
+            time.sleep(random.uniform(2.0, 5.0))
             
         except Exception as e:
             logs_collection.insert_one({
