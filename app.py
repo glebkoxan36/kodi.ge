@@ -512,15 +512,15 @@ def admin_dashboard():
         app.logger.error(f"Admin dashboard error: {str(e)}")
         return render_template('error.html', error="Admin error"), 500
 
-# Маршрут для поиска телефонов (обновленный)
-@app.route('/search_phones', methods=['GET'])
+# Обновленный маршрут для поиска телефонов
+@app.route('/api/search', methods=['GET'])
 def search_phones():
     query = request.args.get('query', '').strip()
     if not query:
         return jsonify({'error': 'Query parameter is required'}), 400
     
     # Поиск по нескольким полям с проекцией только нужных полей
-    regex_query = {'$regex': query, '$options': 'i'}
+    regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
     results = list(phones_collection.find({
         '$or': [
             {'brand': regex_query},
@@ -531,15 +531,20 @@ def search_phones():
         '_id': 1,
         'Name': 1,
         'Image_URL': 1
-    }).limit(20))
+    }).limit(10))
     
-    # Преобразование ObjectId в строки
+    # Преобразование ObjectId в строки и нормализация данных
+    normalized_results = []
     for phone in results:
-        phone['_id'] = str(phone['_id'])
+        normalized_results.append({
+            '_id': str(phone['_id']),
+            'name': phone.get('Name', 'Unknown Phone'),
+            'image_url': phone.get('Image_URL', '')
+        })
     
-    return jsonify({'data': results})
+    return jsonify(normalized_results)
 
-# Маршрут для получения деталей телефона
+# Обновленный маршрут для получения деталей телефона
 @app.route('/phone_details/<phone_id>', methods=['GET'])
 def phone_details(phone_id):
     try:
@@ -547,13 +552,21 @@ def phone_details(phone_id):
         if not phone:
             return jsonify({'error': 'Phone not found'}), 404
         
-        phone['_id'] = str(phone['_id'])
-        return jsonify(phone)
+        # Нормализуем данные для фронтенда
+        normalized_phone = {
+            '_id': str(phone['_id']),
+            'name': phone.get('Name', 'Unknown Phone'),
+            'image_url': phone.get('Image_URL', ''),
+            'specs': {key: value for key, value in phone.items() 
+                     if key not in ['_id', 'Name', 'Image_URL']}
+        }
+        
+        return jsonify(normalized_phone)
     except Exception as e:
         return jsonify({'error': 'Invalid phone ID'}), 400
 
-# Маршрут для AI анализа (обновленный)
-@app.route('/ai_analysis', methods=['POST'])
+# Обновленный маршрут для AI анализа
+@app.route('/api/ai-analysis', methods=['POST'])
 def ai_analysis():
     data = request.json
     phone1 = data.get('phone1')
@@ -564,14 +577,12 @@ def ai_analysis():
     
     try:
         # Подготовка промпта для AI
-        phone1_name = phone1.get('Name', 'Unknown')
-        phone2_name = phone2.get('Name', 'Unknown')
+        phone1_name = phone1.get('name', 'Unknown')
+        phone2_name = phone2.get('name', 'Unknown')
         
         # Собираем все характеристики телефонов
-        phone1_specs = "\n".join([f"{key}: {value}" for key, value in phone1.items() 
-                                 if key not in ['_id', 'Name', 'Image_URL']])
-        phone2_specs = "\n".join([f"{key}: {value}" for key, value in phone2.items() 
-                                 if key not in ['_id', 'Name', 'Image_URL']])
+        phone1_specs = "\n".join([f"{key}: {value}" for key, value in phone1.get('specs', {}).items()])
+        phone2_specs = "\n".join([f"{key}: {value}" for key, value in phone2.get('specs', {}).items()])
         
         prompt = f"""
             გთხოვთ, შეადაროთ ორი სმარტფონი: {phone1_name} და {phone2_name}.
@@ -623,7 +634,7 @@ def ai_analysis():
         }
         comparisons_collection.insert_one(comparison_record)
         
-        return jsonify({'response': content})
+        return jsonify({'analysis': content})
     
     except requests.exceptions.RequestException as e:
         app.logger.error(f"DeepSeek API error: {str(e)}")
@@ -632,7 +643,7 @@ def ai_analysis():
         app.logger.error(f"AI analysis error: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
-# Новые маршруты для сравнения телефонов
+# Новый маршрут для сравнения телефонов
 @app.route('/compare')
 def compare_phones():
     return render_template('compare.html')
