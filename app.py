@@ -648,6 +648,124 @@ def ai_analysis():
 def compare_phones():
     return render_template('compare.html')
 
+# ======================================
+# Визуальное управление MongoDB
+# ======================================
+
+@app.route('/admin/db')
+@admin_required
+def db_management():
+    """Главная страница управления БД"""
+    collections = db.list_collection_names()
+    return render_template('db_management.html', collections=collections)
+
+@app.route('/admin/db/<collection_name>', methods=['GET', 'POST'])
+@admin_required
+def collection_view(collection_name):
+    """Просмотр и управление коллекцией"""
+    # Обработка удаления документов
+    if request.method == 'POST':
+        doc_id = request.form.get('doc_id')
+        if doc_id:
+            try:
+                db[collection_name].delete_one({'_id': ObjectId(doc_id)})
+                flash('Document deleted successfully', 'success')
+            except Exception as e:
+                flash(f'Error deleting document: {str(e)}', 'danger')
+        return redirect(url_for('collection_view', collection_name=collection_name))
+    
+    # Пагинация
+    page = int(request.args.get('page', 1))
+    per_page = 20
+    skip = (page - 1) * per_page
+    
+    # Получение документов
+    documents = list(db[collection_name].find().skip(skip).limit(per_page))
+    total = db[collection_name].count_documents({})
+    
+    # Преобразование ObjectId
+    for doc in documents:
+        doc['_id'] = str(doc['_id'])
+    
+    return render_template(
+        'collection_view.html',
+        collection_name=collection_name,
+        documents=documents,
+        page=page,
+        per_page=per_page,
+        total=total
+    )
+
+@app.route('/admin/db/<collection_name>/edit/<doc_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_document(collection_name, doc_id):
+    """Редактирование документа"""
+    collection = db[collection_name]
+    try:
+        doc = collection.find_one({'_id': ObjectId(doc_id)})
+    except:
+        doc = None
+    
+    if not doc:
+        flash('Document not found', 'danger')
+        return redirect(url_for('collection_view', collection_name=collection_name))
+    
+    if request.method == 'POST':
+        try:
+            # Преобразование данных формы в словарь
+            form_data = {}
+            for key in request.form:
+                if key.startswith('field_'):
+                    field_name = key[6:]
+                    form_data[field_name] = request.form[key]
+            
+            # Обновление документа
+            collection.update_one(
+                {'_id': ObjectId(doc_id)},
+                {'$set': form_data}
+            )
+            flash('Document updated successfully', 'success')
+            return redirect(url_for('collection_view', collection_name=collection_name))
+        
+        except Exception as e:
+            flash(f'Error updating document: {str(e)}', 'danger')
+    
+    # Преобразование ObjectId для отображения
+    doc['_id'] = str(doc['_id'])
+    
+    return render_template(
+        'edit_document.html',
+        collection_name=collection_name,
+        doc_id=doc_id,
+        document=doc
+    )
+
+@app.route('/admin/db/<collection_name>/add', methods=['GET', 'POST'])
+@admin_required
+def add_document(collection_name):
+    """Добавление нового документа"""
+    if request.method == 'POST':
+        try:
+            # Преобразование данных формы в словарь
+            form_data = {}
+            for key in request.form:
+                if key.startswith('field_'):
+                    field_name = key[6:]
+                    form_data[field_name] = request.form[key]
+            
+            # Вставка нового документа
+            result = db[collection_name].insert_one(form_data)
+            flash(f'Document added successfully with ID: {result.inserted_id}', 'success')
+            return redirect(url_for('collection_view', collection_name=collection_name))
+        
+        except Exception as e:
+            flash(f'Error adding document: {str(e)}', 'danger')
+    
+    return render_template(
+        'add_document.html',
+        collection_name=collection_name
+    )
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
