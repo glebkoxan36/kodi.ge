@@ -55,8 +55,8 @@ comparisons_collection = db['comparisons']
 phones_collection = db['phones']
 parser_logs_collection = db['parser_logs']
 
-# Создаем индексы
-phones_collection.create_index([('brand', 'text'), ('model', 'text'), ('name', 'text')])
+# Создаем индексы (ИСПРАВЛЕНО: заменили 'name' на 'Name')
+phones_collection.create_index([('brand', 'text'), ('model', 'text'), ('Name', 'text')])
 
 DEFAULT_PRICES = {
     'paid': 499,    # $4.99
@@ -512,7 +512,7 @@ def admin_dashboard():
         app.logger.error(f"Admin dashboard error: {str(e)}")
         return render_template('error.html', error="Admin error"), 500
 
-# Обновленный маршрут для поиска телефонов
+# Обновленный маршрут для поиска телефонов (ИСПРАВЛЕНО: заменили name на Name)
 @app.route('/api/search', methods=['GET'])
 def search_phones():
     query = request.args.get('query', '').strip()
@@ -525,11 +525,11 @@ def search_phones():
         '$or': [
             {'brand': regex_query},
             {'model': regex_query},
-            {'name': regex_query}
+            {'Name': regex_query}  # Исправлено: name на Name
         ]
     }, {
         '_id': 1,
-        'Name': 1,
+        'Name': 1,  # Исправлено: name на Name
         'Image_URL': 1
     }).limit(10))
     
@@ -544,8 +544,8 @@ def search_phones():
     
     return jsonify(normalized_results)
 
-# Обновленный маршрут для получения деталей телефона
-@app.route('/phone_details/<phone_id>', methods=['GET'])
+# Обновленный маршрут для получения деталей телефона (ИСПРАВЛЕНО: добавили префикс /api)
+@app.route('/api/phone_details/<phone_id>', methods=['GET'])
 def phone_details(phone_id):
     try:
         phone = phones_collection.find_one({'_id': ObjectId(phone_id)})
