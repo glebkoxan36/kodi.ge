@@ -602,7 +602,7 @@
             }
             
             try {
-                const response = await fetch(`/search_phones?query=${encodeURIComponent(query)}`);
+                const response = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
                 
                 if (!response.ok) {
                     throw new Error(`API error: ${response.status}`);
@@ -610,9 +610,9 @@
                 
                 const data = await response.json();
                 
-                if (data.data && data.data.length > 0) {
+                if (data.length > 0) {
                     suggestionsContainer.innerHTML = '';
-                    data.data.forEach(phone => {
+                    data.forEach(phone => {
                         const item = document.createElement('div');
                         item.className = 'suggestion-item';
                         item.textContent = phone.name;
@@ -783,7 +783,7 @@
             
             try {
                 // Call our backend AI endpoint
-                const response = await fetch('/ai_analysis', {
+                const response = await fetch('/api/ai-analysis', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -792,12 +792,12 @@
                         phone1: {
                             phone_name: phone1.name,
                             specs: phone1.specs,
-                            quick_specs: phone1.quick_specs
+                            quick_specs: phone1.quick_specs || null
                         },
                         phone2: {
                             phone_name: phone2.name,
                             specs: phone2.specs,
-                            quick_specs: phone2.quick_specs
+                            quick_specs: phone2.quick_specs || null
                         }
                     })
                 });
@@ -811,7 +811,7 @@
                 // Display AI response
                 aiContent.innerHTML = `
                     <div class="ai-response">
-                        <p>${data.response}</p>
+                        <p>${data.analysis}</p>
                     </div>
                 `;
                 
@@ -822,4 +822,4 @@
         }
     </script>
 </body>
-                                </html>
+</html>
