@@ -664,7 +664,7 @@
             compareButton.disabled = true;
             
             try {
-                // Fetch phone details
+                // Fetch phone details (ИСПРАВЛЕНО: изменили путь на /api/phone_details)
                 const phone1Details = await fetchPhoneDetails(selectedPhone1._id);
                 const phone2Details = await fetchPhoneDetails(selectedPhone2._id);
                 
@@ -693,10 +693,10 @@
             }
         }
         
-        // Fetch phone details from our API
+        // Fetch phone details from our API (ИСПРАВЛЕНО: изменили путь на /api/phone_details)
         async function fetchPhoneDetails(phoneId) {
             try {
-                const response = await fetch(`/phone_details/${phoneId}`);
+                const response = await fetch(`/api/phone_details/${phoneId}`);
                 
                 if (!response.ok) {
                     throw new Error(`API error: ${response.status}`);
