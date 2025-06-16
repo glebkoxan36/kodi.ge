@@ -370,6 +370,22 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template(
+        'error.html', 
+        code=404,
+        message="გვერდი ვერ მოიძებნა"
+    ), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template(
+        'error.html', 
+        code=500,
+        message="სერვერზე შეცდომა მოხდა"
+    ), 500
+    
 @app.route('/admin', methods=['GET', 'POST'])
 @admin_required
 def admin_dashboard():
