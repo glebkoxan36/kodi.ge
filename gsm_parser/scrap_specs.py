@@ -26,7 +26,7 @@ def is_gsmarena_available():
         return False
 
 def get_fresh_proxies():
-    """Получает свежий список прокси с SSLProxies.org"""
+    """Получает свежий список HTTPS-прокси с SSLProxies.org"""
     try:
         url = "https://sslproxies.org/"
         response = requests.get(url, timeout=10)
@@ -38,18 +38,19 @@ def get_fresh_proxies():
             rows = table.find_all('tr')[1:20]  # Берем первые 20
             for row in rows:
                 cols = row.find_all('td')
-                if len(cols) >= 2:
+                # Проверяем наличие 7 колонок и значение 'yes' в колонке HTTPS
+                if len(cols) >= 7 and cols[6].text.strip().lower() == 'yes':
                     ip = cols[0].text
                     port = cols[1].text
                     proxy = f"http://{ip}:{port}"
                     proxies.append(proxy)
         
-        # Сохраняем в файл
+        # Сохраняем в файл только HTTPS-прокси
         with open('ip_addresses.txt', 'w') as f:
             for proxy in proxies:
                 f.write(proxy + '\n')
         
-        logger.info(f"Fetched {len(proxies)} fresh proxies")
+        logger.info(f"Fetched {len(proxies)} fresh HTTPS proxies")
         return [{'http': p, 'https': p} for p in proxies]
     
     except Exception as e:
@@ -57,25 +58,25 @@ def get_fresh_proxies():
         return []
 
 def get_proxies():
-    """Возвращает список рабочих прокси"""
+    """Возвращает список рабочих HTTPS-прокси или пустой список"""
     try:
-        # Сначала пытаемся получить свежие прокси
+        # Пытаемся получить свежие HTTPS-прокси
         fresh_proxies = get_fresh_proxies()
         if fresh_proxies:
             return fresh_proxies
             
         # Если не получилось, пробуем загрузить из файла
-        with open('ip_addresses.txt', 'r') as f:
-            proxies = [line.strip() for line in f if line.strip()]
-            return [{'http': p, 'https': p} for p in proxies]
-            
-    except FileNotFoundError:
-        logger.error("Proxy file not found")
+        if os.path.exists('ip_addresses.txt'):
+            with open('ip_addresses.txt', 'r') as f:
+                proxies = [line.strip() for line in f if line.strip()]
+                if proxies:
+                    return [{'http': p, 'https': p} for p in proxies]
+                    
     except Exception as e:
         logger.error(f"Error loading proxies: {str(e)}")
     
-    logger.warning("No proxies available, using direct connection")
-    return [None]
+    logger.warning("No HTTPS proxies available")
+    return []  # Возвращаем пустой список вместо [None]
 
 def get_db_connection(uri):
     """Устанавливает соединение с MongoDB"""
@@ -92,13 +93,13 @@ def scrape_phone_details(url, proxy=None):
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             }
             
-            # Настройка прокси
-            proxy_config = proxy if proxy and proxy != {'http': None, 'https': None} else None
+            # Упрощенная обработка прокси
+            proxy_config = proxy if proxy is not None else None
             
             response = requests.get(
                 url, 
                 headers=headers, 
-                proxies=proxy_config, 
+                proxies=proxy_config,  # Передаем напрямую
                 timeout=30
             )
             
@@ -195,10 +196,7 @@ def main(mongodb_uri):
         return
     
     phones_collection, logs_collection = get_db_connection(mongodb_uri)
-    proxies = get_proxies()
-    
-    if proxies and proxies[0] is None:
-        logger.warning("No proxies available, using direct connection")
+    proxies = get_proxies()  # Может вернуть пустой список
     
     # Получаем список URL телефонов
     try:
@@ -229,6 +227,7 @@ def main(mongodb_uri):
     # Обработка каждого телефона
     for i in range(start_index, total):
         url = phone_urls[i]
+        # Выбираем случайный прокси если они есть, иначе None
         proxy = random.choice(proxies) if proxies else None
         
         try:
