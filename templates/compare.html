@@ -720,6 +720,12 @@
             const specsContainer = document.getElementById(`${prefix}Specs`);
             specsContainer.innerHTML = '';
             
+            // Check if specs exist
+            if (!phone.specs) {
+                specsContainer.innerHTML = '<p>სპეციფიკაციები ხელმიუწვდომელია</p>';
+                return;
+            }
+            
             // Display each specification
             displaySpecGroup(specsContainer, 'Network', 'ქსელი', phone);
             displaySpecGroup(specsContainer, 'Launch', 'გამოშვება', phone);
@@ -734,6 +740,11 @@
             displaySpecGroup(specsContainer, 'Features', 'ფუნქციები', phone);
             displaySpecGroup(specsContainer, 'Battery', 'ბატარეა', phone);
             displaySpecGroup(specsContainer, 'Misc', 'დამატებით', phone);
+            
+            // If no specifications were added
+            if (specsContainer.children.length === 0) {
+                specsContainer.innerHTML = '<p>სპეციფიკაციები ხელმიუწვდომელია</p>';
+            }
         }
         
         // Display a group of specifications
@@ -745,11 +756,6 @@
             const groupHeader = document.createElement('div');
             groupHeader.className = 'spec-group-header';
             groupHeader.textContent = groupLabel;
-            groupHeader.style.marginTop = '15px';
-            groupHeader.style.fontWeight = 'bold';
-            groupHeader.style.color = '#00c6ff';
-            groupHeader.style.borderBottom = '1px solid rgba(255, 255, 255, 0.2)';
-            groupHeader.style.paddingBottom = '5px';
             container.appendChild(groupHeader);
             
             // Display each spec in the group
