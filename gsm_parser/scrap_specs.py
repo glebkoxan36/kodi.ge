@@ -80,7 +80,6 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger('gsm_parser')
-
             logger.warning("Trying without SSL verification...")
             response = requests.get(
                 "https://www.gsmarena.com",
