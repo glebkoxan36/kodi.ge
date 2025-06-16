@@ -1,0 +1,67 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Add New Document to {{ collection_name }}</h2>
+    <form method="POST">
+        <div id="fields-container">
+            <div class="field-group mb-3">
+                <div class="row">
+                    <div class="col">
+                        <input type="text" class="form-control" 
+                               placeholder="Field name" name="field_names[]">
+                    </div>
+                    <div class="col">
+                        <input type="text" class="form-control" 
+                               placeholder="Value" name="field_values[]">
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-danger remove-field">-</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <button type="button" id="add-field" class="btn btn-secondary mb-3">Add Field</button>
+        <div>
+            <button type="submit" class="btn btn-primary">Add Document</button>
+            <a href="{{ url_for('collection_view', collection_name=collection_name) }}" 
+               class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавление нового поля
+    document.getElementById('add-field').addEventListener('click', function() {
+        const container = document.getElementById('fields-container');
+        const newField = document.createElement('div');
+        newField.className = 'field-group mb-3';
+        newField.innerHTML = `
+            <div class="row">
+                <div class="col">
+                    <input type="text" class="form-control" 
+                           placeholder="Field name" name="field_names[]">
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" 
+                           placeholder="Value" name="field_values[]">
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-danger remove-field">-</button>
+                </div>
+            </div>
+        `;
+        container.appendChild(newField);
+    });
+
+    // Удаление поля
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('remove-field')) {
+            e.target.closest('.field-group').remove();
+        }
+    });
+});
+</script>
+{% endblock %}
