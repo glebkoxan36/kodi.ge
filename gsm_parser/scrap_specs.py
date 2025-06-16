@@ -8,7 +8,6 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
 import re
-from urllib.parse import urljoin
 
 # Настройка логирования
 logging.basicConfig(
@@ -26,35 +25,57 @@ def is_gsmarena_available():
         logger.error(f"GSMArena availability check failed: {str(e)}")
         return False
 
-def get_proxies():
-    """Возвращает список рабочих прокси из файла"""
+def get_fresh_proxies():
+    """Получает свежий список прокси с SSLProxies.org"""
     try:
+        url = "https://sslproxies.org/"
+        response = requests.get(url, timeout=10)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        proxies = []
+        table = soup.find('table', class_='table table-striped table-bordered')
+        if table:
+            rows = table.find_all('tr')[1:20]  # Берем первые 20
+            for row in rows:
+                cols = row.find_all('td')
+                if len(cols) >= 2:
+                    ip = cols[0].text
+                    port = cols[1].text
+                    proxy = f"http://{ip}:{port}"
+                    proxies.append(proxy)
+        
+        # Сохраняем в файл
+        with open('ip_addresses.txt', 'w') as f:
+            for proxy in proxies:
+                f.write(proxy + '\n')
+        
+        logger.info(f"Fetched {len(proxies)} fresh proxies")
+        return [{'http': p, 'https': p} for p in proxies]
+    
+    except Exception as e:
+        logger.error(f"Error fetching fresh proxies: {str(e)}")
+        return []
+
+def get_proxies():
+    """Возвращает список рабочих прокси"""
+    try:
+        # Сначала пытаемся получить свежие прокси
+        fresh_proxies = get_fresh_proxies()
+        if fresh_proxies:
+            return fresh_proxies
+            
+        # Если не получилось, пробуем загрузить из файла
         with open('ip_addresses.txt', 'r') as f:
             proxies = [line.strip() for line in f if line.strip()]
-            
-            # Проверяем работоспособность прокси
-            working_proxies = []
-            test_url = "https://www.google.com"
-            
-            for proxy in proxies:
-                try:
-                    response = requests.get(
-                        test_url, 
-                        proxies={"http": proxy, "https": proxy},
-                        timeout=5
-                    )
-                    if response.status_code == 200:
-                        working_proxies.append(proxy)
-                        logger.info(f"Proxy {proxy} is working")
-                except Exception as e:
-                    logger.warning(f"Proxy {proxy} failed: {str(e)}")
-            
-            logger.info(f"Found {len(working_proxies)} working proxies")
-            return [{'http': p, 'https': p} for p in working_proxies]
+            return [{'http': p, 'https': p} for p in proxies]
             
     except FileNotFoundError:
-        logger.error("Proxy file not found, using no proxies")
-        return [None]
+        logger.error("Proxy file not found")
+    except Exception as e:
+        logger.error(f"Error loading proxies: {str(e)}")
+    
+    logger.warning("No proxies available, using direct connection")
+    return [None]
 
 def get_db_connection(uri):
     """Устанавливает соединение с MongoDB"""
@@ -71,7 +92,15 @@ def scrape_phone_details(url, proxy=None):
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             }
             
-            response = requests.get(url, headers=headers, proxies=proxy, timeout=30)
+            # Настройка прокси
+            proxy_config = proxy if proxy and proxy != {'http': None, 'https': None} else None
+            
+            response = requests.get(
+                url, 
+                headers=headers, 
+                proxies=proxy_config, 
+                timeout=30
+            )
             
             if response.status_code == 429:  # Too Many Requests
                 wait_time = (2 ** attempt) + random.uniform(0, 1)
@@ -149,7 +178,7 @@ def scrape_phone_details(url, proxy=None):
             
         except (requests.exceptions.RequestException, ConnectionError) as e:
             logger.warning(f"Attempt {attempt+1} failed for {url}: {str(e)}")
-            time.sleep(5)
+            time.sleep(3)
         except Exception as e:
             logger.error(f"Error scraping {url}: {str(e)}")
             return None
@@ -167,6 +196,9 @@ def main(mongodb_uri):
     
     phones_collection, logs_collection = get_db_connection(mongodb_uri)
     proxies = get_proxies()
+    
+    if proxies and proxies[0] is None:
+        logger.warning("No proxies available, using direct connection")
     
     # Получаем список URL телефонов
     try:
@@ -237,7 +269,9 @@ def main(mongodb_uri):
                 logger.warning(f"[{i+1}/{total}] Failed to scrape {url}")
             
             # Пауза для избежания блокировки
-            time.sleep(random.uniform(2.0, 5.0))
+            sleep_time = random.uniform(3.0, 7.0)
+            logger.info(f"Waiting {sleep_time:.1f} seconds...")
+            time.sleep(sleep_time)
             
         except Exception as e:
             logs_collection.insert_one({
