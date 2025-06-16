@@ -395,7 +395,7 @@ def admin_dashboard():
             if 'paid_price' in request.form:
                 try:
                     paid_price = int(float(request.form.get('paid_price')) * 100)
-                    premium_price = int(float(request.form.get('premium_price')) * 100)  # Исправлено здесь
+                    premium_price = int(float(request.form.get('premium_price')) * 100)
                     
                     current_doc = prices_collection.find_one({'type': 'current'})
                     current_prices = current_doc['prices']
@@ -481,7 +481,7 @@ def admin_dashboard():
         }
         
         # Получаем последние логи парсера
-        parser_logs = list(parser_logs_collection.find()
+        parser_logs = list(parser_logs_collection.find())
             .sort('timestamp', -1)
             .limit(10))
         for log in parser_logs:
@@ -512,14 +512,14 @@ def admin_dashboard():
         app.logger.error(f"Admin dashboard error: {str(e)}")
         return render_template('error.html', error="Admin error"), 500
 
-# Маршрут для поиска телефонов
+# Маршрут для поиска телефонов (обновленный)
 @app.route('/search_phones', methods=['GET'])
 def search_phones():
     query = request.args.get('query', '').strip()
     if not query:
         return jsonify({'error': 'Query parameter is required'}), 400
     
-    # Поиск по нескольким полям
+    # Поиск по нескольким полям с проекцией только нужных полей
     regex_query = {'$regex': query, '$options': 'i'}
     results = list(phones_collection.find({
         '$or': [
@@ -527,6 +527,10 @@ def search_phones():
             {'model': regex_query},
             {'name': regex_query}
         ]
+    }, {
+        '_id': 1,
+        'Name': 1,
+        'Image_URL': 1
     }).limit(20))
     
     # Преобразование ObjectId в строки
@@ -548,7 +552,7 @@ def phone_details(phone_id):
     except Exception as e:
         return jsonify({'error': 'Invalid phone ID'}), 400
 
-# Маршрут для AI анализа
+# Маршрут для AI анализа (обновленный)
 @app.route('/ai_analysis', methods=['POST'])
 def ai_analysis():
     data = request.json
@@ -560,8 +564,24 @@ def ai_analysis():
     
     try:
         # Подготовка промпта для AI
+        phone1_name = phone1.get('Name', 'Unknown')
+        phone2_name = phone2.get('Name', 'Unknown')
+        
+        # Собираем все характеристики телефонов
+        phone1_specs = "\n".join([f"{key}: {value}" for key, value in phone1.items() 
+                                 if key not in ['_id', 'Name', 'Image_URL']])
+        phone2_specs = "\n".join([f"{key}: {value}" for key, value in phone2.items() 
+                                 if key not in ['_id', 'Name', 'Image_URL']])
+        
         prompt = f"""
-            გთხოვთ, შეადაროთ ორი სმარტფონი: {phone1.get('phone_name', 'Unknown')} და {phone2.get('phone_name', 'Unknown')}.
+            გთხოვთ, შეადაროთ ორი სმარტფონი: {phone1_name} და {phone2_name}.
+            
+            პირველი ტელეფონის მონაცემები:
+            {phone1_specs}
+            
+            მეორე ტელეფონის მონაცემები:
+            {phone2_specs}
+            
             გაანალიზეთ შემდეგი კატეგორიები:
             - შესრულება (პროცესორი, RAM, GPU)
             - დისპლეი (ზომა, გაფართოება, ტექნოლოგია)
@@ -596,8 +616,8 @@ def ai_analysis():
         
         # Сохранение сравнения в БД
         comparison_record = {
-            'phone1': phone1.get('phone_name'),
-            'phone2': phone2.get('phone_name'),
+            'phone1': phone1_name,
+            'phone2': phone2_name,
             'timestamp': datetime.utcnow(),
             'ai_response': content
         }
@@ -607,7 +627,7 @@ def ai_analysis():
     
     except requests.exceptions.RequestException as e:
         app.logger.error(f"DeepSeek API error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'AI service unavailable'}), 500
     except Exception as e:
         app.logger.error(f"AI analysis error: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
@@ -616,14 +636,6 @@ def ai_analysis():
 @app.route('/compare')
 def compare_phones():
     return render_template('compare.html')
-
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('error.html', error="Page not found"), 404
-
-@app.errorhandler(500)
-def internal_server_error(e):
-    return render_template('error.html', error="Server error"), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
