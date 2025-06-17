@@ -8,6 +8,44 @@
         body {
             background-color: #f8f9fa;
             padding: 20px;
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #343a40;
+            color: white;
+            padding: 20px 0;
+            border-radius: 10px;
+            margin-right: 20px;
+            height: fit-content;
+        }
+        .sidebar-sticky {
+            position: sticky;
+            top: 20px;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.75);
+            padding: 10px 20px;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar .nav-link.active {
+            color: white;
+            border-left: 3px solid #3498db;
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        .main-content {
+            flex: 1;
         }
         .container {
             max-width: 1400px;
@@ -89,32 +127,6 @@
         .free-badge {
             background-color: #7f8c8d;
         }
-        
-        /* Навигационная панель */
-        .admin-navbar {
-            background-color: #3498db;
-            border-radius: 10px;
-            padding: 10px 20px;
-            margin-bottom: 20px;
-        }
-        .navbar-brand {
-            color: white !important;
-            font-weight: bold;
-            font-size: 1.5rem;
-        }
-        .nav-link {
-            color: rgba(255,255,255,0.85) !important;
-            font-weight: 500;
-            padding: 8px 15px !important;
-            border-radius: 5px;
-            transition: all 0.3s;
-        }
-        .nav-link:hover, .nav-link.active {
-            color: white !important;
-            background-color: rgba(255,255,255,0.15);
-        }
-        
-        /* Стили для управления БД */
         .field-group {
             margin-bottom: 15px;
             padding: 10px;
@@ -131,44 +143,263 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Навигационная панель -->
-        <nav class="navbar admin-navbar navbar-expand-lg">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="{{ url_for('admin_dashboard') }}">
-                    <i class="bi bi-shield-lock me-2"></i>Admin Panel
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="adminNav">
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}" 
-                               href="{{ url_for('admin_dashboard') }}">
-                                <i class="bi bi-speedometer2 me-1"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint in ['db_management', 'collection_view', 'edit_document', 'add_document', 'manage_users'] %}active{% endif %}" 
-                               href="{{ url_for('db_management') }}">
-                                <i class="bi bi-database me-1"></i> Database
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-        
-        <!-- Блок контента -->
-        <div class="container mt-4">
-            {% if db_management_section %}
-                <!-- ========================================== -->
-                <!-- Раздел управления MongoDB -->
-                <!-- ========================================== -->
+    <div class="sidebar">
+        <div class="sidebar-sticky">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}" 
+                       href="{{ url_for('admin_dashboard') }}">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'price_management' %}active{% endif %}" 
+                       href="{{ url_for('price_management') }}">
+                        <i class="bi bi-currency-dollar"></i> Price Management
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'check_history' %}active{% endif %}" 
+                       href="{{ url_for('check_history') }}">
+                        <i class="bi bi-clock-history"></i> Check History
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint in ['db_management', 'collection_view', 'edit_document', 'add_document'] %}active{% endif %}" 
+                       href="{{ url_for('db_management') }}">
+                        <i class="bi bi-database"></i> Database Management
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'manage_users' %}active{% endif %}" 
+                       href="{{ url_for('manage_users') }}">
+                        <i class="bi bi-people"></i> Manage Users
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <!-- Блок контента -->
+            <div class="container mt-4">
+                {% if request.endpoint == 'admin_dashboard' %}
+                    <!-- ========================================== -->
+                    <!-- Dashboard Section -->
+                    <!-- ========================================== -->
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-value">{{ total_checks }}</div>
+                                <div class="stat-label">Total Checks</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-value text-success">{{ paid_checks }}</div>
+                                <div class="stat-label">Paid Checks</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-value">{{ free_checks }}</div>
+                                <div class="stat-label">Free Checks</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-value revenue">${{ "%.2f"|format(total_revenue) }}</div>
+                                <div class="stat-label">Total Revenue</div>
+                            </div>
+                        </div>
+                    </div>
                 
-                {% if db_content == 'db_management' %}
-                    <!-- Страница со списком коллекций -->
+                {% elif request.endpoint == 'price_management' %}
+                    <!-- ========================================== -->
+                    <!-- Price Management Section -->
+                    <!-- ========================================== -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Price Management</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% with messages = get_flashed_messages(with_categories=true) %}
+                                        {% if messages %}
+                                            {% for category, message in messages %}
+                                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                                    {{ message }}
+                                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                    {% endwith %}
+                                    
+                                    <form method="POST">
+                                        <div class="form-section">
+                                            <h6>Paid Service</h6>
+                                            <div class="input-group input-group-price mb-3">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" step="0.01" min="0.99" max="99.99" 
+                                                       class="form-control" 
+                                                       name="paid_price" 
+                                                       value="{{ current_prices.paid }}" 
+                                                       required>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-section">
+                                            <h6>Premium Service</h6>
+                                            <div class="input-group input-group-price mb-4">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" step="0.01" min="0.99" max="99.99" 
+                                                       class="form-control" 
+                                                       name="premium_price" 
+                                                       value="{{ current_prices.premium }}" 
+                                                       required>
+                                            </div>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-success w-100">
+                                            <i class="bi bi-save me-1"></i> Update Prices
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Price Change History</h5>
+                                </div>
+                                <div class="card-body price-history">
+                                    {% if price_history %}
+                                        {% for item in price_history %}
+                                        <div class="history-item">
+                                            <div class="d-flex justify-content-between">
+                                                <div>
+                                                    <span class="paid-price">Paid: ${{ "%.2f"|format(item.paid) }}</span>
+                                                    <span class="premium-price ms-2">Premium: ${{ "%.2f"|format(item.premium) }}</span>
+                                                </div>
+                                                <div class="history-meta">
+                                                    {{ item.changed_at }}
+                                                </div>
+                                            </div>
+                                            <div class="history-meta">
+                                                Changed by: {{ item.changed_by }}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center text-muted py-3">
+                                            No price history available
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                {% elif request.endpoint == 'check_history' %}
+                    <!-- ========================================== -->
+                    <!-- Check History Section -->
+                    <!-- ========================================== -->
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Check History</h5>
+                            <div>
+                                <span class="badge paid-badge me-1">Paid: ${{ "%.2f"|format(current_prices.paid) }}</span>
+                                <span class="badge bg-primary">Premium: ${{ "%.2f"|format(current_prices.premium) }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <form class="row g-3 mb-4" method="get">
+                                <div class="col-md-8">
+                                    <input type="text" class="form-control" name="imei" 
+                                           placeholder="Search by IMEI..." value="{{ imei_query }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary w-100">Search</button>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ url_for('check_history') }}" class="btn btn-outline-secondary w-100">Reset</a>
+                                </div>
+                            </form>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>IMEI</th>
+                                            <th>Service</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for check in checks %}
+                                        <tr>
+                                            <td>{{ check.timestamp }}</td>
+                                            <td>{{ check.imei }}</td>
+                                            <td>
+                                                <span class="badge {% if check.service_type == 'premium' %}bg-primary{% else %}bg-info{% endif %}">
+                                                    {{ check.service_type|capitalize }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if check.paid %}
+                                                    <span class="text-success fw-bold">{{ check.amount }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">Free</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if check.paid %}
+                                                    <span class="badge bg-success">{{ check.payment_status|capitalize }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">N/A</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="5" class="text-center">No records found</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <nav>
+                                <ul class="pagination justify-content-center">
+                                    {% if page > 1 %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page-1 }}&imei={{ imei_query }}">Previous</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page }}</span>
+                                    </li>
+                                    
+                                    {% if checks|length == per_page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page+1 }}&imei={{ imei_query }}">Next</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                
+                {% elif request.endpoint == 'db_management' %}
+                    <!-- ========================================== -->
+                    <!-- Database Management - Collections List -->
+                    <!-- ========================================== -->
                     <div class="card">
                         <div class="card-header">
                             <h3 class="mb-0">Database Collections</h3>
@@ -188,8 +419,10 @@
                         </div>
                     </div>
                 
-                {% elif db_content == 'collection_view' %}
-                    <!-- Просмотр коллекции -->
+                {% elif request.endpoint == 'collection_view' %}
+                    <!-- ========================================== -->
+                    <!-- Database Management - Collection View -->
+                    <!-- ========================================== -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h2>{{ collection_name }} Collection</h2>
                         <div>
@@ -306,8 +539,10 @@
                         </div>
                     </div>
                 
-                {% elif db_content == 'edit_document' %}
-                    <!-- Редактирование документа -->
+                {% elif request.endpoint == 'edit_document' %}
+                    <!-- ========================================== -->
+                    <!-- Database Management - Edit Document -->
+                    <!-- ========================================== -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h2>Edit Document</h2>
                         <div>
@@ -365,8 +600,10 @@
                         </div>
                     </div>
                 
-                {% elif db_content == 'add_document' %}
-                    <!-- Добавление документа -->
+                {% elif request.endpoint == 'add_document' %}
+                    <!-- ========================================== -->
+                    <!-- Database Management - Add Document -->
+                    <!-- ========================================== -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h2>Add New Document</h2>
                         <div>
@@ -433,8 +670,10 @@
                         </div>
                     </div>
                 
-                {% elif db_content == 'manage_users' %}
-                    <!-- Управление пользователями -->
+                {% elif request.endpoint == 'manage_users' %}
+                    <!-- ========================================== -->
+                    <!-- Manage Users Section -->
+                    <!-- ========================================== -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h2>Admin Users Management</h2>
                         <a href="{{ url_for('db_management') }}" class="btn btn-outline-secondary">
@@ -541,214 +780,7 @@
                         </div>
                     </div>
                 {% endif %}
-            
-            {% else %}
-                <!-- ========================================== -->
-                <!-- Стандартный дашборд -->
-                <!-- ========================================== -->
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="stat-value">{{ total_checks }}</div>
-                            <div class="stat-label">Total Checks</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="stat-value text-success">{{ paid_checks }}</div>
-                            <div class="stat-label">Paid Checks</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="stat-value">{{ free_checks }}</div>
-                            <div class="stat-label">Free Checks</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="stat-value revenue">${{ "%.2f"|format(total_revenue) }}</div>
-                            <div class="stat-label">Total Revenue</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <!-- Блок управления ценами -->
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Price Management</h5>
-                            </div>
-                            <div class="card-body">
-                                {% with messages = get_flashed_messages(with_categories=true) %}
-                                    {% if messages %}
-                                        {% for category, message in messages %}
-                                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                                {{ message }}
-                                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                            </div>
-                                        {% endfor %}
-                                    {% endif %}
-                                {% endwith %}
-                                
-                                <form method="POST">
-                                    <div class="form-section">
-                                        <h6>Paid Service</h6>
-                                        <div class="input-group input-group-price mb-3">
-                                            <span class="input-group-text">$</span>
-                                            <input type="number" step="0.01" min="0.99" max="99.99" 
-                                                   class="form-control" 
-                                                   name="paid_price" 
-                                                   value="{{ current_prices.paid }}" 
-                                                   required>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-section">
-                                        <h6>Premium Service</h6>
-                                        <div class="input-group input-group-price mb-4">
-                                            <span class="input-group-text">$</span>
-                                            <input type="number" step="0.01" min="0.99" max="99.99" 
-                                                   class="form-control" 
-                                                   name="premium_price" 
-                                                   value="{{ current_prices.premium }}" 
-                                                   required>
-                                        </div>
-                                    </div>
-                                    
-                                    <button type="submit" class="btn btn-success w-100">
-                                        <i class="bi bi-save me-1"></i> Update Prices
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        
-                        <!-- История изменений цен -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Price Change History</h5>
-                            </div>
-                            <div class="card-body price-history">
-                                {% if price_history %}
-                                    {% for item in price_history %}
-                                    <div class="history-item">
-                                        <div class="d-flex justify-content-between">
-                                            <div>
-                                                <span class="paid-price">Paid: ${{ "%.2f"|format(item.paid) }}</span>
-                                                <span class="premium-price ms-2">Premium: ${{ "%.2f"|format(item.premium) }}</span>
-                                            </div>
-                                            <div class="history-meta">
-                                                {{ item.changed_at }}
-                                            </div>
-                                        </div>
-                                        <div class="history-meta">
-                                            Changed by: {{ item.changed_by }}
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                {% else %}
-                                    <div class="text-center text-muted py-3">
-                                        No price history available
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Блок с проверками -->
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Recent Checks</h5>
-                                <div>
-                                    <span class="badge paid-badge me-1">Paid: ${{ "%.2f"|format(current_prices.paid) }}</span>
-                                    <span class="badge bg-primary">Premium: ${{ "%.2f"|format(current_prices.premium) }}</span>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <form class="row g-3 mb-4" method="get">
-                                    <div class="col-md-8">
-                                        <input type="text" class="form-control" name="imei" 
-                                               placeholder="Search by IMEI..." value="{{ imei_query }}">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <button type="submit" class="btn btn-primary w-100">Search</button>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary w-100">Reset</a>
-                                    </div>
-                                </form>
-                                
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Timestamp</th>
-                                                <th>IMEI</th>
-                                                <th>Service</th>
-                                                <th>Amount</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for check in checks %}
-                                            <tr>
-                                                <td>{{ check.timestamp }}</td>
-                                                <td>{{ check.imei }}</td>
-                                                <td>
-                                                    <span class="badge {% if check.service_type == 'premium' %}bg-primary{% else %}bg-info{% endif %}">
-                                                        {{ check.service_type|capitalize }}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    {% if check.paid %}
-                                                        <span class="text-success fw-bold">{{ check.amount }}</span>
-                                                    {% else %}
-                                                        <span class="text-muted">Free</span>
-                                                    {% endif %}
-                                                </td>
-                                                <td>
-                                                    {% if check.paid %}
-                                                        <span class="badge bg-success">{{ check.payment_status|capitalize }}</span>
-                                                    {% else %}
-                                                        <span class="badge bg-secondary">N/A</span>
-                                                    {% endif %}
-                                                </td>
-                                            </tr>
-                                            {% else %}
-                                            <tr>
-                                                <td colspan="5" class="text-center">No records found</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                
-                                <nav>
-                                    <ul class="pagination justify-content-center">
-                                        {% if page > 1 %}
-                                            <li class="page-item">
-                                                <a class="page-link" href="?page={{ page-1 }}&imei={{ imei_query }}">Previous</a>
-                                            </li>
-                                        {% endif %}
-                                        
-                                        <li class="page-item active">
-                                            <span class="page-link">{{ page }}</span>
-                                        </li>
-                                        
-                                        {% if checks|length == per_page %}
-                                            <li class="page-item">
-                                                <a class="page-link" href="?page={{ page+1 }}&imei={{ imei_query }}">Next</a>
-                                            </li>
-                                        {% endif %}
-                                    </ul>
-                                </nav>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
+            </div>
         </div>
     </div>
     
@@ -789,4 +821,4 @@
         });
     </script>
 </body>
-                                        </html>
+                                    </html>
