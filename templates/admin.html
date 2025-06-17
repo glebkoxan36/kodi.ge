@@ -180,7 +180,7 @@
                                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                                     {{ collection }}
                                     <span class="badge bg-primary rounded-pill">
-                                        {{ db[collection].count_documents({}) }}
+                                        {{ collection_counts[collection] }}
                                     </span>
                                 </a>
                                 {% endfor %}
@@ -789,4 +789,4 @@
         });
     </script>
 </body>
-                                                        </html>
+                                        </html>
