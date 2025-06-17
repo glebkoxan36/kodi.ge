@@ -4,7 +4,7 @@ import requests
 import logging
 import threading
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, Response, flash
+from flask import Flask, render_template, request, redirect, url_for, jsonify, Response, flash, session
 from flask_cors import CORS
 from pymongo import MongoClient
 import stripe
@@ -55,11 +55,12 @@ prices_collection = db['prices']
 comparisons_collection = db['comparisons']
 phones_collection = db['phones']
 parser_logs_collection = db['parser_logs']
-users_collection = db['admin_users']
+admin_users_collection = db['admin_users']  # Для администраторов
+regular_users_collection = db['users']      # Для обычных пользователей
 
 # Создаем администратора по умолчанию, если не существует
-if not users_collection.find_one({'username': ADMIN_USERNAME}):
-    users_collection.insert_one({
+if not admin_users_collection.find_one({'username': ADMIN_USERNAME}):
+    admin_users_collection.insert_one({
         'username': ADMIN_USERNAME,
         'password': ADMIN_PASSWORD,
         'role': 'superadmin',
@@ -110,6 +111,88 @@ def get_current_prices():
     if price_doc:
         return price_doc['prices']
     return DEFAULT_PRICES
+
+# ======================================
+# Маршруты аутентификации пользователей
+# ======================================
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        # Проверка существования пользователя в обеих коллекциях
+        if (admin_users_collection.find_one({'username': username}) or 
+            regular_users_collection.find_one({'username': username})):
+            flash('Username already exists', 'danger')
+            return redirect(url_for('register'))
+        
+        hashed_pw = generate_password_hash(password)
+        regular_users_collection.insert_one({
+            'username': username,
+            'password': hashed_pw,
+            'role': 'user',
+            'created_at': datetime.utcnow()
+        })
+        
+        flash('Registration successful! Please log in.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        next_url = request.args.get('next') or url_for('index')
+        
+        user = None
+        
+        # Проверка в администраторах
+        admin_user = admin_users_collection.find_one({'username': username})
+        if admin_user and check_password_hash(admin_user['password'], password):
+            user = admin_user
+        
+        # Проверка в обычных пользователях
+        if not user:
+            regular_user = regular_users_collection.find_one({'username': username})
+            if regular_user and check_password_hash(regular_user['password'], password):
+                user = regular_user
+        
+        if user:
+            session['user_id'] = str(user['_id'])
+            session['username'] = user['username']
+            session['role'] = user['role']
+            
+            # Перенаправляем админов в админку
+            if user['role'] in ['admin', 'superadmin']:
+                return redirect(next_url or url_for('admin_dashboard'))
+            return redirect(next_url or url_for('index'))
+        
+        flash('Invalid username or password', 'danger')
+    
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('You have been logged out', 'success')
+    return redirect(url_for('index'))
+
+# Обновленный декоратор для админки
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
+            return redirect(url_for('login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated
+
+# ======================================
+# Основные маршруты приложения
+# ======================================
 
 @app.route('/')
 def index():
@@ -385,26 +468,6 @@ def stripe_webhook():
     
     return jsonify({'status': 'success'})
 
-def admin_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        auth = request.authorization
-        if not auth:
-            return auth_required()
-        
-        user = users_collection.find_one({'username': auth.username})
-        if not user or not check_password_hash(user['password'], auth.password):
-            return auth_required()
-            
-        return f(*args, **kwargs)
-    return decorated
-
-def auth_required():
-    return Response(
-        'Please enter valid admin credentials', 401,
-        {'WWW-Authenticate': 'Basic realm="Login Required"'}
-    )
-
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template(
@@ -420,7 +483,11 @@ def internal_server_error(e):
         code=500,
         message="სერვერზე შეცდომა მოხდა"
     ), 500
-    
+
+# ======================================
+# Админ-панель
+# ======================================
+
 @app.route('/admin', methods=['GET', 'POST'])
 @admin_required
 def admin_dashboard():
@@ -439,7 +506,7 @@ def admin_dashboard():
                         'type': 'history',
                         'prices': current_prices,
                         'changed_at': datetime.utcnow(),
-                        'changed_by': request.authorization.username
+                        'changed_by': session.get('username', 'unknown')
                     })
                     
                     prices_collection.update_one(
@@ -857,11 +924,11 @@ def manage_users():
                 flash('Username and password are required', 'danger')
                 return redirect(url_for('manage_users'))
             
-            if users_collection.find_one({'username': username}):
+            if admin_users_collection.find_one({'username': username}):
                 flash('User already exists', 'danger')
                 return redirect(url_for('manage_users'))
             
-            users_collection.insert_one({
+            admin_users_collection.insert_one({
                 'username': username,
                 'password': generate_password_hash(password),
                 'role': role,
@@ -870,14 +937,14 @@ def manage_users():
             flash('User created successfully', 'success')
             return redirect(url_for('manage_users'))
         
-        users = list(users_collection.find({}, {'password': 0}))
+        users = list(admin_users_collection.find({}, {'password': 0}))
         for user in users:
             user['_id'] = str(user['_id'])
             user['created_at'] = user['created_at'].strftime('%Y-%m-%d %H:%M')
         
         return render_template(
             'admin.html',
-            db_management_section=True,
+            db_management_section=False,
             db_content='manage_users',
             users=users
         )
@@ -892,17 +959,17 @@ def delete_user(user_id):
     """Удаление пользователя"""
     try:
         # Нельзя удалить текущего пользователя или суперадмина
-        current_user = request.authorization.username
-        user = users_collection.find_one({'_id': ObjectId(user_id)})
+        current_username = session.get('username')
+        user = admin_users_collection.find_one({'_id': ObjectId(user_id)})
         
         if not user:
             flash('User not found', 'danger')
-        elif user['username'] == current_user:
+        elif user['username'] == current_username:
             flash('You cannot delete yourself', 'danger')
         elif user['role'] == 'superadmin':
             flash('Cannot delete superadmin', 'danger')
         else:
-            users_collection.delete_one({'_id': ObjectId(user_id)})
+            admin_users_collection.delete_one({'_id': ObjectId(user_id)})
             flash('User deleted successfully', 'success')
     except Exception as e:
         app.logger.error(f"Delete user error: {str(e)}")
