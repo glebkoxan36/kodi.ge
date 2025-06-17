@@ -113,6 +113,21 @@
             color: white !important;
             background-color: rgba(255,255,255,0.15);
         }
+        
+        /* Стили для управления БД */
+        .field-group {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        .actions-cell {
+            white-space: nowrap;
+        }
+        .document-id {
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
@@ -120,7 +135,7 @@
         <!-- Навигационная панель -->
         <nav class="navbar admin-navbar navbar-expand-lg">
             <div class="container-fluid">
-                <a class="navbar-brand" href="#">
+                <a class="navbar-brand" href="{{ url_for('admin_dashboard') }}">
                     <i class="bi bi-shield-lock me-2"></i>Admin Panel
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav">
@@ -135,19 +150,9 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint in ['db_management', 'collection_view', 'edit_document', 'add_document'] %}active{% endif %}" 
+                            <a class="nav-link {% if request.endpoint in ['db_management', 'collection_view', 'edit_document', 'add_document', 'manage_users'] %}active{% endif %}" 
                                href="{{ url_for('db_management') }}">
                                 <i class="bi bi-database me-1"></i> Database
-                                
-                                <li class="nav-item">
-                              <a class="nav-link" href="{{ url_for('db_management') }}">
-                            <i class="bi bi-database me-1"></i> Database
-                                  <!-- После закрытия </nav> -->
-                            <div class="container mt-4">
-                           {% block content %}{% endblock %}
-                            </div>
-                             </a>
-                                 </li>
                             </a>
                         </li>
                     </ul>
@@ -155,210 +160,633 @@
             </div>
         </nav>
         
-        <div class="row">
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-value">{{ total_checks }}</div>
-                    <div class="stat-label">Total Checks</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-value text-success">{{ paid_checks }}</div>
-                    <div class="stat-label">Paid Checks</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-value">{{ free_checks }}</div>
-                    <div class="stat-label">Free Checks</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card">
-                    <div class="stat-value revenue">${{ "%.2f"|format(total_revenue) }}</div>
-                    <div class="stat-label">Total Revenue</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="row">
-            <!-- Блок управления ценами -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Price Management</h5>
-                    </div>
-                    <div class="card-body">
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                        {{ message }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                    </div>
+        <!-- Блок контента -->
+        <div class="container mt-4">
+            {% if db_management_section %}
+                <!-- ========================================== -->
+                <!-- Раздел управления MongoDB -->
+                <!-- ========================================== -->
+                
+                {% if db_content == 'db_management' %}
+                    <!-- Страница со списком коллекций -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="mb-0">Database Collections</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                {% for collection in collections %}
+                                <a href="{{ url_for('collection_view', collection_name=collection) }}" 
+                                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    {{ collection }}
+                                    <span class="badge bg-primary rounded-pill">
+                                        {{ db[collection].count_documents({}) }}
+                                    </span>
+                                </a>
                                 {% endfor %}
-                            {% endif %}
-                        {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                
+                {% elif db_content == 'collection_view' %}
+                    <!-- Просмотр коллекции -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2>{{ collection_name }} Collection</h2>
+                        <div>
+                            <a href="{{ url_for('add_document', collection_name=collection_name) }}" class="btn btn-success">
+                                <i class="bi bi-plus-circle me-1"></i> Add Document
+                            </a>
+                            <a href="{{ url_for('db_management') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Back to Collections
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>Documents ({{ total }} total)</span>
+                            <form class="d-flex" method="get">
+                                <input type="text" class="form-control me-2" placeholder="Search..." name="q" value="{{ search_query }}">
+                                <button type="submit" class="btn btn-primary">Search</button>
+                            </form>
+                        </div>
                         
-                        <form method="POST">
-                            <div class="form-section">
-                                <h6>Paid Service</h6>
-                                <div class="input-group input-group-price mb-3">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" step="0.01" min="0.99" max="99.99" 
-                                           class="form-control" 
-                                           name="paid_price" 
-                                           value="{{ current_prices.paid }}" 
-                                           required>
-                                </div>
+                        <div class="card-body">
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                    {% for category, message in messages %}
+                                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                            {{ message }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
+                            
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            {% if documents %}
+                                                {% for key in documents[0].keys() %}
+                                                    {% if key != '_id' %}
+                                                        <th>{{ key }}</th>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for doc in documents %}
+                                        <tr>
+                                            <td class="document-id">{{ doc._id|truncate(8) }}</td>
+                                            {% for key, value in doc.items() %}
+                                                {% if key != '_id' %}
+                                                    <td>
+                                                        {% if value is string and value|length > 50 %}
+                                                            {{ value[:50] }}...
+                                                        {% elif value is mapping or value is sequence %}
+                                                            [Complex Data]
+                                                        {% else %}
+                                                            {{ value }}
+                                                        {% endif %}
+                                                    </td>
+                                                {% endif %}
+                                            {% endfor %}
+                                            <td class="actions-cell">
+                                                <a href="{{ url_for('edit_document', collection_name=collection_name, doc_id=doc._id) }}" 
+                                                   class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <form method="POST" action="{{ url_for('collection_view', collection_name=collection_name) }}" 
+                                                      class="d-inline">
+                                                    <input type="hidden" name="doc_id" value="{{ doc._id }}">
+                                                    <button type="submit" class="btn btn-sm btn-danger" 
+                                                            onclick="return confirm('Are you sure you want to delete this document?')">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="100" class="text-center py-4">No documents found</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                             </div>
                             
-                            <div class="form-section">
-                                <h6>Premium Service</h6>
-                                <div class="input-group input-group-price mb-4">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" step="0.01" min="0.99" max="99.99" 
-                                           class="form-control" 
-                                           name="premium_price" 
-                                           value="{{ current_prices.premium }}" 
-                                           required>
-                                </div>
-                            </div>
+                            <!-- Пагинация -->
+                            <nav>
+                                <ul class="pagination justify-content-center">
+                                    {% if page > 1 %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page - 1 }}&q={{ search_query }}">Previous</a>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    {% for p in range(1, (total//per_page)+2) %}
+                                        {% if p >= page-2 and p <= page+2 %}
+                                            <li class="page-item {% if p == page %}active{% endif %}">
+                                                <a class="page-link" href="?page={{ p }}&q={{ search_query }}">{{ p }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if page < (total//per_page)+1 %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page + 1 }}&q={{ search_query }}">Next</a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                
+                {% elif db_content == 'edit_document' %}
+                    <!-- Редактирование документа -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2>Edit Document</h2>
+                        <div>
+                            <a href="{{ url_for('collection_view', collection_name=collection_name) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Back to Collection
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            Collection: {{ collection_name }} | ID: {{ doc_id }}
+                        </div>
+                        
+                        <div class="card-body">
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                    {% for category, message in messages %}
+                                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                            {{ message }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
                             
-                            <button type="submit" class="btn btn-success w-100">
-                                <i class="bi bi-save me-1"></i> Update Prices
+                            <form method="POST">
+                                {% for key, value in document.items() %}
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">{{ key }}</label>
+                                    {% if key == '_id' %}
+                                        <input type="text" class="form-control" 
+                                               name="field_{{ key }}" value="{{ value }}" readonly>
+                                    {% elif value is mapping or value is sequence %}
+                                        <textarea class="form-control" rows="4" 
+                                                  name="field_{{ key }}" 
+                                                  placeholder="Enter JSON data">{{ value|tojson }}</textarea>
+                                    {% else %}
+                                        <input type="text" class="form-control" 
+                                               name="field_{{ key }}" value="{{ value }}">
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                                
+                                <div class="d-flex justify-content-end mt-4">
+                                    <button type="submit" class="btn btn-primary me-2">
+                                        <i class="bi bi-save me-1"></i> Save Changes
+                                    </button>
+                                    <a href="{{ url_for('collection_view', collection_name=collection_name) }}" 
+                                       class="btn btn-secondary">
+                                        Cancel
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                
+                {% elif db_content == 'add_document' %}
+                    <!-- Добавление документа -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2>Add New Document</h2>
+                        <div>
+                            <a href="{{ url_for('collection_view', collection_name=collection_name) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Back to Collection
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            Collection: {{ collection_name }}
+                        </div>
+                        
+                        <div class="card-body">
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                    {% for category, message in messages %}
+                                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                            {{ message }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
+                            
+                            <form method="POST">
+                                <div id="fields-container">
+                                    <div class="field-group">
+                                        <div class="row">
+                                            <div class="col-md-5">
+                                                <input type="text" class="form-control" 
+                                                       placeholder="Field name" name="field_names[]" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input type="text" class="form-control" 
+                                                       placeholder="Value" name="field_values[]" required>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <button type="button" class="btn btn-danger remove-field w-100">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between mt-3">
+                                    <button type="button" id="add-field" class="btn btn-secondary">
+                                        <i class="bi bi-plus-circle me-1"></i> Add Field
+                                    </button>
+                                    
+                                    <div>
+                                        <button type="submit" class="btn btn-success me-2">
+                                            <i class="bi bi-check-circle me-1"></i> Create Document
+                                        </button>
+                                        <a href="{{ url_for('collection_view', collection_name=collection_name) }}" 
+                                           class="btn btn-outline-secondary">
+                                            Cancel
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                
+                {% elif db_content == 'manage_users' %}
+                    <!-- Управление пользователями -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2>Admin Users Management</h2>
+                        <a href="{{ url_for('db_management') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Back to Collections
+                        </a>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>Administrators</span>
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                                <i class="bi bi-plus-circle me-1"></i> Add User
                             </button>
-                        </form>
+                        </div>
+                        
+                        <div class="card-body">
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                    {% for category, message in messages %}
+                                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                            {{ message }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
+                            
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Username</th>
+                                            <th>Role</th>
+                                            <th>Created At</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user in users %}
+                                        <tr>
+                                            <td>{{ user.username }}</td>
+                                            <td>
+                                                <span class="badge {% if user.role == 'superadmin' %}bg-primary{% else %}bg-info{% endif %}">
+                                                    {{ user.role }}
+                                                </span>
+                                            </td>
+                                            <td>{{ user.created_at }}</td>
+                                            <td>
+                                                {% if user.role != 'superadmin' %}
+                                                    <form method="POST" action="{{ url_for('delete_user', user_id=user._id) }}" class="d-inline">
+                                                        <button type="submit" class="btn btn-sm btn-danger" 
+                                                                onclick="return confirm('Are you sure you want to delete this user?')">
+                                                            <i class="bi bi-trash"></i> Delete
+                                                        </button>
+                                                    </form>
+                                                {% else %}
+                                                    <span class="text-muted">System protected</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-center">No users found</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Модальное окно добавления пользователя -->
+                    <div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form method="POST" action="{{ url_for('manage_users') }}">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Add New Admin User</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Username</label>
+                                            <input type="text" class="form-control" name="username" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Password</label>
+                                            <input type="password" class="form-control" name="password" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Role</label>
+                                            <select class="form-select" name="role">
+                                                <option value="admin">Admin</option>
+                                                <option value="manager">Manager</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">Create User</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            
+            {% else %}
+                <!-- ========================================== -->
+                <!-- Стандартный дашборд -->
+                <!-- ========================================== -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ total_checks }}</div>
+                            <div class="stat-label">Total Checks</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-value text-success">{{ paid_checks }}</div>
+                            <div class="stat-label">Paid Checks</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ free_checks }}</div>
+                            <div class="stat-label">Free Checks</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-value revenue">${{ "%.2f"|format(total_revenue) }}</div>
+                            <div class="stat-label">Total Revenue</div>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- История изменений цен -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Price Change History</h5>
-                    </div>
-                    <div class="card-body price-history">
-                        {% if price_history %}
-                            {% for item in price_history %}
-                            <div class="history-item">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <span class="paid-price">Paid: ${{ "%.2f"|format(item.paid) }}</span>
-                                        <span class="premium-price ms-2">Premium: ${{ "%.2f"|format(item.premium) }}</span>
-                                    </div>
-                                    <div class="history-meta">
-                                        {{ item.changed_at }}
-                                    </div>
-                                </div>
-                                <div class="history-meta">
-                                    Changed by: {{ item.changed_by }}
-                                </div>
+                <div class="row">
+                    <!-- Блок управления ценами -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Price Management</h5>
                             </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="text-center text-muted py-3">
-                                No price history available
+                            <div class="card-body">
+                                {% with messages = get_flashed_messages(with_categories=true) %}
+                                    {% if messages %}
+                                        {% for category, message in messages %}
+                                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                                {{ message }}
+                                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endwith %}
+                                
+                                <form method="POST">
+                                    <div class="form-section">
+                                        <h6>Paid Service</h6>
+                                        <div class="input-group input-group-price mb-3">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" step="0.01" min="0.99" max="99.99" 
+                                                   class="form-control" 
+                                                   name="paid_price" 
+                                                   value="{{ current_prices.paid }}" 
+                                                   required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-section">
+                                        <h6>Premium Service</h6>
+                                        <div class="input-group input-group-price mb-4">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" step="0.01" min="0.99" max="99.99" 
+                                                   class="form-control" 
+                                                   name="premium_price" 
+                                                   value="{{ current_prices.premium }}" 
+                                                   required>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="bi bi-save me-1"></i> Update Prices
+                                    </button>
+                                </form>
                             </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Блок с проверками -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Recent Checks</h5>
-                        <div>
-                            <span class="badge paid-badge me-1">Paid: ${{ "%.2f"|format(current_prices.paid) }}</span>
-                            <span class="badge bg-primary">Premium: ${{ "%.2f"|format(current_prices.premium) }}</span>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        <form class="row g-3 mb-4" method="get">
-                            <div class="col-md-8">
-                                <input type="text" class="form-control" name="imei" 
-                                       placeholder="Search by IMEI..." value="{{ imei_query }}">
-                            </div>
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary w-100">Search</a>
-                            </div>
-                            <div class="col-md-2">
-                                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary w-100">Reset</a>
-                            </div>
-                        </form>
                         
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Timestamp</th>
-                                        <th>IMEI</th>
-                                        <th>Service</th>
-                                        <th>Amount</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for check in checks %}
-                                    <tr>
-                                        <td>{{ check.timestamp }}</td>
-                                        <td>{{ check.imei }}</td>
-                                        <td>
-                                            <span class="badge {% if check.service_type == 'premium' %}bg-primary{% else %}bg-info{% endif %}">
-                                                {{ check.service_type|capitalize }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {% if check.paid %}
-                                                <span class="text-success fw-bold">{{ check.amount }}</span>
-                                            {% else %}
-                                                <span class="text-muted">Free</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if check.paid %}
-                                                <span class="badge bg-success">{{ check.payment_status|capitalize }}</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">N/A</span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td colspan="5" class="text-center">No records found</td>
-                                    </tr>
+                        <!-- История изменений цен -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Price Change History</h5>
+                            </div>
+                            <div class="card-body price-history">
+                                {% if price_history %}
+                                    {% for item in price_history %}
+                                    <div class="history-item">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <span class="paid-price">Paid: ${{ "%.2f"|format(item.paid) }}</span>
+                                                <span class="premium-price ms-2">Premium: ${{ "%.2f"|format(item.premium) }}</span>
+                                            </div>
+                                            <div class="history-meta">
+                                                {{ item.changed_at }}
+                                            </div>
+                                        </div>
+                                        <div class="history-meta">
+                                            Changed by: {{ item.changed_by }}
+                                        </div>
+                                    </div>
                                     {% endfor %}
-                                </tbody>
-                            </table>
+                                {% else %}
+                                    <div class="text-center text-muted py-3">
+                                        No price history available
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        
-                        <nav>
-                            <ul class="pagination justify-content-center">
-                                {% if page > 1 %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page-1 }}&imei={{ imei_query }}">Previous</a>
-                                    </li>
-                                {% endif %}
+                    </div>
+                    
+                    <!-- Блок с проверками -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Recent Checks</h5>
+                                <div>
+                                    <span class="badge paid-badge me-1">Paid: ${{ "%.2f"|format(current_prices.paid) }}</span>
+                                    <span class="badge bg-primary">Premium: ${{ "%.2f"|format(current_prices.premium) }}</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <form class="row g-3 mb-4" method="get">
+                                    <div class="col-md-8">
+                                        <input type="text" class="form-control" name="imei" 
+                                               placeholder="Search by IMEI..." value="{{ imei_query }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="submit" class="btn btn-primary w-100">Search</button>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary w-100">Reset</a>
+                                    </div>
+                                </form>
                                 
-                                <li class="page-item active">
-                                    <span class="page-link">{{ page }}</span>
-                                </li>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Timestamp</th>
+                                                <th>IMEI</th>
+                                                <th>Service</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for check in checks %}
+                                            <tr>
+                                                <td>{{ check.timestamp }}</td>
+                                                <td>{{ check.imei }}</td>
+                                                <td>
+                                                    <span class="badge {% if check.service_type == 'premium' %}bg-primary{% else %}bg-info{% endif %}">
+                                                        {{ check.service_type|capitalize }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if check.paid %}
+                                                        <span class="text-success fw-bold">{{ check.amount }}</span>
+                                                    {% else %}
+                                                        <span class="text-muted">Free</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if check.paid %}
+                                                        <span class="badge bg-success">{{ check.payment_status|capitalize }}</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">N/A</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% else %}
+                                            <tr>
+                                                <td colspan="5" class="text-center">No records found</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
                                 
-                                {% if checks|length == per_page %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page+1 }}&imei={{ imei_query }}">Next</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
+                                <nav>
+                                    <ul class="pagination justify-content-center">
+                                        {% if page > 1 %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ page-1 }}&imei={{ imei_query }}">Previous</a>
+                                            </li>
+                                        {% endif %}
+                                        
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page }}</span>
+                                        </li>
+                                        
+                                        {% if checks|length == per_page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ page+1 }}&imei={{ imei_query }}">Next</a>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            {% endif %}
         </div>
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Добавление нового поля в формах управления БД
+            document.getElementById('add-field')?.addEventListener('click', function() {
+                const container = document.getElementById('fields-container');
+                const newField = document.createElement('div');
+                newField.className = 'field-group';
+                newField.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-5">
+                            <input type="text" class="form-control" 
+                                   placeholder="Field name" name="field_names[]" required>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" 
+                                   placeholder="Value" name="field_values[]" required>
+                        </div>
+                        <div class="col-md-1">
+                            <button type="button" class="btn btn-danger remove-field w-100">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(newField);
+            });
+
+            // Удаление поля в формах управления БД
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.classList.contains('remove-field')) {
+                    e.target.closest('.field-group').remove();
+                }
+            });
+        });
+    </script>
 </body>
-</html>
+                                                        </html>
