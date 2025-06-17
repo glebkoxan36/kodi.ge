@@ -700,11 +700,17 @@ def db_management():
     """Главная страница управления БД"""
     try:
         collections = db.list_collection_names()
+        # Создаем словарь с количеством документов для каждой коллекции
+        collection_counts = {}
+        for name in collections:
+            collection_counts[name] = db[name].count_documents({})
+        
         return render_template(
             'admin.html',
             db_management_section=True,
             db_content='db_management',
-            collections=collections
+            collections=collections,
+            collection_counts=collection_counts  # Передаем готовые счетчики
         )
     except Exception as e:
         app.logger.error(f"Database error: {str(e)}")
@@ -733,12 +739,13 @@ def collection_view(collection_name):
         skip = (page - 1) * per_page
         
         # Получение документов
-        documents = list(db[collection_name].find().skip(skip).limit(per_page))
+        documents = []
+        cursor = db[collection_name].find().skip(skip).limit(per_page)
+        for doc in cursor:
+            doc['_id'] = str(doc['_id'])  # Конвертируем ObjectId в строку
+            documents.append(doc)
+            
         total = db[collection_name].count_documents({})
-        
-        # Преобразование ObjectId
-        for doc in documents:
-            doc['_id'] = str(doc['_id'])
         
         return render_template(
             'admin.html',
