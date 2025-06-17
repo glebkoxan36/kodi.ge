@@ -13,6 +13,7 @@ from functools import wraps
 from bs4 import BeautifulSoup
 import re
 from bson import ObjectId
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 CORS(app)
@@ -44,7 +45,7 @@ API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')  # PHP API Key
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')  # DeepSeek API Key
 
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
-ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'securepassword')
+ADMIN_PASSWORD = generate_password_hash(os.getenv('ADMIN_PASSWORD', 'securepassword'))
 
 # MongoDB
 client = MongoClient(MONGODB_URI)
@@ -54,6 +55,16 @@ prices_collection = db['prices']
 comparisons_collection = db['comparisons']
 phones_collection = db['phones']
 parser_logs_collection = db['parser_logs']
+users_collection = db['admin_users']
+
+# Создаем администратора по умолчанию, если не существует
+if not users_collection.find_one({'username': ADMIN_USERNAME}):
+    users_collection.insert_one({
+        'username': ADMIN_USERNAME,
+        'password': ADMIN_PASSWORD,
+        'role': 'superadmin',
+        'created_at': datetime.utcnow()
+    })
 
 # ИСПРАВЛЕНИЕ: Проверка существующих индексов перед созданием
 try:
@@ -378,13 +389,21 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         auth = request.authorization
-        if not auth or not (auth.username == ADMIN_USERNAME and auth.password == ADMIN_PASSWORD):
-            return Response(
-                'Please enter valid admin credentials', 401,
-                {'WWW-Authenticate': 'Basic realm="Login Required"'}
-            )
+        if not auth:
+            return auth_required()
+        
+        user = users_collection.find_one({'username': auth.username})
+        if not user or not check_password_hash(user['password'], auth.password):
+            return auth_required()
+            
         return f(*args, **kwargs)
     return decorated
+
+def auth_required():
+    return Response(
+        'Please enter valid admin credentials', 401,
+        {'WWW-Authenticate': 'Basic realm="Login Required"'}
+    )
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -497,7 +516,7 @@ def admin_dashboard():
         }
         
         # Получаем последние логи парсера
-        parser_logs = list(parser_logs_collection.find()
+        parser_logs = list(parser_logs_collection.find())
             .sort('timestamp', -1)
             .limit(10))
         for log in parser_logs:
@@ -522,7 +541,8 @@ def admin_dashboard():
             price_history=price_history,
             parser_logs=parser_logs,
             total_phones=total_phones,
-            brands=brands
+            brands=brands,
+            db_management_section=False
         )
     except Exception as e:
         app.logger.error(f"Admin dashboard error: {str(e)}")
@@ -672,116 +692,211 @@ def compare_phones():
 @admin_required
 def db_management():
     """Главная страница управления БД"""
-    collections = db.list_collection_names()
-    return render_template('db_management.html', collections=collections)
+    try:
+        collections = db.list_collection_names()
+        return render_template(
+            'admin.html',
+            db_management_section=True,
+            db_content='db_management',
+            collections=collections
+        )
+    except Exception as e:
+        app.logger.error(f"Database error: {str(e)}")
+        flash(f'Database error: {str(e)}', 'danger')
+        return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/db/<collection_name>', methods=['GET', 'POST'])
 @admin_required
 def collection_view(collection_name):
     """Просмотр и управление коллекцией"""
-    # Обработка удаления документов
-    if request.method == 'POST':
-        doc_id = request.form.get('doc_id')
-        if doc_id:
-            try:
-                db[collection_name].delete_one({'_id': ObjectId(doc_id)})
-                flash('Document deleted successfully', 'success')
-            except Exception as e:
-                flash(f'Error deleting document: {str(e)}', 'danger')
-        return redirect(url_for('collection_view', collection_name=collection_name))
-    
-    # Пагинация
-    page = int(request.args.get('page', 1))
-    per_page = 20
-    skip = (page - 1) * per_page
-    
-    # Получение документов
-    documents = list(db[collection_name].find().skip(skip).limit(per_page))
-    total = db[collection_name].count_documents({})
-    
-    # Преобразование ObjectId
-    for doc in documents:
-        doc['_id'] = str(doc['_id'])
-    
-    return render_template(
-        'collection_view.html',
-        collection_name=collection_name,
-        documents=documents,
-        page=page,
-        per_page=per_page,
-        total=total
-    )
+    try:
+        # Обработка удаления документов
+        if request.method == 'POST':
+            doc_id = request.form.get('doc_id')
+            if doc_id:
+                try:
+                    db[collection_name].delete_one({'_id': ObjectId(doc_id)})
+                    flash('Document deleted successfully', 'success')
+                except Exception as e:
+                    flash(f'Error deleting document: {str(e)}', 'danger')
+            return redirect(url_for('collection_view', collection_name=collection_name))
+        
+        # Пагинация
+        page = int(request.args.get('page', 1))
+        per_page = 20
+        skip = (page - 1) * per_page
+        
+        # Получение документов
+        documents = list(db[collection_name].find().skip(skip).limit(per_page))
+        total = db[collection_name].count_documents({})
+        
+        # Преобразование ObjectId
+        for doc in documents:
+            doc['_id'] = str(doc['_id'])
+        
+        return render_template(
+            'admin.html',
+            db_management_section=True,
+            db_content='collection_view',
+            collection_name=collection_name,
+            documents=documents,
+            page=page,
+            per_page=per_page,
+            total=total
+        )
+    except Exception as e:
+        app.logger.error(f"Collection view error: {str(e)}")
+        flash(f'Error loading collection: {str(e)}', 'danger')
+        return redirect(url_for('db_management'))
 
 @app.route('/admin/db/<collection_name>/edit/<doc_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_document(collection_name, doc_id):
     """Редактирование документа"""
-    collection = db[collection_name]
     try:
-        doc = collection.find_one({'_id': ObjectId(doc_id)})
-    except:
-        doc = None
-    
-    if not doc:
-        flash('Document not found', 'danger')
-        return redirect(url_for('collection_view', collection_name=collection_name))
-    
-    if request.method == 'POST':
-        try:
-            # Преобразование данных формы в словарь
-            form_data = {}
-            for key in request.form:
-                if key.startswith('field_'):
-                    field_name = key[6:]
-                    form_data[field_name] = request.form[key]
-            
-            # Обновление документа
-            collection.update_one(
-                {'_id': ObjectId(doc_id)},
-                {'$set': form_data}
-            )
-            flash('Document updated successfully', 'success')
+        doc = db[collection_name].find_one({'_id': ObjectId(doc_id)})
+        if not doc:
+            flash('Document not found', 'danger')
             return redirect(url_for('collection_view', collection_name=collection_name))
         
-        except Exception as e:
-            flash(f'Error updating document: {str(e)}', 'danger')
-    
-    # Преобразование ObjectId для отображения
-    doc['_id'] = str(doc['_id'])
-    
-    return render_template(
-        'edit_document.html',
-        collection_name=collection_name,
-        doc_id=doc_id,
-        document=doc
-    )
+        if request.method == 'POST':
+            try:
+                # Собираем данные формы
+                form_data = {}
+                for key, value in request.form.items():
+                    if key.startswith('field_'):
+                        field_name = key[6:]
+                        form_data[field_name] = value
+                
+                # Обновление документа
+                db[collection_name].update_one(
+                    {'_id': ObjectId(doc_id)},
+                    {'$set': form_data}
+                )
+                flash('Document updated successfully', 'success')
+                return redirect(url_for('collection_view', collection_name=collection_name))
+            except Exception as e:
+                flash(f'Error updating document: {str(e)}', 'danger')
+        
+        # Преобразование ObjectId для отображения
+        doc['_id'] = str(doc['_id'])
+        
+        return render_template(
+            'admin.html',
+            db_management_section=True,
+            db_content='edit_document',
+            collection_name=collection_name,
+            doc_id=doc_id,
+            document=doc
+        )
+    except Exception as e:
+        app.logger.error(f"Edit document error: {str(e)}")
+        flash(f'Error loading document: {str(e)}', 'danger')
+        return redirect(url_for('collection_view', collection_name=collection_name))
 
 @app.route('/admin/db/<collection_name>/add', methods=['GET', 'POST'])
 @admin_required
 def add_document(collection_name):
     """Добавление нового документа"""
-    if request.method == 'POST':
-        try:
-            # Преобразование данных формы в словарь
-            form_data = {}
-            for key in request.form:
-                if key.startswith('field_'):
-                    field_name = key[6:]
-                    form_data[field_name] = request.form[key]
-            
-            # Вставка нового документа
-            result = db[collection_name].insert_one(form_data)
-            flash(f'Document added successfully with ID: {result.inserted_id}', 'success')
-            return redirect(url_for('collection_view', collection_name=collection_name))
+    try:
+        if request.method == 'POST':
+            try:
+                # Собираем данные формы
+                form_data = {}
+                for key, value in request.form.items():
+                    if key.startswith('field_'):
+                        field_name = key[6:]
+                        form_data[field_name] = value
+                
+                # Вставка нового документа
+                result = db[collection_name].insert_one(form_data)
+                flash(f'Document added successfully with ID: {result.inserted_id}', 'success')
+                return redirect(url_for('collection_view', collection_name=collection_name))
+            except Exception as e:
+                flash(f'Error adding document: {str(e)}', 'danger')
         
-        except Exception as e:
-            flash(f'Error adding document: {str(e)}', 'danger')
+        return render_template(
+            'admin.html',
+            db_management_section=True,
+            db_content='add_document',
+            collection_name=collection_name
+        )
+    except Exception as e:
+        app.logger.error(f"Add document error: {str(e)}")
+        flash(f'Error loading form: {str(e)}', 'danger')
+        return redirect(url_for('collection_view', collection_name=collection_name))
+
+# ======================================
+# Управление администраторами
+# ======================================
+
+@app.route('/admin/users', methods=['GET', 'POST'])
+@admin_required
+def manage_users():
+    """Управление пользователями админки"""
+    try:
+        if request.method == 'POST':
+            username = request.form.get('username')
+            password = request.form.get('password')
+            role = request.form.get('role', 'admin')
+            
+            if not username or not password:
+                flash('Username and password are required', 'danger')
+                return redirect(url_for('manage_users'))
+            
+            if users_collection.find_one({'username': username}):
+                flash('User already exists', 'danger')
+                return redirect(url_for('manage_users'))
+            
+            users_collection.insert_one({
+                'username': username,
+                'password': generate_password_hash(password),
+                'role': role,
+                'created_at': datetime.utcnow()
+            })
+            flash('User created successfully', 'success')
+            return redirect(url_for('manage_users'))
+        
+        users = list(users_collection.find({}, {'password': 0}))
+        for user in users:
+            user['_id'] = str(user['_id'])
+            user['created_at'] = user['created_at'].strftime('%Y-%m-%d %H:%M')
+        
+        return render_template(
+            'admin.html',
+            db_management_section=True,
+            db_content='manage_users',
+            users=users
+        )
+    except Exception as e:
+        app.logger.error(f"User management error: {str(e)}")
+        flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/users/delete/<user_id>', methods=['POST'])
+@admin_required
+def delete_user(user_id):
+    """Удаление пользователя"""
+    try:
+        # Нельзя удалить текущего пользователя или суперадмина
+        current_user = request.authorization.username
+        user = users_collection.find_one({'_id': ObjectId(user_id)})
+        
+        if not user:
+            flash('User not found', 'danger')
+        elif user['username'] == current_user:
+            flash('You cannot delete yourself', 'danger')
+        elif user['role'] == 'superadmin':
+            flash('Cannot delete superadmin', 'danger')
+        else:
+            users_collection.delete_one({'_id': ObjectId(user_id)})
+            flash('User deleted successfully', 'success')
+    except Exception as e:
+        app.logger.error(f"Delete user error: {str(e)}")
+        flash(f'Error: {str(e)}', 'danger')
     
-    return render_template(
-        'add_document.html',
-        collection_name=collection_name
-    )
+    return redirect(url_for('manage_users'))
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)
