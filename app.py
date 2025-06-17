@@ -146,7 +146,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        next_url = request.args.get('next') or url_for('index')
+        next_param = request.args.get('next')  # Получаем параметр next из запроса
         
         user = None
         
@@ -154,22 +154,32 @@ def login():
         admin_user = admin_users_collection.find_one({'username': username})
         if admin_user and check_password_hash(admin_user['password'], password):
             user = admin_user
+            app.logger.info(f"Admin user logged in: {username}")
         
         # Проверка в обычных пользователях
         if not user:
             regular_user = regular_users_collection.find_one({'username': username})
             if regular_user and check_password_hash(regular_user['password'], password):
                 user = regular_user
+                app.logger.info(f"Regular user logged in: {username}")
         
         if user:
             session['user_id'] = str(user['_id'])
             session['username'] = user['username']
             session['role'] = user['role']
             
-            # Перенаправляем админов в админку
+            # Для администраторов: 
+            # - Если есть next_param - используем его
+            # - Если нет - перенаправляем в админ-панель
             if user['role'] in ['admin', 'superadmin']:
-                return redirect(next_url or url_for('admin_dashboard'))
-            return redirect(next_url or url_for('index'))
+                app.logger.info(f"Redirecting admin to: {next_param or 'admin_dashboard'}")
+                return redirect(next_param) if next_param else redirect(url_for('admin_dashboard'))
+            
+            # Для обычных пользователей:
+            # - Используем next_param или главную страницу
+            return redirect(next_param) if next_param else redirect(url_for('index'))
+        else:
+            app.logger.warning(f"Failed login attempt for: {username}")
         
         flash('Invalid username or password', 'danger')
     
@@ -186,6 +196,7 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
+            # Добавляем параметр next с текущим URL
             return redirect(url_for('login', next=request.url))
         return f(*args, **kwargs)
     return decorated
