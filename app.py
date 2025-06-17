@@ -480,10 +480,13 @@ def admin_dashboard():
         paid_checks = checks_collection.count_documents({'paid': True})
         free_checks = total_checks - paid_checks
         
-        checks = list(checks_collection.find(query)
+        # ИСПРАВЛЕНО: Правильные отступы для цепочки вызовов
+        checks = list(
+            checks_collection.find(query)
             .sort('timestamp', -1)
             .skip((page - 1) * per_page)
-            .limit(per_page))
+            .limit(per_page)
+        )
         
         for check in checks:
             check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
@@ -515,10 +518,13 @@ def admin_dashboard():
             'premium': current_prices['premium'] / 100
         }
         
-        # Получаем последние логи парсера
-        parser_logs = list(parser_logs_collection.find())
+        # ИСПРАВЛЕНО: Правильные отступы для цепочки вызовов
+        parser_logs = list(
+            parser_logs_collection.find()
             .sort('timestamp', -1)
-            .limit(10))
+            .limit(10)
+        )
+        
         for log in parser_logs:
             log['timestamp'] = log['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
             log['_id'] = str(log['_id'])
@@ -548,7 +554,7 @@ def admin_dashboard():
         app.logger.error(f"Admin dashboard error: {str(e)}")
         return render_template('error.html', error="Admin error"), 500
 
-# Обновленный маршрут для поиска телефонов (ИСПРАВЛЕНО: заменили 'name' на 'Name')
+# Обновленный маршрут для поиска телефонов
 @app.route('/api/search', methods=['GET'])
 def search_phones():
     query = request.args.get('query', '').strip()
@@ -561,11 +567,11 @@ def search_phones():
         '$or': [
             {'brand': regex_query},
             {'model': regex_query},
-            {'Name': regex_query}  # Исправлено: name на Name
+            {'Name': regex_query}
         ]
     }, {
         '_id': 1,
-        'Name': 1,  # Исправлено: name на Name
+        'Name': 1,
         'Image_URL': 1
     }).limit(10))
     
@@ -580,7 +586,7 @@ def search_phones():
     
     return jsonify(normalized_results)
 
-# Обновленный маршрут для получения деталей телефона (ИСПРАВЛЕНО: добавили префикс /api)
+# Обновленный маршрут для получения деталей телефона
 @app.route('/api/phone_details/<phone_id>', methods=['GET'])
 def phone_details(phone_id):
     try:
@@ -899,4 +905,4 @@ def delete_user(user_id):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port)
