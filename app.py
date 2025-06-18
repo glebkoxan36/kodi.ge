@@ -507,8 +507,8 @@ def price_management():
         if request.method == 'POST':
             try:
                 # ИСПРАВЛЕНИЕ: правильное преобразование данных формы
-                paid_price = int(float(request.form.get('paid_price')) * 100
-                premium_price = int(float(request.form.get('premium_price')) * 100
+                paid_price = int(float(request.form.get('paid_price')) * 100)
+                premium_price = int(float(request.form.get('premium_price')) * 100)
                 
                 current_doc = prices_collection.find_one({'type': 'current'})
                 current_prices = current_doc['prices']
