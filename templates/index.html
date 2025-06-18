@@ -632,14 +632,6 @@
             z-index: 10;
         }
 
-        .mobile-menu-modal .modal-title {
-            color: var(--accent-color);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 1.1rem;
-        }
-
         .mobile-menu-modal .close-modal {
             position: absolute;
             top: 10px;
@@ -793,6 +785,7 @@
             border: 2px solid var(--accent-color);
             box-shadow: 0 0 15px rgba(0, 198, 255, 0.4);
             transition: transform 0.3s ease;
+            cursor: pointer;
         }
         
         .user-avatar:hover {
@@ -807,6 +800,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            cursor: pointer;
         }
         
         /* Scrollbar styling */
@@ -819,7 +813,7 @@
             border-radius: 3px;
         }
         
-        /* NEW: Floating Avatar for Mobile Menu */
+        /* Floating Avatar for Mobile Menu */
         .floating-avatar-container {
             position: absolute;
             top: -60px;
@@ -843,7 +837,7 @@
                 0 0 10px rgba(0, 198, 255, 0.6),
                 0 0 20px rgba(0, 198, 255, 0.4);
             animation: avatarGlow 2s infinite alternate;
-            pointer-events: auto;
+            cursor: pointer;
         }
 
         /* Half circle border effect */
@@ -876,7 +870,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             padding: 0 10px;
-            pointer-events: none;
+            cursor: pointer;
         }
         
         @keyframes avatarGlow {
@@ -1238,6 +1232,14 @@
             <h2>KODI.GE</h2>
         </div>
         
+        <!-- User profile in sidebar -->
+        <div class="user-profile-section">
+            <div class="user-avatar-container" onclick="goToLogin()">
+                <img src="https://via.placeholder.com/80" alt="User Avatar" class="user-avatar">
+            </div>
+            <div class="user-name" onclick="goToLogin()">ირაკლი ჯაფარიძე</div>
+        </div>
+        
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link active" href="#">
@@ -1548,8 +1550,10 @@
     <div class="mobile-menu-modal" id="mobileMenuModal">
         <!-- Floating Avatar -->
         <div class="floating-avatar-container">
-            <img src="https://via.placeholder.com/80" alt="User Avatar" class="floating-avatar">
-            <div class="floating-avatar-name">ირაკლი ჯაფარიძე</div>
+            <div onclick="goToLogin()">
+                <img src="https://via.placeholder.com/80" alt="User Avatar" class="floating-avatar">
+                <div class="floating-avatar-name">ირაკლი ჯაფარიძე</div>
+            </div>
         </div>
         
         <div class="modal-content">
@@ -1701,6 +1705,12 @@
                     });
             }
         });
+        
+        // Redirect to login page
+        function goToLogin() {
+            closeAllMobileMenus();
+            window.location.href = 'login.html';
+        }
         
         // Show check form based on service type
         function showCheck(serviceType) {
