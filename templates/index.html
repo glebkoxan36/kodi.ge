@@ -617,9 +617,11 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            border: 2px solid var(--accent-color);
             box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.7);
             position: relative;
+            overflow: visible; /* Allow avatar to overflow */
+            border: 2px solid var(--accent-color);
+            border-top: none; /* Remove top border for seamless integration */
         }
 
         .mobile-menu-modal .modal-header {
@@ -630,6 +632,7 @@
             top: 0;
             background: var(--card-bg);
             z-index: 10;
+            padding-top: 50px; /* Space for avatar */
         }
 
         .mobile-menu-modal .close-modal {
@@ -838,20 +841,20 @@
                 0 0 20px rgba(0, 198, 255, 0.4);
             animation: avatarGlow 2s infinite alternate;
             cursor: pointer;
+            display: block;
+            border: 5px solid var(--card-bg); /* Match menu background */
         }
 
         /* Half circle border effect */
         .floating-avatar::before {
             content: '';
             position: absolute;
-            top: -10px;
-            left: -10px;
-            width: 100px;
-            height: 100px;
+            top: -5px;
+            left: -5px;
+            width: 90px;
+            height: 90px;
             border-radius: 50%;
-            border: 3px solid transparent;
-            border-top-color: var(--accent-color);
-            border-right-color: var(--accent-color);
+            border: 3px solid var(--accent-color);
             z-index: 1;
             animation: avatarGlow 2s infinite alternate;
         }
@@ -1548,15 +1551,13 @@
     
     <!-- Mobile Menu Modal -->
     <div class="mobile-menu-modal" id="mobileMenuModal">
-        <!-- Floating Avatar -->
-        <div class="floating-avatar-container">
-            <div onclick="goToLogin()">
+        <div class="modal-content">
+            <!-- Floating Avatar -->
+            <div class="floating-avatar-container">
                 <img src="https://via.placeholder.com/80" alt="User Avatar" class="floating-avatar">
                 <div class="floating-avatar-name">ირაკლი ჯაფარიძე</div>
             </div>
-        </div>
-        
-        <div class="modal-content">
+            
             <div class="modal-header">
                 <button class="close-modal" onclick="closeMobileMenu()">
                     <i class="fas fa-times"></i>
