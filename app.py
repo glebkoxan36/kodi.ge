@@ -3,15 +3,15 @@ import json
 import requests
 import logging
 import threading
+import re
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, Response, flash, session
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
 from flask_cors import CORS
 from pymongo import MongoClient
 import stripe
 from datetime import datetime
 from functools import wraps
 from bs4 import BeautifulSoup
-import re
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -499,89 +499,50 @@ def internal_server_error(e):
 # Админ-панель
 # ======================================
 
-@app.route('/admin', methods=['GET', 'POST'])
+@app.route('/admin/price', methods=['GET', 'POST'])
 @admin_required
-def admin_dashboard():
+def price_management():
+    """Управление ценами"""
     try:
         if request.method == 'POST':
-            # Обработка обновления цен
-            if 'paid_price' in request.form:
-                try:
-                    paid_price = int(float(request.form.get('paid_price')) * 100)
-                    premium_price = int(float(request.form.get('premium_price')) * 100)
-                    
-                    current_doc = prices_collection.find_one({'type': 'current'})
-                    current_prices = current_doc['prices']
-                    
-                    prices_collection.insert_one({
-                        'type': 'history',
-                        'prices': current_prices,
-                        'changed_at': datetime.utcnow(),
-                        'changed_by': session.get('username', 'unknown')
-                    })
-                    
-                    prices_collection.update_one(
-                        {'type': 'current'},
-                        {'$set': {
-                            'prices.paid': paid_price,
-                            'prices.premium': premium_price,
-                            'updated_at': datetime.utcnow()
-                        }}
-                    )
-                    
-                    flash('Prices updated successfully!', 'success')
-                    return redirect(url_for('admin_dashboard'))
-                    
-                except Exception as e:
-                    flash(f'Error updating prices: {str(e)}', 'danger')
-            
-            # Обработка запуска парсера
-            elif 'run_parser' in request.form:
-                try:
-                    from gsm_parser.scrap_specs import main as run_gsm_parser
-                    # Запуск парсера в фоновом режиме
-                    thread = threading.Thread(target=run_gsm_parser, args=(MONGODB_URI,))
-                    thread.start()
-                    flash('Parser started in background', 'success')
-                except Exception as e:
-                    app.logger.error(f"Parser error: {str(e)}")
-                    flash(f'Error starting parser: {str(e)}', 'danger')
-                return redirect(url_for('admin_dashboard'))
+            try:
+                paid_price = int(float(request.form.get('paid_price')) * 100
+                premium_price = int(float(request.form.get('premium_price')) * 100
+                
+                current_doc = prices_collection.find_one({'type': 'current'})
+                current_prices = current_doc['prices']
+                
+                prices_collection.insert_one({
+                    'type': 'history',
+                    'prices': current_prices,
+                    'changed_at': datetime.utcnow(),
+                    'changed_by': session.get('username', 'unknown')
+                })
+                
+                prices_collection.update_one(
+                    {'type': 'current'},
+                    {'$set': {
+                        'prices.paid': paid_price,
+                        'prices.premium': premium_price,
+                        'updated_at': datetime.utcnow()
+                    }}
+                )
+                
+                flash('Prices updated successfully!', 'success')
+                return redirect(url_for('price_management'))
+                
+            except Exception as e:
+                flash(f'Error updating prices: {str(e)}', 'danger')
         
-        page = int(request.args.get('page', 1))
-        per_page = 50
+        # Получаем текущие цены
+        current_prices_doc = prices_collection.find_one({'type': 'current'})
+        current_prices = current_prices_doc['prices']
+        formatted_prices = {
+            'paid': current_prices['paid'] / 100,
+            'premium': current_prices['premium'] / 100
+        }
         
-        imei_query = request.args.get('imei', '')
-        query = {'imei': {'$regex': f'^{imei_query}'}} if imei_query else {}
-        
-        total_checks = checks_collection.count_documents({})
-        paid_checks = checks_collection.count_documents({'paid': True})
-        free_checks = total_checks - paid_checks
-        
-        # ИСПРАВЛЕНО: Правильные отступы для цепочки вызовов
-        checks = list(
-            checks_collection.find(query)
-            .sort('timestamp', -1)
-            .skip((page - 1) * per_page)
-            .limit(per_page)
-        )
-        
-        for check in checks:
-            check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
-            if check.get('paid'):
-                check['amount'] = f"${check.get('amount', 0):.2f}"
-            else:
-                check['amount'] = 'Free'
-        
-        current_prices = get_current_prices()
-        
-        revenue_cursor = checks_collection.aggregate([
-            {"$match": {"paid": True}},
-            {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
-        ])
-        revenue_data = list(revenue_cursor)
-        total_revenue = revenue_data[0]['total'] if revenue_data else 0
-        
+        # Получаем историю изменений цен
         price_history = list(prices_collection.find({'type': 'history'})
             .sort('changed_at', -1)
             .limit(5))
@@ -591,12 +552,99 @@ def admin_dashboard():
             item['paid'] = item['prices']['paid'] / 100
             item['premium'] = item['prices']['premium'] / 100
         
+        return render_template(
+            'admin.html',
+            current_prices=formatted_prices,
+            price_history=price_history,
+            active_section='price_management'
+        )
+    
+    except Exception as e:
+        app.logger.error(f"Price management error: {str(e)}")
+        flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/history')
+@admin_required
+def check_history():
+    """История проверок IMEI"""
+    try:
+        page = int(request.args.get('page', 1))
+        per_page = 50
+        imei_query = request.args.get('imei', '')
+        
+        # Формируем запрос
+        query = {}
+        if imei_query:
+            query['imei'] = {'$regex': f'^{imei_query}'}
+        
+        total_checks = checks_collection.count_documents(query)
+        checks = list(
+            checks_collection.find(query)
+            .sort('timestamp', -1)
+            .skip((page - 1) * per_page)
+            .limit(per_page)
+        )
+        
+        current_prices = get_current_prices()
         formatted_prices = {
             'paid': current_prices['paid'] / 100,
             'premium': current_prices['premium'] / 100
         }
         
-        # ИСПРАВЛЕНО: Правильные отступы для цепочки вызовов
+        # Форматируем данные для отображения
+        for check in checks:
+            check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+            if check.get('paid'):
+                check['amount'] = f"${check.get('amount', 0):.2f}"
+            else:
+                check['amount'] = 'Free'
+        
+        return render_template(
+            'admin.html',
+            checks=checks,
+            total_checks=total_checks,
+            imei_query=imei_query,
+            page=page,
+            per_page=per_page,
+            current_prices=formatted_prices,
+            active_section='check_history'
+        )
+    except Exception as e:
+        app.logger.error(f"Check history error: {str(e)}")
+        flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin', methods=['GET', 'POST'])
+@admin_required
+def admin_dashboard():
+    """Главная панель администратора"""
+    try:
+        if request.method == 'POST' and 'run_parser' in request.form:
+            try:
+                from gsm_parser.scrap_specs import main as run_gsm_parser
+                thread = threading.Thread(target=run_gsm_parser, args=(MONGODB_URI,))
+                thread.start()
+                flash('Parser started in background', 'success')
+            except Exception as e:
+                app.logger.error(f"Parser error: {str(e)}")
+                flash(f'Error starting parser: {str(e)}', 'danger')
+            return redirect(url_for('admin_dashboard'))
+        
+        # Статистика
+        total_checks = checks_collection.count_documents({})
+        paid_checks = checks_collection.count_documents({'paid': True})
+        free_checks = total_checks - paid_checks
+        
+        # Выручка
+        revenue_cursor = checks_collection.aggregate([
+            {"$match": {"paid": True}},
+            {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+        ])
+        revenue_data = list(revenue_cursor)
+        total_revenue = revenue_data[0]['total'] if revenue_data else 0
+        
+        # Логи парсера
         parser_logs = list(
             parser_logs_collection.find()
             .sort('timestamp', -1)
@@ -613,26 +661,19 @@ def admin_dashboard():
         
         return render_template(
             'admin.html',
-            checks=checks,
             total_checks=total_checks,
             paid_checks=paid_checks,
             free_checks=free_checks,
             total_revenue=total_revenue,
-            imei_query=imei_query,
-            page=page,
-            per_page=per_page,
-            current_prices=formatted_prices,
-            price_history=price_history,
             parser_logs=parser_logs,
             total_phones=total_phones,
             brands=brands,
-            db_management_section=False
+            active_section='admin_dashboard'
         )
     except Exception as e:
         app.logger.error(f"Admin dashboard error: {str(e)}")
         return render_template('error.html', error="Admin error"), 500
 
-# Обновленный маршрут для поиска телефонов
 @app.route('/api/search', methods=['GET'])
 def search_phones():
     query = request.args.get('query', '').strip()
@@ -664,7 +705,6 @@ def search_phones():
     
     return jsonify(normalized_results)
 
-# Обновленный маршрут для получения деталей телефона
 @app.route('/api/phone_details/<phone_id>', methods=['GET'])
 def phone_details(phone_id):
     try:
@@ -685,7 +725,6 @@ def phone_details(phone_id):
     except Exception as e:
         return jsonify({'error': 'Invalid phone ID'}), 400
 
-# Обновленный маршрут для AI анализа
 @app.route('/api/ai-analysis', methods=['POST'])
 def ai_analysis():
     data = request.json
@@ -763,7 +802,6 @@ def ai_analysis():
         app.logger.error(f"AI analysis error: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
-# Новый маршрут для сравнения телефонов
 @app.route('/compare')
 def compare_phones():
     return render_template('compare.html')
@@ -785,10 +823,9 @@ def db_management():
         
         return render_template(
             'admin.html',
-            db_management_section=True,
-            db_content='db_management',
+            active_section='db_management',
             collections=collections,
-            collection_counts=collection_counts  # Передаем готовые счетчики
+            collection_counts=collection_counts
         )
     except Exception as e:
         app.logger.error(f"Database error: {str(e)}")
@@ -827,8 +864,7 @@ def collection_view(collection_name):
         
         return render_template(
             'admin.html',
-            db_management_section=True,
-            db_content='collection_view',
+            active_section='db_management',
             collection_name=collection_name,
             documents=documents,
             page=page,
@@ -874,8 +910,7 @@ def edit_document(collection_name, doc_id):
         
         return render_template(
             'admin.html',
-            db_management_section=True,
-            db_content='edit_document',
+            active_section='db_management',
             collection_name=collection_name,
             doc_id=doc_id,
             document=doc
@@ -908,8 +943,7 @@ def add_document(collection_name):
         
         return render_template(
             'admin.html',
-            db_management_section=True,
-            db_content='add_document',
+            active_section='db_management',
             collection_name=collection_name
         )
     except Exception as e:
@@ -955,8 +989,7 @@ def manage_users():
         
         return render_template(
             'admin.html',
-            db_management_section=False,
-            db_content='manage_users',
+            active_section='manage_users',
             users=users
         )
     except Exception as e:
