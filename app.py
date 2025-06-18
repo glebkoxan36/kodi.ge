@@ -196,7 +196,8 @@ def login():
             # - Если нет - перенаправляем в админ-панель
             if user['role'] in ['admin', 'superadmin']:
                 app.logger.info(f"Redirecting admin to: {next_param or 'admin_dashboard'}")
-                return redirect(next_param) if next_param else redirect(url_for('admin_bp.admin_dashboard'))
+                # ИСПРАВЛЕНИЕ: admin_bp.admin_dashboard -> admin.admin_dashboard
+                return redirect(next_param) if next_param else redirect(url_for('admin.admin_dashboard'))
             
             # Для обычных пользователей:
             # - Используем next_param или главную страницу
@@ -655,7 +656,7 @@ def search_phones():
     for phone in results:
         normalized_results.append({
             '_id': str(phone['_id']),
-            'name': phone.get('Name', 'Unknown Phone'),
+            'name': phone.get('name', 'Unknown Phone'),
             'image_url': phone.get('Image_URL', '')
         })
     
@@ -671,10 +672,10 @@ def phone_details(phone_id):
         # Нормализуем данные для фронтенда
         normalized_phone = {
             '_id': str(phone['_id']),
-            'name': phone.get('Name', 'Unknown Phone'),
+            'name': phone.get('name', 'Unknown Phone'),
             'image_url': phone.get('Image_URL', ''),
             'specs': {key: value for key, value in phone.items() 
-                     if key not in ['_id', 'Name', 'Image_URL']}
+                     if key not in ['_id', 'name', 'Image_URL']}
         }
         
         return jsonify(normalized_phone)
@@ -692,8 +693,8 @@ def ai_analysis():
     
     try:
         # Подготовка промпта для AI
-        phone1_name = phone1.get('name', 'Unknown')
-        phone2_name = phone2.get('name', 'Unknown')
+        phone1_name = phone1.get('phone_name', 'Unknown')
+        phone2_name = phone2.get('phone_name', 'Unknown')
         
         # Собираем все характеристики телефонов
         phone1_specs = "\n".join([f"{key}: {value}" for key, value in phone1.get('specs', {}).items()])
