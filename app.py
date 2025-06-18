@@ -66,6 +66,11 @@ api_keys_collection = db['api_keys']        # Для API ключей
 webhooks_collection = db['webhooks']        # Для вебхуков
 payments_collection = db['payments']        # Коллекция для платежей
 
+# Коллекция для неудачных входов
+if 'failed_logins' not in db.list_collection_names():
+    db.create_collection('failed_logins')
+failed_logins_collection = db['failed_logins']
+
 # Создаем администратора по умолчанию, если не существует
 if not admin_users_collection.find_one({'username': ADMIN_USERNAME}):
     admin_users_collection.insert_one({
@@ -163,6 +168,8 @@ def login_required(f):
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    current_year = datetime.now().year
+    
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -185,10 +192,12 @@ def register():
         flash('Registration successful! Please log in.', 'success')
         return redirect(url_for('login'))
     
-    return render_template('register.html')
+    return render_template('register.html', current_year=current_year)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    current_year = datetime.now().year
+    
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -229,7 +238,7 @@ def login():
         
         flash('Invalid username or password', 'danger')
     
-    return render_template('login.html')
+    return render_template('login.html', current_year=current_year)
 
 @app.route('/logout')
 def logout():
