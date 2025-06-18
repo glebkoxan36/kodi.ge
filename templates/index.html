@@ -617,8 +617,8 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            border: 1px solid rgba(0, 198, 255, 0.3);
-            box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.4);
+            border: 2px solid var(--accent-color);
+            box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.7);
             position: relative;
         }
 
@@ -690,8 +690,8 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            border: 1px solid rgba(0, 198, 255, 0.3);
-            box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.4);
+            border: 2px solid var(--accent-color);
+            box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.7);
             position: relative;
         }
 
@@ -822,12 +822,12 @@
         /* NEW: Floating Avatar for Mobile Menu */
         .floating-avatar-container {
             position: absolute;
-            top: -40px;
+            top: -60px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             pointer-events: none;
         }
         
@@ -836,14 +836,30 @@
             height: 80px;
             border-radius: 50%;
             object-fit: cover;
-            border: 3px solid var(--accent-color);
+            background: var(--card-bg);
+            position: relative;
+            z-index: 2;
             box-shadow: 
                 0 0 10px rgba(0, 198, 255, 0.6),
-                0 0 20px rgba(0, 198, 255, 0.4),
-                inset 0 0 10px rgba(0, 198, 255, 0.3);
-            background: var(--card-bg);
+                0 0 20px rgba(0, 198, 255, 0.4);
             animation: avatarGlow 2s infinite alternate;
             pointer-events: auto;
+        }
+
+        /* Half circle border effect */
+        .floating-avatar::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--accent-color);
+            border-right-color: var(--accent-color);
+            z-index: 1;
+            animation: avatarGlow 2s infinite alternate;
         }
         
         .floating-avatar-name {
@@ -867,15 +883,30 @@
             0% {
                 box-shadow: 
                     0 0 10px rgba(0, 198, 255, 0.6),
-                    0 0 20px rgba(0, 198, 255, 0.4),
-                    inset 0 0 10px rgba(0, 198, 255, 0.3);
+                    0 0 20px rgba(0, 198, 255, 0.4);
             }
             100% {
                 box-shadow: 
                     0 0 15px rgba(0, 198, 255, 0.8),
-                    0 0 30px rgba(0, 198, 255, 0.6),
-                    inset 0 0 15px rgba(0, 198, 255, 0.5);
+                    0 0 30px rgba(0, 198, 255, 0.6);
             }
+        }
+        
+        /* Hide scrollbar but keep functionality */
+        .mobile-menu-modal .modal-body,
+        .apple-submenu-modal .modal-body {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;     /* Firefox */
+        }
+
+        .mobile-menu-modal .modal-body::-webkit-scrollbar,
+        .apple-submenu-modal .modal-body::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+
+        /* Header adjustment for avatar space */
+        .mobile-menu-modal .modal-header {
+            padding-top: 50px !important; /* Extra space for avatar */
         }
         
         /* Responsive design */
@@ -965,14 +996,21 @@
             
             /* Floating avatar for tablet */
             .floating-avatar-container {
-                top: -35px;
-                width: 90px;
-                height: 90px;
+                top: -50px;
+                width: 100px;
+                height: 100px;
             }
             
             .floating-avatar {
                 width: 70px;
                 height: 70px;
+            }
+            
+            .floating-avatar::before {
+                top: -8px;
+                left: -8px;
+                width: 86px;
+                height: 86px;
             }
         }
         
@@ -1065,9 +1103,9 @@
             
             /* Floating avatar for mobile */
             .floating-avatar-container {
-                top: -30px;
-                width: 80px;
-                height: 80px;
+                top: -40px;
+                width: 90px;
+                height: 90px;
             }
             
             .floating-avatar {
@@ -1075,9 +1113,20 @@
                 height: 60px;
             }
             
+            .floating-avatar::before {
+                top: -7px;
+                left: -7px;
+                width: 74px;
+                height: 74px;
+            }
+            
             .floating-avatar-name {
                 font-size: 0.8rem;
                 bottom: -25px;
+            }
+            
+            .mobile-menu-modal .modal-header {
+                padding-top: 40px !important;
             }
         }
 
@@ -1138,14 +1187,21 @@
             
             /* Floating avatar for small screens */
             .floating-avatar-container {
-                top: -25px;
-                width: 70px;
-                height: 70px;
+                top: -30px;
+                width: 80px;
+                height: 80px;
             }
             
             .floating-avatar {
                 width: 50px;
                 height: 50px;
+            }
+            
+            .floating-avatar::before {
+                top: -5px;
+                left: -5px;
+                width: 60px;
+                height: 60px;
             }
             
             .floating-avatar-name {
@@ -1279,7 +1335,7 @@
             <div id="mainCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
                 <div class="carousel-inner rounded">
                     <div class="carousel-item active">
-                        <img src="https://source.unsplash.com/random/1200x400/?iphone,apple" class="d-block w-100" alt="iPhone">
+                        <img src="https://source.unsplash.com/random/1200x400/?iphone,apple" class="d-block w-100" alt="">
                         <div class="carousel-caption">
                             <div class="logo-animated carousel-logo">
                                 <div class="logo-ring"></div>
@@ -1289,8 +1345,7 @@
                                     <div class="logo-letter">K</div>
                                 </div>
                             </div>
-                            <h3 class="carousel-title">KODI.GE</h3>
-                            <p class="carousel-subtitle">ტელეფონების პროფესიონალური შემოწმება</p>
+                            <p class="carousel-subtitle">აქ იქნება თქვენი რეკლამა</p>
                         </div>
                     </div>
                     <div class="carousel-item">
@@ -1304,8 +1359,7 @@
                                     <div class="logo-letter">K</div>
                                 </div>
                             </div>
-                            <h3 class="carousel-title">KODI.GE</h3>
-                            <p class="carousel-subtitle">უსაფრთხოება და საიმეო</p>
+                            <p class="carousel-subtitle">აქ იქნება თქვენი რეკლამა</p>
                         </div>
                     </div>
                     <div class="carousel-item">
@@ -1319,8 +1373,7 @@
                                     <div class="logo-letter">K</div>
                                 </div>
                             </div>
-                            <h3 class="carousel-title">KODI.GE</h3>
-                            <p class="carousel-subtitle">ტელეფონების განბლოკვა</p>
+                            <p class="carousel-subtitle">აქ იქნება თქვენი რეკლამა</p>
                         </div>
                     </div>
                 </div>
@@ -1501,7 +1554,6 @@
         
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">მენიუ</h3>
                 <button class="close-modal" onclick="closeMobileMenu()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -1913,4 +1965,4 @@
         }
     </script>
 </body>
-        </html>
+    </html>
