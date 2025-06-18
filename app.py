@@ -506,6 +506,7 @@ def price_management():
     try:
         if request.method == 'POST':
             try:
+                # ИСПРАВЛЕНИЕ: правильное преобразование данных формы
                 paid_price = int(float(request.form.get('paid_price')) * 100
                 premium_price = int(float(request.form.get('premium_price')) * 100
                 
