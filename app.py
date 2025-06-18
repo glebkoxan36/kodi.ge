@@ -643,11 +643,11 @@ def search_phones():
         '$or': [
             {'brand': regex_query},
             {'model': regex_query},
-            {'Name': regex_query}
+            {'name': regex_query}
         ]
     }, {
         '_id': 1,
-        'Name': 1,
+        'name': 1,
         'Image_URL': 1
     }).limit(10))
     
