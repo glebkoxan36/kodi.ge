@@ -4,6 +4,10 @@ import requests
 import logging
 import threading
 import re
+import platform
+import flask
+import hmac
+import secrets
 from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
 from flask_cors import CORS
@@ -57,6 +61,9 @@ phones_collection = db['phones']
 parser_logs_collection = db['parser_logs']
 admin_users_collection = db['admin_users']  # Для администраторов
 regular_users_collection = db['users']      # Для обычных пользователей
+audit_logs_collection = db['audit_logs']    # Для аудита
+api_keys_collection = db['api_keys']        # Для API ключей
+webhooks_collection = db['webhooks']        # Для вебхуков
 
 # Создаем администратора по умолчанию, если не существует
 if not admin_users_collection.find_one({'username': ADMIN_USERNAME}):
@@ -111,6 +118,22 @@ def get_current_prices():
     if price_doc:
         return price_doc['prices']
     return DEFAULT_PRICES
+
+# ======================================
+# Аудит и логирование
+# ======================================
+
+def log_audit_event(action, details, user_id=None, username=None):
+    """Логирование действий администратора"""
+    event = {
+        'action': action,
+        'details': details,
+        'user_id': user_id,
+        'username': username,
+        'timestamp': datetime.utcnow(),
+        'ip_address': request.remote_addr
+    }
+    audit_logs_collection.insert_one(event)
 
 # ======================================
 # Маршруты аутентификации пользователей
@@ -353,6 +376,15 @@ def perform_check():
             }
             checks_collection.insert_one(record)
         
+        # Отправка вебхука после успешной проверки
+        if result and 'error' not in result:
+            send_webhook_event('imei_check_completed', {
+                'imei': imei,
+                'service_type': service_type,
+                'result': result,
+                'timestamp': datetime.utcnow().isoformat()
+            })
+        
         return jsonify(result)
     
     except Exception as e:
@@ -496,6 +528,105 @@ def internal_server_error(e):
     ), 500
 
 # ======================================
+# Health Check и мониторинг
+# ======================================
+
+@app.route('/health')
+def health_check():
+    """Проверка состояния системы"""
+    status = {
+        'status': 'OK',
+        'timestamp': datetime.utcnow().isoformat(),
+        'services': {}
+    }
+    
+    # Проверка MongoDB
+    try:
+        db.command('ping')
+        status['services']['mongodb'] = 'OK'
+    except Exception as e:
+        status['services']['mongodb'] = f'ERROR: {str(e)}'
+        status['status'] = 'ERROR'
+    
+    # Проверка Stripe
+    try:
+        stripe.Balance.retrieve()
+        status['services']['stripe'] = 'OK'
+    except Exception as e:
+        status['services']['stripe'] = f'ERROR: {str(e)}'
+        status['status'] = 'ERROR'
+    
+    # Проверка внешнего API
+    try:
+        response = requests.get(API_URL, timeout=5)
+        status['services']['external_api'] = 'OK' if response.status_code == 200 else f'HTTP {response.status_code}'
+    except Exception as e:
+        status['services']['external_api'] = f'ERROR: {str(e)}'
+        status['status'] = 'ERROR'
+    
+    # Проверка DeepSeek API
+    try:
+        response = requests.post(
+            'https://api.deepseek.com/v1/chat/completions',
+            headers={'Authorization': f'Bearer {DEEPSEEK_API_KEY}'},
+            json={"model": "deepseek-chat", "messages": [{"role": "user", "content": "Ping"}]},
+            timeout=5
+        )
+        status['services']['deepseek_api'] = 'OK' if response.status_code == 200 else f'HTTP {response.status_code}'
+    except Exception as e:
+        status['services']['deepseek_api'] = f'ERROR: {str(e)}'
+        status['status'] = 'ERROR'
+    
+    return jsonify(status), 200 if status['status'] == 'OK' else 500
+
+# ======================================
+# Webhook Manager
+# ======================================
+
+def send_webhook_event(event_type, payload):
+    """Отправка события на зарегистрированные вебхуки"""
+    active_webhooks = webhooks_collection.find({
+        'active': True,
+        'events': event_type
+    })
+    
+    for webhook in active_webhooks:
+        try:
+            headers = {'Content-Type': 'application/json'}
+            if webhook.get('secret'):
+                signature = hmac.new(
+                    webhook['secret'].encode(),
+                    json.dumps(payload).encode(),
+                    'sha256'
+                ).hexdigest()
+                headers['X-Webhook-Signature'] = signature
+            
+            response = requests.post(
+                webhook['url'],
+                json=payload,
+                headers=headers,
+                timeout=5
+            )
+            
+            # Обновляем статус вебхука
+            webhooks_collection.update_one(
+                {'_id': webhook['_id']},
+                {'$set': {
+                    'last_delivery': datetime.utcnow(),
+                    'last_status': response.status_code
+                }}
+            )
+        except Exception as e:
+            app.logger.error(f"Webhook error for {webhook['url']}: {str(e)}")
+            webhooks_collection.update_one(
+                {'_id': webhook['_id']},
+                {'$set': {
+                    'last_delivery': datetime.utcnow(),
+                    'last_status': 'Error'
+                }}
+            )
+
+# ======================================
 # Админ-панель
 # ======================================
 
@@ -527,6 +658,20 @@ def price_management():
                         'prices.premium': premium_price,
                         'updated_at': datetime.utcnow()
                     }}
+                )
+                
+                # Аудит изменения цен
+                log_audit_event(
+                    action='price_change',
+                    details={
+                        'old_prices': current_prices,
+                        'new_prices': {
+                            'paid': paid_price / 100,
+                            'premium': premium_price / 100
+                        }
+                    },
+                    user_id=session.get('user_id'),
+                    username=session.get('username')
                 )
                 
                 flash('Prices updated successfully!', 'success')
@@ -1021,6 +1166,223 @@ def delete_user(user_id):
         flash(f'Error: {str(e)}', 'danger')
     
     return redirect(url_for('manage_users'))
+
+# ======================================
+# Управление API-ключами
+# ======================================
+
+@app.route('/admin/api-keys', methods=['GET', 'POST'])
+@admin_required
+def manage_api_keys():
+    """Управление API ключами"""
+    try:
+        if request.method == 'POST':
+            name = request.form.get('name')
+            permissions = request.form.get('permissions', '').split(',')
+            expires_at = request.form.get('expires_at')
+            
+            if not name:
+                flash('Name is required', 'danger')
+                return redirect(url_for('manage_api_keys'))
+            
+            # Генерация ключа
+            api_key = secrets.token_urlsafe(32)
+            
+            # Сохранение ключа
+            api_keys_collection.insert_one({
+                'name': name,
+                'key': api_key,
+                'permissions': [p.strip() for p in permissions if p.strip()],
+                'created_at': datetime.utcnow(),
+                'expires_at': datetime.fromisoformat(expires_at) if expires_at else None,
+                'revoked': False,
+                'last_used': None
+            })
+            
+            flash(f'API key created: {api_key}', 'success')
+            return redirect(url_for('manage_api_keys'))
+        
+        # Получение всех ключей
+        api_keys = list(api_keys_collection.find().sort('created_at', -1))
+        
+        # Преобразование ObjectId и дат
+        for key in api_keys:
+            key['_id'] = str(key['_id'])
+            key['created_at'] = key['created_at'].strftime('%Y-%m-%d %H:%M')
+            if key.get('expires_at'):
+                key['expires_at'] = key['expires_at'].strftime('%Y-%m-%d')
+            if key.get('last_used'):
+                key['last_used'] = key['last_used'].strftime('%Y-%m-%d %H:%M')
+        
+        return render_template(
+            'admin.html',
+            active_section='api_keys',
+            api_keys=api_keys
+        )
+    except Exception as e:
+        app.logger.error(f"API keys management error: {str(e)}")
+        flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/api-keys/revoke/<key_id>', methods=['POST'])
+@admin_required
+def revoke_api_key(key_id):
+    """Отзыв API ключа"""
+    try:
+        result = api_keys_collection.update_one(
+            {'_id': ObjectId(key_id)},
+            {'$set': {'revoked': True, 'revoked_at': datetime.utcnow()}}
+        )
+        
+        if result.modified_count > 0:
+            flash('API key revoked successfully', 'success')
+        else:
+            flash('API key not found', 'warning')
+    except Exception as e:
+        flash(f'Error revoking key: {str(e)}', 'danger')
+    
+    return redirect(url_for('manage_api_keys'))
+
+@app.route('/admin/api-keys/delete/<key_id>', methods=['POST'])
+@admin_required
+def delete_api_key(key_id):
+    """Удаление API ключа"""
+    try:
+        result = api_keys_collection.delete_one({'_id': ObjectId(key_id)})
+        if result.deleted_count > 0:
+            flash('API key deleted successfully', 'success')
+        else:
+            flash('API key not found', 'warning')
+    except Exception as e:
+        flash(f'Error deleting key: {str(e)}', 'danger')
+    
+    return redirect(url_for('manage_api_keys'))
+
+# ======================================
+# Управление вебхуками
+# ======================================
+
+@app.route('/admin/webhooks', methods=['GET', 'POST'])
+@admin_required
+def manage_webhooks():
+    """Управление вебхуками"""
+    try:
+        if request.method == 'POST':
+            url = request.form.get('url')
+            events = request.form.get('events', '').split(',')
+            secret = request.form.get('secret')
+            
+            if not url or not events:
+                flash('URL and events are required', 'danger')
+                return redirect(url_for('manage_webhooks'))
+            
+            webhooks_collection.insert_one({
+                'url': url,
+                'events': [e.strip() for e in events if e.strip()],
+                'secret': secret,
+                'active': True,
+                'created_at': datetime.utcnow(),
+                'last_delivery': None,
+                'last_status': None
+            })
+            
+            flash('Webhook created successfully', 'success')
+            return redirect(url_for('manage_webhooks'))
+        
+        # Получение всех вебхуков
+        webhooks = list(webhooks_collection.find().sort('created_at', -1))
+        
+        # Преобразование данных
+        for wh in webhooks:
+            wh['_id'] = str(wh['_id'])
+            wh['created_at'] = wh['created_at'].strftime('%Y-%m-%d %H:%M')
+            if wh.get('last_delivery'):
+                wh['last_delivery'] = wh['last_delivery'].strftime('%Y-%m-%d %H:%M')
+        
+        return render_template(
+            'admin.html',
+            active_section='webhooks',
+            webhooks=webhooks
+        )
+    except Exception as e:
+        app.logger.error(f"Webhooks management error: {str(e)}")
+        flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/webhooks/toggle/<webhook_id>', methods=['POST'])
+@admin_required
+def toggle_webhook(webhook_id):
+    """Активация/деактивация вебхука"""
+    try:
+        webhook = webhooks_collection.find_one({'_id': ObjectId(webhook_id)})
+        if not webhook:
+            flash('Webhook not found', 'warning')
+            return redirect(url_for('manage_webhooks'))
+        
+        new_status = not webhook.get('active', False)
+        webhooks_collection.update_one(
+            {'_id': ObjectId(webhook_id)},
+            {'$set': {'active': new_status}}
+        )
+        
+        status = "activated" if new_status else "deactivated"
+        flash(f'Webhook {status} successfully', 'success')
+    except Exception as e:
+        flash(f'Error toggling webhook: {str(e)}', 'danger')
+    
+    return redirect(url_for('manage_webhooks'))
+
+@app.route('/admin/webhooks/delete/<webhook_id>', methods=['POST'])
+@admin_required
+def delete_webhook(webhook_id):
+    """Удаление вебхука"""
+    try:
+        result = webhooks_collection.delete_one({'_id': ObjectId(webhook_id)})
+        if result.deleted_count > 0:
+            flash('Webhook deleted successfully', 'success')
+        else:
+            flash('Webhook not found', 'warning')
+    except Exception as e:
+        flash(f'Error deleting webhook: {str(e)}', 'danger')
+    
+    return redirect(url_for('manage_webhooks'))
+
+# ======================================
+# Status Page
+# ======================================
+
+@app.route('/admin/status')
+@admin_required
+def system_status():
+    """Страница статуса системы"""
+    # Получаем статус health check
+    health_response = health_check()
+    health_data = health_response[0].get_json()
+    
+    # Статистика использования
+    stats = {
+        'total_checks': checks_collection.count_documents({}),
+        'active_webhooks': webhooks_collection.count_documents({'active': True}),
+        'valid_api_keys': api_keys_collection.count_documents({'revoked': False}),
+        'db_size': db.command('dbStats')['dataSize']
+    }
+    
+    # Последние события аудита
+    audit_events = list(audit_logs_collection.find()
+        .sort('timestamp', -1)
+        .limit(10))
+    
+    for event in audit_events:
+        event['_id'] = str(event['_id'])
+        event['timestamp'] = event['timestamp'].strftime('%Y-%m-%d %H:%M')
+    
+    return render_template(
+        'admin.html',
+        active_section='system_status',
+        health_data=health_data,
+        system_stats=stats,
+        audit_events=audit_events
+    )
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
