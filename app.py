@@ -9,7 +9,7 @@ import flask
 import hmac
 import secrets
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, Blueprint
 from flask_cors import CORS
 from pymongo import MongoClient
 import stripe
@@ -64,6 +64,7 @@ regular_users_collection = db['users']      # Для обычных пользо
 audit_logs_collection = db['audit_logs']    # Для аудита
 api_keys_collection = db['api_keys']        # Для API ключей
 webhooks_collection = db['webhooks']        # Для вебхуков
+payments_collection = db['payments']        # Коллекция для платежей
 
 # Создаем администратора по умолчанию, если не существует
 if not admin_users_collection.find_one({'username': ADMIN_USERNAME}):
@@ -136,6 +137,27 @@ def log_audit_event(action, details, user_id=None, username=None):
     audit_logs_collection.insert_one(event)
 
 # ======================================
+# Декораторы
+# ======================================
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
+            # Добавляем параметр next с текущим URL
+            return redirect(url_for('login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session or session.get('role') != 'user':
+            return redirect(url_for('login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated
+
+# ======================================
 # Маршруты аутентификации пользователей
 # ======================================
 
@@ -156,6 +178,7 @@ def register():
             'username': username,
             'password': hashed_pw,
             'role': 'user',
+            'balance': 0.0,  # Начальный баланс
             'created_at': datetime.utcnow()
         })
         
@@ -213,16 +236,6 @@ def logout():
     session.clear()
     flash('You have been logged out', 'success')
     return redirect(url_for('index'))
-
-# Обновленный декоратор для админки
-def admin_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
-            # Добавляем параметр next с текущим URL
-            return redirect(url_for('login', next=request.url))
-        return f(*args, **kwargs)
-    return decorated
 
 # ======================================
 # Основные маршруты приложения
@@ -314,6 +327,9 @@ def payment_success():
             'timestamp': datetime.utcnow(),
             'result': result
         }
+        # Привязываем к пользователю если авторизован
+        if 'user_id' in session and session.get('role') == 'user':
+            record['user_id'] = ObjectId(session['user_id'])
         checks_collection.insert_one(record)
         
         return redirect(url_for('index', session_id=session_id))
@@ -374,6 +390,9 @@ def perform_check():
                 'timestamp': datetime.utcnow(),
                 'result': result
             }
+            # Привязываем к пользователю если авторизован
+            if 'user_id' in session and session.get('role') == 'user':
+                record['user_id'] = ObjectId(session['user_id'])
             checks_collection.insert_one(record)
         
         # Отправка вебхука после успешной проверки
@@ -505,9 +524,34 @@ def stripe_webhook():
     except stripe.error.SignatureVerificationError as e:
         return jsonify({'error': 'Invalid signature'}), 400
 
+    # Обработка события завершения сессии оплаты
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
-        # Обработка успешного платежа
+        metadata = session.get('metadata', {})
+        
+        # Обработка пополнения баланса
+        if metadata.get('type') == 'balance_topup':
+            user_id = metadata.get('user_id')
+            amount = session['amount_total'] / 100  # Сумма в долларах
+            
+            # Обновляем баланс пользователя
+            regular_users_collection.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$inc': {'balance': amount}}
+            )
+            
+            # Записываем платеж
+            payments_collection.insert_one({
+                'user_id': ObjectId(user_id),
+                'amount': amount,
+                'currency': session['currency'],
+                'stripe_session_id': session['id'],
+                'timestamp': datetime.utcnow(),
+                'type': 'topup'
+            })
+        else:
+            # Это может быть оплата за проверку IMEI, но у нас уже есть запись в checks_collection
+            pass
     
     return jsonify({'status': 'success'})
 
@@ -747,6 +791,9 @@ def ai_analysis():
             'timestamp': datetime.utcnow(),
             'ai_response': content
         }
+        # Привязываем к пользователю если авторизован
+        if 'user_id' in session and session.get('role') == 'user':
+            comparison_record['user_id'] = ObjectId(session['user_id'])
         comparisons_collection.insert_one(comparison_record)
         
         return jsonify({'analysis': content})
@@ -763,11 +810,95 @@ def compare_phones():
     return render_template('compare.html')
 
 # ======================================
-# Регистрация админских роутов
+# User Blueprint (Личный кабинет пользователя)
+# ======================================
+
+user_bp = Blueprint('user', __name__, url_prefix='/user')
+
+@user_bp.route('/topup', methods=['POST'])
+@login_required
+def topup():
+    user_id = session['user_id']
+    amount = float(request.json.get('amount'))
+    
+    try:
+        # Create Stripe Checkout Session
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': 'Balance Topup',
+                    },
+                    'unit_amount': int(amount * 100),
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            metadata={
+                'user_id': user_id,
+                'type': 'balance_topup'
+            },
+            success_url=url_for('user.topup_success', _external=True),
+            cancel_url=url_for('user.dashboard', _external=True),
+        )
+        return jsonify({'id': session.id})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@user_bp.route('/dashboard')
+@login_required
+def dashboard():
+    user_id = session['user_id']
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    
+    if not user:
+        flash('User not found', 'danger')
+        return redirect(url_for('login'))
+    
+    # Get balance
+    balance = user.get('balance', 0)
+    
+    # Get last 5 checks
+    checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
+        .sort('timestamp', -1)
+        .limit(5))
+    
+    # Get last 5 comparisons
+    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
+        .sort('timestamp', -1)
+        .limit(5))
+    
+    # Format timestamps
+    for check in checks:
+        check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M')
+        
+    for comp in comparisons:
+        comp['timestamp'] = comp['timestamp'].strftime('%Y-%m-%d %H:%M')
+    
+    return render_template(
+        'user_dashboard.html',
+        user=user,
+        balance=balance,
+        checks=checks,
+        comparisons=comparisons,
+        STRIPE_PUBLIC_KEY=os.getenv('STRIPE_PUBLIC_KEY')
+    )
+
+@user_bp.route('/topup_success')
+@login_required
+def topup_success():
+    flash('Balance top-up successful!', 'success')
+    return redirect(url_for('user.dashboard'))
+
+# ======================================
+# Регистрация блюпринтов
 # ======================================
 
 from admin_routes import admin_bp
 app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(user_bp)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
