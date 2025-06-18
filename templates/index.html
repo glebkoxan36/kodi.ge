@@ -769,6 +769,46 @@
             overflow: hidden;
         }
         
+        /* User profile styling */
+        .user-profile-section {
+            position: relative;
+            text-align: center;
+            padding: 15px 0 10px;
+            background: rgba(0, 198, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .user-avatar-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 10px;
+        }
+        
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent-color);
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.4);
+            transition: transform 0.3s ease;
+        }
+        
+        .user-avatar:hover {
+            transform: scale(1.05);
+        }
+        
+        .user-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            padding: 0 15px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
         /* Scrollbar styling */
         .modal-body::-webkit-scrollbar {
             width: 6px;
@@ -853,6 +893,16 @@
             .carousel-item {
                 height: 300px;
             }
+            
+            .user-avatar-container {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .user-avatar {
+                width: 70px;
+                height: 70px;
+            }
         }
         
         @media (max-width: 576px) {
@@ -926,6 +976,21 @@
                 width: 80px;
                 height: 80px;
             }
+            
+            /* User profile in mobile menu */
+            .user-avatar-container {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .user-avatar {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .user-name {
+                font-size: 0.9rem;
+            }
         }
 
         /* Адаптация для очень маленьких экранов */
@@ -966,6 +1031,21 @@
             .logo-ring:nth-child(3) {
                 width: 70px;
                 height: 70px;
+            }
+            
+            /* User profile in mobile menu */
+            .user-avatar-container {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .user-avatar {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .user-name {
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -1315,6 +1395,15 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
+            
+            <!-- User Profile Section -->
+            <div class="user-profile-section">
+                <div class="user-avatar-container">
+                    <img src="https://via.placeholder.com/80" alt="User Avatar" class="user-avatar">
+                </div>
+                <div class="user-name">ირაკლი ჯაფარიძე</div>
+            </div>
+            
             <div class="modal-body">
                 <div class="menu-grid">
                     <div class="menu-item" onclick="window.scrollTo(0,0); closeMobileMenu();">
@@ -1721,4 +1810,4 @@
         }
     </script>
 </body>
-                    </html>
+    </html>
