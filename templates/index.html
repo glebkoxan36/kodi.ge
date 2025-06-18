@@ -595,10 +595,10 @@
             width: 100%;
             height: 60vh;
             max-height: 90%;
-            background: rgba(0, 0, 0, 0.95);
+            background: transparent;
             z-index: 1100;
             align-items: flex-end;
-            backdrop-filter: blur(10px);
+            backdrop-filter: none;
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
             opacity: 0;
@@ -617,11 +617,10 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            border: 1px solid var(--accent-color);
             box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.7);
             position: relative;
-            overflow: visible; /* Allow avatar to overflow */
-            border: 2px solid var(--accent-color);
-            border-top: none; /* Remove top border for seamless integration */
+            overflow: visible;
         }
 
         .mobile-menu-modal .modal-header {
@@ -632,7 +631,7 @@
             top: 0;
             background: var(--card-bg);
             z-index: 10;
-            padding-top: 50px; /* Space for avatar */
+            padding-top: 50px;
         }
 
         .mobile-menu-modal .close-modal {
@@ -819,12 +818,12 @@
         /* Floating Avatar for Mobile Menu */
         .floating-avatar-container {
             position: absolute;
-            top: -60px;
+            top: -50px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             pointer-events: none;
         }
         
@@ -836,27 +835,26 @@
             background: var(--card-bg);
             position: relative;
             z-index: 2;
+            border: 2px solid var(--accent-color);
             box-shadow: 
                 0 0 10px rgba(0, 198, 255, 0.6),
                 0 0 20px rgba(0, 198, 255, 0.4);
             animation: avatarGlow 2s infinite alternate;
             cursor: pointer;
             display: block;
-            border: 5px solid var(--card-bg); /* Match menu background */
         }
 
-        /* Half circle border effect */
-        .floating-avatar::before {
-            content: '';
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            border: 3px solid var(--accent-color);
-            z-index: 1;
-            animation: avatarGlow 2s infinite alternate;
+        @keyframes avatarGlow {
+            0% {
+                box-shadow: 
+                    0 0 10px rgba(0, 198, 255, 0.6),
+                    0 0 20px rgba(0, 198, 255, 0.4);
+            }
+            100% {
+                box-shadow: 
+                    0 0 15px rgba(0, 198, 255, 0.8),
+                    0 0 30px rgba(0, 198, 255, 0.6);
+            }
         }
         
         .floating-avatar-name {
@@ -874,19 +872,6 @@
             text-overflow: ellipsis;
             padding: 0 10px;
             cursor: pointer;
-        }
-        
-        @keyframes avatarGlow {
-            0% {
-                box-shadow: 
-                    0 0 10px rgba(0, 198, 255, 0.6),
-                    0 0 20px rgba(0, 198, 255, 0.4);
-            }
-            100% {
-                box-shadow: 
-                    0 0 15px rgba(0, 198, 255, 0.8),
-                    0 0 30px rgba(0, 198, 255, 0.6);
-            }
         }
         
         /* Hide scrollbar but keep functionality */
@@ -1002,13 +987,6 @@
                 width: 70px;
                 height: 70px;
             }
-            
-            .floating-avatar::before {
-                top: -8px;
-                left: -8px;
-                width: 86px;
-                height: 86px;
-            }
         }
         
         @media (max-width: 576px) {
@@ -1110,13 +1088,6 @@
                 height: 60px;
             }
             
-            .floating-avatar::before {
-                top: -7px;
-                left: -7px;
-                width: 74px;
-                height: 74px;
-            }
-            
             .floating-avatar-name {
                 font-size: 0.8rem;
                 bottom: -25px;
@@ -1192,13 +1163,6 @@
             .floating-avatar {
                 width: 50px;
                 height: 50px;
-            }
-            
-            .floating-avatar::before {
-                top: -5px;
-                left: -5px;
-                width: 60px;
-                height: 60px;
             }
             
             .floating-avatar-name {
