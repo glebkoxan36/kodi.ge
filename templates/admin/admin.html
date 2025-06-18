@@ -164,10 +164,12 @@
                         <i class="bi bi-person-fill"></i> {{ session.username }}
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url_for('admin.logout') }}">Logout</a></li>
+                        <!-- FIXED: admin.logout -> logout -->
+                        <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
                     </ul>
                 </div>
             {% else %}
+                <!-- FIXED: admin_bp.admin_dashboard -> admin.admin_dashboard -->
                 <a href="{{ url_for('login', next=url_for('admin.admin_dashboard')) }}" class="btn btn-outline-primary">
                     <i class="bi bi-box-arrow-in-right"></i> Login
                 </a>
@@ -1189,4 +1191,4 @@
     });
 </script>
 </body>
-  </html>
+    </html>
