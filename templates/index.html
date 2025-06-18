@@ -819,6 +819,65 @@
             border-radius: 3px;
         }
         
+        /* NEW: Floating Avatar for Mobile Menu */
+        .floating-avatar-container {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1500;
+            width: 100px;
+            height: 100px;
+            pointer-events: none;
+        }
+        
+        .floating-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--accent-color);
+            box-shadow: 
+                0 0 10px rgba(0, 198, 255, 0.6),
+                0 0 20px rgba(0, 198, 255, 0.4),
+                inset 0 0 10px rgba(0, 198, 255, 0.3);
+            background: var(--card-bg);
+            animation: avatarGlow 2s infinite alternate;
+            pointer-events: auto;
+        }
+        
+        .floating-avatar-name {
+            position: absolute;
+            bottom: -30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-color);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 10px;
+            pointer-events: none;
+        }
+        
+        @keyframes avatarGlow {
+            0% {
+                box-shadow: 
+                    0 0 10px rgba(0, 198, 255, 0.6),
+                    0 0 20px rgba(0, 198, 255, 0.4),
+                    inset 0 0 10px rgba(0, 198, 255, 0.3);
+            }
+            100% {
+                box-shadow: 
+                    0 0 15px rgba(0, 198, 255, 0.8),
+                    0 0 30px rgba(0, 198, 255, 0.6),
+                    inset 0 0 15px rgba(0, 198, 255, 0.5);
+            }
+        }
+        
         /* Responsive design */
         @media (max-width: 1199px) {
             .sidebar {
@@ -900,6 +959,18 @@
             }
             
             .user-avatar {
+                width: 70px;
+                height: 70px;
+            }
+            
+            /* Floating avatar for tablet */
+            .floating-avatar-container {
+                top: -35px;
+                width: 90px;
+                height: 90px;
+            }
+            
+            .floating-avatar {
                 width: 70px;
                 height: 70px;
             }
@@ -991,6 +1062,23 @@
             .user-name {
                 font-size: 0.9rem;
             }
+            
+            /* Floating avatar for mobile */
+            .floating-avatar-container {
+                top: -30px;
+                width: 80px;
+                height: 80px;
+            }
+            
+            .floating-avatar {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .floating-avatar-name {
+                font-size: 0.8rem;
+                bottom: -25px;
+            }
         }
 
         /* Адаптация для очень маленьких экранов */
@@ -1046,6 +1134,23 @@
             
             .user-name {
                 font-size: 0.8rem;
+            }
+            
+            /* Floating avatar for small screens */
+            .floating-avatar-container {
+                top: -25px;
+                width: 70px;
+                height: 70px;
+            }
+            
+            .floating-avatar {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .floating-avatar-name {
+                font-size: 0.75rem;
+                bottom: -20px;
             }
         }
     </style>
@@ -1388,20 +1493,18 @@
     
     <!-- Mobile Menu Modal -->
     <div class="mobile-menu-modal" id="mobileMenuModal">
+        <!-- Floating Avatar -->
+        <div class="floating-avatar-container">
+            <img src="https://via.placeholder.com/80" alt="User Avatar" class="floating-avatar">
+            <div class="floating-avatar-name">ირაკლი ჯაფარიძე</div>
+        </div>
+        
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">მენიუ</h3>
                 <button class="close-modal" onclick="closeMobileMenu()">
                     <i class="fas fa-times"></i>
                 </button>
-            </div>
-            
-            <!-- User Profile Section -->
-            <div class="user-profile-section">
-                <div class="user-avatar-container">
-                    <img src="https://via.placeholder.com/80" alt="User Avatar" class="user-avatar">
-                </div>
-                <div class="user-name">ირაკლი ჯაფარიძე</div>
             </div>
             
             <div class="modal-body">
@@ -1810,4 +1913,4 @@
         }
     </script>
 </body>
-    </html>
+        </html>
