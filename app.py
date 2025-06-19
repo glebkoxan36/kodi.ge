@@ -5,12 +5,12 @@ import logging
 import re
 import hmac
 import secrets
+from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
 from flask_cors import CORS
 from pymongo import MongoClient
 import stripe
-from datetime import datetime
 from functools import wraps
 from bs4 import BeautifulSoup
 from bson import ObjectId
@@ -314,7 +314,8 @@ def login():
         # Перенаправление администраторов в админ-панель
         next_url = request.args.get('next')
         if user['role'] in ['admin', 'superadmin']:
-            return redirect(next_url or url_for('admin_dashboard'))
+            # ИСПРАВЛЕНИЕ: используем правильный endpoint с префиксом blueprint
+            return redirect(next_url or url_for('admin.admin_dashboard'))
         
         return redirect(next_url or url_for('index'))
     
