@@ -1,5 +1,4 @@
 /* styles.css */
-/* Глобальный border-box */
 *, *::before, *::after {
     box-sizing: border-box;
 }
@@ -285,7 +284,7 @@ body {
     opacity: 0.8;
     animation: neonGlow 3s infinite alternate;
     pointer-events: none;
-    z-index: 0; /* Ensure it's behind content */
+    z-index: 0;
 }
 
 .stat-card::before {
@@ -324,13 +323,13 @@ body {
     font-weight: 600;
     color: var(--accent-color);
     position: relative;
-    z-index: 1; /* Ensure content is above glow */
+    z-index: 1;
 }
 
 .card-body {
     padding: 20px;
     position: relative;
-    z-index: 1; /* Ensure content is above glow */
+    z-index: 1;
 }
 
 /* Service cards */
@@ -532,7 +531,7 @@ body {
     text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 }
 
-/* Gradient background elements - FIXED: скрываем на мобильных */
+/* Gradient background elements */
 .gradient-bg {
     position: fixed;
     width: 500px;
@@ -576,7 +575,7 @@ body {
     }
 }
 
-/* Mobile Menu Modal - Updated */
+/* Мобильное меню - ОБНОВЛЕНО */
 .mobile-menu-modal {
     display: none;
     position: fixed;
@@ -584,9 +583,9 @@ body {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 60vh;
+    height: 40vh; /* Фиксированная высота 40% */
     max-height: 90%;
-    background: rgba(0, 0, 0, 0.7) !important;
+    background: rgba(0, 0, 0, 0.7);
     z-index: 1100;
     align-items: flex-end;
     backdrop-filter: blur(5px);
@@ -601,28 +600,25 @@ body {
 }
 
 .mobile-menu-modal .modal-content {
-    background: rgba(18, 26, 43, 0.95) !important;
-    border: 2px solid rgba(0, 198, 255, 0.4) !important;
-    border-radius: 30px 30px 0 0 !important;
-    box-shadow: 0 0 20px rgba(0, 198, 255, 0.5) !important;
-    overflow: visible !important;
+    background: rgba(18, 26, 43, 0.95);
+    border: 2px solid rgba(0, 198, 255, 0.4);
+    border-radius: 30px 30px 0 0;
+    box-shadow: 0 0 20px rgba(0, 198, 255, 0.5);
+    overflow: visible;
     position: relative;
-}
-
-.mobile-menu-modal .modal-content::before,
-.mobile-menu-modal .modal-content::after {
-    content: none !important;
+    width: 100%;
+    height: 100%;
 }
 
 .mobile-menu-modal .modal-header {
     padding: 12px 20px;
-    border-bottom: none !important;
+    border-bottom: none;
     text-align: center;
     position: sticky;
     top: 0;
-    background: transparent !important;
+    background: transparent;
     z-index: 10;
-    padding-top: 70px !important;
+    padding-top: 70px;
 }
 
 .mobile-menu-modal .close-modal {
@@ -643,184 +639,15 @@ body {
     padding-bottom: 20px;
 }
 
-/* Apple Submenu Modal */
-.apple-submenu-modal {
-    display: none;
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60vh;
-    max-height: 90%;
-    background: rgba(0, 0, 0, 0.7) !important;
-    z-index: 1200;
-    align-items: flex-end;
-    backdrop-filter: blur(5px);
-    transform: translateY(100%);
-    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
-    opacity: 0;
-}
-
-.apple-submenu-modal.open {
-    transform: translateY(0);
-    opacity: 1;
-}
-
-.apple-submenu-modal .modal-content {
-    background: rgba(18, 26, 43, 0.95) !important;
-    border: 2px solid rgba(0, 198, 255, 0.4) !important;
-    border-radius: 30px 30px 0 0 !important;
-    box-shadow: 0 0 20px rgba(0, 198, 255, 0.5) !important;
-    overflow: visible !important;
-    position: relative;
-}
-
-.apple-submenu-modal .modal-content::before,
-.apple-submenu-modal .modal-content::after {
-    content: none !important;
-}
-
-.apple-submenu-modal .modal-header {
-    padding: 12px 20px;
-    border-bottom: none !important;
-    text-align: center;
-    position: sticky;
-    top: 0;
-    background: transparent !important;
-    z-index: 10;
-}
-
-.apple-submenu-modal .close-modal {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 1.3rem;
-    cursor: pointer;
-}
-
-.apple-submenu-modal .modal-body {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-bottom: 20px;
-}
-
-/* Menu grid with 3 columns */
-.menu-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-    gap: 12px;
-    padding: 15px;
-    width: 100%;
-    box-sizing: border-box;
-    background: transparent;
-}
-
-.menu-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 12px 6px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(0, 198, 255, 0.2) !important;
-    aspect-ratio: 1/1;
-    text-align: center;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.menu-item:hover {
-    background: rgba(0, 198, 255, 0.15) !important;
-    transform: translateY(-5px);
-    border-color: var(--accent-color) !important;
-    box-shadow: 0 8px 16px rgba(0, 198, 255, 0.3);
-}
-
-.menu-item i {
-    font-size: 1.5rem;
-    margin-bottom: 8px;
-    color: var(--accent-color);
-}
-
-.menu-item span {
-    font-size: 0.7rem;
-    line-height: 1.2;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-/* User profile styling */
-.user-profile-section {
-    position: relative;
-    text-align: center;
-    padding: 15px 0 10px;
-    background: transparent !important;
-    border-bottom: none !important;
-}
-
-.user-avatar-container {
-    position: relative;
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 10px;
-    cursor: pointer;
-}
-
-.user-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid var(--accent-color);
-    box-shadow: 0 0 15px rgba(0, 198, 255, 0.4);
-    transition: transform 0.3s ease;
-    cursor: pointer;
-}
-
-.user-avatar:hover {
-    transform: scale(1.05);
-}
-
-.user-name {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-color);
-    padding: 0 15px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    cursor: pointer;
-}
-
-/* Scrollbar styling */
-.modal-body::-webkit-scrollbar {
-    width: 6px;
-}
-
-.modal-body::-webkit-scrollbar-thumb {
-    background-color: var(--accent-color);
-    border-radius: 3px;
-}
-
-/* Floating Avatar for Mobile Menu - Updated */
+/* Плавающий аватар - ОБНОВЛЕНО */
 .floating-avatar-container {
     position: absolute;
-    top: -75px;
+    top: -55px; /* Половина аватара снаружи */
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
-    width: 130px;
-    height: 130px;
-    pointer-events: none;
+    width: 110px;
+    height: 110px;
 }
 
 .floating-avatar {
@@ -828,7 +655,7 @@ body {
     height: 110px;
     border-radius: 50%;
     object-fit: cover;
-    background: transparent !important;
+    background: transparent;
     position: relative;
     z-index: 2;
     border: 3px solid var(--accent-color);
@@ -846,7 +673,7 @@ body {
     justify-content: center;
     width: 100%;
     height: 100%;
-    background: transparent !important;
+    background: transparent;
     color: var(--accent-color);
     font-weight: bold;
     font-size: 1.2rem;
@@ -881,16 +708,53 @@ body {
     pointer-events: auto;
 }
 
-/* Hide scrollbar but keep functionality */
-.mobile-menu-modal .modal-body,
-.apple-submenu-modal .modal-body {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;     /* Firefox */
+/* Menu grid with 3 columns */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 12px;
+    padding: 15px;
+    width: 100%;
+    box-sizing: border-box;
+    background: transparent;
 }
 
-.mobile-menu-modal .modal-body::-webkit-scrollbar,
-.apple-submenu-modal .modal-body::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+.menu-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 6px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 198, 255, 0.2);
+    aspect-ratio: 1/1;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.menu-item:hover {
+    background: rgba(0, 198, 255, 0.15);
+    transform: translateY(-5px);
+    border-color: var(--accent-color);
+    box-shadow: 0 8px 16px rgba(0, 198, 255, 0.3);
+}
+
+.menu-item i {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    color: var(--accent-color);
+}
+
+.menu-item span {
+    font-size: 0.7rem;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 /* Responsive design */
@@ -927,7 +791,6 @@ body {
         margin-left: 70px;
     }
     
-    /* Адаптация логотипа */
     .logo-animated {
         width: 60px;
         height: 60px;
@@ -968,21 +831,11 @@ body {
         height: 300px;
     }
     
-    .user-avatar-container {
-        width: 80px;
-        height: 80px;
-    }
-    
-    .user-avatar {
-        width: 70px;
-        height: 70px;
-    }
-    
-    /* Floating avatar for tablet */
+    /* Адаптация аватара для планшетов */
     .floating-avatar-container {
-        top: -65px;
-        width: 110px;
-        height: 110px;
+        top: -45px;
+        width: 90px;
+        height: 90px;
     }
     
     .floating-avatar {
@@ -1013,31 +866,15 @@ body {
         height: 250px;
     }
     
-    .nav-link {
-        font-size: 1.1rem;
-        padding: 15px 25px;
-    }
-    
-    .submenu .nav-link {
-        font-size: 1rem;
-    }
-    
-    .card-body, .service-card, .stat-label {
-        color: #f5f5f5;
-    }
-    
-    /* Enhanced neon glow for mobile */
     .card::before {
-        box-shadow: 0 0 15px rgba(0, 198, 255, 0.5) !important;
+        box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
         animation: neonGlow 1.5s infinite alternate;
     }
     
-    /* Ensure pseudo-elements are visible */
     .card {
         overflow: visible;
     }
     
-    /* Адаптация логотипа для мобильных */
     .logo-animated {
         width: 70px;
         height: 70px;
@@ -1067,26 +904,11 @@ body {
         height: 80px;
     }
     
-    /* User profile in mobile menu */
-    .user-avatar-container {
-        width: 70px;
-        height: 70px;
-    }
-    
-    .user-avatar {
-        width: 60px;
-        height: 60px;
-    }
-    
-    .user-name {
-        font-size: 0.9rem;
-    }
-    
-    /* Floating avatar for mobile */
+    /* Адаптация аватара для мобильных */
     .floating-avatar-container {
-        top: -55px;
-        width: 100px;
-        height: 100px;
+        top: -40px;
+        width: 80px;
+        height: 80px;
     }
     
     .floating-avatar {
@@ -1130,7 +952,6 @@ body {
         padding: 8px 4px;
     }
     
-    /* Логотип для очень маленьких экранов */
     .logo-animated {
         width: 60px;
         height: 60px;
@@ -1160,26 +981,11 @@ body {
         height: 70px;
     }
     
-    /* User profile in mobile menu */
-    .user-avatar-container {
-        width: 60px;
-        height: 60px;
-    }
-    
-    .user-avatar {
-        width: 50px;
-        height: 50px;
-    }
-    
-    .user-name {
-        font-size: 0.8rem;
-    }
-    
-    /* Floating avatar for small screens */
+    /* Адаптация аватара для маленьких экранов */
     .floating-avatar-container {
-        top: -45px;
-        width: 90px;
-        height: 90px;
+        top: -35px;
+        width: 70px;
+        height: 70px;
     }
     
     .floating-avatar {
@@ -1197,9 +1003,9 @@ body {
     }
 }
 
-/* FIX: скрываем градиенты на мобильных */
+/* Скрываем градиенты на мобильных */
 @media (max-width: 991px) {
     .gradient-bg {
-        display: none !important;
+        display: none;
     }
     }
