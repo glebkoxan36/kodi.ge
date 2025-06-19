@@ -585,6 +585,34 @@
         const stripe = Stripe("{{ STRIPE_PUBLIC_KEY }}");
         let currentServiceType = null;
         
+        // Mobile menu functions
+        function openMobileMenu() {
+            const modal = document.getElementById('mobileMenuModal');
+            modal.classList.add('open');
+        }
+        
+        function closeMobileMenu() {
+            const modal = document.getElementById('mobileMenuModal');
+            modal.classList.remove('open');
+        }
+        
+        function openAppleSubmenu() {
+            closeMobileMenu();
+            const appleModal = document.getElementById('appleSubmenuModal');
+            appleModal.classList.add('open');
+        }
+        
+        function closeAppleSubmenu() {
+            const appleModal = document.getElementById('appleSubmenuModal');
+            appleModal.classList.remove('open');
+            openMobileMenu();
+        }
+        
+        function closeAllMobileMenus() {
+            closeMobileMenu();
+            closeAppleSubmenu();
+        }
+        
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize carousel
@@ -594,10 +622,7 @@
             });
             
             // Mobile menu toggle
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            if (mobileMenuBtn) {
-                mobileMenuBtn.addEventListener('click', openMobileMenu);
-            }
+            document.getElementById('mobileMenuBtn').addEventListener('click', openMobileMenu);
             
             // Close menu when clicking outside
             document.addEventListener('click', (e) => {
@@ -607,14 +632,14 @@
                 // Close mobile menu if click is outside
                 if (mobileMenuModal.classList.contains('open') && 
                     !mobileMenuModal.contains(e.target) && 
-                    !mobileMenuBtn.contains(e.target)) {
+                    e.target.id !== 'mobileMenuBtn') {
                     closeMobileMenu();
                 }
                 
                 // Close apple submenu if click is outside
                 if (appleSubmenuModal.classList.contains('open') && 
                     !appleSubmenuModal.contains(e.target) && 
-                    !mobileMenuBtn.contains(e.target)) {
+                    e.target.id !== 'mobileMenuBtn') {
                     closeAppleSubmenu();
                 }
             });
@@ -867,34 +892,6 @@
             
             return labels[key] || key;
         }
-        
-        // Mobile menu functions
-        function openMobileMenu() {
-            const modal = document.getElementById('mobileMenuModal');
-            modal.classList.add('open');
-        }
-        
-        function closeMobileMenu() {
-            const modal = document.getElementById('mobileMenuModal');
-            modal.classList.remove('open');
-        }
-        
-        function openAppleSubmenu() {
-            closeMobileMenu();
-            const appleModal = document.getElementById('appleSubmenuModal');
-            appleModal.classList.add('open');
-        }
-        
-        function closeAppleSubmenu() {
-            const appleModal = document.getElementById('appleSubmenuModal');
-            appleModal.classList.remove('open');
-            openMobileMenu();
-        }
-        
-        function closeAllMobileMenus() {
-            closeMobileMenu();
-            closeAppleSubmenu();
-        }
     </script>
 </body>
-    </html>
+</html>
