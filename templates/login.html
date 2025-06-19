@@ -98,29 +98,25 @@
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            // Сброс ошибки
             document.getElementById('login-error').textContent = '';
             
             const formData = new FormData(e.target);
-            const response = await fetch('/login', {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (response.ok) {
-                window.location.href = '/';
-            } else {
-                try {
-                    const result = await response.json();
-                    if (result.error) {
-                        document.getElementById('login-error').textContent = result.error;
-                    } else {
-                        document.getElementById('login-error').textContent = 'შეცდომა ავტორიზაციის დროს';
-                    }
-                } catch (error) {
-                    document.getElementById('login-error').textContent = 'სერვერული შეცდომა';
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    window.location.href = result.redirect_url;
+                } else {
+                    document.getElementById('login-error').textContent = 
+                        result.error || 'შეცდომა ავტორიზაციის დროს';
                 }
+            } catch (error) {
+                document.getElementById('login-error').textContent = 'სერვერული შეცდომა';
             }
         });
     </script>
