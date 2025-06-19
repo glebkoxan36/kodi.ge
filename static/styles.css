@@ -7,7 +7,7 @@
     --primary-color: #0a0e17;
     --secondary-color: #1a2138;
     --accent-color: #00c6ff;
-    --text-color: #f0f0f0;
+    --text-color: #ffffff; /* Изменён на чистый белый */
     --text-secondary: #c0c0d0;
     --card-bg: #121a2b;
     --success-color: #00d68f;
@@ -49,7 +49,7 @@ body {
     align-items: center;
     justify-content: center;
     transform-style: preserve-3d;
-    box-shadow: 0 0 20px rgba(0, 198, 255, 0.6);
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.5); /* Уменьшено свечение */
     overflow: hidden;
     z-index: 2;
 }
@@ -124,8 +124,7 @@ body {
     border-radius: 50%;
     font-size: 1.6rem;
     cursor: pointer;
-    box-shadow: 0 0 20px rgba(0, 198, 255, 0.7);
-    animation: neonPulse 2s infinite alternate;
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.5); /* Статичное свечение */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -135,16 +134,6 @@ body {
 .mobile-menu-btn i {
     color: white;
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-}
-
-@keyframes neonPulse {
-    0% {
-        box-shadow: 0 0 10px rgba(0, 198, 255, 0.7);
-    }
-    100% {
-        box-shadow: 0 0 20px rgba(0, 198, 255, 1), 
-                    0 0 30px rgba(0, 198, 255, 0.8);
-    }
 }
 
 /* Sidebar styling */
@@ -280,40 +269,23 @@ body {
     right: 0;
     bottom: 0;
     border-radius: 12px;
-    box-shadow: 0 0 10px rgba(0, 198, 255, 0.2);
+    box-shadow: 0 0 8px rgba(0, 198, 255, 0.3); /* Уменьшено свечение */
     opacity: 0.8;
-    animation: neonGlow 3s infinite alternate;
     pointer-events: none;
     z-index: 0;
 }
 
 .stat-card::before {
-    box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
+    box-shadow: 0 0 10px rgba(0, 198, 255, 0.3); /* Уменьшено свечение */
 }
 
 .service-card::before {
-    box-shadow: 0 0 20px rgba(0, 198, 255, 0.4);
-}
-
-@keyframes neonGlow {
-    0% {
-        box-shadow: 0 0 10px rgba(0, 198, 255, 0.4);
-    }
-    50% {
-        box-shadow: 0 0 25px rgba(0, 198, 255, 0.7);
-    }
-    100% {
-        box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
-    }
+    box-shadow: 0 0 12px rgba(0, 198, 255, 0.3); /* Уменьшено свечение */
 }
 
 .card:hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-}
-
-.card:hover::before {
-    animation: neonGlow 1.5s infinite alternate;
 }
 
 .card-header {
@@ -381,24 +353,9 @@ body {
     max-height: 90vh;
     overflow-y: auto;
     border: 1px solid rgba(0, 198, 255, 0.3);
-    box-shadow: 0 0 30px rgba(0, 198, 255, 0.2);
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.3); /* Уменьшено свечение */
     animation: modalAppear 0.5s ease;
     position: relative;
-}
-
-.modal-content::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 15px;
-    box-shadow: 0 0 20px rgba(0, 198, 255, 0.4);
-    opacity: 0.8;
-    animation: neonGlow 3s infinite alternate;
-    pointer-events: none;
-    z-index: 0;
 }
 
 @keyframes modalAppear {
@@ -561,20 +518,6 @@ body {
     margin-top: 15px;
 }
 
-/* Form button styling */
-#check-button {
-    animation: neonButton 3s infinite alternate;
-}
-
-@keyframes neonButton {
-    0% {
-        box-shadow: 0 0 5px rgba(0, 198, 255, 0.3);
-    }
-    100% {
-        box-shadow: 0 0 15px rgba(0, 198, 255, 0.6);
-    }
-}
-
 /* Мобильное меню - ОБНОВЛЕНО */
 .mobile-menu-modal {
     display: none;
@@ -583,7 +526,7 @@ body {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 40vh; /* Фиксированная высота 40% */
+    height: 50vh; /* Изменено: фиксированная высота 50% экрана */
     max-height: 90%;
     background: rgba(0, 0, 0, 0.7);
     z-index: 1100;
@@ -603,7 +546,7 @@ body {
     background: rgba(18, 26, 43, 0.95);
     border: 2px solid rgba(0, 198, 255, 0.4);
     border-radius: 30px 30px 0 0;
-    box-shadow: 0 0 20px rgba(0, 198, 255, 0.5);
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.3); /* Уменьшено свечение */
     overflow: visible;
     position: relative;
     width: 100%;
@@ -659,7 +602,7 @@ body {
     position: relative;
     z-index: 2;
     border: 3px solid var(--accent-color);
-    box-shadow: 0 0 20px rgba(0, 198, 255, 0.6);
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.5); /* Уменьшено свечение */
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -673,13 +616,13 @@ body {
     justify-content: center;
     width: 100%;
     height: 100%;
-    background: transparent;
-    color: var(--accent-color);
+    background: linear-gradient(135deg, #0a0e17, #1a2138); /* Градиентный фон */
+    color: #ffffff; /* Белый текст */
     font-weight: bold;
     font-size: 1.2rem;
     text-align: center;
     padding: 10px;
-    text-shadow: 0 0 10px rgba(0, 198, 255, 0.5);
+    text-shadow: 0 0 12px rgba(0, 198, 255, 0.8); /* Улучшена читаемость */
 }
 
 .floating-avatar-info {
@@ -867,8 +810,7 @@ body {
     }
     
     .card::before {
-        box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
-        animation: neonGlow 1.5s infinite alternate;
+        box-shadow: 0 0 10px rgba(0, 198, 255, 0.3);
     }
     
     .card {
