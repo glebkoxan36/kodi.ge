@@ -485,24 +485,36 @@
         // Mobile menu functions
         function openMobileMenu() {
             const modal = document.getElementById('mobileMenuModal');
-            modal.classList.add('open');
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('open');
+            }, 10);
         }
         
         function closeMobileMenu() {
             const modal = document.getElementById('mobileMenuModal');
             modal.classList.remove('open');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 400);
         }
         
         function openAppleSubmenu() {
             closeMobileMenu();
             const appleModal = document.getElementById('appleSubmenuModal');
-            appleModal.classList.add('open');
+            appleModal.style.display = 'flex';
+            setTimeout(() => {
+                appleModal.classList.add('open');
+            }, 10);
         }
         
         function closeAppleSubmenu() {
             const appleModal = document.getElementById('appleSubmenuModal');
             appleModal.classList.remove('open');
-            openMobileMenu();
+            setTimeout(() => {
+                appleModal.style.display = 'none';
+                openMobileMenu();
+            }, 400);
         }
         
         function closeAllMobileMenus() {
