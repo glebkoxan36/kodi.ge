@@ -202,11 +202,15 @@ body {
 .nav-link:hover, .nav-link.active {
     background: rgba(0, 198, 255, 0.15);
     color: var(--accent-color);
+    border-radius: 8px; /* Ensure rounded corners on hover */
+    overflow: hidden; /* Fix background overflow */
 }
 
 /* Submenu styling */
 .submenu {
     padding-left: 30px;
+    border-radius: 8px; /* Added rounded corners */
+    overflow: hidden; /* Fix background overflow */
 }
 
 .submenu .nav-link {
@@ -296,6 +300,8 @@ body {
     color: var(--accent-color);
     position: relative;
     z-index: 1;
+    border-top-left-radius: 12px; /* Match parent border radius */
+    border-top-right-radius: 12px; /* Match parent border radius */
 }
 
 .card-body {
@@ -368,6 +374,8 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     position: relative;
     z-index: 1;
+    border-top-left-radius: 15px; /* Match parent border radius */
+    border-top-right-radius: 15px; /* Match parent border radius */
 }
 
 .modal-title {
@@ -562,7 +570,7 @@ body {
     top: 0;
     background: transparent;
     z-index: 10;
-    padding-top: 80px; /* Увеличенный отступ для аватарки */
+    padding-top: 90px; /* Увеличенный отступ для аватарки */
 }
 
 .mobile-menu-modal .close-modal {
@@ -586,7 +594,7 @@ body {
 /* Плавающий аватар - ИСПРАВЛЕНО (полностью виден) */
 .floating-avatar-container {
     position: absolute;
-    top: -55px;
+    top: -60px; /* Increased space */
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
@@ -701,6 +709,70 @@ body {
     overflow: hidden;
 }
 
+/* Apple Submenu Modal - Fixed positioning */
+.apple-submenu-modal {
+    display: none;
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50vh;
+    max-height: 90%;
+    background: transparent;
+    z-index: 1200;
+    align-items: flex-end;
+    backdrop-filter: blur(5px);
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.apple-submenu-modal.open {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.apple-submenu-modal .modal-content {
+    background: rgba(18, 26, 43, 0.95);
+    border: 3px solid rgba(0, 198, 255, 0.4);
+    border-radius: 30px 30px 0 0;
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
+    overflow: visible;
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.apple-submenu-modal .modal-header {
+    padding: 20px;
+    border-bottom: none;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    background: transparent;
+    z-index: 10;
+}
+
+.apple-submenu-modal .close-modal {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.apple-submenu-modal .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 20px;
+}
+
 /* Responsive design */
 @media (max-width: 1199px) {
     .sidebar {
@@ -777,11 +849,11 @@ body {
     
     /* Адаптация для планшетов */
     .mobile-menu-modal .modal-header {
-        padding-top: 70px;
+        padding-top: 80px;
     }
     
     .floating-avatar-container {
-        top: -45px;
+        top: -50px;
         width: 90px;
         height: 90px;
     }
@@ -854,11 +926,11 @@ body {
     
     /* Адаптация для мобильных */
     .mobile-menu-modal .modal-header {
-        padding-top: 65px;
+        padding-top: 75px;
     }
     
     .floating-avatar-container {
-        top: -40px;
+        top: -45px;
         width: 80px;
         height: 80px;
     }
@@ -934,11 +1006,11 @@ body {
     
     /* Адаптация для маленьких экранов */
     .mobile-menu-modal .modal-header {
-        padding-top: 60px;
+        padding-top: 70px;
     }
     
     .floating-avatar-container {
-        top: -35px;
+        top: -40px;
         width: 70px;
         height: 70px;
     }
@@ -963,4 +1035,4 @@ body {
     .gradient-bg {
         display: none;
     }
-        }
+    }
