@@ -576,7 +576,7 @@ body {
     }
 }
 
-/* Mobile Menu Modal */
+/* Mobile Menu Modal - Updated with better avatar placement */
 .mobile-menu-modal {
     display: none;
     position: fixed;
@@ -586,10 +586,10 @@ body {
     width: 100%;
     height: 60vh;
     max-height: 90%;
-    background: rgba(0, 0, 0, 0.95);
+    background: transparent !important; /* Прозрачный фон */
     z-index: 1100;
     align-items: flex-end;
-    backdrop-filter: blur(10px);
+    backdrop-filter: none !important; /* Убираем размытие */
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
     opacity: 0;
@@ -608,8 +608,8 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: none; /* Убрать границу */
-    box-shadow: none; /* Убрать тень */
+    border: none !important; /* Убрать границу */
+    box-shadow: none !important; /* Убрать тень */
     position: relative;
     overflow: visible;
 }
@@ -620,11 +620,11 @@ body {
 
 .mobile-menu-modal .modal-header {
     padding: 12px 20px;
-    border-bottom: none; /* Убрать границу */
+    border-bottom: none !important; /* Убрать границу */
     text-align: center;
     position: sticky;
     top: 0;
-    background: transparent; /* Убрать фон */
+    background: transparent !important; /* Убрать фон */
     z-index: 10;
     padding-top: 60px;
 }
@@ -657,10 +657,10 @@ body {
     width: 100%;
     height: 60vh;
     max-height: 90%;
-    background: rgba(0, 0, 0, 0.95);
+    background: transparent !important; /* Прозрачный фон */
     z-index: 1200;
     align-items: flex-end;
-    backdrop-filter: blur(10px);
+    backdrop-filter: none !important; /* Убираем размытие */
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
     opacity: 0;
@@ -679,8 +679,8 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: none; /* Убрать границу */
-    box-shadow: none; /* Убрать тень */
+    border: none !important; /* Убрать границу */
+    box-shadow: none !important; /* Убрать тень */
     position: relative;
 }
 
@@ -690,11 +690,11 @@ body {
 
 .apple-submenu-modal .modal-header {
     padding: 12px 20px;
-    border-bottom: none; /* Убрать границу */
+    border-bottom: none !important; /* Убрать границу */
     text-align: center;
     position: sticky;
     top: 0;
-    background: transparent; /* Убрать фон */
+    background: transparent !important; /* Убрать фон */
     z-index: 10;
 }
 
@@ -734,18 +734,20 @@ body {
     justify-content: center;
     padding: 8px 4px;
     border-radius: 8px;
-    background: transparent; /* Убрать фон */
+    background: transparent !important; /* Убрать фон */
     aspect-ratio: 1/1;
     text-align: center;
     transition: all 0.3s ease;
     border: none;
     cursor: pointer;
+    opacity: 0.9; /* Небольшая прозрачность */
 }
 
 .menu-item:hover {
     background: transparent !important; /* Убрать фон при наведении */
-    transform: none; /* Убрать трансформацию */
+    transform: none !important; /* Убрать трансформацию */
     box-shadow: none !important; /* Убрать тень */
+    opacity: 1; /* Полная видимость при наведении */
 }
 
 .menu-item i {
