@@ -549,6 +549,7 @@ body {
 .mobile-menu-modal.open {
     transform: translateY(0);
     opacity: 1;
+    display: flex;
 }
 
 .mobile-menu-modal .modal-content {
@@ -729,6 +730,7 @@ body {
 .apple-submenu-modal.open {
     transform: translateY(0);
     opacity: 1;
+    display: flex;
 }
 
 .apple-submenu-modal .modal-content {
@@ -1035,4 +1037,4 @@ body {
     .gradient-bg {
         display: none;
     }
-    
+    }
