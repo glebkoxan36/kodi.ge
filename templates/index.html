@@ -357,7 +357,9 @@
         <div class="modal-content">
             <!-- Floating Avatar - Updated -->
             <div class="floating-avatar-container" onclick="goToLogin()">
-                <img src="https://via.placeholder.com/110" alt="User Avatar" class="floating-avatar" id="mobileAvatar">
+                <div class="floating-avatar" id="mobileAvatar">
+                    <div class="avatar-placeholder">KODI.GE</div>
+                </div>
                 <div class="floating-avatar-info" id="mobileUserName">ლოგინი/რეგისტრაცია</div>
                 <div class="user-balance" id="mobileUserBalance" style="display: none;">ბალანსი: 15.50 ₾</div>
             </div>
@@ -520,17 +522,28 @@
         
         // Update user info based on authentication state
         function updateUserInfo() {
+            const avatarPlaceholder = document.querySelector('.avatar-placeholder');
+            const mobileAvatar = document.getElementById('mobileAvatar');
+            
             if (isAuthenticated) {
                 // Authenticated state
                 document.getElementById('sidebarUserName').textContent = 'ირაკლი ჯაფარიძე';
                 document.getElementById('mobileUserName').textContent = 'ირაკლი ჯაფარიძე';
                 document.getElementById('mobileUserBalance').textContent = `ბალანსი: ${userBalance.toFixed(2)} ₾`;
                 document.getElementById('mobileUserBalance').style.display = 'block';
+                
+                // Show real avatar
+                if (avatarPlaceholder) avatarPlaceholder.style.display = 'none';
+                mobileAvatar.innerHTML = '<img src="https://via.placeholder.com/110" alt="User Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
             } else {
                 // Not authenticated
                 document.getElementById('sidebarUserName').textContent = 'ლოგინი/რეგისტრაცია';
                 document.getElementById('mobileUserName').textContent = 'ლოგინი/რეგისტრაცია';
                 document.getElementById('mobileUserBalance').style.display = 'none';
+                
+                // Show KODI.GE placeholder
+                if (avatarPlaceholder) avatarPlaceholder.style.display = 'flex';
+                mobileAvatar.innerHTML = '<div class="avatar-placeholder">KODI.GE</div>';
             }
         }
         
@@ -807,4 +820,4 @@
         }
     </script>
 </body>
-                                        </html>
+</html>
