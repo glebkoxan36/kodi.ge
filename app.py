@@ -311,13 +311,12 @@ def login():
         session['role'] = user['role']
         app.logger.info(f"Successful login for: {user['username']} (Role: {user['role']})")
         
-        # Перенаправление администраторов в админ-панель
+        # Перенаправление в зависимости от роли
         next_url = request.args.get('next')
         if user['role'] in ['admin', 'superadmin']:
-            # ИСПРАВЛЕНИЕ: используем правильный endpoint с префиксом blueprint
             return redirect(next_url or url_for('admin.admin_dashboard'))
-        
-        return redirect(next_url or url_for('index'))
+        else:
+            return redirect(next_url or url_for('user.dashboard'))
     
     # Обработка неудачной попытки входа
     attempts = 1
