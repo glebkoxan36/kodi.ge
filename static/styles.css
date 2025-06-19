@@ -601,15 +601,15 @@ body {
 }
 
 .mobile-menu-modal .modal-content {
-    background: var(--card-bg);
+    background: transparent; /* Убрать фон */
     border-radius: 20px 20px 0 0;
     width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 2px solid var(--accent-color);
-    box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.7);
+    border: none; /* Убрать границу */
+    box-shadow: none; /* Убрать тень */
     position: relative;
     overflow: visible;
 }
@@ -620,11 +620,11 @@ body {
 
 .mobile-menu-modal .modal-header {
     padding: 12px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none; /* Убрать границу */
     text-align: center;
     position: sticky;
     top: 0;
-    background: var(--card-bg);
+    background: transparent; /* Убрать фон */
     z-index: 10;
     padding-top: 60px;
 }
@@ -672,15 +672,15 @@ body {
 }
 
 .apple-submenu-modal .modal-content {
-    background: var(--card-bg);
+    background: transparent; /* Убрать фон */
     border-radius: 20px 20px 0 0;
     width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 2px solid var(--accent-color);
-    box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.7);
+    border: none; /* Убрать границу */
+    box-shadow: none; /* Убрать тень */
     position: relative;
 }
 
@@ -690,11 +690,11 @@ body {
 
 .apple-submenu-modal .modal-header {
     padding: 12px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none; /* Убрать границу */
     text-align: center;
     position: sticky;
     top: 0;
-    background: var(--card-bg);
+    background: transparent; /* Убрать фон */
     z-index: 10;
 }
 
@@ -734,7 +734,7 @@ body {
     justify-content: center;
     padding: 8px 4px;
     border-radius: 8px;
-    background: transparent;
+    background: transparent; /* Убрать фон */
     aspect-ratio: 1/1;
     text-align: center;
     transition: all 0.3s ease;
@@ -743,9 +743,9 @@ body {
 }
 
 .menu-item:hover {
-    background: rgba(0, 198, 255, 0.15);
-    transform: translateY(-3px);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    background: transparent !important; /* Убрать фон при наведении */
+    transform: none; /* Убрать трансформацию */
+    box-shadow: none !important; /* Убрать тень */
 }
 
 .menu-item i {
@@ -768,8 +768,8 @@ body {
     position: relative;
     text-align: center;
     padding: 15px 0 10px;
-    background: rgba(0, 198, 255, 0.1);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent !important; /* Убрать фон */
+    border-bottom: none !important; /* Убрать границу */
 }
 
 .user-avatar-container {
@@ -833,32 +833,17 @@ body {
     height: 110px;
     border-radius: 50%;
     object-fit: cover;
-    background: var(--card-bg);
+    background: transparent !important; /* Убрать фон */
     position: relative;
     z-index: 2;
     border: 3px solid var(--accent-color);
-    box-shadow: 
-        0 0 15px rgba(0, 198, 255, 0.8),
-        0 0 30px rgba(0, 198, 255, 0.5);
-    animation: avatarGlow 2s infinite alternate;
+    box-shadow: none !important; /* Убрать тень */
+    animation: none !important; /* Убрать анимацию */
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-}
-
-@keyframes avatarGlow {
-    0% {
-        box-shadow: 
-            0 0 15px rgba(0, 198, 255, 0.8),
-            0 0 30px rgba(0, 198, 255, 0.5);
-    }
-    100% {
-        box-shadow: 
-            0 0 25px rgba(0, 198, 255, 1),
-            0 0 45px rgba(0, 198, 255, 0.7);
-    }
 }
 
 .avatar-placeholder {
@@ -867,22 +852,20 @@ body {
     justify-content: center;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #0a0e17, #1a2138);
+    background: transparent !important; /* Убрать фон */
     color: var(--accent-color);
     font-weight: bold;
     font-size: 1.2rem;
     text-align: center;
     padding: 10px;
     text-shadow: 0 0 10px rgba(0, 198, 255, 0.5);
-    box-shadow: 
-        0 0 15px rgba(0, 198, 255, 0.8),
-        0 0 30px rgba(0, 198, 255, 0.5);
-    animation: avatarGlow 2s infinite alternate;
+    box-shadow: none !important; /* Убрать тень */
+    animation: none !important; /* Убрать анимацию */
 }
 
 .floating-avatar-info {
     position: absolute;
-    bottom: -30px; /* Изменено с -35px */
+    bottom: -35px;
     left: 0;
     right: 0;
     text-align: center;
@@ -920,7 +903,7 @@ body {
 
 /* Header adjustment for avatar space */
 .mobile-menu-modal .modal-header {
-    padding-top: 70px !important; /* Изменено с 60px */
+    padding-top: 70px !important;
 }
 
 /* Responsive design */
@@ -1126,11 +1109,11 @@ body {
     
     .floating-avatar-info {
         font-size: 0.8rem;
-        bottom: -25px; /* Изменено с -30px */
+        bottom: -30px;
     }
     
     .mobile-menu-modal .modal-header {
-        padding-top: 60px !important; /* Изменено с 50px */
+        padding-top: 60px !important;
     }
     
     .avatar-placeholder {
@@ -1207,7 +1190,7 @@ body {
     
     .floating-avatar-info {
         font-size: 0.75rem;
-        bottom: -20px; /* Изменено с -25px */
+        bottom: -25px;
     }
     
     .avatar-placeholder {
@@ -1236,9 +1219,9 @@ body {
 
 /* Сохраняем фон в саб-меню Apple */
 .apple-submenu-modal .menu-item {
-    background: rgba(0, 0, 0, 0.3);
+    background: transparent !important; /* Убрать фон */
 }
 
 .apple-submenu-modal .menu-item:hover {
-    background: rgba(0, 198, 255, 0.15);
+    background: transparent !important; /* Убрать фон при наведении */
     }
