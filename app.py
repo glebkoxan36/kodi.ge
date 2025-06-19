@@ -5,6 +5,7 @@ import logging
 import re
 import hmac
 import secrets
+import hashlib  # Добавлен новый импорт
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app
@@ -19,6 +20,24 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
+
+# Функция для генерации цвета аватара
+def generate_avatar_color(name):
+    """Генерирует HEX-цвет на основе хеша имени пользователя"""
+    if not name:
+        # Генерируем случайный цвет если имя отсутствует
+        return "#{:06x}".format(secrets.randbelow(0xFFFFFF))
+    
+    # Создаем хеш от имени и берем первые 6 символов для цвета
+    hash_obj = hashlib.md5(name.encode('utf-8'))
+    return '#' + hash_obj.hexdigest()[:6]
+
+# Регистрируем функцию в контексте шаблонов
+@app.context_processor
+def inject_utils():
+    return {
+        'generate_avatar_color': generate_avatar_color
+    }
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -71,12 +90,14 @@ if not admin_users_collection.find_one({'username': 'admin'}):
         'created_at': datetime.utcnow()
     })
 
-# ИСПРАВЛЕНИЕ: Проверка существующих индексов перед созданием
+# Исправленное создание индекса
 try:
     # Проверяем существование текстового индекса
     existing_indexes = phones_collection.index_information()
+    
+    # Правильная проверка существования текстового индекса
     text_index_exists = any(
-        'text' in index['key'].values() 
+        'text' in dict(index['key']).values()
         for index in existing_indexes.values()
     )
     
@@ -87,6 +108,7 @@ try:
             ('model', 'text'), 
             ('Name', 'text')
         ])
+        app.logger.info("Text index created successfully")
 except Exception as e:
     app.logger.error(f"Index creation error: {str(e)}")
 
@@ -323,7 +345,7 @@ def perform_check():
     
     except Exception as e:
         app.logger.error(f'Check error: {str(e)}')
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Internal server error'}), 500
 
 def validate_imei(imei):
     return len(imei) == 15 and imei.isdigit()
@@ -784,17 +806,29 @@ def dashboard():
     
     # Format timestamps
     for check in checks:
-        check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M')
+        check['timestamp'] = check['timestamp'].strftime('%d.%m.%Y %H:%M')
         
     for comp in comparisons:
-        comp['timestamp'] = comp['timestamp'].strftime('%Y-%m-%d %H:%M')
+        comp['timestamp'] = comp['timestamp'].strftime('%d.%m.%Y %H:%M')
+    
+    # Get payment history
+    payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
+    for payment in payments:
+        payment['timestamp'] = payment['timestamp'].strftime('%d.%m.%Y %H:%M')
+    
+    # Calculate totals
+    total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
+    total_comparisons = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
     
     return render_template(
-        'user_dashboard.html',
+        'dashboard.html',
         user=user,
         balance=balance,
         checks=checks,
         comparisons=comparisons,
+        payments=payments,
+        total_checks=total_checks,
+        total_comparisons=total_comparisons,
         STRIPE_PUBLIC_KEY=os.getenv('STRIPE_PUBLIC_KEY')
     )
 
@@ -803,6 +837,33 @@ def dashboard():
 def topup_success():
     flash('Balance top-up successful!', 'success')
     return redirect(url_for('user.dashboard'))
+
+@user_bp.route('/history_checks')
+@login_required
+def history_checks():
+    user_id = session['user_id']
+    checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1))
+    
+    for check in checks:
+        check['timestamp'] = check['timestamp'].strftime('%d.%m.%Y %H:%M')
+    
+    return render_template('history_checks.html', checks=checks)
+
+@user_bp.route('/history_comparisons')
+@login_required
+def history_comparisons():
+    user_id = session['user_id']
+    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1))
+    
+    for comp in comparisons:
+        comp['timestamp'] = comp['timestamp'].strftime('%d.%m.%Y %H:%M')
+    
+    return render_template('history_comparisons.html', comparisons=comparisons)
+
+@user_bp.route('/topup_balance')
+@login_required
+def topup_balance():
+    return render_template('topup_balance.html', stripe_public_key=STRIPE_PUBLIC_KEY)
 
 # ======================================
 # Authentication Blueprint
