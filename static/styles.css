@@ -776,6 +776,7 @@ body {
     width: 100px;
     height: 100px;
     margin: 0 auto 10px;
+    cursor: pointer;
 }
 
 .user-avatar {
@@ -871,6 +872,7 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     padding: 0 10px;
+    pointer-events: auto;
 }
 
 .user-balance {
@@ -878,6 +880,7 @@ body {
     font-weight: 500;
     color: var(--success-color);
     margin-top: 3px;
+    pointer-events: auto;
 }
 
 /* Hide scrollbar but keep functionality */
@@ -1182,4 +1185,4 @@ body {
     .gradient-bg {
         display: none !important;
     }
-    }
+        }
