@@ -56,6 +56,16 @@
             font-size: 0.85rem;
             margin-top: 0.25rem;
         }
+        .password-container {
+            position: relative;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -63,13 +73,13 @@
         <h2>რეგისტრაცია</h2>
         <form id="registration-form">
             <div class="form-group">
-                <label class="form-label" for="first_name">სახელი</label>
+                <label class="form-label" for="first_name">სახელი (მხოლოდ ქართული ასოები)</label>
                 <input type="text" class="form-control" id="first_name" name="first_name" required>
                 <div class="error-message" id="first_name_error"></div>
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="last_name">გვარი</label>
+                <label class="form-label" for="last_name">გვარი (მხოლოდ ქართული ასოები)</label>
                 <input type="text" class="form-control" id="last_name" name="last_name" required>
                 <div class="error-message" id="last_name_error"></div>
             </div>
@@ -102,7 +112,7 @@
                     
                     <select class="form-control" id="birth_year" name="birth_year" required>
                         <option value="">წელი</option>
-                        {% for year in range(1900, current_year) | reverse %}
+                        {% for year in range(current_year, 1899, -1) %}
                         <option value="{{ year }}">{{ year }}</option>
                         {% endfor %}
                     </select>
@@ -111,7 +121,7 @@
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="phone">ტელეფონის ნომერი</label>
+                <label class="form-label" for="phone">ტელეფონის ნომერი (ფორმატი: +995XXXXXXXXX)</label>
                 <input type="tel" class="form-control" id="phone" name="phone" placeholder="+995XXXXXXXXX" required>
                 <div class="error-message" id="phone_error"></div>
             </div>
@@ -128,9 +138,10 @@
                 <div class="error-message" id="username_error"></div>
             </div>
             
-            <div class="form-group">
+            <div class="form-group password-container">
                 <label class="form-label" for="password">პაროლი</label>
                 <input type="password" class="form-control" id="password" name="password" required>
+                <span class="toggle-password" onclick="togglePassword('password')">👁️</span>
                 <div class="password-requirements">
                     პაროლი უნდა შეიცავდეს:
                     <ul>
@@ -144,9 +155,10 @@
                 <div class="error-message" id="password_error"></div>
             </div>
             
-            <div class="form-group">
+            <div class="form-group password-container">
                 <label class="form-label" for="confirm_password">გაიმეორეთ პაროლი</label>
                 <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                <span class="toggle-password" onclick="togglePassword('confirm_password')">👁️</span>
                 <div class="error-message" id="confirm_password_error"></div>
             </div>
             
@@ -155,6 +167,15 @@
     </div>
 
     <script>
+        function togglePassword(fieldId) {
+            const passwordField = document.getElementById(fieldId);
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+            } else {
+                passwordField.type = 'password';
+            }
+        }
+
         document.getElementById('registration-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -171,28 +192,46 @@
             if (response.status === 201) {
                 alert(result.message);
                 window.location.href = '/';
-            } else {
+            } else if (response.status === 400) {
                 // Отображение ошибок
                 if (result.errors) {
                     result.errors.forEach(error => {
                         // Общая ошибка
-                        if (error.includes('Дата')) {
+                        if (error.includes('Дата') || error.includes('თარიღ')) {
                             document.getElementById('birth_date_error').textContent = error;
                         } 
                         // Полевые ошибки
+                        else if (error.includes('Имя') || error.includes('სახელი')) {
+                            document.getElementById('first_name_error').textContent = error;
+                        } 
+                        else if (error.includes('Фамилия') || error.includes('გვარი')) {
+                            document.getElementById('last_name_error').textContent = error;
+                        } 
+                        else if (error.includes('телефон') || error.includes('ტელეფონ')) {
+                            document.getElementById('phone_error').textContent = error;
+                        } 
+                        else if (error.includes('email') || error.includes('ფოსტა')) {
+                            document.getElementById('email_error').textContent = error;
+                        } 
+                        else if (error.includes('Пользователь') || error.includes('მომხმარებელი')) {
+                            document.getElementById('username_error').textContent = error;
+                        } 
+                        else if (error.includes('Пароль') || error.includes('პაროლი')) {
+                            document.getElementById('password_error').textContent = error;
+                        } 
+                        else if (error.includes('Пароли') || error.includes('პაროლები')) {
+                            document.getElementById('confirm_password_error').textContent = error;
+                        }
                         else {
-                            const field = error.split(' ')[0].toLowerCase();
-                            const errorElement = document.getElementById(`${field}_error`);
-                            if (errorElement) {
-                                errorElement.textContent = error;
-                            }
+                            // Общие ошибки
+                            alert(error);
                         }
                     });
-                } else {
-                    alert(result.error || 'Registration failed');
                 }
+            } else {
+                alert('რეგისტრაცია ვერ მოხერხდა. გთხოვთ სცადოთ თავიდან.');
             }
         });
     </script>
 </body>
-    </html>
+</html>
