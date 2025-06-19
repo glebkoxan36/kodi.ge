@@ -48,6 +48,16 @@
             margin-top: 1rem;
             text-align: center;
         }
+        .password-container {
+            position: relative;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -55,13 +65,14 @@
         <h2>ავტორიზაცია</h2>
         <form id="login-form">
             <div class="form-group">
-                <label class="form-label" for="identifier">მომხმარებელი ან ელ. ფოსტა ან ტელეფონი</label>
+                <label class="form-label" for="identifier">მომხმარებელი, ელ. ფოსტა ან ტელეფონი</label>
                 <input type="text" class="form-control" id="identifier" name="identifier" required>
             </div>
             
-            <div class="form-group">
+            <div class="form-group password-container">
                 <label class="form-label" for="password">პაროლი</label>
                 <input type="password" class="form-control" id="password" name="password" required>
+                <span class="toggle-password" onclick="togglePassword()">👁️</span>
             </div>
             
             <div class="error-message" id="login-error"></div>
@@ -76,6 +87,15 @@
     </div>
 
     <script>
+        function togglePassword() {
+            const passwordField = document.getElementById('password');
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+            } else {
+                passwordField.type = 'password';
+            }
+        }
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -91,8 +111,16 @@
             if (response.ok) {
                 window.location.href = '/';
             } else {
-                const result = await response.json();
-                document.getElementById('login-error').textContent = result.error || 'Login failed';
+                try {
+                    const result = await response.json();
+                    if (result.error) {
+                        document.getElementById('login-error').textContent = result.error;
+                    } else {
+                        document.getElementById('login-error').textContent = 'შეცდომა ავტორიზაციის დროს';
+                    }
+                } catch (error) {
+                    document.getElementById('login-error').textContent = 'სერვერული შეცდომა';
+                }
             }
         });
     </script>
