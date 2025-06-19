@@ -1227,3 +1227,84 @@ body {
 .apple-submenu-modal .menu-item:hover {
     background: transparent !important; /* Убрать фон при наведении */
     }
+/* Добавляем в конец файла styles.css */
+
+/* Стили для мобильного меню - обновлённые */
+.mobile-menu-modal .modal-content {
+    background: rgba(18, 26, 43, 0.95) !important; /* Полупрозрачный фон как у карточек */
+    border: 1px solid rgba(0, 198, 255, 0.3) !important; /* Голубая граница */
+    border-radius: 30px 30px 0 0 !important; /* Полукруглые углы сверху */
+    box-shadow: 0 0 30px rgba(0, 198, 255, 0.2) !important; /* Неоновая тень */
+    overflow: hidden;
+    backdrop-filter: blur(10px); /* Лёгкое размытие */
+}
+
+/* Стили для сабменю Apple - обновлённые */
+.apple-submenu-modal .modal-content {
+    background: rgba(18, 26, 43, 0.95) !important; /* Полупрозрачный фон как у карточек */
+    border: 1px solid rgba(0, 198, 255, 0.3) !important; /* Голубая граница */
+    border-radius: 30px 30px 0 0 !important; /* Полукруглые углы сверху */
+    box-shadow: 0 0 30px rgba(0, 198, 255, 0.2) !important; /* Неоновая тень */
+    overflow: hidden;
+    backdrop-filter: blur(10px); /* Лёгкое размытие */
+}
+
+/* Стили для элементов меню */
+.menu-item {
+    background: rgba(255, 255, 255, 0.05) !important; /* Лёгкий фон для элементов */
+    border: 1px solid rgba(0, 198, 255, 0.1) !important; /* Тонкая граница */
+    border-radius: 12px !important; /* Закруглённые углы */
+    transition: all 0.3s ease;
+}
+
+.menu-item:hover {
+    background: rgba(0, 198, 255, 0.1) !important; /* Подсветка при наведении */
+    border-color: rgba(0, 198, 255, 0.4) !important; /* Ярче граница */
+    transform: translateY(-3px) scale(1.05); /* Эффект подъёма */
+    box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2) !important; /* Тень при наведении */
+}
+
+/* Стили для заголовков меню */
+.mobile-menu-modal .modal-header,
+.apple-submenu-modal .modal-header {
+    background: rgba(0, 0, 0, 0.2) !important; /* Тёмный фон для заголовка */
+    border-bottom: 1px solid rgba(0, 198, 255, 0.2) !important; /* Граница снизу */
+    border-radius: 30px 30px 0 0 !important; /* Закругление сверху */
+}
+
+/* Анимация для границы меню */
+.mobile-menu-modal .modal-content::after,
+.apple-submenu-modal .modal-content::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 30px 30px 0 0;
+    border: 1px solid transparent;
+    background: linear-gradient(135deg, 
+        rgba(0, 198, 255, 0.4), 
+        rgba(0, 214, 143, 0.4), 
+        rgba(255, 61, 113, 0.4)) border-box;
+    mask: linear-gradient(#fff 0 0) padding-box, 
+          linear-gradient(#fff 0 0);
+    -webkit-mask-composite: destination-out;
+    mask-composite: exclude;
+    animation: borderAnimation 3s infinite alternate;
+}
+
+@keyframes borderAnimation {
+    0% {
+        background: linear-gradient(135deg, 
+            rgba(0, 198, 255, 0.2), 
+            rgba(0, 214, 143, 0.2), 
+            rgba(255, 61, 113, 0.2)) border-box;
+    }
+    100% {
+        background: linear-gradient(135deg, 
+            rgba(0, 198, 255, 0.6), 
+            rgba(0, 214, 143, 0.6), 
+            rgba(255, 61, 113, 0.6)) border-box;
+    }
+}
