@@ -512,7 +512,7 @@ body {
 }
 
 /* Service instruction */
-.service-instruction {
+.service-instructions {
     color: var(--text-secondary);
     font-size: 0.9rem;
     margin-top: 15px;
@@ -950,4 +950,42 @@ body {
     .gradient-bg {
         display: none;
     }
+}
+
+/* ВНЕСЕННЫЕ ИЗМЕНЕНИЯ */
+
+/* Увеличиваем высоту мобильного меню */
+@media (max-width: 576px) {
+    .mobile-menu-modal {
+        height: 60vh; /* Увеличено с 50vh */
     }
+}
+
+/* Делаем все тексты на странице белыми */
+body, body * {
+    color: var(--text-color) !important;
+}
+
+/* Убираем нижнюю часть бордера у аватарки в мобильном меню */
+.mobile-menu-modal .floating-avatar {
+    border-bottom-color: transparent !important;
+}
+
+/* Сохраняем бордер для выступающей части */
+.mobile-menu-modal .floating-avatar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%; /* Только верхняя часть */
+    border: 3px solid var(--accent-color);
+    border-radius: 50% 50% 0 0;
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* Убираем исходный бордер */
+.mobile-menu-modal .floating-avatar {
+    border: none;
+        }
