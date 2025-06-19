@@ -530,11 +530,10 @@ body {
 .mobile-menu-modal {
     display: none;
     position: fixed;
-    top: auto;
-    bottom: 0;
+    top: 0;
     left: 0;
     width: 100%;
-    height: 50vh;
+    height: 60vh; /* Высота увеличена до половины экрана */
     max-height: 90%;
     background: transparent;
     z-index: 1100;
@@ -570,7 +569,7 @@ body {
     top: 0;
     background: transparent;
     z-index: 10;
-    padding-top: 90px; /* Увеличенный отступ для аватарки */
+    padding-top: 80px; /* Увеличенный отступ для аватарки */
 }
 
 .mobile-menu-modal .close-modal {
@@ -594,7 +593,7 @@ body {
 /* Плавающий аватар - ИСПРАВЛЕНО (полностью виден) */
 .floating-avatar-container {
     position: absolute;
-    top: -60px; /* Increased space */
+    top: -60px; /* Подняли выше */
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
@@ -713,11 +712,10 @@ body {
 .apple-submenu-modal {
     display: none;
     position: fixed;
-    top: auto;
-    bottom: 0;
+    top: 0;
     left: 0;
     width: 100%;
-    height: 50vh;
+    height: 60vh; /* Высота увеличена до половины экрана */
     max-height: 90%;
     background: transparent;
     z-index: 1200;
@@ -849,7 +847,7 @@ body {
     
     /* Адаптация для планшетов */
     .mobile-menu-modal .modal-header {
-        padding-top: 80px;
+        padding-top: 70px;
     }
     
     .floating-avatar-container {
@@ -926,7 +924,7 @@ body {
     
     /* Адаптация для мобильных */
     .mobile-menu-modal .modal-header {
-        padding-top: 75px;
+        padding-top: 65px;
     }
     
     .floating-avatar-container {
@@ -1006,7 +1004,7 @@ body {
     
     /* Адаптация для маленьких экранов */
     .mobile-menu-modal .modal-header {
-        padding-top: 70px;
+        padding-top: 60px;
     }
     
     .floating-avatar-container {
