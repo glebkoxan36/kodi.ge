@@ -2,14 +2,11 @@ import os
 import json
 import requests
 import logging
-import threading
 import re
-import platform
-import flask
 import hmac
 import secrets
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, Blueprint
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
 from flask_cors import CORS
 from pymongo import MongoClient
 import stripe
@@ -48,9 +45,6 @@ API_URL = "https://api.ifreeicloud.co.uk"
 API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')  # PHP API Key
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')  # DeepSeek API Key
 
-ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
-ADMIN_PASSWORD = generate_password_hash(os.getenv('ADMIN_PASSWORD', 'securepassword'))
-
 # MongoDB
 client = MongoClient(MONGODB_URI)
 db = client['imei_checker']
@@ -65,20 +59,22 @@ audit_logs_collection = db['audit_logs']    # Для аудита
 api_keys_collection = db['api_keys']        # Для API ключей
 webhooks_collection = db['webhooks']        # Для вебхуков
 payments_collection = db['payments']        # Коллекция для платежей
-
-# Коллекция для неудачных входов
-if 'failed_logins' not in db.list_collection_names():
-    db.create_collection('failed_logins')
-failed_logins_collection = db['failed_logins']
+failed_logins_collection = db['failed_logins']  # Для неудачных входов
 
 # Создаем администратора по умолчанию, если не существует
-if not admin_users_collection.find_one({'username': ADMIN_USERNAME}):
+if not admin_users_collection.find_one({'username': 'admin'}):
+    admin_password = os.getenv('ADMIN_PASSWORD', 'securepassword')
     admin_users_collection.insert_one({
-        'username': ADMIN_USERNAME,
-        'password': ADMIN_PASSWORD,
+        'username': 'admin',
+        'password': generate_password_hash(admin_password),
         'role': 'superadmin',
         'created_at': datetime.utcnow()
     })
+
+# Регулярные выражения для валидации
+GEORGIAN_LETTERS_REGEX = re.compile(r'^[\u10A0-\u10FF\s]+$')  # Грузинские буквы и пробелы
+PASSWORD_REGEX = re.compile(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$')
+PHONE_REGEX = re.compile(r'^\+995\d{9}$')  # Пример: +995123456789
 
 # ИСПРАВЛЕНИЕ: Проверка существующих индексов перед созданием
 try:
@@ -149,7 +145,6 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
-            # Добавляем параметр next с текущим URL
             return redirect(url_for('login', next=request.url))
         return f(*args, **kwargs)
     return decorated
@@ -157,88 +152,207 @@ def admin_required(f):
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if 'user_id' not in session or session.get('role') != 'user':
+        if 'user_id' not in session:
             return redirect(url_for('login', next=request.url))
         return f(*args, **kwargs)
     return decorated
 
 # ======================================
-# Маршруты аутентификации пользователей
+# Маршруты аутентификации пользователей (УЛУЧШЕННЫЕ)
 # ======================================
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    current_year = datetime.now().year
-    
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        
-        # Проверка существования пользователя в обеих коллекциях
-        if (admin_users_collection.find_one({'username': username}) or 
-            regular_users_collection.find_one({'username': username})):
-            flash('Username already exists', 'danger')
-            return redirect(url_for('register'))
-        
-        hashed_pw = generate_password_hash(password)
-        regular_users_collection.insert_one({
-            'username': username,
-            'password': hashed_pw,
-            'role': 'user',
-            'balance': 0.0,  # Начальный баланс
-            'created_at': datetime.utcnow()
-        })
-        
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('login'))
-    
+@app.route('/register', methods=['GET'])
+def show_register_form():
+    current_year = datetime.utcnow().year
     return render_template('register.html', current_year=current_year)
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.form
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
+    birth_day = data.get('birth_day')
+    birth_month = data.get('birth_month')
+    birth_year = data.get('birth_year')
+    phone = data.get('phone')
+    email = data.get('email', '').strip().lower()  # Нормализация email
+    username = data.get('username')
+    password = data.get('password')
+    confirm_password = data.get('confirm_password')
+
+    # Валидация данных
+    errors = []
+    
+    if not GEORGIAN_LETTERS_REGEX.match(first_name):
+        errors.append("Имя должно содержать только грузинские буквы")
+    
+    if not GEORGIAN_LETTERS_REGEX.match(last_name):
+        errors.append("Фамилия должна содержать только грузинские буквы")
+    
+    try:
+        birth_date = datetime(int(birth_year), int(birth_month), int(birth_day))
+        if birth_date > datetime.utcnow():
+            errors.append("Дата рождения не может быть в будущем")
+    except (ValueError, TypeError):
+        errors.append("Некорректная дата рождения")
+    
+    if not PHONE_REGEX.match(phone):
+        errors.append("Некорректный формат телефона. Используйте +995XXXXXXXXX")
+    
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        errors.append("Некорректный email адрес")
+    
+    if not PASSWORD_REGEX.match(password):
+        errors.append("Пароль должен содержать минимум 12 символов, одну заглавную букву, одну строчную, одну цифру и один спецсимвол")
+    
+    if password != confirm_password:
+        errors.append("Пароли не совпадают")
+    
+    # Проверка уникальности данных
+    if regular_users_collection.find_one({'$or': [{'username': username}, {'email': email}, {'phone': phone}]}):
+        errors.append("Пользователь с такими данными уже существует")
+    
+    if errors:
+        return jsonify({"success": False, "errors": errors}), 400
+
+    # Создание пользователя
+    hashed_pw = generate_password_hash(password)
+    user_data = {
+        'first_name': first_name,
+        'last_name': last_name,
+        'birth_date': birth_date,
+        'phone': phone,
+        'email': email,
+        'username': username,
+        'password': hashed_pw,
+        'role': 'user',
+        'balance': 0.0,
+        'created_at': datetime.utcnow(),
+        'failed_attempts': 0,
+        'last_failed_attempt': None
+    }
+    
+    result = regular_users_collection.insert_one(user_data)
+    app.logger.info(f"Registered new user: {username}")
+    
+    # Автоматический вход после регистрации
+    session['user_id'] = str(result.inserted_id)
+    session['username'] = username
+    session['role'] = 'user'
+    
+    return jsonify({"success": True, "message": "Регистрация успешна!"}), 201
+
+@app.route('/login', methods=['GET'])
+def show_login_form():
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
 def login():
-    current_year = datetime.now().year
+    identifier = request.form.get('identifier', '').strip()
+    password = request.form.get('password')
+    app.logger.info(f"Login attempt for: {identifier}")
     
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        next_param = request.args.get('next')  # Получаем параметр next из запроса
-        
-        user = None
-        
-        # Проверка в администраторах
-        admin_user = admin_users_collection.find_one({'username': username})
-        if admin_user and check_password_hash(admin_user['password'], password):
-            user = admin_user
-            app.logger.info(f"Admin user logged in: {username}")
-        
-        # Проверка в обычных пользователях
-        if not user:
-            regular_user = regular_users_collection.find_one({'username': username})
-            if regular_user and check_password_hash(regular_user['password'], password):
-                user = regular_user
-                app.logger.info(f"Regular user logged in: {username}")
-        
-        if user:
-            session['user_id'] = str(user['_id'])
-            session['username'] = user['username']
-            session['role'] = user['role']
-            
-            # Для администраторов: 
-            # - Если есть next_param - используем его
-            # - Если нет - перенаправляем в админ-панель
-            if user['role'] in ['admin', 'superadmin']:
-                app.logger.info(f"Redirecting admin to: {next_param or 'admin_dashboard'}")
-                return redirect(next_param) if next_param else redirect(url_for('admin_dashboard'))
-            
-            # Для обычных пользователей:
-            # - Используем next_param или главную страницу
-            return redirect(next_param) if next_param else redirect(url_for('index'))
+    # Нормализация идентификатора
+    identifier_lower = identifier.lower()
+    
+    # Проверка блокировки
+    ip_address = request.remote_addr
+    failed_login = failed_logins_collection.find_one({'ip': ip_address})
+    
+    if failed_login and failed_login.get('blocked_until') and datetime.utcnow() < failed_login['blocked_until']:
+        remaining = int((failed_login['blocked_until'] - datetime.utcnow()).total_seconds() / 60)
+        return jsonify({
+            "success": False,
+            "error": f"Аккаунт временно заблокирован. Попробуйте через {remaining} минут"
+        }), 429
+    
+    # Поиск пользователя по email/телефону или username
+    user = None
+    is_admin = False
+    
+    # Попробовать найти обычного пользователя
+    if '@' in identifier_lower:
+        user = regular_users_collection.find_one({'email': identifier_lower})
+    elif identifier.startswith('+995'):
+        user = regular_users_collection.find_one({'phone': identifier})
+    elif identifier.isdigit() and len(identifier) == 9:
+        user = regular_users_collection.find_one({'phone': f"+995{identifier}"})
+    else:
+        user = regular_users_collection.find_one({'username': identifier})
+    
+    # Попробовать найти администратора
+    if not user:
+        if '@' in identifier_lower:
+            user = admin_users_collection.find_one({'email': identifier_lower})
+        elif identifier.startswith('+995'):
+            user = admin_users_collection.find_one({'phone': identifier})
+        elif identifier.isdigit() and len(identifier) == 9:
+            user = admin_users_collection.find_one({'phone': f"+995{identifier}"})
         else:
-            app.logger.warning(f"Failed login attempt for: {username}")
+            user = admin_users_collection.find_one({'username': identifier})
+        is_admin = True if user else False
+
+    # Проверка пароля
+    if user and check_password_hash(user['password'], password):
+        # Сброс счетчика неудачных попыток для IP
+        if failed_login:
+            failed_logins_collection.delete_one({'ip': ip_address})
         
-        flash('Invalid username or password', 'danger')
+        # Обновление данных пользователя
+        collection = admin_users_collection if is_admin else regular_users_collection
+        collection.update_one(
+            {'_id': user['_id']},
+            {'$set': {'last_login': datetime.utcnow()}}
+        )
+        
+        # Создание сессии
+        session['user_id'] = str(user['_id'])
+        session['username'] = user['username']
+        session['role'] = user['role']
+        app.logger.info(f"Successful login for: {user['username']} (Role: {user['role']})")
+        
+        # Перенаправление администраторов в админ-панель
+        next_url = request.args.get('next')
+        if user['role'] in ['admin', 'superadmin']:
+            return redirect(next_url or url_for('admin_dashboard'))
+        
+        return redirect(next_url or url_for('index'))
     
-    return render_template('login.html', current_year=current_year)
+    # Обработка неудачной попытки входа
+    attempts = 1
+    if failed_login:
+        attempts = failed_login['attempts'] + 1
+        update_data = {
+            'attempts': attempts,
+            'last_attempt': datetime.utcnow()
+        }
+        failed_logins_collection.update_one(
+            {'ip': ip_address},
+            {'$set': update_data}
+        )
+    else:
+        failed_logins_collection.insert_one({
+            'ip': ip_address,
+            'attempts': attempts,
+            'last_attempt': datetime.utcnow(),
+            'blocked_until': None
+        })
+    
+    # Блокировка после 5 неудачных попыток
+    if attempts >= 5:
+        blocked_until = datetime.utcnow() + timedelta(minutes=10)
+        failed_logins_collection.update_one(
+            {'ip': ip_address},
+            {'$set': {'blocked_until': blocked_until}}
+        )
+        app.logger.warning(f"IP blocked: {ip_address} for 10 minutes")
+        return jsonify({
+            "success": False,
+            "error": "Слишком много попыток. Аккаунт заблокирован на 10 минут"
+        }), 429
+    
+    app.logger.warning(f"Failed login attempt for: {identifier} from IP: {ip_address}")
+    return jsonify({"success": False, "error": "Неверный логин или пароль"}), 401
 
 @app.route('/logout')
 def logout():
@@ -337,7 +451,7 @@ def payment_success():
             'result': result
         }
         # Привязываем к пользователю если авторизован
-        if 'user_id' in session and session.get('role') == 'user':
+        if 'user_id' in session:
             record['user_id'] = ObjectId(session['user_id'])
         checks_collection.insert_one(record)
         
@@ -400,7 +514,7 @@ def perform_check():
                 'result': result
             }
             # Привязываем к пользователю если авторизован
-            if 'user_id' in session and session.get('role') == 'user':
+            if 'user_id' in session:
                 record['user_id'] = ObjectId(session['user_id'])
             checks_collection.insert_one(record)
         
@@ -801,7 +915,7 @@ def ai_analysis():
             'ai_response': content
         }
         # Привязываем к пользователю если авторизован
-        if 'user_id' in session and session.get('role') == 'user':
+        if 'user_id' in session:
             comparison_record['user_id'] = ObjectId(session['user_id'])
         comparisons_collection.insert_one(comparison_record)
         
@@ -822,6 +936,7 @@ def compare_phones():
 # User Blueprint (Личный кабинет пользователя)
 # ======================================
 
+from flask import Blueprint
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 
 @user_bp.route('/topup', methods=['POST'])
@@ -870,14 +985,10 @@ def dashboard():
     balance = user.get('balance', 0)
     
     # Get last 5 checks
-    checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
-        .sort('timestamp', -1)
-        .limit(5))
+    checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
     # Get last 5 comparisons
-    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
-        .sort('timestamp', -1)
-        .limit(5))
+    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
     # Format timestamps
     for check in checks:
