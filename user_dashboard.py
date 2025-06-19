@@ -1,4 +1,3 @@
-
 # user_dashboard.py
 import os
 import stripe
@@ -33,6 +32,17 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def generate_avatar_color(name):
+    """Генерирует цвет для аватара на основе имени"""
+    colors = [
+        '#00c6ff', '#ff3d71', '#00d68f', '#ffaa00', 
+        '#8c7ae6', '#0097e6', '#e1b12c', '#44bd32'
+    ]
+    if not name:
+        return colors[0]
+    char_code = ord(name[0].lower())
+    return colors[char_code % len(colors)]
+
 @user_bp.route('/dashboard')
 @login_required
 def dashboard():
@@ -44,7 +54,7 @@ def dashboard():
         flash('User not found', 'danger')
         return redirect(url_for('login'))
     
-    # Получение баланса (если поле balance не существует, считаем 0)
+    # Получение баланса
     balance = user.get('balance', 0)
     
     # Последние 5 проверок
@@ -57,19 +67,26 @@ def dashboard():
         .sort('timestamp', -1)
         .limit(5))
     
-    # Форматирование данных
-    for check in checks:
-        check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M')
-        
-    for comp in comparisons:
-        comp['timestamp'] = comp['timestamp'].strftime('%Y-%m-%d %H:%M')
+    # Последние 5 платежей
+    payments = list(payments_collection.find({'user_id': user_id})
+        .sort('timestamp', -1)
+        .limit(5))
+    
+    # Общее количество операций
+    total_checks = checks_collection.count_documents({'user_id': user_id})
+    total_comparisons = comparisons_collection.count_documents({'user_id': user_id})
     
     return render_template(
         'user/dashboard.html',
         user=user,
         balance=balance,
         checks=checks,
-        comparisons=comparisons
+        comparisons=comparisons,
+        payments=payments,
+        total_checks=total_checks,
+        total_comparisons=total_comparisons,
+        generate_avatar_color=generate_avatar_color,
+        STRIPE_PUBLIC_KEY=STRIPE_PUBLIC_KEY
     )
 
 @user_bp.route('/topup', methods=['GET', 'POST'])
@@ -115,7 +132,6 @@ def topup_balance():
 @login_required
 def topup_success():
     """Успешное пополнение баланса"""
-    # Здесь мы будем обрабатывать вебхук от Stripe, поэтому просто покажем сообщение
     flash('Payment successful! Your balance will be updated shortly.', 'success')
     return redirect(url_for('user.dashboard'))
 
@@ -123,7 +139,6 @@ def topup_success():
 @login_required
 def payment_methods():
     """Управление платежными методами"""
-    # Пока просто заглушка
     return render_template('user/payment_methods.html')
 
 @user_bp.route('/history/checks')
@@ -176,4 +191,4 @@ def history_comparisons():
         page=page,
         per_page=per_page,
         total=total
-                      )
+    )
