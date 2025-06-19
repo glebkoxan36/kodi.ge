@@ -1,26 +1,32 @@
 # auth.py
 import re
+import os
 import logging
 from datetime import datetime, timedelta
-from flask import Blueprint, request, redirect, url_for, session, render_template, jsonify
-from . import (
-    app, 
-    regular_users_collection,
-    admin_users_collection,
-    failed_logins_collection
-)
+from flask import Blueprint, request, session, redirect, url_for, jsonify
+from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
+from bson.objectid import ObjectId
 
-# Настройка логирования
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
+# Создаем Blueprint для аутентификации
 auth_bp = Blueprint('auth', __name__)
 
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Подключение к MongoDB
+MONGODB_URI = os.getenv('MONGODB_URI')
+client = MongoClient(MONGODB_URI)
+db = client['imei_checker']
+regular_users_collection = db['users']
+admin_users_collection = db['admin_users']
+failed_logins_collection = db['failed_logins']
+
 # Регулярные выражения для валидации
-GEORGIAN_LETTERS_REGEX = re.compile(r'^[\u10A0-\u10FF\s]+$')  # Грузинские буквы и пробелы
+GEORGIAN_LETTERS_REGEX = re.compile(r'^[\u10A0-\u10FF\s]+$')
 PASSWORD_REGEX = re.compile(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$')
-PHONE_REGEX = re.compile(r'^\+995\d{9}$')  # Пример: +995123456789
+PHONE_REGEX = re.compile(r'^\+995\d{9}$')
 
 @auth_bp.route('/register', methods=['GET'])
 def show_register_form():
@@ -36,7 +42,7 @@ def register():
     birth_month = data.get('birth_month')
     birth_year = data.get('birth_year')
     phone = data.get('phone')
-    email = data.get('email', '').strip().lower()  # Нормализация email
+    email = data.get('email', '').strip().lower()
     username = data.get('username')
     password = data.get('password')
     confirm_password = data.get('confirm_password')
@@ -94,7 +100,7 @@ def register():
     }
     
     result = regular_users_collection.insert_one(user_data)
-    logger.debug(f"Registered new user: {username} with ID: {result.inserted_id}")
+    logger.info(f"Registered new user: {username}")
     
     # Автоматический вход после регистрации
     session['user_id'] = str(result.inserted_id)
@@ -111,7 +117,8 @@ def show_login_form():
 def login():
     identifier = request.form.get('identifier', '').strip()
     password = request.form.get('password')
-    logger.debug(f"Login attempt for: {identifier}")
+    next_url = request.args.get('next')
+    logger.info(f"Login attempt for: {identifier}")
     
     # Нормализация идентификатора
     identifier_lower = identifier.lower()
@@ -127,7 +134,7 @@ def login():
             "error": f"Аккаунт временно заблокирован. Попробуйте через {remaining} минут"
         }), 429
     
-    # Поиск пользователя по email/телефону или username
+    # Поиск пользователя
     user = None
     is_admin = False
     
@@ -155,7 +162,7 @@ def login():
 
     # Проверка пароля
     if user and check_password_hash(user['password'], password):
-        # Сброс счетчика неудачных попыток для IP
+        # Сброс счетчика неудачных попыток
         if failed_login:
             failed_logins_collection.delete_one({'ip': ip_address})
         
@@ -170,19 +177,20 @@ def login():
         session['user_id'] = str(user['_id'])
         session['username'] = user['username']
         session['role'] = user['role']
-        logger.debug(f"Successful login for: {user['username']} (Role: {user['role']})")
+        logger.info(f"Successful login for: {user['username']} (Role: {user['role']})")
         
-        # Перенаправление в зависимости от роли
-        if user['role'] in ['admin', 'superadmin']:
-            return jsonify({
-                "success": True,
-                "redirect_url": url_for('admin.admin_dashboard')
-            }), 200
+        # Определение URL для перенаправления
+        if next_url:
+            redirect_url = next_url
+        elif user['role'] in ['admin', 'superadmin']:
+            redirect_url = url_for('admin.admin_dashboard')
         else:
-            return jsonify({
-                "success": True,
-                "redirect_url": url_for('user.dashboard')
-            }), 200
+            redirect_url = url_for('user.dashboard')
+        
+        return jsonify({
+            "success": True,
+            "redirect_url": redirect_url
+        }), 200
     
     # Обработка неудачной попытки входа
     attempts = 1
@@ -217,7 +225,7 @@ def login():
             "error": "Слишком много попыток. Аккаунт заблокирован на 10 минут"
         }), 429
     
-    logger.debug(f"Failed login attempt for: {identifier} from IP: {ip_address}")
+    logger.warning(f"Failed login attempt for: {identifier} from IP: {ip_address}")
     return jsonify({"success": False, "error": "Неверный логин или пароль"}), 401
 
 @auth_bp.route('/logout')
