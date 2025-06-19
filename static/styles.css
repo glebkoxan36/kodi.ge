@@ -1007,7 +1007,30 @@ body {
         font-size: 0.8rem;
     }
 }
+.user-avatar-container .user-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 24px;
+    color: white;
+}
 
+.floating-avatar {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 36px;
+    color: white;
+    margin: 0 auto 10px;
+}
 @media (max-width: 991px) {
     .gradient-bg {
         display: none;
