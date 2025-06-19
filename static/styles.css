@@ -842,7 +842,10 @@ body {
         0 0 30px rgba(0, 198, 255, 0.5);
     animation: avatarGlow 2s infinite alternate;
     cursor: pointer;
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
 
 @keyframes avatarGlow {
@@ -858,6 +861,25 @@ body {
     }
 }
 
+.avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0a0e17, #1a2138);
+    color: var(--accent-color);
+    font-weight: bold;
+    font-size: 1.2rem;
+    text-align: center;
+    padding: 10px;
+    text-shadow: 0 0 10px rgba(0, 198, 255, 0.5);
+    box-shadow: 
+        0 0 15px rgba(0, 198, 255, 0.8),
+        0 0 30px rgba(0, 198, 255, 0.5);
+    animation: avatarGlow 2s infinite alternate;
+}
+
 .floating-avatar-info {
     position: absolute;
     bottom: -30px; /* Изменено с -35px */
@@ -869,11 +891,10 @@ body {
     color: var(--text-color);
     text-shadow: 0 1px 2px rgba(0,0,0,0.5);
     cursor: pointer;
-    white-space: normal; /* Изменено с nowrap */
-    overflow: visible; /* Изменено с hidden */
+    white-space: nowrap;
+    overflow: hidden;
     text-overflow: ellipsis;
     padding: 0 10px;
-    line-height: 1.2; /* Добавлено */
     pointer-events: auto;
 }
 
@@ -998,6 +1019,10 @@ body {
         width: 90px;
         height: 90px;
     }
+    
+    .avatar-placeholder {
+        font-size: 1rem;
+    }
 }
 
 @media (max-width: 576px) {
@@ -1107,6 +1132,10 @@ body {
     .mobile-menu-modal .modal-header {
         padding-top: 60px !important; /* Изменено с 50px */
     }
+    
+    .avatar-placeholder {
+        font-size: 0.9rem;
+    }
 }
 
 /* Адаптация для очень маленьких экранов */
@@ -1180,6 +1209,10 @@ body {
         font-size: 0.75rem;
         bottom: -20px; /* Изменено с -25px */
     }
+    
+    .avatar-placeholder {
+        font-size: 0.8rem;
+    }
 }
 
 /* FIX: скрываем градиенты на мобильных */
@@ -1187,4 +1220,25 @@ body {
     .gradient-bg {
         display: none !important;
     }
+}
+
+/* Убираем фоны в основном мобильном меню */
+.mobile-menu-modal .menu-item {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.mobile-menu-modal .menu-item:hover {
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none;
+}
+
+/* Сохраняем фон в саб-меню Apple */
+.apple-submenu-modal .menu-item {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.apple-submenu-modal .menu-item:hover {
+    background: rgba(0, 198, 255, 0.15);
     }
