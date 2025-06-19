@@ -5,7 +5,7 @@ import logging
 import re
 import hmac
 import secrets
-import hashlib  # Добавлен новый импорт
+import hashlib
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app
@@ -181,10 +181,27 @@ def login_required(f):
 @app.route('/')
 def index():
     prices = get_current_prices()
+    user_data = None
+    
+    # Получаем данные пользователя если он аутентифицирован
+    if 'user_id' in session:
+        user_id = session['user_id']
+        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+        if user:
+            # Генерируем цвет аватара на основе имени
+            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+            user_data = {
+                'first_name': user.get('first_name', ''),
+                'last_name': user.get('last_name', ''),
+                'balance': user.get('balance', 0.0),
+                'avatar_color': avatar_color
+            }
+
     return render_template('index.html', 
                          stripe_public_key=STRIPE_PUBLIC_KEY,
                          paid_price=prices['paid'] / 100,
-                         premium_price=prices['premium'] / 100)
+                         premium_price=prices['premium'] / 100,
+                         user=user_data)  # Передаем данные пользователя в шаблон
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
