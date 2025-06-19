@@ -518,7 +518,7 @@ body {
     margin-top: 15px;
 }
 
-/* Мобильное меню - ОБНОВЛЕНО */
+/* Мобильное меню - ИСПРАВЛЕНО (аватарка полностью видна) */
 .mobile-menu-modal {
     display: none;
     position: fixed;
@@ -562,7 +562,7 @@ body {
     top: 0;
     background: transparent;
     z-index: 10;
-    padding-top: 70px;
+    padding-top: 80px; /* Увеличенный отступ для аватарки */
 }
 
 .mobile-menu-modal .close-modal {
@@ -583,7 +583,7 @@ body {
     padding-bottom: 20px;
 }
 
-/* Плавающий аватар - ОБНОВЛЕНО */
+/* Плавающий аватар - ИСПРАВЛЕНО (полностью виден) */
 .floating-avatar-container {
     position: absolute;
     top: -55px;
@@ -775,6 +775,11 @@ body {
         height: 300px;
     }
     
+    /* Адаптация для планшетов */
+    .mobile-menu-modal .modal-header {
+        padding-top: 70px;
+    }
+    
     .floating-avatar-container {
         top: -45px;
         width: 90px;
@@ -845,6 +850,11 @@ body {
     .logo-ring:nth-child(3) {
         width: 80px;
         height: 80px;
+    }
+    
+    /* Адаптация для мобильных */
+    .mobile-menu-modal .modal-header {
+        padding-top: 65px;
     }
     
     .floating-avatar-container {
@@ -922,6 +932,11 @@ body {
         height: 70px;
     }
     
+    /* Адаптация для маленьких экранов */
+    .mobile-menu-modal .modal-header {
+        padding-top: 60px;
+    }
+    
     .floating-avatar-container {
         top: -35px;
         width: 70px;
@@ -948,4 +963,4 @@ body {
     .gradient-bg {
         display: none;
     }
-}
+        }
