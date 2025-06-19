@@ -8,6 +8,33 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 
+    <style>
+        .user-avatar-container .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            color: white;
+        }
+        
+        .floating-avatar {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 36px;
+            color: white;
+            margin: 0 auto 10px;
+        }
+    </style>
+
     <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
@@ -40,9 +67,22 @@
         <!-- User profile in sidebar -->
         <div class="user-profile-section">
             <div class="user-avatar-container" onclick="goToLogin()">
-                <img src="https://via.placeholder.com/80" alt="User Avatar" class="user-avatar" id="sidebarAvatar">
+                {% if user %}
+                    <div class="user-avatar" style="background-color: {{ user.avatar_color }};">
+                        {{ user.first_name[0] }}{{ user.last_name[0] }}
+                    </div>
+                {% else %}
+                    <img src="https://via.placeholder.com/80" alt="User Avatar" class="user-avatar" id="sidebarAvatar">
+                {% endif %}
             </div>
-            <div class="user-name" onclick="goToLogin()" id="sidebarUserName">ლოგინი/რეგისტრაცია</div>
+            <div class="user-name" onclick="goToLogin()">
+                {% if user %}
+                    {{ user.first_name }} {{ user.last_name }}<br>
+                    <small>ბალანსი: {{ user.balance }} ₾</small>
+                {% else %}
+                    ლოგინი/რეგისტრაცია
+                {% endif %}
+            </div>
         </div>
         
         <ul class="nav flex-column">
@@ -354,11 +394,21 @@
     <div class="mobile-menu-modal" id="mobileMenuModal">
         <!-- Avatar placed outside modal content -->
         <div class="floating-avatar-container" onclick="goToLogin()">
-            <div class="floating-avatar" id="mobileAvatar">
-                <div class="avatar-placeholder">KODI.GE</div>
-            </div>
-            <div class="floating-avatar-info" id="mobileUserName">ლოგინი/რეგისტრაცია</div>
-            <div class="user-balance" id="mobileUserBalance" style="display: none;">ბალანსი: 15.50 ₾</div>
+            {% if user %}
+                <div class="floating-avatar" style="background-color: {{ user.avatar_color }};">
+                    {{ user.first_name[0] }}{{ user.last_name[0] }}
+                </div>
+                <div class="floating-avatar-info">
+                    {{ user.first_name }} {{ user.last_name }}
+                </div>
+                <div class="user-balance">ბალანსი: {{ user.balance }} ₾</div>
+            {% else %}
+                <div class="floating-avatar" id="mobileAvatar">
+                    <div class="avatar-placeholder">KODI.GE</div>
+                </div>
+                <div class="floating-avatar-info" id="mobileUserName">ლოგინი/რეგისტრაცია</div>
+                <div class="user-balance" id="mobileUserBalance" style="display: none;"></div>
+            {% endif %}
         </div>
         
         <div class="modal-content">
@@ -454,11 +504,10 @@
     <!-- Main application logic -->
     <script>
         // User authentication state
-        let isAuthenticated = false; // Change to true for testing authenticated state
-        let userBalance = 15.50;
+        let isAuthenticated = {% if user %}true{% else %}false{% endif %};
         
         // Initialize Stripe
-        const stripe = Stripe("pk_test_51P...");
+        const stripe = Stripe("{{ STRIPE_PUBLIC_KEY }}");
         let currentServiceType = null;
         
         // Initialize page
@@ -512,46 +561,16 @@
                         displayResult({ error: 'Failed to get result: ' + error.message });
                     });
             }
-            
-            // Update user info based on authentication state
-            updateUserInfo();
         });
-        
-        // Update user info based on authentication state
-        function updateUserInfo() {
-            const avatarPlaceholder = document.querySelector('.avatar-placeholder');
-            const mobileAvatar = document.getElementById('mobileAvatar');
-            
-            if (isAuthenticated) {
-                // Authenticated state
-                document.getElementById('sidebarUserName').textContent = 'ირაკლი ჯაფარიძე';
-                document.getElementById('mobileUserName').textContent = 'ირაკლი ჯაფარიძე';
-                document.getElementById('mobileUserBalance').textContent = `ბალანსი: ${userBalance.toFixed(2)} ₾`;
-                document.getElementById('mobileUserBalance').style.display = 'block';
-                
-                // Show real avatar
-                if (avatarPlaceholder) avatarPlaceholder.style.display = 'none';
-                mobileAvatar.innerHTML = '<img src="https://via.placeholder.com/110" alt="User Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
-            } else {
-                // Not authenticated
-                document.getElementById('sidebarUserName').textContent = 'ლოგინი/რეგისტრაცია';
-                document.getElementById('mobileUserName').textContent = 'ლოგინი/რეგისტრაცია';
-                document.getElementById('mobileUserBalance').style.display = 'none';
-                
-                // Show KODI.GE placeholder
-                if (avatarPlaceholder) avatarPlaceholder.style.display = 'flex';
-                mobileAvatar.innerHTML = '<div class="avatar-placeholder">KODI.GE</div>';
-            }
-        }
         
         // Redirect to login or dashboard
         function goToLogin() {
             closeAllMobileMenus();
-            if (isAuthenticated) {
-                window.location.href = 'dashboard.html';
-            } else {
-                window.location.href = 'login';
-            }
+            {% if user %}
+                window.location.href = "{{ url_for('user.dashboard') }}";
+            {% else %}
+                window.location.href = "{{ url_for('auth.login') }}";
+            {% endif %}
         }
         
         // Show check form based on service type
@@ -817,4 +836,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
