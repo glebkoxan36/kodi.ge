@@ -172,7 +172,17 @@ def login():
         session['role'] = user['role']
         logger.debug(f"Successful login for: {user['username']} (Role: {user['role']})")
         
-        return jsonify({"success": True}), 200
+        # Перенаправление в зависимости от роли
+        if user['role'] in ['admin', 'superadmin']:
+            return jsonify({
+                "success": True,
+                "redirect_url": url_for('admin.admin_dashboard')
+            }), 200
+        else:
+            return jsonify({
+                "success": True,
+                "redirect_url": url_for('user.dashboard')
+            }), 200
     
     # Обработка неудачной попытки входа
     attempts = 1
