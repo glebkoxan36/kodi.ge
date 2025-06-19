@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ka">
 <head>
@@ -89,7 +88,6 @@
                 </a>
             </li>
             <li class="nav-item">
-                <!-- Активная кнопка сравнения телефонов -->
                 <a class="nav-link" href="compare">
                     <i class="fas fa-exchange-alt"></i>
                     <span>ტელეფონების შედარება</span>
@@ -354,16 +352,16 @@
     
     <!-- Mobile Menu Modal - Fixed with visible avatar -->
     <div class="mobile-menu-modal" id="mobileMenuModal">
-        <div class="modal-content">
-            <!-- Floating Avatar - Fixed position -->
-            <div class="floating-avatar-container" onclick="goToLogin()">
-                <div class="floating-avatar" id="mobileAvatar">
-                    <div class="avatar-placeholder">KODI.GE</div>
-                </div>
-                <div class="floating-avatar-info" id="mobileUserName">ლოგინი/რეგისტრაცია</div>
-                <div class="user-balance" id="mobileUserBalance" style="display: none;">ბალანსი: 15.50 ₾</div>
+        <!-- Avatar placed outside modal content -->
+        <div class="floating-avatar-container" onclick="goToLogin()">
+            <div class="floating-avatar" id="mobileAvatar">
+                <div class="avatar-placeholder">KODI.GE</div>
             </div>
-            
+            <div class="floating-avatar-info" id="mobileUserName">ლოგინი/რეგისტრაცია</div>
+            <div class="user-balance" id="mobileUserBalance" style="display: none;">ბალანსი: 15.50 ₾</div>
+        </div>
+        
+        <div class="modal-content">
             <div class="modal-header">
                 <button class="close-modal" onclick="closeMobileMenu()">
                     <i class="fas fa-times"></i>
@@ -388,7 +386,6 @@
                         <i class="fas fa-unlock-alt"></i>
                         <span>განბლოკვა</span>
                     </div>
-                    <!-- Рабочая кнопка сравнения в мобильном меню -->
                     <div class="menu-item" onclick="window.location.href='compare'; closeAllMobileMenus();">
                         <i class="fas fa-exchange-alt"></i>
                         <span>შედარება</span>
@@ -414,7 +411,7 @@
         </div>
     </div>
 
-    <!-- Apple Submenu Modal - Fixed positioning -->
+    <!-- Apple Submenu Modal -->
     <div class="apple-submenu-modal" id="appleSubmenuModal">
         <div class="modal-content">
             <div class="modal-header">
