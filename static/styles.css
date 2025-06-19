@@ -1,3 +1,4 @@
+/* styles.css */
 /* Глобальный border-box */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -859,7 +860,7 @@ body {
 
 .floating-avatar-info {
     position: absolute;
-    bottom: -35px;
+    bottom: -30px; /* Изменено с -35px */
     left: 0;
     right: 0;
     text-align: center;
@@ -868,10 +869,11 @@ body {
     color: var(--text-color);
     text-shadow: 0 1px 2px rgba(0,0,0,0.5);
     cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
+    white-space: normal; /* Изменено с nowrap */
+    overflow: visible; /* Изменено с hidden */
     text-overflow: ellipsis;
     padding: 0 10px;
+    line-height: 1.2; /* Добавлено */
     pointer-events: auto;
 }
 
@@ -897,7 +899,7 @@ body {
 
 /* Header adjustment for avatar space */
 .mobile-menu-modal .modal-header {
-    padding-top: 60px !important; /* Extra space for avatar */
+    padding-top: 70px !important; /* Изменено с 60px */
 }
 
 /* Responsive design */
@@ -1099,11 +1101,11 @@ body {
     
     .floating-avatar-info {
         font-size: 0.8rem;
-        bottom: -30px;
+        bottom: -25px; /* Изменено с -30px */
     }
     
     .mobile-menu-modal .modal-header {
-        padding-top: 50px !important;
+        padding-top: 60px !important; /* Изменено с 50px */
     }
 }
 
@@ -1176,7 +1178,7 @@ body {
     
     .floating-avatar-info {
         font-size: 0.75rem;
-        bottom: -25px;
+        bottom: -20px; /* Изменено с -25px */
     }
 }
 
@@ -1185,4 +1187,4 @@ body {
     .gradient-bg {
         display: none !important;
     }
-        }
+    }
