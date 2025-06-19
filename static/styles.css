@@ -576,7 +576,7 @@ body {
     }
 }
 
-/* Mobile Menu Modal - Updated with better avatar placement */
+/* Mobile Menu Modal - Updated */
 .mobile-menu-modal {
     display: none;
     position: fixed;
@@ -586,10 +586,10 @@ body {
     width: 100%;
     height: 60vh;
     max-height: 90%;
-    background: transparent !important; /* Прозрачный фон */
+    background: rgba(0, 0, 0, 0.7) !important;
     z-index: 1100;
     align-items: flex-end;
-    backdrop-filter: none !important; /* Убираем размытие */
+    backdrop-filter: blur(5px);
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
     opacity: 0;
@@ -601,32 +601,28 @@ body {
 }
 
 .mobile-menu-modal .modal-content {
-    background: transparent; /* Убрать фон */
-    border-radius: 20px 20px 0 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: none !important; /* Убрать границу */
-    box-shadow: none !important; /* Убрать тень */
+    background: rgba(18, 26, 43, 0.95) !important;
+    border: 2px solid rgba(0, 198, 255, 0.4) !important;
+    border-radius: 30px 30px 0 0 !important;
+    box-shadow: 0 0 20px rgba(0, 198, 255, 0.5) !important;
+    overflow: visible !important;
     position: relative;
-    overflow: visible;
 }
 
-.mobile-menu-modal .modal-content::before {
-    content: none;
+.mobile-menu-modal .modal-content::before,
+.mobile-menu-modal .modal-content::after {
+    content: none !important;
 }
 
 .mobile-menu-modal .modal-header {
     padding: 12px 20px;
-    border-bottom: none !important; /* Убрать границу */
+    border-bottom: none !important;
     text-align: center;
     position: sticky;
     top: 0;
-    background: transparent !important; /* Убрать фон */
+    background: transparent !important;
     z-index: 10;
-    padding-top: 60px;
+    padding-top: 70px !important;
 }
 
 .mobile-menu-modal .close-modal {
@@ -657,10 +653,10 @@ body {
     width: 100%;
     height: 60vh;
     max-height: 90%;
-    background: transparent !important; /* Прозрачный фон */
+    background: rgba(0, 0, 0, 0.7) !important;
     z-index: 1200;
     align-items: flex-end;
-    backdrop-filter: none !important; /* Убираем размытие */
+    backdrop-filter: blur(5px);
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
     opacity: 0;
@@ -672,29 +668,26 @@ body {
 }
 
 .apple-submenu-modal .modal-content {
-    background: transparent; /* Убрать фон */
-    border-radius: 20px 20px 0 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: none !important; /* Убрать границу */
-    box-shadow: none !important; /* Убрать тень */
+    background: rgba(18, 26, 43, 0.95) !important;
+    border: 2px solid rgba(0, 198, 255, 0.4) !important;
+    border-radius: 30px 30px 0 0 !important;
+    box-shadow: 0 0 20px rgba(0, 198, 255, 0.5) !important;
+    overflow: visible !important;
     position: relative;
 }
 
-.apple-submenu-modal .modal-content::before {
-    content: none;
+.apple-submenu-modal .modal-content::before,
+.apple-submenu-modal .modal-content::after {
+    content: none !important;
 }
 
 .apple-submenu-modal .modal-header {
     padding: 12px 20px;
-    border-bottom: none !important; /* Убрать границу */
+    border-bottom: none !important;
     text-align: center;
     position: sticky;
     top: 0;
-    background: transparent !important; /* Убрать фон */
+    background: transparent !important;
     z-index: 10;
 }
 
@@ -720,8 +713,8 @@ body {
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-    gap: 6px;
-    padding: 10px 6px 20px;
+    gap: 12px;
+    padding: 15px;
     width: 100%;
     box-sizing: border-box;
     background: transparent;
@@ -732,32 +725,32 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 8px 4px;
-    border-radius: 8px;
-    background: transparent !important; /* Убрать фон */
+    padding: 12px 6px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(0, 198, 255, 0.2) !important;
     aspect-ratio: 1/1;
     text-align: center;
     transition: all 0.3s ease;
-    border: none;
     cursor: pointer;
-    opacity: 0.9; /* Небольшая прозрачность */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .menu-item:hover {
-    background: transparent !important; /* Убрать фон при наведении */
-    transform: none !important; /* Убрать трансформацию */
-    box-shadow: none !important; /* Убрать тень */
-    opacity: 1; /* Полная видимость при наведении */
+    background: rgba(0, 198, 255, 0.15) !important;
+    transform: translateY(-5px);
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 8px 16px rgba(0, 198, 255, 0.3);
 }
 
 .menu-item i {
-    font-size: 1.3rem;
-    margin-bottom: 5px;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
     color: var(--accent-color);
 }
 
 .menu-item span {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     line-height: 1.2;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -770,8 +763,8 @@ body {
     position: relative;
     text-align: center;
     padding: 15px 0 10px;
-    background: transparent !important; /* Убрать фон */
-    border-bottom: none !important; /* Убрать границу */
+    background: transparent !important;
+    border-bottom: none !important;
 }
 
 .user-avatar-container {
@@ -821,7 +814,7 @@ body {
 /* Floating Avatar for Mobile Menu - Updated */
 .floating-avatar-container {
     position: absolute;
-    top: -65px;
+    top: -75px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
@@ -835,12 +828,11 @@ body {
     height: 110px;
     border-radius: 50%;
     object-fit: cover;
-    background: transparent !important; /* Убрать фон */
+    background: transparent !important;
     position: relative;
     z-index: 2;
     border: 3px solid var(--accent-color);
-    box-shadow: none !important; /* Убрать тень */
-    animation: none !important; /* Убрать анимацию */
+    box-shadow: 0 0 20px rgba(0, 198, 255, 0.6);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -854,15 +846,13 @@ body {
     justify-content: center;
     width: 100%;
     height: 100%;
-    background: transparent !important; /* Убрать фон */
+    background: transparent !important;
     color: var(--accent-color);
     font-weight: bold;
     font-size: 1.2rem;
     text-align: center;
     padding: 10px;
     text-shadow: 0 0 10px rgba(0, 198, 255, 0.5);
-    box-shadow: none !important; /* Убрать тень */
-    animation: none !important; /* Убрать анимацию */
 }
 
 .floating-avatar-info {
@@ -901,11 +891,6 @@ body {
 .mobile-menu-modal .modal-body::-webkit-scrollbar,
 .apple-submenu-modal .modal-body::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
-}
-
-/* Header adjustment for avatar space */
-.mobile-menu-modal .modal-header {
-    padding-top: 70px !important;
 }
 
 /* Responsive design */
@@ -995,7 +980,7 @@ body {
     
     /* Floating avatar for tablet */
     .floating-avatar-container {
-        top: -55px;
+        top: -65px;
         width: 110px;
         height: 110px;
     }
@@ -1099,7 +1084,7 @@ body {
     
     /* Floating avatar for mobile */
     .floating-avatar-container {
-        top: -45px;
+        top: -55px;
         width: 100px;
         height: 100px;
     }
@@ -1114,12 +1099,22 @@ body {
         bottom: -30px;
     }
     
-    .mobile-menu-modal .modal-header {
-        padding-top: 60px !important;
-    }
-    
     .avatar-placeholder {
         font-size: 0.9rem;
+    }
+    
+    /* Menu grid adjustments */
+    .menu-grid {
+        gap: 8px;
+        padding: 12px;
+    }
+    
+    .menu-item {
+        padding: 10px 5px;
+    }
+    
+    .menu-item i {
+        font-size: 1.3rem;
     }
 }
 
@@ -1127,10 +1122,12 @@ body {
 @media (max-width: 340px) {
     .menu-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
     }
     
     .menu-item {
         aspect-ratio: 1/1.2;
+        padding: 8px 4px;
     }
     
     /* Логотип для очень маленьких экранов */
@@ -1180,7 +1177,7 @@ body {
     
     /* Floating avatar for small screens */
     .floating-avatar-container {
-        top: -35px;
+        top: -45px;
         width: 90px;
         height: 90px;
     }
@@ -1205,236 +1202,4 @@ body {
     .gradient-bg {
         display: none !important;
     }
-}
-
-/* Убираем фоны в основном мобильном меню */
-.mobile-menu-modal .menu-item {
-    background: transparent !important;
-    box-shadow: none !important;
-}
-
-.mobile-menu-modal .menu-item:hover {
-    background: transparent !important;
-    box-shadow: none !important;
-    transform: none;
-}
-
-/* Сохраняем фон в саб-меню Apple */
-.apple-submenu-modal .menu-item {
-    background: transparent !important; /* Убрать фон */
-}
-
-.apple-submenu-modal .menu-item:hover {
-    background: transparent !important; /* Убрать фон при наведении */
     }
-/* Добавляем в конец файла styles.css */
-
-/* Стили для мобильного меню - обновлённые */
-.mobile-menu-modal .modal-content {
-    background: rgba(18, 26, 43, 0.95) !important; /* Полупрозрачный фон как у карточек */
-    border: 1px solid rgba(0, 198, 255, 0.3) !important; /* Голубая граница */
-    border-radius: 30px 30px 0 0 !important; /* Полукруглые углы сверху */
-    box-shadow: 0 0 30px rgba(0, 198, 255, 0.2) !important; /* Неоновая тень */
-    overflow: hidden;
-    backdrop-filter: blur(10px); /* Лёгкое размытие */
-}
-
-/* Стили для сабменю Apple - обновлённые */
-.apple-submenu-modal .modal-content {
-    background: rgba(18, 26, 43, 0.95) !important; /* Полупрозрачный фон как у карточек */
-    border: 1px solid rgba(0, 198, 255, 0.3) !important; /* Голубая граница */
-    border-radius: 30px 30px 0 0 !important; /* Полукруглые углы сверху */
-    box-shadow: 0 0 30px rgba(0, 198, 255, 0.2) !important; /* Неоновая тень */
-    overflow: hidden;
-    backdrop-filter: blur(10px); /* Лёгкое размытие */
-}
-
-/* Стили для элементов меню */
-.menu-item {
-    background: rgba(255, 255, 255, 0.05) !important; /* Лёгкий фон для элементов */
-    border: 1px solid rgba(0, 198, 255, 0.1) !important; /* Тонкая граница */
-    border-radius: 12px !important; /* Закруглённые углы */
-    transition: all 0.3s ease;
-}
-
-.menu-item:hover {
-    background: rgba(0, 198, 255, 0.1) !important; /* Подсветка при наведении */
-    border-color: rgba(0, 198, 255, 0.4) !important; /* Ярче граница */
-    transform: translateY(-3px) scale(1.05); /* Эффект подъёма */
-    box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2) !important; /* Тень при наведении */
-}
-
-/* Стили для заголовков меню */
-.mobile-menu-modal .modal-header,
-.apple-submenu-modal .modal-header {
-    background: rgba(0, 0, 0, 0.2) !important; /* Тёмный фон для заголовка */
-    border-bottom: 1px solid rgba(0, 198, 255, 0.2) !important; /* Граница снизу */
-    border-radius: 30px 30px 0 0 !important; /* Закругление сверху */
-}
-
-/* Анимация для границы меню */
-.mobile-menu-modal .modal-content::after,
-.apple-submenu-modal .modal-content::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 30px 30px 0 0;
-    border: 1px solid transparent;
-    background: linear-gradient(135deg, 
-        rgba(0, 198, 255, 0.4), 
-        rgba(0, 214, 143, 0.4), 
-        rgba(255, 61, 113, 0.4)) border-box;
-    mask: linear-gradient(#fff 0 0) padding-box, 
-          linear-gradient(#fff 0 0);
-    -webkit-mask-composite: destination-out;
-    mask-composite: exclude;
-    animation: borderAnimation 3s infinite alternate;
-}
-
-@keyframes borderAnimation {
-    0% {
-        background: linear-gradient(135deg, 
-            rgba(0, 198, 255, 0.2), 
-            rgba(0, 214, 143, 0.2), 
-            rgba(255, 61, 113, 0.2)) border-box;
-    }
-    100% {
-        background: linear-gradient(135deg, 
-            rgba(0, 198, 255, 0.6), 
-            rgba(0, 214, 143, 0.6), 
-            rgba(255, 61, 113, 0.6)) border-box;
-    }
-}
-/* Добавляем в конец файла styles.css */
-
-/* Переопределение стилей мобильного меню */
-.mobile-menu-modal {
-    z-index: 2000 !important; /* Повышаем z-index для всего меню */
-    backdrop-filter: blur(5px); /* Легкое размытие фона */
-}
-
-.mobile-menu-modal .modal-content {
-    background: rgba(18, 26, 43, 0.95) !important; /* Основной цвет сайта с прозрачностью */
-    border: 2px solid rgba(0, 198, 255, 0.4) !important; /* Голубая граница */
-    border-radius: 30px 30px 0 0 !important; /* Полукруглые углы */
-    box-shadow: 
-        0 0 20px rgba(0, 198, 255, 0.5),
-        0 0 40px rgba(0, 0, 0, 0.7) !important; /* Двойная тень */
-    overflow: visible !important; /* Разрешаем выход элементов за границы */
-    position: relative;
-}
-
-/* Анимация для границы */
-.mobile-menu-modal .modal-content::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border-radius: 30px 30px 0 0;
-    background: linear-gradient(45deg, 
-        var(--ring-color-1), 
-        var(--ring-color-2), 
-        var(--ring-color-3));
-    z-index: -1;
-    animation: rotateBorder 8s linear infinite;
-}
-
-@keyframes rotateBorder {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Стили для сабменю Apple */
-.apple-submenu-modal .modal-content {
-    background: rgba(18, 26, 43, 0.95) !important; /* Основной цвет сайта с прозрачностью */
-    border: 2px solid rgba(0, 198, 255, 0.4) !important; /* Голубая граница */
-    border-radius: 30px 30px 0 0 !important; /* Полукруглые углы */
-    box-shadow: 
-        0 0 20px rgba(0, 198, 255, 0.5),
-        0 0 40px rgba(0, 0, 0, 0.7) !important; /* Двойная тень */
-    overflow: visible !important; /* Разрешаем выход элементов за границы */
-}
-
-/* Аватарка поверх всего */
-.floating-avatar-container {
-    z-index: 2100 !important; /* Выше чем само меню */
-    top: -75px !important; /* Поднимаем выше */
-    transform: translateX(-50%) scale(1.1) !important;
-    transition: transform 0.4s ease;
-}
-
-.floating-avatar-container:hover {
-    transform: translateX(-50%) scale(1.15) !important;
-}
-
-.floating-avatar {
-    border: 3px solid var(--accent-color) !important;
-    box-shadow: 
-        0 0 20px rgba(0, 198, 255, 0.8),
-        0 0 40px rgba(0, 198, 255, 0.4) !important;
-    animation: avatarGlow 2s infinite alternate;
-}
-
-/* Элементы меню */
-.menu-item {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(0, 198, 255, 0.15) !important;
-    border-radius: 12px !important;
-    padding: 12px 6px !important;
-    transition: all 0.3s ease;
-}
-
-.menu-item:hover {
-    background: rgba(0, 198, 255, 0.15) !important;
-    border-color: rgba(0, 198, 255, 0.4) !important;
-    transform: translateY(-5px) scale(1.05);
-    box-shadow: 0 10px 20px rgba(0, 198, 255, 0.2) !important;
-}
-
-/* Заголовок меню */
-.mobile-menu-modal .modal-header {
-    background: rgba(0, 0, 0, 0.3) !important;
-    border-bottom: 1px solid rgba(0, 198, 255, 0.2) !important;
-    border-radius: 30px 30px 0 0 !important;
-    padding: 15px 20px 10px !important;
-}
-
-/* Улучшение для маленьких экранов */
-@media (max-width: 576px) {
-    .mobile-menu-modal .modal-content {
-        border-radius: 25px 25px 0 0 !important;
-    }
-    
-    .floating-avatar-container {
-        top: -65px !important;
-    }
-    
-    .floating-avatar {
-        width: 90px !important;
-        height: 90px !important;
-    }
-    
-    .menu-item {
-        padding: 10px 4px !important;
-    }
-}
-
-@media (max-width: 400px) {
-    .mobile-menu-modal .modal-content {
-        border-radius: 20px 20px 0 0 !important;
-    }
-    
-    .floating-avatar-container {
-        top: -55px !important;
-    }
-    
-    .floating-avatar {
-        width: 80px !important;
-        height: 80px !important;
-    }
-}
