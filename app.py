@@ -250,6 +250,7 @@ def show_login_form():
 def login():
     identifier = request.form.get('identifier', '').strip()
     password = request.form.get('password')
+    next_url = request.args.get('next')  # Получаем URL для перенаправления
     app.logger.info(f"Login attempt for: {identifier}")
     
     # Нормализация идентификатора
@@ -311,12 +312,19 @@ def login():
         session['role'] = user['role']
         app.logger.info(f"Successful login for: {user['username']} (Role: {user['role']})")
         
-        # Перенаправление в зависимости от роли
-        next_url = request.args.get('next')
-        if user['role'] in ['admin', 'superadmin']:
-            return redirect(next_url or url_for('admin.admin_dashboard'))
+        # Определяем URL для перенаправления
+        if next_url:
+            redirect_url = next_url
+        elif user['role'] in ['admin', 'superadmin']:
+            redirect_url = url_for('admin.admin_dashboard')
         else:
-            return redirect(next_url or url_for('user.dashboard'))
+            redirect_url = url_for('user.dashboard')
+        
+        # Возвращаем JSON с URL для перенаправления
+        return jsonify({
+            "success": True,
+            "redirect_url": redirect_url
+        }), 200
     
     # Обработка неудачной попытки входа
     attempts = 1
