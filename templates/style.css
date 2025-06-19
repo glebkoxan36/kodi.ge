@@ -585,10 +585,10 @@ body {
     width: 100%;
     height: 60vh;
     max-height: 90%;
-    background: transparent;
+    background: rgba(0, 0, 0, 0.95);
     z-index: 1100;
     align-items: flex-end;
-    backdrop-filter: none;
+    backdrop-filter: blur(10px);
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
     opacity: 0;
@@ -607,10 +607,14 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid var(--accent-color);
+    border: 2px solid var(--accent-color);
     box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.7);
     position: relative;
     overflow: visible;
+}
+
+.mobile-menu-modal .modal-content::before {
+    content: none;
 }
 
 .mobile-menu-modal .modal-header {
@@ -621,7 +625,7 @@ body {
     top: 0;
     background: var(--card-bg);
     z-index: 10;
-    padding-top: 50px;
+    padding-top: 60px;
 }
 
 .mobile-menu-modal .close-modal {
@@ -677,6 +681,10 @@ body {
     border: 2px solid var(--accent-color);
     box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.7);
     position: relative;
+}
+
+.apple-submenu-modal .modal-content::before {
+    content: none;
 }
 
 .apple-submenu-modal .modal-header {
@@ -809,24 +817,24 @@ body {
 /* Floating Avatar for Mobile Menu - Updated */
 .floating-avatar-container {
     position: absolute;
-    top: -65px; /* Подняли выше */
+    top: -65px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
-    width: 130px; /* Увеличили размеры */
+    width: 130px;
     height: 130px;
     pointer-events: none;
 }
 
 .floating-avatar {
-    width: 110px; /* Увеличили размер */
+    width: 110px;
     height: 110px;
     border-radius: 50%;
     object-fit: cover;
     background: var(--card-bg);
     position: relative;
     z-index: 2;
-    border: 3px solid var(--accent-color); /* Более толстая рамка */
+    border: 3px solid var(--accent-color);
     box-shadow: 
         0 0 15px rgba(0, 198, 255, 0.8),
         0 0 30px rgba(0, 198, 255, 0.5);
@@ -1174,4 +1182,4 @@ body {
     .gradient-bg {
         display: none !important;
     }
-  }
+    }
