@@ -627,7 +627,7 @@ def send_webhook_event(event_type, payload):
 # ======================================
 # Сравнение телефонов
 # ======================================
-
+PLACEHOLDER = '/static/images/placeholder.jpg'
 @app.route('/api/search', methods=['GET'])
 def search_phones():
     query = request.args.get('query', '').strip()
@@ -645,7 +645,7 @@ def search_phones():
     }, {
         '_id': 1,
         'Name': 1,
-        'Image_URL': 1
+        'Image_URL': PLACEHOLDER
     }).limit(10))
     
     # Преобразование ObjectId в строки и нормализация данных
