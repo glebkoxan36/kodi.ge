@@ -750,20 +750,26 @@
                 return;
             }
             
-            // Display each specification
-            displaySpecGroup(specsContainer, 'Network', 'ქსელი', phone);
-            displaySpecGroup(specsContainer, 'Launch', 'გამოშვება', phone);
-            displaySpecGroup(specsContainer, 'Body', 'კორპუსი', phone);
-            displaySpecGroup(specsContainer, 'Display', 'ეკრანი', phone);
-            displaySpecGroup(specsContainer, 'Platform', 'პლატფორმა', phone);
-            displaySpecGroup(specsContainer, 'Memory', 'მეხსიერება', phone);
-            displaySpecGroup(specsContainer, 'Main Camera', 'მთავარი კამერა', phone);
-            displaySpecGroup(specsContainer, 'Selfie camera', 'წინა კამერა', phone);
-            displaySpecGroup(specsContainer, 'Sound', 'ხმა', phone);
-            displaySpecGroup(specsContainer, 'Comms', 'კავშირი', phone);
-            displaySpecGroup(specsContainer, 'Features', 'ფუნქციები', phone);
-            displaySpecGroup(specsContainer, 'Battery', 'ბატარეა', phone);
-            displaySpecGroup(specsContainer, 'Misc', 'დამატებით', phone);
+            // Groups of specifications
+            const specGroups = [
+                { key: 'Network', label: 'ქსელი' },
+                { key: 'Body', label: 'კორპუსი' },
+                { key: 'Display', label: 'ეკრანი' },
+                { key: 'Platform', label: 'პლატფორმა' },
+                { key: 'Memory', label: 'მეხსიერება' },
+                { key: 'MainCamera', label: 'მთავარი კამერა' },
+                { key: 'SelfieCamera', label: 'წინა კამერა' },
+                { key: 'Sound', label: 'ხმა' },
+                { key: 'Comms', label: 'კავშირი' },
+                { key: 'Features', label: 'ფუნქციები' },
+                { key: 'Battery', label: 'ბატარეა' },
+                { key: 'Misc', label: 'დამატებით' }
+            ];
+            
+            // Display each specification group
+            specGroups.forEach(group => {
+                displaySpecGroup(specsContainer, group.key, group.label, phone.specs);
+            });
             
             // If no specifications were added
             if (specsContainer.children.length === 0) {
@@ -772,9 +778,22 @@
         }
         
         // Display a group of specifications
-        function displaySpecGroup(container, groupKey, groupLabel, phone) {
-            // Check if this group exists in the specs
-            if (!phone.specs || !phone.specs[groupKey]) return;
+        function displaySpecGroup(container, groupKey, groupLabel, specs) {
+            // Find all specs in this group
+            const groupSpecs = {};
+            const prefix = groupKey + '_';
+            
+            for (const [key, value] of Object.entries(specs)) {
+                if (key.startsWith(prefix)) {
+                    const cleanKey = key.replace(prefix, '');
+                    groupSpecs[cleanKey] = value;
+                }
+            }
+            
+            // Skip if no specs found in this group
+            if (Object.keys(groupSpecs).length === 0) {
+                return;
+            }
             
             // Create group header
             const groupHeader = document.createElement('div');
@@ -783,7 +802,7 @@
             container.appendChild(groupHeader);
             
             // Display each spec in the group
-            for (const [specKey, specValue] of Object.entries(phone.specs[groupKey])) {
+            for (const [specKey, specValue] of Object.entries(groupSpecs)) {
                 const specItem = document.createElement('div');
                 specItem.className = 'spec-item';
                 
@@ -819,16 +838,8 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        phone1: {
-                            phone_name: phone1.name,
-                            specs: phone1.specs,
-                            quick_specs: phone1.quick_specs || null
-                        },
-                        phone2: {
-                            phone_name: phone2.name,
-                            specs: phone2.specs,
-                            quick_specs: phone2.quick_specs || null
-                        }
+                        phone1: phone1,
+                        phone2: phone2
                     })
                 });
                 
