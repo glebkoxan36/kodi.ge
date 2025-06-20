@@ -527,7 +527,7 @@
                 <div class="comparison-container" id="comparisonContainer" style="display: none;">
                     <div class="phone-card" id="phone1Card">
                         <div class="text-center">
-                            <img src="" class="phone-image" id="phone1Image" alt="Phone 1" onerror="this.src='https://via.placeholder.com/200?text=Image+Not+Available'">
+                            <img src="" class="phone-image" id="phone1Image" alt="Phone 1" onerror="handleImageError(event)">
                             <h3 class="phone-title" id="phone1Title"></h3>
                         </div>
                         <div id="phone1Specs"></div>
@@ -535,7 +535,7 @@
                     
                     <div class="phone-card" id="phone2Card">
                         <div class="text-center">
-                            <img src="" class="phone-image" id="phone2Image" alt="Phone 2" onerror="this.src='https://via.placeholder.com/200?text=Image+Not+Available'">
+                            <img src="" class="phone-image" id="phone2Image" alt="Phone 2" onerror="handleImageError(event)">
                             <h3 class="phone-title" id="phone2Title"></h3>
                         </div>
                         <div id="phone2Specs"></div>
@@ -559,6 +559,12 @@
     </div>
     
     <script>
+        // Function to handle image loading errors
+        function handleImageError(event) {
+            event.target.onerror = null; // Prevent infinite loop
+            event.target.src = '/static/placeholder.jpg';
+        }
+        
         // Phone selection state
         let selectedPhone1 = null;
         let selectedPhone2 = null;
@@ -664,7 +670,7 @@
             compareButton.disabled = true;
             
             try {
-                // Fetch phone details (ИСПРАВЛЕНО: изменили путь на /api/phone_details)
+                // Fetch phone details
                 const phone1Details = await fetchPhoneDetails(selectedPhone1._id);
                 const phone2Details = await fetchPhoneDetails(selectedPhone2._id);
                 
@@ -693,7 +699,7 @@
             }
         }
         
-        // Fetch phone details from our API (ИСПРАВЛЕНО: изменили путь на /api/phone_details)
+        // Fetch phone details from our API
         async function fetchPhoneDetails(phoneId) {
             try {
                 const response = await fetch(`/api/phone_details/${phoneId}`);
@@ -714,7 +720,11 @@
         function displayPhone(phone, prefix) {
             // Basic info
             document.getElementById(`${prefix}Title`).textContent = phone.name;
-            document.getElementById(`${prefix}Image`).src = phone.image_url || 'https://via.placeholder.com/200?text=Image+Not+Available';
+            
+            // Set image with error handling
+            const imgElement = document.getElementById(`${prefix}Image`);
+            imgElement.src = phone.image_url || '';
+            imgElement.onerror = handleImageError;
             
             // Specifications
             const specsContainer = document.getElementById(`${prefix}Specs`);
