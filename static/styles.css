@@ -533,7 +533,7 @@ body {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 55vh; /* Оптимальная высота */
+    height: 60vh; /* Увеличено с 55vh */
     max-height: 90%;
     background: transparent;
     z-index: 1100;
@@ -595,13 +595,14 @@ body {
 /* Плавающий аватар - ПОЛНОСТЬЮ ПЕРЕРАБОТАНО */
 .floating-avatar-container {
     position: absolute;
-    top: 10px; /* Расположен над меню */
+    top: 0; /* Фиксированная позиция сверху */
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
     width: 110px;
-    height: 110px;
     text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Граница под аватаркой */
+    padding-bottom: 10px; /* Отступ под границей */
 }
 
 .floating-avatar {
@@ -644,9 +645,10 @@ body {
     color: var(--text-color);
     text-shadow: 0 1px 2px rgba(0,0,0,0.5);
     cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap; /* Запрет переноса текста */
+    overflow: hidden; /* Скрытие переполнения */
+    text-overflow: ellipsis; /* Многоточие при переполнении */
+    max-width: 100%; /* Ограничение ширины */
     padding: 0 10px;
     pointer-events: auto;
 }
@@ -848,7 +850,7 @@ body {
     
     /* Адаптация для планшетов */
     .mobile-menu-modal {
-        height: 50vh;
+        height: 55vh; /* Увеличено с 50vh */
         padding-top: 60px;
     }
     
@@ -919,13 +921,13 @@ body {
     
     /* Адаптация для мобильных */
     .mobile-menu-modal {
-        height: 55vh;
+        height: 60vh; /* Увеличено с 55vh */
         padding-top: 60px;
     }
     
     .floating-avatar {
-        width: 80px;
-        height: 80px;
+        width: 70px; /* Уменьшено с 80px */
+        height: 70px; /* Уменьшено с 80px */
     }
     
     .floating-avatar-info {
@@ -992,13 +994,13 @@ body {
     
     /* Адаптация для маленьких экранов */
     .mobile-menu-modal {
-        height: 60vh;
+        height: 65vh; /* Увеличено с 60vh */
         padding-top: 50px;
     }
     
     .floating-avatar {
-        width: 70px;
-        height: 70px;
+        width: 60px; /* Уменьшено с 70px */
+        height: 60px; /* Уменьшено с 70px */
     }
     
     .floating-avatar-info {
