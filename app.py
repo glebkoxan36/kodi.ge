@@ -628,33 +628,42 @@ def send_webhook_event(event_type, payload):
 # Сравнение телефонов
 # ======================================
 PLACEHOLDER = '/static/placeholder.jpg'
+
 @app.route('/api/search', methods=['GET'])
 def search_phones():
     query = request.args.get('query', '').strip()
     if not query:
         return jsonify({'error': 'Query parameter is required'}), 400
     
-    # Поиск по нескольким полям с проекцией только нужных полей
+    # Поиск по нескольким полям
     regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
     results = list(phones_collection.find({
         '$or': [
             {'brand': regex_query},
             {'model': regex_query},
-            {'Name': regex_query}
+            {'Name': regex_query}  # Исправлено на Name с большой буквы
         ]
     }, {
         '_id': 1,
-        'Name': 1,
-        'Image_URL': PLACEHOLDER
+        'Name': 1,  # Исправлено
+        'brand': 1,
+        'model': 1
     }).limit(10))
     
-    # Преобразование ObjectId в строки и нормализация данных
+    # Преобразование результатов
     normalized_results = []
     for phone in results:
+        # Формируем название из бренда и модели, если Name отсутствует
+        name = phone.get('Name')
+        if not name:
+            brand = phone.get('brand', '')
+            model = phone.get('model', '')
+            name = f"{brand} {model}".strip()
+        
         normalized_results.append({
             '_id': str(phone['_id']),
-            'name': phone.get('Name', 'Unknown Phone'),
-            'image_url': phone.get('Image_URL', '')
+            'name': name or 'Unknown Phone',
+            'image_url': PLACEHOLDER  # Всегда используем заглушку
         })
     
     return jsonify(normalized_results)
@@ -666,19 +675,45 @@ def phone_details(phone_id):
         if not phone:
             return jsonify({'error': 'Phone not found'}), 404
         
-        # Нормализуем данные для фронтенда
+        # Формируем название
+        name = phone.get('Name')
+        if not name:
+            brand = phone.get('brand', '')
+            model = phone.get('model', '')
+            name = f"{brand} {model}".strip()
+        
+        # Собираем все характеристики без префиксов
+        specs = {}
+        prefix_groups = [
+            'Network_', 'Body_', 'Display_', 'Platform_', 
+            'Memory_', 'MainCamera_', 'SelfieCamera_', 
+            'Sound_', 'COMMS_', 'Battery_', 'Colors'
+        ]
+        
+        for key, value in phone.items():
+            # Пропускаем служебные поля
+            if key in ['_id', 'Name', 'brand', 'model']:
+                continue
+                
+            # Убираем префиксы из ключей
+            clean_key = key
+            for prefix in prefix_groups:
+                if key.startswith(prefix):
+                    clean_key = key.replace(prefix, '')
+                    break
+                    
+            specs[clean_key] = value
+        
         normalized_phone = {
             '_id': str(phone['_id']),
-            'name': phone.get('Name', 'Unknown Phone'),
-            'image_url': phone.get('Image_URL', ''),
-            'specs': {key: value for key, value in phone.items() 
-                     if key not in ['_id', 'Name', 'Image_URL']}
+            'name': name or 'Unknown Phone',
+            'image_url': PLACEHOLDER,
+            'specs': specs
         }
         
         return jsonify(normalized_phone)
     except Exception as e:
         return jsonify({'error': 'Invalid phone ID'}), 400
-
 @app.route('/api/ai-analysis', methods=['POST'])
 def ai_analysis():
     data = request.json
