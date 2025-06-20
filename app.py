@@ -90,7 +90,7 @@ if not admin_users_collection.find_one({'username': 'admin'}):
         'created_at': datetime.utcnow()
     })
 
-# Исправленное создание индекса
+# Исправленное создание индекса с указанием языка
 try:
     # Проверяем существование текстового индекса
     existing_indexes = phones_collection.index_information()
@@ -103,12 +103,12 @@ try:
     
     # Создаем индекс только если его еще нет
     if not text_index_exists:
-        phones_collection.create_index([
-            ('brand', 'text'), 
-            ('model', 'text'), 
-            ('Name', 'text')
-        ], name='text_search')
-        app.logger.info("Text index created successfully")
+        phones_collection.create_index(
+            [('brand', 'text'), ('model', 'text'), ('Name', 'text')],
+            name='text_search',
+            default_language='none'  # Ключевое исправление для грузинского языка
+        )
+        app.logger.info("Text index created successfully with 'none' language")
 except Exception as e:
     app.logger.error(f"Index creation error: {str(e)}")
 
@@ -635,14 +635,41 @@ def search_phones():
     if not query:
         return jsonify({'error': 'Query parameter is required'}), 400
     
-    # Используем полнотекстовый поиск
+    results = []
     try:
-        results = list(phones_collection.find(
+        # Попытка полнотекстового поиска с проекцией нужных полей
+        cursor = phones_collection.find(
             {'$text': {'$search': query}},
-            {'score': {'$meta': 'textScore'}}
-        ).sort([('score', {'$meta': 'textScore'})]).limit(10))
+            {
+                'score': {'$meta': 'textScore'},
+                'Name': 1,
+                'brand': 1,
+                'model': 1
+            }
+        ).sort([('score', {'$meta': 'textScore'})]).limit(10)
+        
+        results = list(cursor)
+        
+        # Если результатов нет, используем regex fallback
+        if not results:
+            app.logger.info(f"No full-text results, using regex fallback for: {query}")
+            regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
+            results = list(phones_collection.find({
+                '$or': [
+                    {'brand': regex_query},
+                    {'model': regex_query},
+                    {'Name': regex_query}
+                ]
+            }, {
+                '_id': 1,
+                'Name': 1,
+                'brand': 1,
+                'model': 1
+            }).limit(10))
+            
     except Exception as e:
-        # Если полнотекстовый поиск не сработал, используем regex как запасной вариант
+        app.logger.error(f"Search error: {str(e)}")
+        # При ошибке также используем regex
         regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
         results = list(phones_collection.find({
             '$or': [
@@ -660,7 +687,6 @@ def search_phones():
     # Преобразование результатов
     normalized_results = []
     for phone in results:
-        # Формируем название из бренда и модели, если Name отсутствует
         name = phone.get('Name')
         if not name:
             brand = phone.get('brand', '')
