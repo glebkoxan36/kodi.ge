@@ -107,7 +107,7 @@ try:
             ('brand', 'text'), 
             ('model', 'text'), 
             ('Name', 'text')
-        ])
+        ], name='text_search')
         app.logger.info("Text index created successfully")
 except Exception as e:
     app.logger.error(f"Index creation error: {str(e)}")
@@ -635,20 +635,27 @@ def search_phones():
     if not query:
         return jsonify({'error': 'Query parameter is required'}), 400
     
-    # Поиск по нескольким полям
-    regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
-    results = list(phones_collection.find({
-        '$or': [
-            {'brand': regex_query},
-            {'model': regex_query},
-            {'Name': regex_query}
-        ]
-    }, {
-        '_id': 1,
-        'Name': 1,
-        'brand': 1,
-        'model': 1
-    }).limit(10))
+    # Используем полнотекстовый поиск
+    try:
+        results = list(phones_collection.find(
+            {'$text': {'$search': query}},
+            {'score': {'$meta': 'textScore'}}
+        ).sort([('score', {'$meta': 'textScore'})]).limit(10))
+    except Exception as e:
+        # Если полнотекстовый поиск не сработал, используем regex как запасной вариант
+        regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
+        results = list(phones_collection.find({
+            '$or': [
+                {'brand': regex_query},
+                {'model': regex_query},
+                {'Name': regex_query}
+            ]
+        }, {
+            '_id': 1,
+            'Name': 1,
+            'brand': 1,
+            'model': 1
+        }).limit(10))
     
     # Преобразование результатов
     normalized_results = []
