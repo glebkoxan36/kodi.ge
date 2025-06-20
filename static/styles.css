@@ -1,4 +1,6 @@
 /* styles.css */
+@import url("static/mobile-avatar-menu.css"); /* Импорт стилей мобильного меню и аватарки */
+
 *, *::before, *::after {
     box-sizing: border-box;
 }
@@ -7,8 +9,8 @@
     --primary-color: #0a0e17;
     --secondary-color: #1a2138;
     --accent-color: #00c6ff;
-    --text-color: #ffffff; /* Обновлено: белый цвет текста */
-    --text-secondary: #e0e0e0; /* Обновлено: светлый серый */
+    --text-color: #ffffff;
+    --text-secondary: #e0e0e0;
     --card-bg: #121a2b;
     --success-color: #00d68f;
     --warning-color: #ffaa00;
@@ -20,7 +22,7 @@
 
 body {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: var(--text-color) !important; /* Принудительно белый цвет */
+    color: var(--text-color) !important;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
@@ -104,38 +106,6 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-/* Bottom mobile menu button */
-.mobile-menu-bottom {
-    display: none;
-    position: fixed;
-    bottom: 20px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    z-index: 1000;
-}
-
-.mobile-menu-btn {
-    background: var(--accent-color);
-    color: white;
-    border: none;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    font-size: 1.6rem;
-    cursor: pointer;
-    box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-}
-
-.mobile-menu-btn i {
-    color: white;
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-}
-
 /* Sidebar styling */
 .sidebar {
     background: rgba(10, 14, 23, 0.98);
@@ -202,15 +172,15 @@ body {
 .nav-link:hover, .nav-link.active {
     background: rgba(0, 198, 255, 0.15);
     color: var(--accent-color);
-    border-radius: 8px; /* Ensure rounded corners on hover */
-    overflow: hidden; /* Fix background overflow */
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 /* Submenu styling */
 .submenu {
     padding-left: 30px;
-    border-radius: 8px; /* Added rounded corners */
-    overflow: hidden; /* Fix background overflow */
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .submenu .nav-link {
@@ -300,8 +270,8 @@ body {
     color: var(--accent-color);
     position: relative;
     z-index: 1;
-    border-top-left-radius: 12px; /* Match parent border radius */
-    border-top-right-radius: 12px; /* Match parent border radius */
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
 }
 
 .card-body {
@@ -374,8 +344,8 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     position: relative;
     z-index: 1;
-    border-top-left-radius: 15px; /* Match parent border radius */
-    border-top-right-radius: 15px; /* Match parent border radius */
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
 }
 
 .modal-title {
@@ -526,190 +496,6 @@ body {
     margin-top: 15px;
 }
 
-/* Мобильное меню - ИСПРАВЛЕНО (аватарка полностью видна) */
-.mobile-menu-modal {
-    display: none;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 70vh; /* Увеличено с 60vh */
-    max-height: 90%;
-    background: transparent;
-    z-index: 1100;
-    align-items: flex-end;
-    backdrop-filter: blur(0px);
-    transform: translateY(100%);
-    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
-    opacity: 0;
-    overflow: hidden;
-    padding-top: 70px; /* Место для аватарки */
-}
-
-.mobile-menu-modal.open {
-    transform: translateY(0);
-    opacity: 1;
-    display: flex;
-}
-
-.mobile-menu-modal .modal-content {
-    background: rgba(18, 26, 43, 0.95);
-    border: 3px solid rgba(0, 198, 255, 0.4);
-    border-radius: 30px 30px 0 0;
-    box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
-    overflow: visible;
-    position: relative;
-    width: 100%;
-    height: 100%;
-    margin-top: 20px; /* Отступ от аватарки */
-}
-
-.mobile-menu-modal .modal-header {
-    padding: 12px 20px;
-    border-bottom: none;
-    text-align: center;
-    position: sticky;
-    top: 0;
-    background: transparent;
-    z-index: 10;
-}
-
-.mobile-menu-modal .close-modal {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 1.3rem;
-    cursor: pointer;
-}
-
-.mobile-menu-modal .modal-body {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-bottom: 20px;
-}
-
-/* Плавающий аватар - ПОЛНОСТЬЮ ПЕРЕРАБОТАНО */
-.floating-avatar-container {
-    position: absolute;
-    top: 0; /* Фиксированная позиция сверху */
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1500;
-    width: 110px;
-    text-align: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Граница под аватаркой */
-    padding-bottom: 10px; /* Отступ под границей */
-}
-
-.floating-avatar {
-    width: 80px; /* Уменьшено с 110px */
-    height: 80px; /* Уменьшено с 110px */
-    border-radius: 50%;
-    object-fit: cover;
-    background: transparent;
-    position: relative;
-    z-index: 2;
-    border: 3px solid var(--accent-color);
-    box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    margin: 0 auto;
-}
-
-.avatar-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #0a0e17, #1a2138);
-    color: #ffffff;
-    font-weight: bold;
-    font-size: 1rem; /* Уменьшено с 1.2rem */
-    text-align: center;
-    padding: 10px;
-    text-shadow: 0 0 12px rgba(0, 198, 255, 0.8);
-}
-
-.floating-avatar-info {
-    margin-top: 10px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-color);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    cursor: pointer;
-    white-space: nowrap; /* Запрет переноса текста */
-    overflow: hidden; /* Скрытие переполнения */
-    text-overflow: ellipsis; /* Многоточие при переполнении */
-    max-width: 100%; /* Ограничение ширины */
-    padding: 0 10px;
-    pointer-events: auto;
-}
-
-.user-balance {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--success-color);
-    margin-top: 3px;
-    pointer-events: auto;
-}
-
-/* Menu grid with 3 columns */
-.menu-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-    gap: 12px;
-    padding: 15px;
-    width: 100%;
-    box-sizing: border-box;
-    background: transparent;
-}
-
-.menu-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 12px 6px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(0, 198, 255, 0.2);
-    aspect-ratio: 1/1;
-    text-align: center;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.menu-item:hover {
-    background: rgba(0, 198, 255, 0.15);
-    transform: translateY(-5px);
-    border-color: var(--accent-color);
-    box-shadow: 0 8px 16px rgba(0, 198, 255, 0.3);
-}
-
-.menu-item i {
-    font-size: 1.5rem;
-    margin-bottom: 8px;
-    color: var(--accent-color);
-}
-
-.menu-item span {
-    font-size: 0.7rem;
-    line-height: 1.2;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
 /* Apple Submenu Modal */
 .apple-submenu-modal {
     display: none;
@@ -847,28 +633,9 @@ body {
     .carousel-item {
         height: 300px;
     }
-    
-    /* Адаптация для планшетов */
-    .mobile-menu-modal {
-        height: 65vh; /* Увеличено с 55vh */
-        padding-top: 60px;
-    }
-    
-    .floating-avatar {
-        width: 70px; /* Уменьшено с 90px */
-        height: 70px; /* Уменьшено с 90px */
-    }
-    
-    .avatar-placeholder {
-        font-size: 0.9rem; /* Уменьшено с 1rem */
-    }
 }
 
 @media (max-width: 576px) {
-    .mobile-menu-bottom {
-        display: block;
-    }
-    
     .sidebar {
         display: none;
     }
@@ -918,51 +685,9 @@ body {
         width: 80px;
         height: 80px;
     }
-    
-    /* Адаптация для мобильных */
-    .mobile-menu-modal {
-        height: 75vh; /* Увеличено с 60vh */
-        padding-top: 60px;
-    }
-    
-    .floating-avatar {
-        width: 60px; /* Уменьшено с 70px */
-        height: 60px; /* Уменьшено с 70px */
-    }
-    
-    .floating-avatar-info {
-        font-size: 0.8rem;
-    }
-    
-    .avatar-placeholder {
-        font-size: 0.8rem; /* Уменьшено с 0.9rem */
-    }
-    
-    .menu-grid {
-        gap: 8px;
-        padding: 12px;
-    }
-    
-    .menu-item {
-        padding: 10px 5px;
-    }
-    
-    .menu-item i {
-        font-size: 1.3rem;
-    }
 }
 
 @media (max-width: 340px) {
-    .menu-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 6px;
-    }
-    
-    .menu-item {
-        aspect-ratio: 1/1.2;
-        padding: 8px 4px;
-    }
-    
     .logo-animated {
         width: 60px;
         height: 60px;
@@ -991,50 +716,8 @@ body {
         width: 70px;
         height: 70px;
     }
-    
-    /* Адаптация для маленьких экранов */
-    .mobile-menu-modal {
-        height: 80vh; /* Увеличено с 65vh */
-        padding-top: 50px;
-    }
-    
-    .floating-avatar {
-        width: 50px; /* Уменьшено с 60px */
-        height: 50px; /* Уменьшено с 60px */
-    }
-    
-    .floating-avatar-info {
-        font-size: 0.75rem;
-    }
-    
-    .avatar-placeholder {
-        font-size: 0.7rem; /* Уменьшено с 0.8rem */
-    }
-}
-.user-avatar-container .user-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 24px;
-    color: white;
 }
 
-.floating-avatar {
-    width: 80px; /* Обновлено */
-    height: 80px; /* Обновлено */
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 36px;
-    color: white;
-    margin: 0 auto 10px;
-}
 @media (max-width: 991px) {
     .gradient-bg {
         display: none;
