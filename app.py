@@ -660,10 +660,20 @@ def search_phones():
             model = phone.get('model', '')
             name = f"{brand} {model}".strip()
         
+         normalized_results = []
+    for phone in results:
+        # Формируем название
+        name = phone.get('Name')
+        if not name:
+            brand = phone.get('brand', '')
+            model = phone.get('model', '')
+            name = f"{brand} {model}".strip()
+        
+        # Всегда используем локальную заглушку
         normalized_results.append({
             '_id': str(phone['_id']),
             'name': name or 'Unknown Phone',
-            'image_url': PLACEHOLDER  # Всегда используем заглушку
+            'image_url': PLACEHOLDER  # Используем локальный путь
         })
     
     return jsonify(normalized_results)
@@ -707,13 +717,23 @@ def phone_details(phone_id):
         normalized_phone = {
             '_id': str(phone['_id']),
             'name': name or 'Unknown Phone',
-            'image_url': PLACEHOLDER,
+            'image_url': PLACEHOLDER,  # Используем локальный путь
             'specs': specs
         }
         
         return jsonify(normalized_phone)
     except Exception as e:
         return jsonify({'error': 'Invalid phone ID'}), 400
+        @app.route('/phone_image/<phone_id>')
+def phone_image(phone_id):
+    try:
+        phone = phones_collection.find_one({'_id': ObjectId(phone_id)})
+        if phone and phone.get('image_url'):
+            return redirect(phone['image_url'])
+    except:
+        pass
+    return redirect(url_for('static', filename='images/placeholder.jpg'))
+    
 @app.route('/api/ai-analysis', methods=['POST'])
 def ai_analysis():
     data = request.json
