@@ -7,8 +7,8 @@
     --primary-color: #0a0e17;
     --secondary-color: #1a2138;
     --accent-color: #00c6ff;
-    --text-color: #ffffff;
-    --text-secondary: #c0c0d0;
+    --text-color: #ffffff; /* Обновлено: белый цвет текста */
+    --text-secondary: #e0e0e0; /* Обновлено: светлый серый */
     --card-bg: #121a2b;
     --success-color: #00d68f;
     --warning-color: #ffaa00;
@@ -20,7 +20,7 @@
 
 body {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: var(--text-color);
+    color: var(--text-color) !important; /* Принудительно белый цвет */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
@@ -533,7 +533,7 @@ body {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 60vh; /* Увеличено с 55vh */
+    height: 70vh; /* Увеличено с 60vh */
     max-height: 90%;
     background: transparent;
     z-index: 1100;
@@ -606,8 +606,8 @@ body {
 }
 
 .floating-avatar {
-    width: 100px;
-    height: 100px;
+    width: 80px; /* Уменьшено с 110px */
+    height: 80px; /* Уменьшено с 110px */
     border-radius: 50%;
     object-fit: cover;
     background: transparent;
@@ -632,7 +632,7 @@ body {
     background: linear-gradient(135deg, #0a0e17, #1a2138);
     color: #ffffff;
     font-weight: bold;
-    font-size: 1.2rem;
+    font-size: 1rem; /* Уменьшено с 1.2rem */
     text-align: center;
     padding: 10px;
     text-shadow: 0 0 12px rgba(0, 198, 255, 0.8);
@@ -850,17 +850,17 @@ body {
     
     /* Адаптация для планшетов */
     .mobile-menu-modal {
-        height: 55vh; /* Увеличено с 50vh */
+        height: 65vh; /* Увеличено с 55vh */
         padding-top: 60px;
     }
     
     .floating-avatar {
-        width: 90px;
-        height: 90px;
+        width: 70px; /* Уменьшено с 90px */
+        height: 70px; /* Уменьшено с 90px */
     }
     
     .avatar-placeholder {
-        font-size: 1rem;
+        font-size: 0.9rem; /* Уменьшено с 1rem */
     }
 }
 
@@ -921,13 +921,13 @@ body {
     
     /* Адаптация для мобильных */
     .mobile-menu-modal {
-        height: 60vh; /* Увеличено с 55vh */
+        height: 75vh; /* Увеличено с 60vh */
         padding-top: 60px;
     }
     
     .floating-avatar {
-        width: 70px; /* Уменьшено с 80px */
-        height: 70px; /* Уменьшено с 80px */
+        width: 60px; /* Уменьшено с 70px */
+        height: 60px; /* Уменьшено с 70px */
     }
     
     .floating-avatar-info {
@@ -935,7 +935,7 @@ body {
     }
     
     .avatar-placeholder {
-        font-size: 0.9rem;
+        font-size: 0.8rem; /* Уменьшено с 0.9rem */
     }
     
     .menu-grid {
@@ -994,13 +994,13 @@ body {
     
     /* Адаптация для маленьких экранов */
     .mobile-menu-modal {
-        height: 65vh; /* Увеличено с 60vh */
+        height: 80vh; /* Увеличено с 65vh */
         padding-top: 50px;
     }
     
     .floating-avatar {
-        width: 60px; /* Уменьшено с 70px */
-        height: 60px; /* Уменьшено с 70px */
+        width: 50px; /* Уменьшено с 60px */
+        height: 50px; /* Уменьшено с 60px */
     }
     
     .floating-avatar-info {
@@ -1008,7 +1008,7 @@ body {
     }
     
     .avatar-placeholder {
-        font-size: 0.8rem;
+        font-size: 0.7rem; /* Уменьшено с 0.8rem */
     }
 }
 .user-avatar-container .user-avatar {
@@ -1024,8 +1024,8 @@ body {
 }
 
 .floating-avatar {
-    width: 110px;
-    height: 110px;
+    width: 80px; /* Обновлено */
+    height: 80px; /* Обновлено */
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1039,4 +1039,4 @@ body {
     .gradient-bg {
         display: none;
     }
-    }
+}
