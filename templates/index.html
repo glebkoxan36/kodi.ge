@@ -475,46 +475,62 @@
     
     <!-- Main application logic -->
     <script>
+        // Global stripe instance
+        let stripeInstance = null;
+        
         // User authentication state
         let isAuthenticated = {% if user %}true{% else %}false{% endif %};
-        
-        // Initialize Stripe
-        const stripe = Stripe("{{ STRIPE_PUBLIC_KEY }}");
         let currentServiceType = null;
-        
+
         // Mobile menu functions
         function openMobileMenu() {
-            const modal = document.getElementById('mobileMenuModal');
-            modal.style.display = 'flex';
-            setTimeout(() => {
-                modal.classList.add('open');
-            }, 10);
+            try {
+                const modal = document.getElementById('mobileMenuModal');
+                modal.style.display = 'flex';
+                setTimeout(() => {
+                    modal.classList.add('open');
+                }, 10);
+            } catch(e) {
+                console.error('Error opening mobile menu:', e);
+            }
         }
         
         function closeMobileMenu() {
-            const modal = document.getElementById('mobileMenuModal');
-            modal.classList.remove('open');
-            setTimeout(() => {
-                modal.style.display = 'none';
-            }, 400);
+            try {
+                const modal = document.getElementById('mobileMenuModal');
+                modal.classList.remove('open');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 400);
+            } catch(e) {
+                console.error('Error closing mobile menu:', e);
+            }
         }
         
         function openAppleSubmenu() {
-            closeMobileMenu();
-            const appleModal = document.getElementById('appleSubmenuModal');
-            appleModal.style.display = 'flex';
-            setTimeout(() => {
-                appleModal.classList.add('open');
-            }, 10);
+            try {
+                closeMobileMenu();
+                const appleModal = document.getElementById('appleSubmenuModal');
+                appleModal.style.display = 'flex';
+                setTimeout(() => {
+                    appleModal.classList.add('open');
+                }, 10);
+            } catch(e) {
+                console.error('Error opening Apple submenu:', e);
+            }
         }
         
         function closeAppleSubmenu() {
-            const appleModal = document.getElementById('appleSubmenuModal');
-            appleModal.classList.remove('open');
-            setTimeout(() => {
-                appleModal.style.display = 'none';
-                openMobileMenu();
-            }, 400);
+            try {
+                const appleModal = document.getElementById('appleSubmenuModal');
+                appleModal.classList.remove('open');
+                setTimeout(() => {
+                    appleModal.style.display = 'none';
+                    openMobileMenu();
+                }, 400);
+            } catch(e) {
+                console.error('Error closing Apple submenu:', e);
+            }
         }
         
         function closeAllMobileMenus() {
@@ -524,56 +540,98 @@
         
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize carousel
-            const myCarousel = new bootstrap.Carousel(document.getElementById('mainCarousel'), {
-                interval: 2000,
-                ride: 'carousel'
-            });
-            
-            // Mobile menu toggle
-            document.getElementById('mobileMenuBtn').addEventListener('click', openMobileMenu);
+            // Initialize Stripe with error handling
+            try {
+                stripeInstance = Stripe("{{ STRIPE_PUBLIC_KEY }}");
+            } catch(e) {
+                console.error('Stripe initialization failed:', e);
+                // Show user-friendly error message
+                const stripeError = document.createElement('div');
+                stripeError.className = 'alert alert-danger position-fixed top-0 start-0 m-3';
+                stripeError.style.zIndex = '9999';
+                stripeError.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Payment Error:</strong> Payment system initialization failed. Please refresh the page.
+                `;
+                document.body.appendChild(stripeError);
+            }
+
+            // Initialize carousel with error handling
+            try {
+                const carouselElement = document.getElementById('mainCarousel');
+                if (carouselElement) {
+                    const myCarousel = new bootstrap.Carousel(carouselElement, {
+                        interval: 2000,
+                        ride: 'carousel'
+                    });
+                } else {
+                    console.warn('Carousel element not found');
+                }
+            } catch(e) {
+                console.error('Carousel initialization failed:', e);
+            }
+
+            // Mobile menu button setup
+            try {
+                const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+                if (mobileMenuBtn) {
+                    mobileMenuBtn.addEventListener('click', openMobileMenu);
+                } else {
+                    console.warn('Mobile menu button not found');
+                }
+            } catch(e) {
+                console.error('Mobile menu setup error:', e);
+            }
+
+            // Handle session_id after payment
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const sessionId = urlParams.get('session_id');
+                
+                if(sessionId) {
+                    showSpinner(true);
+                    fetch(`/get_check_result?session_id=${sessionId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            showSpinner(false);
+                            if(data.error) {
+                                displayResult({ error: data.error });
+                            } else {
+                                displayResult(data.result);
+                            }
+                        })
+                        .catch(error => {
+                            showSpinner(false);
+                            displayResult({ error: 'Failed to get result: ' + error.message });
+                        });
+                }
+            } catch(e) {
+                console.error('Session ID processing error:', e);
+            }
             
             // Close menu when clicking outside
             document.addEventListener('click', (e) => {
-                const mobileMenuModal = document.getElementById('mobileMenuModal');
-                const appleSubmenuModal = document.getElementById('appleSubmenuModal');
-                
-                // Close mobile menu if click is outside
-                if (mobileMenuModal.classList.contains('open') && 
-                    !mobileMenuModal.contains(e.target) && 
-                    e.target.id !== 'mobileMenuBtn') {
-                    closeMobileMenu();
-                }
-                
-                // Close apple submenu if click is outside
-                if (appleSubmenuModal.classList.contains('open') && 
-                    !appleSubmenuModal.contains(e.target) && 
-                    e.target.id !== 'mobileMenuBtn') {
-                    closeAppleSubmenu();
+                try {
+                    const mobileMenuModal = document.getElementById('mobileMenuModal');
+                    const appleSubmenuModal = document.getElementById('appleSubmenuModal');
+                    
+                    // Close mobile menu if click is outside
+                    if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
+                        !mobileMenuModal.contains(e.target) && 
+                        e.target.id !== 'mobileMenuBtn') {
+                        closeMobileMenu();
+                    }
+                    
+                    // Close apple submenu if click is outside
+                    if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
+                        !appleSubmenuModal.contains(e.target) && 
+                        e.target.id !== 'mobileMenuBtn') {
+                        closeAppleSubmenu();
+                    }
+                } catch(e) {
+                    console.error('Click handler error:', e);
                 }
             });
-            
-            // Handle session_id after payment
-            const urlParams = new URLSearchParams(window.location.search);
-            const sessionId = urlParams.get('session_id');
-            
-            if(sessionId) {
-                showSpinner(true);
-                fetch(`/get_check_result?session_id=${sessionId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        showSpinner(false);
-                        if(data.error) {
-                            displayResult({ error: data.error });
-                        } else {
-                            displayResult(data.result);
-                        }
-                    })
-                    .catch(error => {
-                        showSpinner(false);
-                        displayResult({ error: 'Failed to get result: ' + error.message });
-                    });
-            }
         });
         
         // Redirect to login or dashboard
@@ -588,195 +646,234 @@
         
         // Show check form based on service type
         function showCheck(serviceType) {
-            currentServiceType = serviceType;
-            const checkSection = document.getElementById('check-section');
-            const checkTitle = document.getElementById('check-title');
-            const checkButton = document.getElementById('check-button');
-            
-            // If check section doesn't exist, create it
-            if (!checkSection) {
-                createCheckSection();
-            } else {
-                checkSection.classList.remove('d-none');
-            }
-            
-            document.getElementById('check-section').scrollIntoView({ behavior: 'smooth' });
-            
-            // Update title and button based on service type
-            switch(serviceType) {
-                case 'free':
-                    checkTitle.innerHTML = '<i class="fas fa-mobile-alt me-2"></i>უფასო შემოწმება';
-                    checkButton.textContent = 'უფასო შემოწმება';
-                    checkButton.classList.remove('btn-warning', 'btn-success');
-                    checkButton.classList.add('btn-info');
-                    break;
-                case 'paid':
-                    checkTitle.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>პლატანი შემოწმება';
-                    checkButton.textContent = `გადახდა: 2.99 ₾`;
-                    checkButton.classList.remove('btn-info', 'btn-success');
-                    checkButton.classList.add('btn-warning');
-                    break;
-                case 'premium':
-                    checkTitle.innerHTML = '<i class="fas fa-crown me-2"></i>პრემიუმ შემოწმება';
-                    checkButton.textContent = `გადახდა: 4.99 ₾`;
-                    checkButton.classList.remove('btn-info', 'btn-warning');
-                    checkButton.classList.add('btn-success');
-                    break;
+            try {
+                currentServiceType = serviceType;
+                const checkSection = document.getElementById('check-section');
+                const checkTitle = document.getElementById('check-title');
+                const checkButton = document.getElementById('check-button');
+                
+                // If check section doesn't exist, create it
+                if (!checkSection) {
+                    createCheckSection();
+                } else {
+                    checkSection.classList.remove('d-none');
+                }
+                
+                document.getElementById('check-section').scrollIntoView({ behavior: 'smooth' });
+                
+                // Update title and button based on service type
+                switch(serviceType) {
+                    case 'free':
+                        checkTitle.innerHTML = '<i class="fas fa-mobile-alt me-2"></i>უფასო შემოწმება';
+                        checkButton.textContent = 'უფასო შემოწმება';
+                        checkButton.classList.remove('btn-warning', 'btn-success');
+                        checkButton.classList.add('btn-info');
+                        break;
+                    case 'paid':
+                        checkTitle.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>პლატანი შემოწმება';
+                        checkButton.textContent = `გადახდა: 2.99 ₾`;
+                        checkButton.classList.remove('btn-info', 'btn-success');
+                        checkButton.classList.add('btn-warning');
+                        break;
+                    case 'premium':
+                        checkTitle.innerHTML = '<i class="fas fa-crown me-2"></i>პრემიუმ შემოწმება';
+                        checkButton.textContent = `გადახდა: 4.99 ₾`;
+                        checkButton.classList.remove('btn-info', 'btn-warning');
+                        checkButton.classList.add('btn-success');
+                        break;
+                }
+            } catch(e) {
+                console.error('Error showing check:', e);
+                alert('Error initializing check service');
             }
         }
         
         // Create check section dynamically
         function createCheckSection() {
-            const mainContent = document.querySelector('.main-content');
-            const pricingSection = document.getElementById('pricing');
-            
-            const checkSection = document.createElement('div');
-            checkSection.id = 'check-section';
-            checkSection.className = 'card';
-            checkSection.innerHTML = `
-                <div class="card-header">
-                    <i class="fas fa-mobile-alt me-2"></i>
-                    <span id="check-title">IMEI შემოწმება</span>
-                </div>
-                <div class="card-body">
-                    <form id="imeiForm">
-                        <div class="mb-4">
-                            <label for="imeiInput" class="form-label">შეიყვანეთ IMEI ნომერი</label>
-                            <input 
-                                type="text" 
-                                class="form-control bg-dark text-light" 
-                                id="imeiInput" 
-                                placeholder="15-ნიშნა IMEI" 
-                                required
-                                pattern="[0-9]{15}"
-                                title="15-ნიშნა IMEI ნომერი">
-                        </div>
-                        
-                        <div class="d-grid gap-3">
-                            <button type="button" class="btn btn-lg" id="check-button" onclick="checkImei()">
-                                შემოწმების დაწყება
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            `;
-            
-            mainContent.insertBefore(checkSection, pricingSection);
+            try {
+                const mainContent = document.querySelector('.main-content');
+                const pricingSection = document.getElementById('pricing');
+                
+                const checkSection = document.createElement('div');
+                checkSection.id = 'check-section';
+                checkSection.className = 'card';
+                checkSection.innerHTML = `
+                    <div class="card-header">
+                        <i class="fas fa-mobile-alt me-2"></i>
+                        <span id="check-title">IMEI შემოწმება</span>
+                    </div>
+                    <div class="card-body">
+                        <form id="imeiForm">
+                            <div class="mb-4">
+                                <label for="imeiInput" class="form-label">შეიყვანეთ IMEI ნომერი</label>
+                                <input 
+                                    type="text" 
+                                    class="form-control bg-dark text-light" 
+                                    id="imeiInput" 
+                                    placeholder="15-ნიშნა IMEI" 
+                                    required
+                                    pattern="[0-9]{15}"
+                                    title="15-ნიშნა IMEI ნომერი">
+                            </div>
+                            
+                            <div class="d-grid gap-3">
+                                <button type="button" class="btn btn-lg" id="check-button" onclick="checkImei()">
+                                    შემოწმების დაწყება
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+                
+                mainContent.insertBefore(checkSection, pricingSection);
+            } catch(e) {
+                console.error('Error creating check section:', e);
+            }
         }
         
         // Close modal
         function closeModal() {
-            document.getElementById('resultModal').style.display = 'none';
+            try {
+                document.getElementById('resultModal').style.display = 'none';
+            } catch(e) {
+                console.error('Error closing modal:', e);
+            }
         }
         
         // Show spinner
         function showSpinner(show) {
-            document.getElementById('spinner').style.display = show ? 'flex' : 'none';
+            try {
+                document.getElementById('spinner').style.display = show ? 'flex' : 'none';
+            } catch(e) {
+                console.error('Error toggling spinner:', e);
+            }
         }
         
         // Perform IMEI check
         function checkImei() {
-            const imei = document.getElementById('imeiInput').value.trim();
-            
-            if(!imei || imei.length !== 15 || !/^\d+$/.test(imei)) {
-                alert('გთხოვთ შეიყვანოთ სწორი 15-ნიშნა IMEI ნომერი');
-                return;
-            }
-            
-            // Increment counters
-            document.getElementById('daily-checks').textContent = parseInt(document.getElementById('daily-checks').textContent) + 1;
-            document.getElementById('weekly-checks').textContent = parseInt(document.getElementById('weekly-checks').textContent) + 1;
-            document.getElementById('monthly-checks').textContent = parseInt(document.getElementById('monthly-checks').textContent) + 1;
-            
-            showSpinner(true);
-            
-            if(currentServiceType === 'free') {
-                // Free check
-                fetch('/perform_check', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        imei: imei,
-                        service_type: 'free'
+            try {
+                const imei = document.getElementById('imeiInput').value.trim();
+                
+                if(!imei || imei.length !== 15 || !/^\d+$/.test(imei)) {
+                    alert('გთხოვთ შეიყვანოთ სწორი 15-ნიშნა IMEI ნომერი');
+                    return;
+                }
+                
+                // Increment counters
+                try {
+                    document.getElementById('daily-checks').textContent = parseInt(document.getElementById('daily-checks').textContent) + 1;
+                    document.getElementById('weekly-checks').textContent = parseInt(document.getElementById('weekly-checks').textContent) + 1;
+                    document.getElementById('monthly-checks').textContent = parseInt(document.getElementById('monthly-checks').textContent) + 1;
+                } catch(e) {
+                    console.warn('Error updating counters:', e);
+                }
+                
+                showSpinner(true);
+                
+                if(currentServiceType === 'free') {
+                    // Free check
+                    fetch('/perform_check', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            imei: imei,
+                            service_type: 'free'
+                        })
                     })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    showSpinner(false);
-                    displayResult(data);
-                })
-                .catch(error => {
-                    showSpinner(false);
-                    displayResult({ error: 'Request failed: ' + error.message });
-                });
-            } else {
-                // Paid check
-                fetch('/create-checkout-session', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        imei: imei,
-                        service_type: currentServiceType
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.error) {
-                        throw new Error(data.error);
-                    }
-                    return stripe.redirectToCheckout({ sessionId: data.id });
-                })
-                .then(result => {
-                    if(result.error) {
+                    .then(response => response.json())
+                    .then(data => {
                         showSpinner(false);
-                        alert(result.error.message);
-                    }
-                })
-                .catch(error => {
-                    showSpinner(false);
-                    alert('Payment failed: ' + error.message);
-                });
+                        displayResult(data);
+                    })
+                    .catch(error => {
+                        showSpinner(false);
+                        displayResult({ error: 'Request failed: ' + error.message });
+                    });
+                } else {
+                    // Paid check
+                    fetch('/create-checkout-session', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            imei: imei,
+                            service_type: currentServiceType
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.error) {
+                            throw new Error(data.error);
+                        }
+                        if (!stripeInstance) {
+                            throw new Error('Payment system not initialized');
+                        }
+                        return stripeInstance.redirectToCheckout({ sessionId: data.id });
+                    })
+                    .then(result => {
+                        if(result.error) {
+                            showSpinner(false);
+                            alert(result.error.message);
+                        }
+                    })
+                    .catch(error => {
+                        showSpinner(false);
+                        alert('Payment failed: ' + error.message);
+                    });
+                }
+            } catch(e) {
+                console.error('Error in IMEI check:', e);
+                showSpinner(false);
+                alert('An error occurred during IMEI check');
             }
         }
         
         // Display result in modal
         function displayResult(data) {
-            const modalContent = document.getElementById('modalResultContent');
-            
-            if(data.error) {
-                modalContent.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle me-2"></i> შეცდომა: ${data.error}
-                    </div>
-                `;
-            } else {
-                let html = `
-                    <div class="alert alert-success mb-4">
-                        <i class="fas fa-check-circle me-2"></i> შემოწმება წარმატებით დასრულდა!
-                    </div>
-                `;
+            try {
+                const modalContent = document.getElementById('modalResultContent');
                 
-                for(const [key, value] of Object.entries(data)) {
-                    if(key === 'html_content') {
-                        html += `<div class="mt-4">${value}</div>`;
-                    } else {
-                        html += `
-                            <div class="result-item">
-                                <div class="result-label">${formatLabel(key)}:</div>
-                                <div class="result-value">${value}</div>
-                            </div>
-                        `;
-                    }
+                if(!modalContent) {
+                    throw new Error('Result modal content element not found');
                 }
                 
-                modalContent.innerHTML = html;
+                if(data.error) {
+                    modalContent.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i> შეცდომა: ${data.error}
+                        </div>
+                    `;
+                } else {
+                    let html = `
+                        <div class="alert alert-success mb-4">
+                            <i class="fas fa-check-circle me-2"></i> შემოწმება წარმატებით დასრულდა!
+                        </div>
+                    `;
+                    
+                    for(const [key, value] of Object.entries(data)) {
+                        if(key === 'html_content') {
+                            html += `<div class="mt-4">${value}</div>`;
+                        } else {
+                            html += `
+                                <div class="result-item">
+                                    <div class="result-label">${formatLabel(key)}:</div>
+                                    <div class="result-value">${value}</div>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    modalContent.innerHTML = html;
+                }
+                
+                document.getElementById('resultModal').style.display = 'flex';
+            } catch(e) {
+                console.error('Error displaying result:', e);
+                alert('Error displaying results');
             }
-            
-            document.getElementById('resultModal').style.display = 'flex';
         }
         
         // Format labels for display
