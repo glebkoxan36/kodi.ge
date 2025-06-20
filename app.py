@@ -627,7 +627,7 @@ def send_webhook_event(event_type, payload):
 # ======================================
 # Сравнение телефонов
 # ======================================
-PLACEHOLDER = '/static/images/placeholder.jpg'
+PLACEHOLDER = '/static/placeholder.jpg'
 @app.route('/api/search', methods=['GET'])
 def search_phones():
     query = request.args.get('query', '').strip()
