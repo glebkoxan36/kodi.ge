@@ -4,72 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>რეგისტრაცია</title>
-    <style>
-        .registration-container {
-            max-width: 600px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-        .form-control {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            font-size: 1rem;
-        }
-        .birth-date-group {
-            display: flex;
-            gap: 10px;
-        }
-        .birth-date-group select,
-        .birth-date-group input {
-            flex: 1;
-        }
-        .password-requirements {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin-top: 0.25rem;
-        }
-        .btn-primary {
-            background-color: #0d6efd;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-            width: 100%;
-        }
-        .error-message {
-            color: #dc3545;
-            font-size: 0.85rem;
-            margin-top: 0.25rem;
-        }
-        .password-container {
-            position: relative;
-        }
-        .toggle-password {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="static/auth.css">
 </head>
-<body>
-    <div class="registration-container">
+<body class="auth-page">
+    <div class="auth-container registration-container">
         <h2>რეგისტრაცია</h2>
         <form id="registration-form">
             <div class="form-group">
@@ -141,7 +80,7 @@
             <div class="form-group password-container">
                 <label class="form-label" for="password">პაროლი</label>
                 <input type="password" class="form-control" id="password" name="password" required>
-                <span class="toggle-password" onclick="togglePassword('password')">👁️</span>
+                <button type="button" class="toggle-password" onclick="togglePassword('password')">👁️</button>
                 <div class="password-requirements">
                     პაროლი უნდა შეიცავდეს:
                     <ul>
@@ -158,7 +97,7 @@
             <div class="form-group password-container">
                 <label class="form-label" for="confirm_password">გაიმეორეთ პაროლი</label>
                 <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                <span class="toggle-password" onclick="togglePassword('confirm_password')">👁️</span>
+                <button type="button" class="toggle-password" onclick="togglePassword('confirm_password')">👁️</button>
                 <div class="error-message" id="confirm_password_error"></div>
             </div>
             
@@ -169,10 +108,13 @@
     <script>
         function togglePassword(fieldId) {
             const passwordField = document.getElementById(fieldId);
+            const toggleBtn = document.querySelector(`[onclick="togglePassword('${fieldId}')"]`);
             if (passwordField.type === 'password') {
                 passwordField.type = 'text';
+                toggleBtn.textContent = '👁️';
             } else {
                 passwordField.type = 'password';
+                toggleBtn.textContent = '👁️';
             }
         }
 
