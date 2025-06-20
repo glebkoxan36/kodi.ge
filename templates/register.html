@@ -3,112 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>რეგისტრაცია</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>ავტორიზაცია</title>
     <link rel="stylesheet" href="static/auth.css">
 </head>
 <body class="auth-page">
-    <div class="auth-container registration-container">
-        <h2>რეგისტრაცია</h2>
-        <form id="registration-form">
+    <div class="auth-container">
+        <h2>ავტორიზაცია</h2>
+        <form id="login-form">
             <div class="form-group">
-                <label class="form-label" for="first_name">სახელი (მხოლოდ ქართული ასოები)</label>
-                <input type="text" class="form-control" id="first_name" name="first_name" required>
-                <div class="error-message" id="first_name_error"></div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="last_name">გვარი (მხოლოდ ქართული ასოები)</label>
-                <input type="text" class="form-control" id="last_name" name="last_name" required>
-                <div class="error-message" id="last_name_error"></div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">დაბადების თარიღი</label>
-                <div class="birth-date-group">
-                    <select class="form-control" id="birth_day" name="birth_day" required>
-                        <option value="">დღე</option>
-                        {% for day in range(1, 32) %}
-                        <option value="{{ day }}">{{ day }}</option>
-                        {% endfor %}
-                    </select>
-                    
-                    <select class="form-control" id="birth_month" name="birth_month" required>
-                        <option value="">თვე</option>
-                        <option value="1">იანვარი</option>
-                        <option value="2">თებერვალი</option>
-                        <option value="3">მარტი</option>
-                        <option value="4">აპრილი</option>
-                        <option value="5">მაისი</option>
-                        <option value="6">ივნისი</option>
-                        <option value="7">ივლისი</option>
-                        <option value="8">აგვისტო</option>
-                        <option value="9">სექტემბერი</option>
-                        <option value="10">ოქტომბერი</option>
-                        <option value="11">ნოემბერი</option>
-                        <option value="12">დეკემბერი</option>
-                    </select>
-                    
-                    <select class="form-control" id="birth_year" name="birth_year" required>
-                        <option value="">წელი</option>
-                        {% for year in range(current_year, 1899, -1) %}
-                        <option value="{{ year }}">{{ year }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="error-message" id="birth_date_error"></div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="phone">ტელეფონის ნომერი (ფორმატი: +995XXXXXXXXX)</label>
-                <input type="tel" class="form-control" id="phone" name="phone" placeholder="+995XXXXXXXXX" required>
-                <div class="error-message" id="phone_error"></div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="email">ელ. ფოსტა</label>
-                <input type="email" class="form-control" id="email" name="email" required>
-                <div class="error-message" id="email_error"></div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="username">მომხმარებლის სახელი</label>
-                <input type="text" class="form-control" id="username" name="username" required>
-                <div class="error-message" id="username_error"></div>
+                <label class="form-label" for="identifier">მომხმარებელი, ელ. ფოსტა ან ტელეფონი</label>
+                <input type="text" class="form-control" id="identifier" name="identifier" required>
             </div>
             
             <div class="form-group password-container">
                 <label class="form-label" for="password">პაროლი</label>
                 <input type="password" class="form-control" id="password" name="password" required>
-                <button type="button" class="toggle-password" onclick="togglePassword('password')">👁️</button>
-                <div class="password-requirements">
-                    პაროლი უნდა შეიცავდეს:
-                    <ul>
-                        <li>მინიმუმ 12 სიმბოლოს</li>
-                        <li>ერთ დიდ ასოს (A-Z)</li>
-                        <li>ერთ პატარა ასოს (a-z)</li>
-                        <li>ერთ ციფრს (0-9)</li>
-                        <li>ერთ სპეციალურ სიმბოლოს (@$!%*?&)</li>
-                    </ul>
-                </div>
-                <div class="error-message" id="password_error"></div>
+                <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
             </div>
             
-            <div class="form-group password-container">
-                <label class="form-label" for="confirm_password">გაიმეორეთ პაროლი</label>
-                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                <button type="button" class="toggle-password" onclick="togglePassword('confirm_password')">👁️</button>
-                <div class="error-message" id="confirm_password_error"></div>
-            </div>
+            <div class="error-message" id="login-error"></div>
             
-            <button type="submit" class="btn-primary">რეგისტრაცია</button>
+            <button type="submit" class="btn-primary">შესვლა</button>
+            
+            <div class="login-options">
+                <p>არ გაქვთ ანგარიში? <a href="/register">რეგისტრაცია</a></p>
+                <p><a href="/forgot-password">დაგავიწყდათ პაროლი?</a></p>
+            </div>
         </form>
     </div>
 
     <script>
-        function togglePassword(fieldId) {
-            const passwordField = document.getElementById(fieldId);
-            const toggleBtn = document.querySelector(`[onclick="togglePassword('${fieldId}')"]`);
+        function togglePassword() {
+            const passwordField = document.getElementById('password');
+            const toggleBtn = document.querySelector('.toggle-password');
             if (passwordField.type === 'password') {
                 passwordField.type = 'text';
                 toggleBtn.textContent = '👁️';
@@ -118,60 +45,27 @@
             }
         }
 
-        document.getElementById('registration-form').addEventListener('submit', async (e) => {
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            document.getElementById('login-error').textContent = '';
             
-            // Сброс ошибок
-            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-            
-            const response = await fetch('/register', {
-                method: 'POST',
-                body: new FormData(e.target)
-            });
-            
-            const result = await response.json();
-            
-            if (response.status === 201) {
-                alert(result.message);
-                window.location.href = '/';
-            } else if (response.status === 400) {
-                // Отображение ошибок
-                if (result.errors) {
-                    result.errors.forEach(error => {
-                        // Общая ошибка
-                        if (error.includes('Дата') || error.includes('თარიღ')) {
-                            document.getElementById('birth_date_error').textContent = error;
-                        } 
-                        // Полевые ошибки
-                        else if (error.includes('Имя') || error.includes('სახელი')) {
-                            document.getElementById('first_name_error').textContent = error;
-                        } 
-                        else if (error.includes('Фамилия') || error.includes('გვარი')) {
-                            document.getElementById('last_name_error').textContent = error;
-                        } 
-                        else if (error.includes('телефон') || error.includes('ტელეფონ')) {
-                            document.getElementById('phone_error').textContent = error;
-                        } 
-                        else if (error.includes('email') || error.includes('ფოსტა')) {
-                            document.getElementById('email_error').textContent = error;
-                        } 
-                        else if (error.includes('Пользователь') || error.includes('მომხმარებელი')) {
-                            document.getElementById('username_error').textContent = error;
-                        } 
-                        else if (error.includes('Пароль') || error.includes('პაროლი')) {
-                            document.getElementById('password_error').textContent = error;
-                        } 
-                        else if (error.includes('Пароли') || error.includes('პაროლები')) {
-                            document.getElementById('confirm_password_error').textContent = error;
-                        }
-                        else {
-                            // Общие ошибки
-                            alert(error);
-                        }
-                    });
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    window.location.href = result.redirect_url;
+                } else {
+                    document.getElementById('login-error').textContent = 
+                        result.error || 'შეცდომა ავტორიზაციის დროს';
                 }
-            } else {
-                alert('რეგისტრაცია ვერ მოხერხდა. გთხოვთ სცადოთ თავიდან.');
+            } catch (error) {
+                document.getElementById('login-error').textContent = 'სერვერული შეცდომა';
             }
         });
     </script>
