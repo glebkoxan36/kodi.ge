@@ -277,11 +277,12 @@
             background: var(--card-bg);
             border: 1px solid rgba(0, 198, 255, 0.2);
             border-radius: 8px;
-            z-index: 10;
+            z-index: 1000;
             max-height: 200px;
             overflow-y: auto;
             display: none;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            overscroll-behavior: contain; /* Предотвращает скролл родителя */
         }
         
         .suggestion-item {
@@ -474,6 +475,11 @@
                 height: 70px;
             }
         }
+        
+        /* Улучшение для выпадающего списка */
+        .search-container .position-relative {
+            z-index: 1000; /* Увеличиваем z-index контейнера */
+        }
     </style>
 </head>
 <body>
@@ -597,6 +603,14 @@
                 if (!e.target.closest('#suggestions2') && !e.target.closest('#phone2Search')) {
                     suggestions2.style.display = 'none';
                 }
+            });
+            
+            // Prevent page scroll when scrolling in dropdown
+            suggestions1.addEventListener('wheel', function(e) {
+                e.stopPropagation();
+            });
+            suggestions2.addEventListener('wheel', function(e) {
+                e.stopPropagation();
             });
         });
         
