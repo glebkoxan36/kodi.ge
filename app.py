@@ -690,8 +690,8 @@ def ai_analysis():
     
     try:
         # Подготовка промпта для AI
-        phone1_name = phone1.get('name', 'Unknown')
-        phone2_name = phone2.get('name', 'Unknown')
+        phone1_name = phone1.get('Name', 'Unknown')
+        phone2_name = phone2.get('Name', 'Unknown')
         
         # Собираем все характеристики телефонов
         phone1_specs = "\n".join([f"{key}: {value}" for key, value in phone1.get('specs', {}).items()])
