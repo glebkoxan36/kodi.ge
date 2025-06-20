@@ -641,11 +641,11 @@ def search_phones():
         '$or': [
             {'brand': regex_query},
             {'model': regex_query},
-            {'Name': regex_query}  # Исправлено на Name с большой буквы
+            {'Name': regex_query}
         ]
     }, {
         '_id': 1,
-        'Name': 1,  # Исправлено
+        'Name': 1,
         'brand': 1,
         'model': 1
     }).limit(10))
@@ -660,20 +660,10 @@ def search_phones():
             model = phone.get('model', '')
             name = f"{brand} {model}".strip()
         
-         normalized_results = []
-    for phone in results:
-        # Формируем название
-        name = phone.get('Name')
-        if not name:
-            brand = phone.get('brand', '')
-            model = phone.get('model', '')
-            name = f"{brand} {model}".strip()
-        
-        # Всегда используем локальную заглушку
         normalized_results.append({
             '_id': str(phone['_id']),
             'name': name or 'Unknown Phone',
-            'image_url': PLACEHOLDER  # Используем локальный путь
+            'image_url': PLACEHOLDER
         })
     
     return jsonify(normalized_results)
@@ -717,23 +707,14 @@ def phone_details(phone_id):
         normalized_phone = {
             '_id': str(phone['_id']),
             'name': name or 'Unknown Phone',
-            'image_url': PLACEHOLDER,  # Используем локальный путь
+            'image_url': PLACEHOLDER,
             'specs': specs
         }
         
         return jsonify(normalized_phone)
     except Exception as e:
         return jsonify({'error': 'Invalid phone ID'}), 400
-        @app.route('/phone_image/<phone_id>')
-def phone_image(phone_id):
-    try:
-        phone = phones_collection.find_one({'_id': ObjectId(phone_id)})
-        if phone and phone.get('image_url'):
-            return redirect(phone['image_url'])
-    except:
-        pass
-    return redirect(url_for('static', filename='images/placeholder.jpg'))
-    
+
 @app.route('/api/ai-analysis', methods=['POST'])
 def ai_analysis():
     data = request.json
@@ -744,34 +725,33 @@ def ai_analysis():
         return jsonify({'error': 'Both phones are required'}), 400
     
     try:
-        # Подготовка промпта для AI
-        phone1_name = phone1.get('Name', 'Unknown')
-        phone2_name = phone2.get('Name', 'Unknown')
+        # Используем нормализованные названия
+        phone1_name = phone1.get('name', 'Unknown Phone 1')
+        phone2_name = phone2.get('name', 'Unknown Phone 2')
         
-        # Собираем все характеристики телефонов
+        # Собираем характеристики
         phone1_specs = "\n".join([f"{key}: {value}" for key, value in phone1.get('specs', {}).items()])
         phone2_specs = "\n".join([f"{key}: {value}" for key, value in phone2.get('specs', {}).items()])
         
+        # Формируем промпт
         prompt = f"""
-            გთხოვთ, შეადაროთ ორი სმარტფონი: {phone1_name} და {phone2_name}.
+            შედარება: {phone1_name} vs {phone2_name}
             
-            პირველი ტელეფონის მონაცემები:
+            {phone1_name} მახასიათებლები:
             {phone1_specs}
             
-            მეორე ტელეფონის მონაცემები:
+            {phone2_name} მახასიათებლები:
             {phone2_specs}
             
-            გაანალიზეთ შემდეგი კატეგორიები:
-            - შესრულება (პროცესორი, RAM, GPU)
-            - დისპლეი (ზომა, გაფართოება, ტექნოლოგია)
-            - კამერები (მთავარი, ფრონტალური, ფუნქციები)
+            გთხოვთ შეადაროთ შემდეგი კატეგორიები:
+            - პროდუქტიულობა
+            - ეკრანის ხარისხი
+            - კამერა
             - ბატარეის ხანგრძლივობა
-            - დიზაინი და აშენების ხარისხი
-            - დამატებითი ფუნქციები
+            - დიზაინი
             - ფასი და ღირებულება
             
-            გთხოვთ, მოგვაწოდოთ დეტალური ანალიზი ქართულ ენაზე და გამოავლინოთ რომელი ტელეფონია უკეთესი თითოეულ კატეგორიაში.
-            დასასრულს, გამოაცხადეთ საერთო გამარჯვებული და ახსენით თქვენი არჩევანი.
+            გთხოვთ მოგვაწოდოთ დეტალური ანალიზი ქართულ ენაზე.
         """
         
         # Вызов DeepSeek API
