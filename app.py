@@ -212,12 +212,10 @@ def perform_ai_comparison(phone1, phone2):
     """Выполнение AI-сравнения двух телефонов с использованием Google Gemini"""
     try:
         import google.generativeai as genai
+        genai.configure(api_key=GEMINI_API_KEY)
         
-        # Инициализация клиента Gemini
-        client = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            api_key=GEMINI_API_KEY
-        )
+        # Инициализация модели Gemini
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         phone1_name = phone1.get('name', 'Unknown Phone 1')
         phone2_name = phone2.get('name', 'Unknown Phone 2')
@@ -238,7 +236,7 @@ def perform_ai_comparison(phone1, phone2):
         """
         
         # Генерация контента
-        response = client.generate_content(
+        response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
                 temperature=0.7,
@@ -663,11 +661,9 @@ def health_check():
     try:
         # Проверка Gemini API
         import google.generativeai as genai
-        client = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            api_key=GEMINI_API_KEY
-        )
-        response = client.generate_content("Ping", generation_config=genai.types.GenerationConfig(max_output_tokens=1))
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content("Ping", generation_config=genai.types.GenerationConfig(max_output_tokens=1))
         status['services']['gemini_api'] = 'OK'
     except Exception as e:
         status['services']['gemini_api'] = f'ERROR: {str(e)}'
