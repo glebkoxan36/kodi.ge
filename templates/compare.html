@@ -7,7 +7,77 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    
+    <style>
+        /* Дополнительные стили для таблицы сравнения */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 30px;
+        }
+        
+        .grid-header {
+            background-color: var(--secondary-color);
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+        
+        .spec-row {
+            display: contents;
+        }
+        
+        .spec-cell {
+            padding: 12px 15px;
+            background: var(--card-bg);
+        }
+        
+        .spec-name {
+            color: var(--text-secondary);
+        }
+        
+        .spec-value {
+            position: relative;
+            padding-right: 25px;
+        }
+        
+        .better-value {
+            color: var(--success-color);
+        }
+        
+        .value-indicator {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .group-header {
+            grid-column: 1 / span 3;
+            background: rgba(0, 198, 255, 0.15);
+            padding: 10px 15px;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-top: 5px;
+        }
+        
+        .phone-image-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .phone-thumb {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+        }
+    </style>
 </head>
 <body>
     <div class="gradient-bg gradient-1"></div>
@@ -57,22 +127,9 @@
                     </button>
                 </div>
                 
-                <div class="comparison-container" id="comparisonContainer" style="display: none;">
-                    <div class="phone-card" id="phone1Card">
-                        <div class="text-center">
-                            <img src="" class="phone-image" id="phone1Image" alt="Phone 1" onerror="handleImageError(event)">
-                            <h3 class="phone-title" id="phone1Title"></h3>
-                        </div>
-                        <div id="phone1Specs"></div>
-                    </div>
-                    
-                    <div class="phone-card" id="phone2Card">
-                        <div class="text-center">
-                            <img src="" class="phone-image" id="phone2Image" alt="Phone 2" onerror="handleImageError(event)">
-                            <h3 class="phone-title" id="phone2Title"></h3>
-                        </div>
-                        <div id="phone2Specs"></div>
-                    </div>
+                <!-- Сетка для сравнения спецификаций -->
+                <div class="comparison-grid" id="specsGrid" style="display: none;">
+                    <!-- Заголовки будут заполнены динамически -->
                 </div>
                 
                 <div class="ai-analysis" id="aiAnalysis" style="display: none;">
@@ -108,11 +165,31 @@
         const suggestions1 = document.getElementById('suggestions1');
         const suggestions2 = document.getElementById('suggestions2');
         const compareButton = document.getElementById('compareButton');
-        const comparisonContainer = document.getElementById('comparisonContainer');
+        const specsGrid = document.getElementById('specsGrid');
         const aiAnalysis = document.getElementById('aiAnalysis');
         const aiContent = document.getElementById('aiContent');
         const apiError = document.getElementById('apiError');
         
+        // Rules for numeric comparisons
+        const numericComparisonRules = {
+            'Battery_capacity': 'higher',
+            'Memory_internal': 'higher',
+            'Display_size': 'higher',
+            'Display_resolution': 'higher',
+            'Body_weight': 'lower',
+            'MainCamera_video': 'higher',
+            'SelfieCamera_video': 'higher',
+            'Battery_charging': 'higher'
+        };
+        
+        // Rules for text comparisons
+        const textComparisonRules = {
+            'Platform_OS': 'match',
+            'Platform_Chipset': 'match',
+            'Memory_cardslot': 'match',
+            'Network_technology': 'match'
+        };
+
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
             // Event listeners for search inputs
@@ -215,16 +292,12 @@
                 const phone1Details = await fetchPhoneDetails(selectedPhone1._id);
                 const phone2Details = await fetchPhoneDetails(selectedPhone2._id);
                 
-                // Display phones
-                displayPhone(phone1Details, 'phone1');
-                displayPhone(phone2Details, 'phone2');
-                
-                // Show comparison
-                comparisonContainer.style.display = 'flex';
+                // Show comparison grid
+                specsGrid.style.display = 'grid';
                 aiAnalysis.style.display = 'block';
                 
-                // Scroll to AI analysis
-                aiAnalysis.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Build comparison grid
+                buildComparisonGrid(phone1Details, phone2Details);
                 
                 // Perform AI analysis
                 await performAiAnalysis(phone1Details, phone2Details);
@@ -257,25 +330,22 @@
             }
         }
         
-        // Display phone details
-        function displayPhone(phone, prefix) {
-            // Basic info
-            document.getElementById(`${prefix}Title`).textContent = phone.name;
+        // Build the comparison grid
+        function buildComparisonGrid(phone1, phone2) {
+            specsGrid.innerHTML = '';
             
-            // Set image with error handling
-            const imgElement = document.getElementById(`${prefix}Image`);
-            imgElement.src = phone.image_url || '';
-            imgElement.onerror = handleImageError;
-            
-            // Specifications
-            const specsContainer = document.getElementById(`${prefix}Specs`);
-            specsContainer.innerHTML = '';
-            
-            // Check if specs exist
-            if (!phone.specs || Object.keys(phone.specs).length === 0) {
-                specsContainer.innerHTML = '<p>სპეციფიკაციები ხელმიუწვდომელია</p>';
-                return;
-            }
+            // Add headers
+            specsGrid.innerHTML += `
+                <div class="grid-header"></div>
+                <div class="grid-header phone-image-header">
+                    <img src="${phone1.image_url}" class="phone-thumb" id="phone1Thumb" alt="${phone1.name}" onerror="handleImageError(event)">
+                    <span>${phone1.name}</span>
+                </div>
+                <div class="grid-header phone-image-header">
+                    <img src="${phone2.image_url}" class="phone-thumb" id="phone2Thumb" alt="${phone2.name}" onerror="handleImageError(event)">
+                    <span>${phone2.name}</span>
+                </div>
+            `;
             
             // Groups of specifications
             const specGroups = [
@@ -293,56 +363,105 @@
                 { key: 'Misc', label: 'დამატებით' }
             ];
             
-            // Display each specification group
+            // Add specs for each group
             specGroups.forEach(group => {
-                displaySpecGroup(specsContainer, group.key, group.label, phone.specs);
+                // Add group header
+                specsGrid.innerHTML += `<div class="group-header">${group.label}</div>`;
+                
+                // Get all specs for this group
+                const groupSpecs = {};
+                const prefix = group.key + '_';
+                
+                // Collect all unique spec keys from both phones
+                const allKeys = new Set();
+                
+                if (phone1.specs) {
+                    for (const key in phone1.specs) {
+                        if (key.startsWith(prefix)) {
+                            const cleanKey = key.substring(prefix.length);
+                            groupSpecs[cleanKey] = groupSpecs[cleanKey] || {};
+                            groupSpecs[cleanKey].phone1 = phone1.specs[key];
+                            allKeys.add(cleanKey);
+                        }
+                    }
+                }
+                
+                if (phone2.specs) {
+                    for (const key in phone2.specs) {
+                        if (key.startsWith(prefix)) {
+                            const cleanKey = key.substring(prefix.length);
+                            groupSpecs[cleanKey] = groupSpecs[cleanKey] || {};
+                            groupSpecs[cleanKey].phone2 = phone2.specs[key];
+                            allKeys.add(cleanKey);
+                        }
+                    }
+                }
+                
+                // Add specs to the grid
+                allKeys.forEach(specKey => {
+                    const spec = groupSpecs[specKey] || {};
+                    const value1 = spec.phone1 || 'N/A';
+                    const value2 = spec.phone2 || 'N/A';
+                    
+                    // Determine which value is better
+                    const comparison = compareSpecValues(specKey, value1, value2);
+                    
+                    specsGrid.innerHTML += `
+                        <div class="spec-cell spec-name">${specKey}</div>
+                        <div class="spec-cell spec-value ${comparison.phone1 === 'better' ? 'better-value' : ''}">
+                            ${value1}
+                            ${comparison.phone1 === 'better' ? '<i class="fas fa-check-circle text-success value-indicator"></i>' : ''}
+                        </div>
+                        <div class="spec-cell spec-value ${comparison.phone2 === 'better' ? 'better-value' : ''}">
+                            ${value2}
+                            ${comparison.phone2 === 'better' ? '<i class="fas fa-check-circle text-success value-indicator"></i>' : ''}
+                        </div>
+                    `;
+                });
             });
         }
         
-        // Display a group of specifications
-        function displaySpecGroup(container, groupKey, groupLabel, specs) {
-            // Find all specs in this group
-            const groupSpecs = {};
-            const prefix = groupKey + '_';
+        // Compare two spec values
+        function compareSpecValues(specKey, value1, value2) {
+            const result = { phone1: 'equal', phone2: 'equal' };
             
-            for (const [key, value] of Object.entries(specs)) {
-                if (key.startsWith(prefix)) {
-                    const cleanKey = key.substring(prefix.length);
-                    groupSpecs[cleanKey] = value;
+            if (value1 === 'N/A' || value2 === 'N/A') {
+                return result;
+            }
+            
+            // Numeric comparison
+            if (numericComparisonRules[specKey]) {
+                const num1 = extractNumber(value1);
+                const num2 = extractNumber(value2);
+                
+                if (isNaN(num1) || isNaN(num2)) {
+                    return result;
+                }
+                
+                if (numericComparisonRules[specKey] === 'higher') {
+                    if (num1 > num2) result.phone1 = 'better';
+                    if (num2 > num1) result.phone2 = 'better';
+                } else {
+                    if (num1 < num2) result.phone1 = 'better';
+                    if (num2 < num1) result.phone2 = 'better';
+                }
+            }
+            // Text comparison
+            else if (textComparisonRules[specKey] === 'match') {
+                if (value1.toLowerCase().includes(value2.toLowerCase())) {
+                    result.phone2 = 'better';
+                } else if (value2.toLowerCase().includes(value1.toLowerCase())) {
+                    result.phone1 = 'better';
                 }
             }
             
-            // Skip if no specs found in this group
-            if (Object.keys(groupSpecs).length === 0) {
-                return;
-            }
-            
-            // Create group header
-            const groupHeader = document.createElement('div');
-            groupHeader.className = 'spec-group-header';
-            groupHeader.textContent = groupLabel;
-            container.appendChild(groupHeader);
-            
-            // Display each spec in the group
-            for (const [specKey, specValue] of Object.entries(groupSpecs)) {
-                // Skip empty values
-                if (!specValue || specValue.toString().trim() === '') continue;
-                
-                const specItem = document.createElement('div');
-                specItem.className = 'spec-item';
-                
-                const label = document.createElement('div');
-                label.className = 'spec-label';
-                label.textContent = specKey;
-                
-                const val = document.createElement('div');
-                val.className = 'spec-value';
-                val.textContent = specValue;
-                
-                specItem.appendChild(label);
-                specItem.appendChild(val);
-                container.appendChild(specItem);
-            }
+            return result;
+        }
+        
+        // Extract number from string
+        function extractNumber(str) {
+            const match = str.match(/(\d+[\.,]?\d*)/);
+            return match ? parseFloat(match[0].replace(',', '.')) : NaN;
         }
         
         // Perform AI analysis using our API
@@ -350,7 +469,7 @@
             // Show loading state
             aiContent.innerHTML = `
                 <div class="ai-loader">
-                    <i class="fas fa-spinner"></i>
+                    <i class="fas fa-spinner fa-spin"></i>
                     <p>Kodi.ge AI ხდის დეტალურ შედარებას...</p>
                 </div>
             `;
