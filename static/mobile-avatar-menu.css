@@ -99,6 +99,9 @@
     overflow-y: auto;
     overflow-x: hidden;
     padding-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 /* Контейнер плавающей аватарки */
@@ -174,13 +177,16 @@
     pointer-events: auto;
 }
 
-/* Сетка элементов меню */
+/* Сетка элементов меню - 3x3 без прокрутки */
 .menu-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(6px, 1fr)); /* Размер ячейки 6px */
-    gap: 1px; /* Минимальные отступы */
-    padding: 3px; /* Компактные отступы */
-    width: 100%;
+    grid-template-columns: repeat(3, 1fr); /* Фиксировано 3 колонки */
+    grid-template-rows: repeat(3, 1fr); /* Фиксировано 3 строки */
+    gap: 15px; /* Достаточный отступ между элементами */
+    padding: 20px; /* Внутренний отступ контейнера */
+    width: 90%; /* Ширина 90% от родителя */
+    max-width: 400px; /* Максимальная ширина */
+    height: 80%; /* Высота 80% от родителя */
     box-sizing: border-box;
     background: transparent;
 }
@@ -191,42 +197,41 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 1px; /* Минимальные внутренние отступы */
-    border-radius: 3px; /* Закругленные края */
+    padding: 10px;
+    border-radius: 15px; /* Закругленные края */
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(0, 198, 255, 0.1); /* Более тонкая граница */
-    aspect-ratio: 1/1;
+    border: 1px solid rgba(0, 198, 255, 0.2);
     text-align: center;
     transition: all 0.3s ease;
     cursor: pointer;
-    box-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    aspect-ratio: 1/1; /* Квадратные элементы */
 }
 
 /* Эффект при наведении на элемент */
 .menu-item:hover {
     background: rgba(0, 198, 255, 0.15);
-    transform: translateY(-1px);
+    transform: translateY(-5px);
     border-color: var(--accent-color);
-    box-shadow: 0 1px 2px rgba(0, 198, 255, 0.3);
+    box-shadow: 0 8px 16px rgba(0, 198, 255, 0.3);
 }
 
 /* Иконка в элементе меню */
 .menu-item i {
-    font-size: 0.5rem; /* Маленькие иконки */
-    margin-bottom: 1px; /* Минимальный отступ */
+    font-size: 1.8rem; /* Достаточно крупные иконки */
+    margin-bottom: 8px;
     color: var(--accent-color);
 }
 
 /* Текст в элементе меню */
 .menu-item span {
-    font-size: 0.3rem; /* Очень маленький текст */
-    line-height: 1.1;
+    font-size: 0.8rem;
+    line-height: 1.2;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    padding: 0 0.5px; /* Минимальные отступы */
+    font-weight: 500;
 }
 
 /* Адаптивные стили для планшетов */
@@ -241,11 +246,15 @@
     .avatar-placeholder {
         font-size: 0.9rem;
     }
+    .menu-grid {
+        gap: 12px;
+        padding: 15px;
+    }
     .menu-item i {
-        font-size: 0.45rem;
+        font-size: 1.6rem;
     }
     .menu-item span {
-        font-size: 0.25rem;
+        font-size: 0.75rem;
     }
 }
 
@@ -265,14 +274,15 @@
         font-size: 0.8rem;
     }
     .menu-grid {
-        gap: 0.5px;
-        padding: 2px;
+        gap: 10px;
+        padding: 15px;
+        width: 95%;
     }
     .menu-item i {
-        font-size: 0.4rem;
+        font-size: 1.5rem;
     }
     .menu-item span {
-        font-size: 0.2rem;
+        font-size: 0.7rem;
     }
 }
 
@@ -292,32 +302,34 @@
         font-size: 0.9rem;
     }
     .menu-grid {
-        gap: 1px;
-        padding: 4px;
+        max-width: 500px;
     }
     .menu-item i {
-        font-size: 0.5rem;
+        font-size: 2rem;
     }
     .menu-item span {
-        font-size: 0.3rem;
+        font-size: 0.9rem;
     }
 }
 
 /* Средние мобильные (341-400px) */
 @media (min-width: 341px) and (max-width: 400px) {
     .menu-grid {
-        grid-template-columns: repeat(12, 1fr); /* Максимальное количество колонок */
+        gap: 8px;
+        padding: 12px;
+    }
+    .menu-item i {
+        font-size: 1.4rem;
+    }
+    .menu-item span {
+        font-size: 0.65rem;
     }
 }
 
 /* Маленькие мобильные */
 @media (max-width: 340px) {
-    .menu-grid {
-        grid-template-columns: repeat(10, 1fr); /* Больше колонок */
-        gap: 0.5px;
-    }
     .mobile-menu-modal {
-        height: 80vh;
+        height: 70vh;
     }
     .floating-avatar {
         width: 55px;
@@ -332,11 +344,15 @@
     .avatar-placeholder {
         font-size: 0.7rem;
     }
+    .menu-grid {
+        gap: 6px;
+        padding: 10px;
+    }
     .menu-item i {
-        font-size: 0.35rem;
+        font-size: 1.2rem;
     }
     .menu-item span {
-        font-size: 0.15rem;
+        font-size: 0.6rem;
     }
 }
 
