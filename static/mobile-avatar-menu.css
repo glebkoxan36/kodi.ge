@@ -210,11 +210,10 @@
     box-shadow: 0 8px 16px rgba(0, 198, 255, 0.3);
 }
 
-/* Иконка в элементе меню */
+/* Иконка в элементе меню - уменьшена в 3 раза */
 .menu-item i {
-    font-size: 1.5rem;
-    margin-bottom: 8px;
-    color: var(--accent-color);
+    font-size: 0.5rem; /* Было 1.5rem */
+    margin-bottom: 2.67px; /* Уменьшено пропорционально */
 }
 
 /* Текст в элементе меню */
@@ -264,7 +263,7 @@
         padding: 10px 5px;
     }
     .menu-item i {
-        font-size: 1.3rem;
+        font-size: 0.43rem; /* Было 1.3rem */
     }
 }
 
@@ -292,7 +291,7 @@
         padding: 15px;
     }
     .menu-item i {
-        font-size: 1.8rem;
+        font-size: 0.6rem; /* Было 1.8rem */
     }
     .menu-item span {
         font-size: 0.85rem;
@@ -334,6 +333,9 @@
     }
     .avatar-placeholder {
         font-size: 0.7rem;
+    }
+    .menu-item i {
+        font-size: 0.43rem;
     }
 }
 
