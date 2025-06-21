@@ -60,7 +60,7 @@ MONGODB_URI = os.getenv('MONGODB_URI')
 # Данные для PHP API
 API_URL = "https://api.ifreeicloud.co.uk"
 API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
-DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')  # Изменено на Gemini
 PLACEHOLDER = '/static/placeholder.jpg'
 
 # MongoDB
@@ -209,22 +209,17 @@ def get_phone_details(phone_id):
         return None
 
 def perform_ai_comparison(phone1, phone2):
-    """Выполнение AI-сравнения двух телефонов"""
+    """Выполнение AI-сравнения двух телефонов с использованием Google Gemini"""
     try:
+        import google.generativeai as genai
+        genai.configure(api_key=GEMINI_API_KEY)
+        
         phone1_name = phone1.get('name', 'Unknown Phone 1')
         phone2_name = phone2.get('name', 'Unknown Phone 2')
         
-        phone1_specs = "\n".join([f"{key}: {value}" for key, value in phone1.get('specs', {}).items()])
-        phone2_specs = "\n".join([f"{key}: {value}" for key, value in phone2.get('specs', {}).items()])
-        
+        # Формируем промпт для Gemini
         prompt = f"""
             შედარება: {phone1_name} vs {phone2_name}
-            
-            {phone1_name} მახასიათებლები:
-            {phone1_specs}
-            
-            {phone2_name} მახასიათებლები:
-            {phone2_specs}
             
             გთხოვთ შეადაროთ შემდეგი კატეგორიები:
             - პროდუქტიულობა
@@ -237,22 +232,19 @@ def perform_ai_comparison(phone1, phone2):
             გთხოვთ მოგვაწოდოთ დეტალური ანალიზი ქართულ ენაზე.
         """
         
-        response = requests.post(
-            'https://api.deepseek.com/v1/chat/completions',
-            headers={'Authorization': f'Bearer {DEEPSEEK_API_KEY}'},
-            json={
-                "model": "deepseek-chat",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.7,
-                "max_tokens": 2000
-            },
-            timeout=30
+        # Создаем модель и отправляем запрос
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.7,
+                max_output_tokens=2000
+            )
         )
-        response.raise_for_status()
         
-        ai_response = response.json()
-        content = ai_response['choices'][0]['message']['content']
+        content = response.text
         
+        # Сохраняем результат сравнения
         if comparisons_collection is not None:
             try:
                 comparisons_collection.insert_one({
@@ -266,12 +258,9 @@ def perform_ai_comparison(phone1, phone2):
         
         return content
     
-    except requests.exceptions.RequestException as e:
-        app.logger.error(f"DeepSeek API error: {str(e)}")
-        return "AI service unavailable"
     except Exception as e:
-        app.logger.error(f"AI analysis error: {str(e)}")
-        return "Internal server error"
+        app.logger.error(f"Gemini API error: {str(e)}")
+        return "AI service unavailable"
 
 # ======================================
 # Аудит и логирование
@@ -668,15 +657,14 @@ def health_check():
         status['status'] = 'ERROR'
     
     try:
-        response = requests.post(
-            'https://api.deepseek.com/v1/chat/completions',
-            headers={'Authorization': f'Bearer {DEEPSEEK_API_KEY}'},
-            json={"model": "deepseek-chat", "messages": [{"role": "user", "content": "Ping"}]},
-            timeout=5
-        )
-        status['services']['deepseek_api'] = 'OK' if response.status_code == 200 else f'HTTP {response.status_code}'
+        # Проверка Gemini API
+        import google.generativeai as genai
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content("Ping", max_output_tokens=1)
+        status['services']['gemini_api'] = 'OK'
     except Exception as e:
-        status['services']['deepseek_api'] = f'ERROR: {str(e)}'
+        status['services']['gemini_api'] = f'ERROR: {str(e)}'
         status['status'] = 'ERROR'
     
     return jsonify(status), 200 if status['status'] == 'OK' else 500
