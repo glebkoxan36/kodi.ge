@@ -61,20 +61,24 @@ except Exception as e:
 def search_phones(query):
     """Поиск телефонов по названию, бренду или модели"""
     try:
-        # Используем только regex-поиск из-за проблем с индексами
+        # Используем regex-поиск для Name, brand и model
         regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
         results = list(phones_collection.find({
             '$or': [
                 {'brand': regex_query},
                 {'model': regex_query},
-                {'Name': regex_query}
+                {'Name': regex_query}  # Исправлено на Name
             ]
         }, {'_id': 1, 'Name': 1, 'brand': 1, 'model': 1}).limit(10))
         
         # Нормализация результатов
         normalized = []
         for phone in results:
-            name = phone.get('Name') or f"{phone.get('brand', '')} {phone.get('model', '')}".strip()
+            # Используем поле Name как основное название
+            name = phone.get('Name', '')
+            if not name:
+                name = f"{phone.get('brand', '')} {phone.get('model', '')}".strip()
+                
             normalized.append({
                 '_id': str(phone['_id']),
                 'name': name or 'Unknown Phone',
@@ -94,13 +98,25 @@ def get_phone_details(phone_id):
         if not phone:
             return None
         
-        # Формирование названия
-        name = phone.get('Name') or f"{phone.get('brand', '')} {phone.get('model', '')}".strip()
+        # Формирование названия из поля Name
+        name = phone.get('Name', '')
+        if not name:
+            name = f"{phone.get('brand', '')} {phone.get('model', '')}".strip()
         
         # Фильтрация спецификаций
         specs = {}
         for key, value in phone.items():
             if key not in ['_id', 'Name', 'brand', 'model']:
+                # Преобразование ObjectId в строку
+                if isinstance(value, ObjectId):
+                    value = str(value)
+                # Преобразование списков в строки
+                elif isinstance(value, list):
+                    value = ', '.join(map(str, value))
+                # Преобразование чисел с плавающей точкой в целые
+                elif isinstance(value, float) and value.is_integer():
+                    value = int(value)
+                
                 specs[key] = value
         
         return {
