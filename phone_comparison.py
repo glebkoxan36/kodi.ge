@@ -1,11 +1,11 @@
 import os
 import re
-import requests
 import logging
 from bson import ObjectId
 from pymongo import MongoClient
 from flask import jsonify
 from datetime import datetime
+import google.generativeai as genai  # Импорт Gemini
 
 # Настройка логгера
 logger = logging.getLogger(__name__)
@@ -17,8 +17,11 @@ logger.addHandler(handler)
 
 # Конфигурация
 MONGODB_URI = os.getenv('MONGODB_URI')
-DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')  # Изменено на Gemini
 PLACEHOLDER = '/static/placeholder.jpg'
+
+# Настройка Gemini
+genai.configure(api_key=GEMINI_API_KEY)
 
 # Подключение к MongoDB с использованием стандартного URI
 try:
@@ -119,22 +122,14 @@ def get_phone_details(phone_id):
         return None
 
 def perform_ai_comparison(phone1, phone2):
-    """Выполнение AI-сравнения двух телефонов"""
+    """Выполнение AI-сравнения двух телефонов с использованием Google Gemini"""
     try:
         phone1_name = phone1.get('name', 'Unknown Phone 1')
         phone2_name = phone2.get('name', 'Unknown Phone 2')
         
-        phone1_specs = "\n".join([f"{key}: {value}" for key, value in phone1.get('specs', {}).items()])
-        phone2_specs = "\n".join([f"{key}: {value}" for key, value in phone2.get('specs', {}).items()])
-        
+        # Формируем промпт для Gemini
         prompt = f"""
             შედარება: {phone1_name} vs {phone2_name}
-            
-            {phone1_name} მახასიათებლები:
-            {phone1_specs}
-            
-            {phone2_name} მახასიათებლები:
-            {phone2_specs}
             
             გთხოვთ შეადაროთ შემდეგი კატეგორიები:
             - პროდუქტიულობა
@@ -147,22 +142,19 @@ def perform_ai_comparison(phone1, phone2):
             გთხოვთ მოგვაწოდოთ დეტალური ანალიზი ქართულ ენაზე.
         """
         
-        response = requests.post(
-            'https://api.deepseek.com/v1/chat/completions',
-            headers={'Authorization': f'Bearer {DEEPSEEK_API_KEY}'},
-            json={
-                "model": "deepseek-chat",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.7,
-                "max_tokens": 2000
-            },
-            timeout=30
+        # Создаем модель и отправляем запрос
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.7,
+                max_output_tokens=2000
+            )
         )
-        response.raise_for_status()
         
-        ai_response = response.json()
-        content = ai_response['choices'][0]['message']['content']
+        content = response.text
         
+        # Сохраняем результат сравнения
         if comparisons_collection is not None:
             try:
                 comparisons_collection.insert_one({
@@ -176,9 +168,6 @@ def perform_ai_comparison(phone1, phone2):
         
         return content
     
-    except requests.exceptions.RequestException as e:
-        logger.error(f"DeepSeek API error: {str(e)}")
-        return "AI service unavailable"
     except Exception as e:
-        logger.error(f"AI analysis error: {str(e)}")
-        return "Internal server error"
+        logger.error(f"Gemini API error: {str(e)}")
+        return "AI service unavailable"
