@@ -20,11 +20,28 @@ MONGODB_URI = os.getenv('MONGODB_URI')
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 PLACEHOLDER = '/static/placeholder.jpg'
 
-# MongoDB
-client = MongoClient(MONGODB_URI)
-db = client['imei_checker']
-phones_collection = db['phones']
-comparisons_collection = db['comparisons']
+# Подключение к НОВОЙ базе данных для спецификаций телефонов
+phone_client = MongoClient(
+    'mongodb://ac-0gle9pt-shard-00-00.9c971rn.mongodb.net,'
+    'ac-0gle9pt-shard-00-01.9c971rn.mongodb.net,'
+    'ac-0gle9pt-shard-00-02.9c971rn.mongodb.net/'
+    '?tls=true'
+    '&authMechanism=MONGODB-X509'
+    '&authSource=%24external'
+    '&serverMonitoringMode=poll'
+    '&maxIdleTimeMS=30000'
+    '&minPoolSize=0'
+    '&maxPoolSize=5'
+    '&replicaSet=atlas-n6218o-shard-0'
+    '&appName=Data+Explorer--684970465eb1ef5a01425a8b'
+)
+phone_db = phone_client['phone_database']
+phones_collection = phone_db['phones']  # Основная коллекция с телефонами
+
+# Подключение к СТАРОЙ базе для истории сравнений
+history_client = MongoClient(MONGODB_URI)
+history_db = history_client['imei_checker']
+comparisons_collection = history_db['comparisons']  # Коллекция для сравнений
 
 def search_phones(query):
     """Поиск телефонов по названию, бренду или модели"""
@@ -138,7 +155,7 @@ def perform_ai_comparison(phone1, phone2):
         ai_response = response.json()
         content = ai_response['choices'][0]['message']['content']
         
-        # Сохранение в БД
+        # Сохранение в БД (старая база)
         comparisons_collection.insert_one({
             'phone1': phone1_name,
             'phone2': phone2_name,
