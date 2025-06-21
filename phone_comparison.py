@@ -20,61 +20,54 @@ MONGODB_URI = os.getenv('MONGODB_URI')
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 PLACEHOLDER = '/static/placeholder.jpg'
 
+# Подключение к MongoDB с использованием стандартного URI
 try:
-    # Подключение к НОВОЙ базе данных с отключенной проверкой сертификатов
-    phone_client = MongoClient(
-        'mongodb://ac-0gle9pt-shard-00-00.9c971rn.mongodb.net,'
-        'ac-0gle9pt-shard-00-01.9c971rn.mongodb.net,'
-        'ac-0gle9pt-shard-00-02.9c971rn.mongodb.net/'
-        '?tls=true'
-        '&authMechanism=MONGODB-X509'
-        '&authSource=%24external'
-        '&serverMonitoringMode=poll'
-        '&maxIdleTimeMS=30000'
-        '&minPoolSize=0'
-        '&maxPoolSize=5'
-        '&replicaSet=atlas-n6218o-shard-0'
-        '&appName=PhoneComparison',
-        tlsAllowInvalidCertificates=True  # Важное исправление
-    )
-    phone_db = phone_client['phone_database']
+    client = MongoClient(MONGODB_URI)
+    phone_db = client.get_database()
     phones_collection = phone_db['phones']
+    logger.info("Connected to MongoDB using MONGODB_URI")
 except Exception as e:
-    logger.error(f"New DB connection failed: {str(e)}")
-    # Fallback на оригинальную базу
-    fallback_client = MongoClient(MONGODB_URI)
-    phone_db = fallback_client['imei_checker']
-    phones_collection = phone_db['phones']
-    logger.info("Using fallback database for phone specs")
+    logger.error(f"DB connection failed: {str(e)}")
+    # Fallback на локальную базу
+    try:
+        client = MongoClient()
+        phone_db = client['imei_checker']
+        phones_collection = phone_db['phones']
+        logger.info("Using local database for phone specs")
+    except Exception as e2:
+        logger.error(f"Local DB connection failed: {str(e2)}")
+        # Создаем пустую коллекцию, чтобы избежать ошибок выполнения
+        from pymongo import MongoClient
+        client = MongoClient()
+        phone_db = client['dummy_phone_db']
+        phones_collection = phone_db['dummy_phones']
+        logger.info("Using dummy in-memory collection for phone specs")
 
-# Подключение к СТАРОЙ базе для истории сравнений
+# Подключение к базе для истории сравнений
 try:
     history_client = MongoClient(MONGODB_URI)
-    history_db = history_client['imei_checker']
+    history_db = history_client.get_database()
     comparisons_collection = history_db['comparisons']
+    logger.info("Connected to history DB")
 except Exception as e:
     logger.error(f"History DB connection failed: {str(e)}")
-    # Создаем in-memory хранилище для сравнений
     comparisons_collection = None
     logger.info("Using in-memory storage for comparisons")
 
 def search_phones(query):
     """Поиск телефонов по названию, бренду или модели"""
     try:
-        # Используем regex-поиск для Name, brand и model
         regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
         results = list(phones_collection.find({
             '$or': [
                 {'brand': regex_query},
                 {'model': regex_query},
-                {'Name': regex_query}  # Исправлено на Name
+                {'Name': regex_query}
             ]
         }, {'_id': 1, 'Name': 1, 'brand': 1, 'model': 1}).limit(10))
         
-        # Нормализация результатов
         normalized = []
         for phone in results:
-            # Используем поле Name как основное название
             name = phone.get('Name', '')
             if not name:
                 name = f"{phone.get('brand', '')} {phone.get('model', '')}".strip()
@@ -98,22 +91,17 @@ def get_phone_details(phone_id):
         if not phone:
             return None
         
-        # Формирование названия из поля Name
         name = phone.get('Name', '')
         if not name:
             name = f"{phone.get('brand', '')} {phone.get('model', '')}".strip()
         
-        # Фильтрация спецификаций
         specs = {}
         for key, value in phone.items():
             if key not in ['_id', 'Name', 'brand', 'model']:
-                # Преобразование ObjectId в строку
                 if isinstance(value, ObjectId):
                     value = str(value)
-                # Преобразование списков в строки
                 elif isinstance(value, list):
                     value = ', '.join(map(str, value))
-                # Преобразование чисел с плавающей точкой в целые
                 elif isinstance(value, float) and value.is_integer():
                     value = int(value)
                 
@@ -133,7 +121,6 @@ def get_phone_details(phone_id):
 def perform_ai_comparison(phone1, phone2):
     """Выполнение AI-сравнения двух телефонов"""
     try:
-        # Формирование промпта
         phone1_name = phone1.get('name', 'Unknown Phone 1')
         phone2_name = phone2.get('name', 'Unknown Phone 2')
         
@@ -160,7 +147,6 @@ def perform_ai_comparison(phone1, phone2):
             გთხოვთ მოგვაწოდოთ დეტალური ანალიზი ქართულ ენაზე.
         """
         
-        # Вызов DeepSeek API
         response = requests.post(
             'https://api.deepseek.com/v1/chat/completions',
             headers={'Authorization': f'Bearer {DEEPSEEK_API_KEY}'},
@@ -177,7 +163,6 @@ def perform_ai_comparison(phone1, phone2):
         ai_response = response.json()
         content = ai_response['choices'][0]['message']['content']
         
-        # Сохранение в БД (если подключение доступно)
         if comparisons_collection is not None:
             try:
                 comparisons_collection.insert_one({
