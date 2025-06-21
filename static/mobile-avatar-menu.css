@@ -1,14 +1,18 @@
-/* === Кнопка вызова меню === */
+/* static/mobile-avatar-menu.css */
+/* Стили для мобильного меню и аватарки пользователя */
+
+/* Кнопка вызова мобильного меню внизу экрана */
 .mobile-menu-bottom {
-    display: none;
+    display: none; /* По умолчанию скрыта */
     position: fixed;
     bottom: 20px;
     left: 0;
     right: 0;
     text-align: center;
-    z-index: 1050;
+    z-index: 1050; /* Увеличен для надежности */
 }
 
+/* Стили самой кнопки меню */
 .mobile-menu-btn {
     background: var(--accent-color);
     color: white;
@@ -25,175 +29,324 @@
     margin: 0 auto;
 }
 
-/* === Модальное меню === */
+/* Модальное окно мобильного меню */
 .mobile-menu-modal {
     display: none;
     position: fixed;
+    top: auto;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 100vh;
-    background: transparent;
-    z-index: 1100;
+    height: 60vh;
+    max-height: 90%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 1200;
     align-items: flex-end;
+    backdrop-filter: blur(10px);
     transform: translateY(100%);
-    transition: transform 0.4s ease, opacity 0.4s ease;
+    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
     opacity: 0;
-    overflow: hidden;
+    overflow: visible;
 }
 
+/* Состояние открытого меню */
 .mobile-menu-modal.open {
     transform: translateY(0);
     opacity: 1;
     display: flex;
 }
 
-/* === Контейнер меню (половина экрана) === */
+/* Контент модального окна */
 .mobile-menu-modal .modal-content {
-    background: rgba(18, 26, 43, 0.95);
-    border-radius: 30px 30px 0 0;
-    border: 2px solid rgba(0, 198, 255, 0.3);
-    box-shadow: 0 0 10px rgba(0, 198, 255, 0.2);
-    overflow: visible;
-    position: relative;
+    background: var(--card-bg);
+    border-radius: 20px 20px 0 0;
     width: 100%;
-    height: 50vh;
-    margin-top: 40px; /* половина высоты аватарки */
+    height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.7);
+    position: relative;
 }
 
-/* === Контейнер аватара === */
+/* Шапка модального окна */
+.mobile-menu-modal .modal-header {
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    position: sticky;
+    top: 0;
+    background: var(--card-bg);
+    z-index: 10;
+}
+
+/* Кнопка закрытия меню */
+.mobile-menu-modal .close-modal {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+/* Тело модального окна */
+.mobile-menu-modal .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 20px;
+}
+
+/* Контейнер плавающей аватарки */
 .floating-avatar-container {
     position: absolute;
     top: -40px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
-    width: 80px;
-    height: 80px;
+    width: 110px;
     text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
 }
 
-/* === Аватарка === */
+/* Стили аватарки */
 .floating-avatar {
     width: 80px;
     height: 80px;
     border-radius: 50%;
     object-fit: cover;
-    background: #222;
+    background: transparent;
+    position: relative;
+    z-index: 2;
     border: 3px solid var(--accent-color);
-    box-shadow: 0 0 10px rgba(0, 198, 255, 0.5);
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 0 auto;
 }
 
-/* === Текст под аватаркой (обрезка ...) === */
+/* Заглушка аватарки (если нет изображения) */
+.avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0a0e17, #1a2138);
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 1rem;
+    text-align: center;
+    padding: 10px;
+    text-shadow: 0 0 12px rgba(0, 198, 255, 0.8);
+}
+
+/* Информация под аватаркой */
 .floating-avatar-info {
-    margin-top: 4px;
+    margin-top: 10px;
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-color);
-    text-align: center;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    cursor: pointer;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100px;
-    position: relative;
-    left: 50%;
-    transform: translateX(-50%);
+    max-width: 100%;
+    padding: 0 10px;
+    pointer-events: auto;
 }
 
-/* === Контент меню === */
-.mobile-menu-modal .modal-body {
-    flex: 1;
-    padding-top: 60px; /* место под текст под аватаркой */
-    padding-bottom: 10px;
-    overflow: hidden; /* отключаем прокрутку */
+/* Баланс пользователя */
+.user-balance {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--success-color);
+    margin-top: 3px;
+    pointer-events: auto;
 }
 
-/* === Сетка 3x3 === */
+/* Сетка элементов меню */
 .menu-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    gap: 10px;
-    padding: 10px;
-    height: 100%;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 12px;
+    padding: 15px;
+    width: 100%;
     box-sizing: border-box;
-    grid-auto-rows: 1fr;
+    background: transparent;
 }
 
-/* === Элемент меню === */
+/* Элемент меню */
 .menu-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: 12px 6px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(0, 198, 255, 0.2);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: 0.3s;
-    padding: 4px;
     aspect-ratio: 1/1;
     text-align: center;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* Эффект при наведении на элемент */
 .menu-item:hover {
-    background: rgba(0, 198, 255, 0.1);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 198, 255, 0.2);
+    background: rgba(0, 198, 255, 0.15);
+    transform: translateY(-5px);
+    border-color: var(--accent-color);
+    box-shadow: 0 8px 16px rgba(0, 198, 255, 0.3);
 }
 
-/* Иконка */
+/* Иконка в элементе меню */
 .menu-item i {
-    font-size: 1.3rem;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
     color: var(--accent-color);
-    margin-bottom: 4px;
 }
 
-/* Текст меню */
+/* Текст в элементе меню */
 .menu-item span {
-    font-size: 0.75rem;
-    color: var(--text-color);
+    font-size: 0.7rem;
     line-height: 1.2;
-    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
 }
 
-/* === Адаптивность для маленьких экранов === */
-@media (max-width: 400px) {
+/* Адаптивные стили для планшетов */
+@media (max-width: 768px) {
     .floating-avatar {
-        width: 60px;
-        height: 60px;
+        width: 75px;
+        height: 75px;
     }
     .floating-avatar-container {
-        top: -30px;
-        width: 60px;
-        height: 60px;
+        top: -37.5px;
+    }
+    .avatar-placeholder {
+        font-size: 0.9rem;
+    }
+}
+
+/* Адаптивные стили для мобильных */
+@media (max-width: 576px) {
+    .floating-avatar {
+        width: 65px;
+        height: 65px;
+    }
+    .floating-avatar-container {
+        top: -32.5px;
+    }
+    .floating-avatar-info {
+        font-size: 0.8rem;
+    }
+    .avatar-placeholder {
+        font-size: 0.8rem;
+    }
+    .menu-grid {
+        gap: 8px;
+        padding: 12px;
+    }
+    .menu-item {
+        padding: 10px 5px;
+    }
+    .menu-item i {
+        font-size: 1.3rem;
+    }
+}
+
+/* Планшеты в альбомной ориентации */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .floating-avatar {
+        width: 90px;
+        height: 90px;
+    }
+    .floating-avatar-container {
+        top: -45px;
+    }
+    .floating-avatar-info {
+        font-size: 1rem;
+    }
+    .user-balance {
+        font-size: 0.9rem;
+    }
+    .menu-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 20px;
+        padding: 25px;
+    }
+    .menu-item {
+        padding: 15px;
+    }
+    .menu-item i {
+        font-size: 1.8rem;
+    }
+    .menu-item span {
+        font-size: 0.85rem;
+    }
+}
+
+/* Средние мобильные (341-400px) */
+@media (min-width: 341px) and (max-width: 400px) {
+    .menu-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .menu-item {
+        aspect-ratio: 1/1;
+    }
+}
+
+/* Маленькие мобильные */
+@media (max-width: 340px) {
+    .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+    .menu-item {
+        aspect-ratio: 1/1.2;
+        padding: 8px 4px;
+    }
+    .mobile-menu-modal {
+        height: 80vh;
+    }
+    .floating-avatar {
+        width: 55px;
+        height: 55px;
+    }
+    .floating-avatar-container {
+        top: -27.5px;
     }
     .floating-avatar-info {
         font-size: 0.75rem;
-        max-width: 80px;
     }
-    .mobile-menu-modal .modal-content {
-        margin-top: 30px;
-    }
-    .mobile-menu-modal .modal-body {
-        padding-top: 50px;
-    }
-    .menu-item i {
-        font-size: 1.1rem;
-    }
-    .menu-item span {
+    .avatar-placeholder {
         font-size: 0.7rem;
     }
 }
 
-/* Показываем кнопку меню только на мобильных */
+/* Показать меню на мобильных устройствах */
 @media (max-width: 1024px) {
     .mobile-menu-bottom {
-        display: block;
+        display: block; /* Видимость на мобильных */
+    }
+}
+
+/* Скрыть меню на ПК */
+@media (min-width: 1025px) {
+    .mobile-menu-modal {
+        display: none !important; /* Скрытие на ПК */
     }
 }
