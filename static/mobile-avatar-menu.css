@@ -1,18 +1,15 @@
-/* static/mobile-avatar-menu.css */
-/* Стили для мобильного меню и аватарки пользователя */
-
-/* Кнопка вызова мобильного меню внизу экрана */
+/* ====================== */
+/* Кнопка вызова меню */
 .mobile-menu-bottom {
-    display: none; /* По умолчанию скрыта */
+    display: none;
     position: fixed;
     bottom: 20px;
     left: 0;
     right: 0;
     text-align: center;
-    z-index: 1050; /* Увеличен для надежности */
+    z-index: 1050;
 }
 
-/* Стили самой кнопки меню */
 .mobile-menu-btn {
     background: var(--accent-color);
     color: white;
@@ -29,15 +26,16 @@
     margin: 0 auto;
 }
 
-/* Модальное окно мобильного меню */
+/* ====================== */
+/* Модальное окно меню */
 .mobile-menu-modal {
     display: none;
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 70vh;
-    max-height: 90%;
+    height: 100vh;
+    max-height: 100vh;
     background: transparent;
     z-index: 1100;
     align-items: flex-end;
@@ -46,17 +44,14 @@
     transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
     opacity: 0;
     overflow: hidden;
-    padding-top: 70px;
 }
 
-/* Состояние открытого меню */
 .mobile-menu-modal.open {
     transform: translateY(0);
     opacity: 1;
     display: flex;
 }
 
-/* Контент модального окна */
 .mobile-menu-modal .modal-content {
     background: rgba(18, 26, 43, 0.95);
     border: 3px solid rgba(0, 198, 255, 0.4);
@@ -65,11 +60,15 @@
     overflow: visible;
     position: relative;
     width: 100%;
-    height: 100%;
-    margin-top: 20px;
+    /* Если аватарка 80px, половина — 40px */
+    margin-top: 40px;
+    height: calc(100vh - 40px);
+    display: flex;
+    flex-direction: column;
 }
 
-/* Шапка модального окна */
+/* ====================== */
+/* Заголовок модального окна */
 .mobile-menu-modal .modal-header {
     padding: 12px 20px;
     border-bottom: none;
@@ -80,7 +79,6 @@
     z-index: 10;
 }
 
-/* Кнопка закрытия меню */
 .mobile-menu-modal .close-modal {
     position: absolute;
     top: 10px;
@@ -92,28 +90,28 @@
     cursor: pointer;
 }
 
-/* Тело модального окна */
+/* ====================== */
+/* Тело меню */
 .mobile-menu-modal .modal-body {
     flex: 1;
+    /* Отступ сверху: учтите выступ аватарки + высоту текста */
+    padding-top: 80px;
     overflow-y: auto;
     overflow-x: hidden;
     padding-bottom: 20px;
 }
 
-/* Контейнер плавающей аватарки */
+/* ====================== */
+/* Аватарка */
 .floating-avatar-container {
     position: absolute;
-    top: 0;
+    top: -40px; /* половина высоты аватарки */
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
-    width: 110px;
-    text-align: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 10px;
+    width: 80px;
 }
 
-/* Стили аватарки */
 .floating-avatar {
     width: 80px;
     height: 80px;
@@ -125,60 +123,37 @@
     border: 3px solid var(--accent-color);
     box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
+    display: block;
     margin: 0 auto;
+    overflow: hidden;
 }
 
-/* Заглушка аватарки (если нет изображения) */
-.avatar-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #0a0e17, #1a2138);
-    color: #ffffff;
-    font-weight: bold;
-    font-size: 1rem;
-    text-align: center;
-    padding: 10px;
-    text-shadow: 0 0 12px rgba(0, 198, 255, 0.8);
-}
-
-/* Информация под аватаркой */
 .floating-avatar-info {
-    margin-top: 10px;
+    margin-top: 45px; /* чтобы текст начинался ниже аватарки */
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-color);
     text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    cursor: pointer;
-    white-space: nowrap;
+    text-align: center;
+    white-space: normal;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100%;
-    padding: 0 10px;
-    pointer-events: auto;
+    max-width: 100px;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
-/* Баланс пользователя */
-.user-balance {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--success-color);
-    margin-top: 3px;
-    pointer-events: auto;
-}
-
-/* Сетка элементов меню */
+/* ====================== */
+/* Сетка меню */
 .menu-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-    gap: 12px;
-    padding: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 10px;
+    padding: 10px;
     width: 100%;
     box-sizing: border-box;
     background: transparent;
@@ -190,7 +165,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 12px 6px;
+    padding: 8px 4px;
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(0, 198, 255, 0.2);
@@ -201,24 +176,23 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* Эффект при наведении на элемент */
 .menu-item:hover {
     background: rgba(0, 198, 255, 0.15);
-    transform: translateY(-5px);
+    transform: translateY(-3px);
     border-color: var(--accent-color);
     box-shadow: 0 8px 16px rgba(0, 198, 255, 0.3);
 }
 
-/* Иконка в элементе меню */
 .menu-item i {
-    font-size: 1.5rem;
-    margin-bottom: 8px;
+    /* Динамический размер: от 1rem до 1.5rem */
+    font-size: clamp(1rem, 4vw, 1.3rem);
+    margin-bottom: 6px;
     color: var(--accent-color);
 }
 
-/* Текст в элементе меню */
 .menu-item span {
-    font-size: 0.7rem;
+    /* Динамический размер текста */
+    font-size: clamp(0.6rem, 2.5vw, 0.75rem);
     line-height: 1.2;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -226,113 +200,69 @@
     overflow: hidden;
 }
 
-/* Адаптивные стили для планшетов */
+/* ====================== */
+/* Адаптив для таблетов */
 @media (max-width: 768px) {
-    .mobile-menu-modal {
-        height: 65vh;
-        padding-top: 65px;
+    .mobile-menu-modal .modal-content {
+        margin-top: 35px; /* если аватарка чуть меньше */
+        height: calc(100vh - 35px);
     }
     .floating-avatar {
-        width: 75px;
-        height: 75px;
+        width: 70px;
+        height: 70px;
     }
-    .avatar-placeholder {
-        font-size: 0.9rem;
-    }
-}
-
-/* Адаптивные стили для мобильных */
-@media (max-width: 576px) {
-    .mobile-menu-modal {
-        height: 75vh;
-        padding-top: 60px;
-    }
-    .floating-avatar {
-        width: 65px;
-        height: 65px;
+    .floating-avatar-container {
+        width: 70px;
+        top: -35px;
     }
     .floating-avatar-info {
-        font-size: 0.8rem;
+        margin-top: 40px;
+        max-width: 90px;
     }
-    .avatar-placeholder {
-        font-size: 0.8rem;
+    .mobile-menu-modal .modal-body {
+        padding-top: 75px;
     }
     .menu-grid {
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
         gap: 8px;
-        padding: 12px;
-    }
-    .menu-item {
-        padding: 10px 5px;
-    }
-    .menu-item i {
-        font-size: 1.3rem;
+        padding: 8px;
     }
 }
 
-/* Планшеты в альбомной ориентации */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .mobile-menu-modal {
-        height: 55vh;
-        padding-top: 100px;
+/* Очень маленькие экраны */
+@media (max-width: 360px) {
+    .mobile-menu-modal .modal-content {
+        margin-top: 30px;
+        height: calc(100vh - 30px);
     }
     .floating-avatar {
-        width: 90px;
-        height: 90px;
+        width: 60px;
+        height: 60px;
+    }
+    .floating-avatar-container {
+        width: 60px;
+        top: -30px;
     }
     .floating-avatar-info {
-        font-size: 1rem;
-    }
-    .user-balance {
-        font-size: 0.9rem;
-    }
-    .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        gap: 20px;
-        padding: 25px;
-    }
-    .menu-item {
-        padding: 15px;
-    }
-    .menu-item i {
-        font-size: 1.8rem;
-    }
-    .menu-item span {
-        font-size: 0.85rem;
-    }
-}
-
-/* Средние мобильные (341-400px) */
-@media (min-width: 341px) and (max-width: 400px) {
-    .menu-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    .menu-item {
-        aspect-ratio: 1/1;
-    }
-}
-
-/* Маленькие мобильные */
-@media (max-width: 340px) {
-    .menu-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 6px;
-    }
-    .menu-item {
-        aspect-ratio: 1/1.2;
-        padding: 8px 4px;
-    }
-    .mobile-menu-modal {
-        height: 80vh;
-        padding-top: 50px;
-    }
-    .floating-avatar {
-        width: 55px;
-        height: 55px;
-    }
-    .floating-avatar-info {
+        margin-top: 35px;
+        max-width: 80px;
         font-size: 0.75rem;
     }
-    .avatar-placeholder {
+    .mobile-menu-modal .modal-body {
+        padding-top: 65px;
+    }
+    .menu-grid {
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+        gap: 6px;
+        padding: 6px;
+    }
+    .menu-item {
+        padding: 6px 3px;
+    }
+    .menu-item i {
+        font-size: 1.1rem;
+    }
+    .menu-item span {
         font-size: 0.7rem;
     }
 }
@@ -340,13 +270,13 @@
 /* Показать меню на мобильных устройствах */
 @media (max-width: 1024px) {
     .mobile-menu-bottom {
-        display: block; /* Видимость на мобильных */
+        display: block;
     }
 }
 
 /* Скрыть меню на ПК */
 @media (min-width: 1025px) {
     .mobile-menu-modal {
-        display: none !important; /* Скрытие на ПК */
+        display: none !important;
     }
 }
