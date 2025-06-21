@@ -3,297 +3,349 @@
 
 /* Кнопка вызова мобильного меню внизу экрана */
 .mobile-menu-bottom {
-    display: none; /* Скрыта по умолчанию */
-    position: fixed; /* Фиксированное позиционирование */
-    bottom: 20px; /* Отступ снизу */
-    left: 0; /* Прижата к левому краю */
-    right: 0; /* Прижата к правому краю */
-    text-align: center; /* Центрирование содержимого */
-    z-index: 1000; /* Высокий слой */
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    z-index: 1050; /* Увеличен для надежности */
 }
 
 /* Стили самой кнопки меню */
 .mobile-menu-btn {
-    background: var(--accent-color); /* Цвет фона */
-    color: white; /* Цвет текста */
-    border: none; /* Без рамки */
-    width: 60px; /* Фиксированная ширина */
-    height: 60px; /* Фиксированная высота */
-    border-radius: 50%; /* Круглая форма */
-    font-size: 1.6rem; /* Размер иконки */
-    cursor: pointer; /* Курсор-указатель */
-    box-shadow: 0 0 15px rgba(0, 198, 255, 0.5); /* Эффект свечения */
-    display: flex; /* Flex-контейнер */
-    align-items: center; /* Вертикальное центрирование */
-    justify-content: center; /* Горизонтальное центрирование */
-    margin: 0 auto; /* Центрирование кнопки */
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 1.6rem;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
 }
 
 /* Модальное окно мобильного меню */
 .mobile-menu-modal {
-    display: none; /* Скрыто по умолчанию */
-    position: fixed; /* Фиксированная позиция */
-    bottom: 0; /* Прижато к низу */
-    left: 0; /* Прижато к левому краю */
-    width: 100%; /* На всю ширину */
-    height: 70vh; /* Высота 70% экрана */
-    max-height: 90%; /* Максимальная высота */
-    background: transparent; /* Прозрачный фон */
-    z-index: 1100; /* Высокий слой поверх других */
-    align-items: flex-end; /* Выравнивание по нижнему краю */
-    backdrop-filter: blur(0px); /* Без размытия фона */
-    transform: translateY(100%); /* Начальное положение за экраном */
-    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease; /* Анимация появления */
-    opacity: 0; /* Начальная прозрачность */
-    overflow: hidden; /* Скрытие переполнения */
-    padding-top: 70px; /* Отступ для аватарки */
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 70vh;
+    max-height: 90%;
+    background: transparent;
+    z-index: 1100;
+    align-items: flex-end;
+    backdrop-filter: blur(0px);
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
+    opacity: 0;
+    overflow: hidden;
+    padding-top: 70px;
 }
 
 /* Состояние открытого меню */
 .mobile-menu-modal.open {
-    transform: translateY(0); /* Сдвиг на экран */
-    opacity: 1; /* Полная видимость */
-    display: flex; /* Отображение как flex-контейнер */
+    transform: translateY(0);
+    opacity: 1;
+    display: flex;
 }
 
 /* Контент модального окна */
 .mobile-menu-modal .modal-content {
-    background: rgba(18, 26, 43, 0.95); /* Полупрозрачный фон */
-    border: 3px solid rgba(0, 198, 255, 0.4); /* Граница с эффектом свечения */
-    border-radius: 30px 30px 0 0; /* Скругленные верхние углы */
-    box-shadow: 0 0 15px rgba(0, 198, 255, 0.3); /* Тень */
-    overflow: visible; /* Видимое переполнение */
-    position: relative; /* Относительное позиционирование */
-    width: 100%; /* На всю ширину */
-    height: 100%; /* На всю высоту */
-    margin-top: 20px; /* Отступ сверху */
+    background: rgba(18, 26, 43, 0.95);
+    border: 3px solid rgba(0, 198, 255, 0.4);
+    border-radius: 30px 30px 0 0;
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
+    overflow: visible;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    margin-top: 20px;
 }
 
 /* Шапка модального окна */
 .mobile-menu-modal .modal-header {
-    padding: 12px 20px; /* Внутренние отступы */
-    border-bottom: none; /* Без нижней границы */
-    text-align: center; /* Центрирование текста */
-    position: sticky; /* Липкое позиционирование */
-    top: 0; /* Фиксация сверху */
-    background: transparent; /* Прозрачный фон */
-    z-index: 10; /* Слой */
+    padding: 12px 20px;
+    border-bottom: none;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    background: transparent;
+    z-index: 10;
 }
 
 /* Кнопка закрытия меню */
 .mobile-menu-modal .close-modal {
-    position: absolute; /* Абсолютное позиционирование */
-    top: 10px; /* Отступ сверху */
-    right: 10px; /* Отступ справа */
-    background: none; /* Без фона */
-    border: none; /* Без рамки */
-    color: var(--text-secondary); /* Цвет иконки */
-    font-size: 1.3rem; /* Размер иконки */
-    cursor: pointer; /* Курсор-указатель */
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.3rem;
+    cursor: pointer;
 }
 
 /* Тело модального окна */
 .mobile-menu-modal .modal-body {
-    flex: 1; /* Растягивание на свободное пространство */
-    overflow-y: auto; /* Вертикальный скролл */
-    overflow-x: hidden; /* Без горизонтального скролла */
-    padding-bottom: 20px; /* Отступ снизу */
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 20px;
 }
 
 /* Контейнер плавающей аватарки */
 .floating-avatar-container {
-    position: absolute; /* Абсолютное позиционирование */
-    top: 0; /* Фиксация сверху */
-    left: 50%; /* Центрирование по горизонтали */
-    transform: translateX(-50%); /* Точное центрирование */
-    z-index: 1500; /* Максимальный слой */
-    width: 110px; /* Ширина контейнера */
-    text-align: center; /* Центрирование содержимого */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Граница снизу */
-    padding-bottom: 10px; /* Отступ под границей */
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1500;
+    width: 110px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
 }
 
 /* Стили аватарки */
 .floating-avatar {
-    width: 80px; /* Ширина аватарки */
-    height: 80px; /* Высота аватарки */
-    border-radius: 50%; /* Круглая форма */
-    object-fit: cover; /* Обрезка изображения */
-    background: transparent; /* Прозрачный фон */
-    position: relative; /* Относительное позиционирование */
-    z-index: 2; /* Слой */
-    border: 3px solid var(--accent-color); /* Граница с акцентным цветом */
-    box-shadow: 0 0 15px rgba(0, 198, 255, 0.5); /* Эффект свечения */
-    cursor: pointer; /* Курсор-указатель */
-    display: flex; /* Flex-контейнер */
-    align-items: center; /* Вертикальное центрирование */
-    justify-content: center; /* Горизонтальное центрирование */
-    overflow: hidden; /* Скрытие переполнения */
-    margin: 0 auto; /* Центрирование по горизонтали */
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: transparent;
+    position: relative;
+    z-index: 2;
+    border: 3px solid var(--accent-color);
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 0 auto;
 }
 
 /* Заглушка аватарки (если нет изображения) */
 .avatar-placeholder {
-    display: flex; /* Flex-контейнер */
-    align-items: center; /* Вертикальное центрирование */
-    justify-content: center; /* Горизонтальное центрирование */
-    width: 100%; /* На всю ширину */
-    height: 100%; /* На всю высоту */
-    background: linear-gradient(135deg, #0a0e17, #1a2138); /* Градиентный фон */
-    color: #ffffff; /* Цвет текста */
-    font-weight: bold; /* Жирный шрифт */
-    font-size: 1rem; /* Размер шрифта */
-    text-align: center; /* Центрирование текста */
-    padding: 10px; /* Внутренние отступы */
-    text-shadow: 0 0 12px rgba(0, 198, 255, 0.8); /* Свечение текста */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0a0e17, #1a2138);
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 1rem;
+    text-align: center;
+    padding: 10px;
+    text-shadow: 0 0 12px rgba(0, 198, 255, 0.8);
 }
 
 /* Информация под аватаркой */
 .floating-avatar-info {
-    margin-top: 10px; /* Отступ сверху */
-    font-size: 0.85rem; /* Размер шрифта */
-    font-weight: 600; /* Жирность шрифта */
-    color: var(--text-color); /* Основной цвет текста */
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Тень текста */
-    cursor: pointer; /* Курсор-указатель */
-    white-space: nowrap; /* Запрет переноса текста */
-    overflow: hidden; /* Скрытие переполнения */
-    text-overflow: ellipsis; /* Многоточие при обрезке */
-    max-width: 100%; /* Максимальная ширина */
-    padding: 0 10px; /* Горизонтальные отступы */
-    pointer-events: auto; /* Разрешение событий мыши */
+    margin-top: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-color);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    padding: 0 10px;
+    pointer-events: auto;
 }
 
 /* Баланс пользователя */
 .user-balance {
-    font-size: 0.8rem; /* Размер шрифта */
-    font-weight: 500; /* Жирность шрифта */
-    color: var(--success-color); /* Цвет успеха */
-    margin-top: 3px; /* Отступ сверху */
-    pointer-events: auto; /* Разрешение событий мыши */
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--success-color);
+    margin-top: 3px;
+    pointer-events: auto;
 }
 
 /* Сетка элементов меню */
 .menu-grid {
-    display: grid; /* Grid-раскладка */
-    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); /* Автоподбор колонок */
-    gap: 12px; /* Расстояние между элементами */
-    padding: 15px; /* Внутренние отступы */
-    width: 100%; /* На всю ширину */
-    box-sizing: border-box; /* Учет padding в ширине */
-    background: transparent; /* Прозрачный фон */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 12px;
+    padding: 15px;
+    width: 100%;
+    box-sizing: border-box;
+    background: transparent;
 }
 
 /* Элемент меню */
 .menu-item {
-    display: flex; /* Flex-контейнер */
-    flex-direction: column; /* Вертикальное расположение */
-    align-items: center; /* Центрирование по горизонтали */
-    justify-content: center; /* Центрирование по вертикали */
-    padding: 12px 6px; /* Внутренние отступы */
-    border-radius: 12px; /* Скругление углов */
-    background: rgba(255, 255, 255, 0.05); /* Полупрозрачный фон */
-    border: 1px solid rgba(0, 198, 255, 0.2); /* Граница */
-    aspect-ratio: 1/1; /* Квадратное соотношение */
-    text-align: center; /* Центрирование текста */
-    transition: all 0.3s ease; /* Плавные анимации */
-    cursor: pointer; /* Курсор-указатель */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Тень */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 6px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 198, 255, 0.2);
+    aspect-ratio: 1/1;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Эффект при наведении на элемент */
 .menu-item:hover {
-    background: rgba(0, 198, 255, 0.15); /* Изменение фона */
-    transform: translateY(-5px); /* Сдвиг вверх */
-    border-color: var(--accent-color); /* Изменение цвета границы */
-    box-shadow: 0 8px 16px rgba(0, 198, 255, 0.3); /* Усиление тени */
+    background: rgba(0, 198, 255, 0.15);
+    transform: translateY(-5px);
+    border-color: var(--accent-color);
+    box-shadow: 0 8px 16px rgba(0, 198, 255, 0.3);
 }
 
 /* Иконка в элементе меню */
 .menu-item i {
-    font-size: 1.5rem; /* Размер иконки */
-    margin-bottom: 8px; /* Отступ снизу */
-    color: var(--accent-color); /* Акцентный цвет */
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    color: var(--accent-color);
 }
 
 /* Текст в элементе меню */
 .menu-item span {
-    font-size: 0.7rem; /* Размер шрифта */
-    line-height: 1.2; /* Межстрочный интервал */
-    display: -webkit-box; /* Совместимость для обрезки текста */
-    -webkit-line-clamp: 2; /* Макс. 2 строки */
-    -webkit-box-orient: vertical; /* Вертикальная ориентация */
-    overflow: hidden; /* Скрытие переполнения */
+    font-size: 0.7rem;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 /* Адаптивные стили для планшетов */
 @media (max-width: 768px) {
     .mobile-menu-modal {
-        height: 65vh; /* Уменьшение высоты */
-        padding-top: 60px; /* Уменьшение отступа */
+        height: 65vh;
+        padding-top: 65px; /* Оптимизировано */
     }
     .floating-avatar {
-        width: 70px; /* Уменьшение размера */
-        height: 70px; /* Уменьшение размера */
+        width: 75px; /* Оптимизировано */
+        height: 75px;
     }
     .avatar-placeholder {
-        font-size: 0.9rem; /* Уменьшение шрифта */
+        font-size: 0.9rem;
     }
 }
 
 /* Адаптивные стили для мобильных */
 @media (max-width: 576px) {
-    .mobile-menu-bottom {
-        display: block; /* Показ кнопки меню */
-    }
     .mobile-menu-modal {
-        height: 75vh; /* Увеличение высоты */
-        padding-top: 60px; /* Отступ для аватарки */
+        height: 75vh;
+        padding-top: 60px;
     }
     .floating-avatar {
-        width: 60px; /* Уменьшение размера */
-        height: 60px; /* Уменьшение размера */
+        width: 65px; /* Оптимизировано */
+        height: 65px;
     }
     .floating-avatar-info {
-        font-size: 0.8rem; /* Уменьшение шрифта */
+        font-size: 0.8rem;
     }
     .avatar-placeholder {
-        font-size: 0.8rem; /* Уменьшение шрифта */
+        font-size: 0.8rem;
     }
     .menu-grid {
-        gap: 8px; /* Уменьшение расстояния */
-        padding: 12px; /* Уменьшение отступов */
+        gap: 8px;
+        padding: 12px;
     }
     .menu-item {
-        padding: 10px 5px; /* Уменьшение отступов */
+        padding: 10px 5px;
     }
     .menu-item i {
-        font-size: 1.3rem; /* Уменьшение иконки */
+        font-size: 1.3rem;
     }
 }
 
-/* Адаптивные стили для маленьких экранов */
-@media (max-width: 340px) {
-    .menu-grid {
-        grid-template-columns: repeat(2, 1fr); /* 2 колонки */
-        gap: 6px; /* Минимальное расстояние */
-    }
-    .menu-item {
-        aspect-ratio: 1/1.2; /* Прямоугольное соотношение */
-        padding: 8px 4px; /* Минимальные отступы */
-    }
+/* Планшеты в альбомной ориентации */
+@media (min-width: 769px) and (max-width: 1024px) {
     .mobile-menu-modal {
-        height: 80vh; /* Максимальная высота */
-        padding-top: 50px; /* Минимальный отступ */
+        height: 55vh;
+        padding-top: 100px;
     }
     .floating-avatar {
-        width: 50px; /* Минимальный размер */
-        height: 50px; /* Минимальный размер */
+        width: 90px;
+        height: 90px;
     }
     .floating-avatar-info {
-        font-size: 0.75rem; /* Минимальный шрифт */
+        font-size: 1rem;
+    }
+    .user-balance {
+        font-size: 0.9rem;
+    }
+    .menu-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 20px;
+        padding: 25px;
+    }
+    .menu-item {
+        padding: 15px;
+    }
+    .menu-item i {
+        font-size: 1.8rem;
+    }
+    .menu-item span {
+        font-size: 0.85rem;
+    }
+}
+
+/* Средние мобильные (341-400px) */
+@media (min-width: 341px) and (max-width: 400px) {
+    .menu-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .menu-item {
+        aspect-ratio: 1/1;
+    }
+}
+
+/* Маленькие мобильные */
+@media (max-width: 340px) {
+    .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+    .menu-item {
+        aspect-ratio: 1/1.2;
+        padding: 8px 4px;
+    }
+    .mobile-menu-modal {
+        height: 80vh;
+        padding-top: 50px;
+    }
+    .floating-avatar {
+        width: 55px; /* Оптимизировано */
+        height: 55px;
+    }
+    .floating-avatar-info {
+        font-size: 0.75rem;
     }
     .avatar-placeholder {
-        font-size: 0.7rem; /* Минимальный шрифт */
+        font-size: 0.7rem;
+    }
+}
+
+/* Условия отображения для не-PC устройств */
+@media (max-width: 1024px) {
+    .mobile-menu-bottom {
+        display: block;
+    }
+}
+
+@media (min-width: 1025px) {
+    .mobile-menu-modal {
+        display: none !important;
     }
 }
