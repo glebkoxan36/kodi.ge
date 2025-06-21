@@ -8,7 +8,136 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
-        /* NEW COMPARISON GRID STYLES */
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #00c6ff;
+            --text-primary: #ecf0f1;
+            --text-secondary: #bdc3c7;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --success-color: #2ecc71;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a3a, #0d1b2a);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        .gradient-bg {
+            position: fixed;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            z-index: -1;
+            opacity: 0.3;
+            background: radial-gradient(circle, var(--accent-color) 0%, transparent 70%);
+        }
+        
+        .gradient-2 {
+            transform: rotate(45deg);
+            opacity: 0.2;
+        }
+        
+        .card {
+            background: rgba(30, 40, 50, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-header {
+            background: rgba(0, 198, 255, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+        
+        .btn-compare {
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+            margin-top: 20px;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 198, 255, 0.3);
+        }
+        
+        .btn-compare:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 198, 255, 0.5);
+        }
+        
+        .btn-compare:disabled {
+            background: #7f8c8d;
+            opacity: 0.7;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .search-input {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 8px;
+            padding: 12px 20px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem rgba(0, 198, 255, 0.25);
+            outline: none;
+        }
+        
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(40, 50, 60, 0.95);
+            border-radius: 8px;
+            margin-top: 5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .suggestion-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .suggestion-item:hover {
+            background: rgba(0, 198, 255, 0.15);
+        }
+        
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        /* COMPARISON GRID STYLES */
         .comparison-grid-container {
             margin-top: 30px;
             display: none;
@@ -43,26 +172,34 @@
         }
         
         .spec-name {
+            grid-column: 1 / span 3;
             color: var(--text-secondary);
-            justify-content: flex-end;
-            padding-right: 20px;
+            justify-content: center;
+            padding: 8px 15px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.03);
+            font-size: 0.95rem;
         }
         
         .spec-value {
-            position: relative;
-            padding-left: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 15px;
+            text-align: center;
+            min-height: 60px;
         }
         
         .better-value {
             color: var(--success-color);
             font-weight: 600;
+            position: relative;
         }
         
         .value-indicator {
-            position: absolute;
-            left: 5px;
-            top: 50%;
-            transform: translateY(-50%);
+            margin-right: 5px;
+            display: inline-flex;
+            font-size: 1.1rem;
         }
         
         .group-header {
@@ -101,8 +238,96 @@
             background: rgba(255, 255, 255, 0.1);
         }
         
-        .empty-cell {
-            background: var(--card-bg);
+        .ai-analysis {
+            background: rgba(0, 198, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 25px;
+            border: 1px solid rgba(0, 198, 255, 0.15);
+        }
+        
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+        }
+        
+        .ai-icon {
+            font-size: 1.8rem;
+        }
+        
+        .ai-loader {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .ai-response {
+            line-height: 1.7;
+        }
+        
+        .logo-animated {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto;
+        }
+        
+        .logo-ring {
+            position: absolute;
+            border: 2px solid var(--accent-color);
+            border-radius: 50%;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0.7;
+            animation: pulse 3s infinite ease-in-out;
+        }
+        
+        .logo-ring:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .logo-ring:nth-child(2) {
+            animation-delay: 1s;
+        }
+        
+        .logo-ring:nth-child(3) {
+            animation-delay: 2s;
+        }
+        
+        .logo-core {
+            position: absolute;
+            top: 25%;
+            left: 25%;
+            width: 50%;
+            height: 50%;
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo-letter {
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 0.3; }
+            100% { transform: scale(1); opacity: 0.7; }
+        }
+        
+        footer {
+            color: var(--text-secondary);
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
         }
     </style>
 </head>
@@ -154,7 +379,7 @@
                     </button>
                 </div>
                 
-                <!-- NEW COMPARISON GRID CONTAINER -->
+                <!-- COMPARISON GRID CONTAINER -->
                 <div class="comparison-grid-container" id="comparisonGrid">
                     <div class="specs-grid">
                         <!-- Header row -->
@@ -444,15 +669,17 @@
                     const value1 = spec.phone1 || 'N/A';
                     const value2 = spec.phone2 || 'N/A';
                     
-                    // Create row container
-                    const row = document.createElement('div');
-                    row.className = 'spec-row';
+                    // Create name row (occupies all columns)
+                    const nameRow = document.createElement('div');
+                    nameRow.className = 'spec-cell spec-name';
+                    nameRow.textContent = specKey;
+                    specsGrid.appendChild(nameRow);
                     
-                    // Create cells
-                    const nameCell = document.createElement('div');
-                    nameCell.className = 'spec-cell spec-name';
-                    nameCell.textContent = specKey;
+                    // Create value row container
+                    const valueRow = document.createElement('div');
+                    valueRow.className = 'spec-row';
                     
+                    // Create value cells
                     const value1Cell = document.createElement('div');
                     value1Cell.className = 'spec-cell spec-value';
                     
@@ -467,28 +694,29 @@
                     const comparison = compareSpecValues(specKey, value1, value2);
                     
                     // Add values to cells
-                    value1Cell.innerHTML = value1;
-                    value2Cell.innerHTML = value2;
+                    let content1 = value1;
+                    let content2 = value2;
                     
-                    // Add indicators for better values
                     if (comparison.phone1 === 'better') {
+                        content1 = '<i class="fas fa-check-circle text-success value-indicator"></i>' + content1;
                         value1Cell.classList.add('better-value');
-                        value1Cell.innerHTML += '<i class="fas fa-check-circle text-success value-indicator"></i>';
                     }
                     
                     if (comparison.phone2 === 'better') {
+                        content2 = '<i class="fas fa-check-circle text-success value-indicator"></i>' + content2;
                         value2Cell.classList.add('better-value');
-                        value2Cell.innerHTML += '<i class="fas fa-check-circle text-success value-indicator"></i>';
                     }
                     
+                    value1Cell.innerHTML = content1;
+                    value2Cell.innerHTML = content2;
+                    
                     // Append cells to row
-                    row.appendChild(nameCell);
-                    row.appendChild(value1Cell);
-                    row.appendChild(dividerCell);
-                    row.appendChild(value2Cell);
+                    valueRow.appendChild(value1Cell);
+                    valueRow.appendChild(dividerCell);
+                    valueRow.appendChild(value2Cell);
                     
                     // Append row to grid
-                    specsGrid.appendChild(row);
+                    specsGrid.appendChild(valueRow);
                 });
             });
         }
@@ -579,4 +807,4 @@
         }
     </script>
 </body>
-</html>
+                        </html>
