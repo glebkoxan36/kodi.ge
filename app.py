@@ -17,6 +17,9 @@ from bs4 import BeautifulSoup
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# Импорт модуля сравнения телефонов
+from phone_comparison import search_phones, get_phone_details, perform_ai_comparison
+
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
@@ -624,116 +627,27 @@ def send_webhook_event(event_type, payload):
             )
 
 # ======================================
-# Сравнение телефонов
+# Сравнение телефонов (маршруты)
 # ======================================
-PLACEHOLDER = '/static/placeholder.jpg'
 
 @app.route('/api/search', methods=['GET'])
-def search_phones():
+def api_search():
     query = request.args.get('query', '').strip()
     if not query:
         return jsonify({'error': 'Query parameter is required'}), 400
     
-    # Логируем запрос
-    app.logger.info(f"Searching phones for query: {query}")
-    
-    try:
-        # Попытка полнотекстового поиска
-        cursor = phones_collection.find(
-            {'$text': {'$search': query}},
-            {
-                'score': {'$meta': 'textScore'},
-                'Name': 1,
-                'brand': 1,
-                'model': 1
-            }
-        ).sort([('score', {'$meta': 'textScore'})]).limit(10)
-        
-        results = list(cursor)
-        app.logger.info(f"Full-text search found {len(results)} results")
-        
-        # Если результатов нет, используем regex fallback
-        if not results:
-            app.logger.info("No full-text results, using regex fallback")
-            regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
-            results = list(phones_collection.find({
-                '$or': [
-                    {'brand': regex_query},
-                    {'model': regex_query},
-                    {'Name': regex_query}
-                ]
-            }, {
-                '_id': 1,
-                'Name': 1,
-                'brand': 1,
-                'model': 1
-            }).limit(10))
-            app.logger.info(f"Regex search found {len(results)} results")
-            
-    except Exception as e:
-        app.logger.error(f"Search error: {str(e)}")
-        # При ошибке также используем regex
-        regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
-        results = list(phones_collection.find({
-            '$or': [
-                {'brand': regex_query},
-                {'model': regex_query},
-                {'Name': regex_query}
-            ]
-        }, {
-            '_id': 1,
-            'Name': 1,
-            'brand': 1,
-            'model': 1
-        }).limit(10))
-    
-    # Преобразование результатов
-    normalized_results = []
-    for phone in results:
-        name = phone.get('Name')
-        if not name:
-            brand = phone.get('brand', '')
-            model = phone.get('model', '')
-            name = f"{brand} {model}".strip()
-        
-        normalized_results.append({
-            '_id': str(phone['_id']),
-            'name': name or 'Unknown Phone',
-            'image_url': PLACEHOLDER
-        })
-    
-    return jsonify(normalized_results)
+    results = search_phones(query)
+    return jsonify(results)
 
 @app.route('/api/phone_details/<phone_id>', methods=['GET'])
-def phone_details(phone_id):
-    try:
-        phone = phones_collection.find_one({'_id': ObjectId(phone_id)})
-        if not phone:
-            return jsonify({'error': 'Phone not found'}), 404
-        
-        # Формируем название
-        name = phone.get('Name')
-        if not name:
-            brand = phone.get('brand', '')
-            model = phone.get('model', '')
-            name = f"{brand} {model}".strip()
-        
-        # Возвращаем все характеристики как есть (без обработки префиксов)
-        # Клиент будет сам группировать их по префиксам
-        normalized_phone = {
-            '_id': str(phone['_id']),
-            'name': name or 'Unknown Phone',
-            'image_url': PLACEHOLDER,
-            'specs': {k: v for k, v in phone.items() if k not in ['_id', 'Name', 'brand', 'model']}
-        }
-        
-        return jsonify(normalized_phone)
-    except Exception as e:
-        app.logger.error(f"Error getting phone details: {str(e)}")
-        return jsonify({'error': 'Invalid phone ID'}), 400
+def api_phone_details(phone_id):
+    phone = get_phone_details(phone_id)
+    if not phone:
+        return jsonify({'error': 'Phone not found'}), 404
+    return jsonify(phone)
 
 @app.route('/api/ai-analysis', methods=['POST'])
-def ai_analysis():
+def api_ai_analysis():
     data = request.json
     phone1 = data.get('phone1')
     phone2 = data.get('phone2')
@@ -741,75 +655,8 @@ def ai_analysis():
     if not phone1 or not phone2:
         return jsonify({'error': 'Both phones are required'}), 400
     
-    try:
-        # Используем нормализованные названия
-        phone1_name = phone1.get('name', 'Unknown Phone 1')
-        phone2_name = phone2.get('name', 'Unknown Phone 2')
-        
-        # Собираем характеристики
-        phone1_specs = "\n".join([f"{key}: {value}" for key, value in phone1.get('specs', {}).items()])
-        phone2_specs = "\n".join([f"{key}: {value}" for key, value in phone2.get('specs', {}).items()])
-        
-        # Формируем промпт
-        prompt = f"""
-            შედარება: {phone1_name} vs {phone2_name}
-            
-            {phone1_name} მახასიათებლები:
-            {phone1_specs}
-            
-            {phone2_name} მახასიათებლები:
-            {phone2_specs}
-            
-            გთხოვთ შეადაროთ შემდეგი კატეგორიები:
-            - პროდუქტიულობა
-            - ეკრანის ხარისხი
-            - კამერა
-            - ბატარეის ხანგრძლივობა
-            - დიზაინი
-            - ფასი და ღირებულება
-            
-            გთხოვთ მოგვაწოდოთ დეტალური ანალიზი ქართულ ენაზე.
-        """
-        
-        # Вызов DeepSeek API
-        response = requests.post(
-            'https://api.deepseek.com/v1/chat/completions',
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': f'Bearer {DEEPSEEK_API_KEY}'
-            },
-            json={
-                "model": "deepseek-chat",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.7,
-                "max_tokens": 2000
-            }
-        )
-        response.raise_for_status()
-        
-        ai_response = response.json()
-        content = ai_response['choices'][0]['message']['content']
-        
-        # Сохранение сравнения в БД
-        comparison_record = {
-            'phone1': phone1_name,
-            'phone2': phone2_name,
-            'timestamp': datetime.utcnow(),
-            'ai_response': content
-        }
-        # Привязываем к пользователю если авторизован
-        if 'user_id' in session:
-            comparison_record['user_id'] = ObjectId(session['user_id'])
-        comparisons_collection.insert_one(comparison_record)
-        
-        return jsonify({'analysis': content})
-    
-    except requests.exceptions.RequestException as e:
-        app.logger.error(f"DeepSeek API error: {str(e)}")
-        return jsonify({'error': 'AI service unavailable'}), 500
-    except Exception as e:
-        app.logger.error(f"AI analysis error: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
+    analysis = perform_ai_comparison(phone1, phone2)
+    return jsonify({'analysis': analysis})
 
 @app.route('/compare')
 def compare_phones():
