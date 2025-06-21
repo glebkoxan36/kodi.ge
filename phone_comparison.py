@@ -20,9 +20,6 @@ MONGODB_URI = os.getenv('MONGODB_URI')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 PLACEHOLDER = '/static/placeholder.jpg'
 
-# Настройка Gemini
-genai.configure(api_key=GEMINI_API_KEY)
-
 # Подключение к MongoDB с использованием стандартного URI
 try:
     client = MongoClient(MONGODB_URI)
@@ -124,6 +121,12 @@ def get_phone_details(phone_id):
 def perform_ai_comparison(phone1, phone2):
     """Выполнение AI-сравнения двух телефонов с использованием Google Gemini"""
     try:
+        # Инициализация клиента Gemini
+        client = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            api_key=GEMINI_API_KEY
+        )
+        
         phone1_name = phone1.get('name', 'Unknown Phone 1')
         phone2_name = phone2.get('name', 'Unknown Phone 2')
         
@@ -142,9 +145,8 @@ def perform_ai_comparison(phone1, phone2):
             გთხოვთ მოგვაწოდოთ დეტალური ანალიზი ქართულ ენაზე.
         """
         
-        # Используем актуальную версию модели Gemini
-        model = genai.GenerativeModel('gemini-1.0-pro')
-        response = model.generate_content(
+        # Генерация контента
+        response = client.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
                 temperature=0.7,
