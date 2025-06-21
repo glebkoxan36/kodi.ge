@@ -60,7 +60,7 @@ MONGODB_URI = os.getenv('MONGODB_URI')
 # Данные для PHP API
 API_URL = "https://api.ifreeicloud.co.uk"
 API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')  # Изменено на Gemini
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 PLACEHOLDER = '/static/placeholder.jpg'
 
 # MongoDB
@@ -232,8 +232,8 @@ def perform_ai_comparison(phone1, phone2):
             გთხოვთ მოგვაწოდოთ დეტალური ანალიზი ქართულ ენაზე.
         """
         
-        # Создаем модель и отправляем запрос
-        model = genai.GenerativeModel('gemini-pro')
+        # Используем актуальную версию модели Gemini
+        model = genai.GenerativeModel('gemini-1.0-pro')
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
@@ -660,7 +660,7 @@ def health_check():
         # Проверка Gemini API
         import google.generativeai as genai
         genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-1.0-pro')
         response = model.generate_content("Ping", max_output_tokens=1)
         status['services']['gemini_api'] = 'OK'
     except Exception as e:
