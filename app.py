@@ -90,25 +90,24 @@ if not admin_users_collection.find_one({'username': 'admin'}):
         'created_at': datetime.utcnow()
     })
 
-# Исправленное создание индекса с указанием языка
+# Пересоздание текстового индекса
 try:
     # Проверяем существование текстового индекса
+    index_name = 'text_search'
     existing_indexes = phones_collection.index_information()
     
-    # Правильная проверка существования текстового индекса
-    text_index_exists = any(
-        'text' in dict(index['key']).values()
-        for index in existing_indexes.values()
-    )
+    # Если индекс существует - удаляем его
+    if index_name in existing_indexes:
+        phones_collection.drop_index(index_name)
+        app.logger.info(f"Dropped existing index: {index_name}")
     
-    # Создаем индекс только если его еще нет
-    if not text_index_exists:
-        phones_collection.create_index(
-            [('brand', 'text'), ('model', 'text'), ('Name', 'text')],
-            name='text_search',
-            default_language='none'  # Ключевое исправление для грузинского языка
-        )
-        app.logger.info("Text index created successfully with 'none' language")
+    # Создаем новый индекс с правильными настройками
+    phones_collection.create_index(
+        [('brand', 'text'), ('model', 'text'), ('Name', 'text')],
+        name=index_name,
+        default_language='none'  # Ключевое исправление для грузинского языка
+    )
+    app.logger.info("Text index recreated successfully with 'none' language")
 except Exception as e:
     app.logger.error(f"Index creation error: {str(e)}")
 
@@ -635,9 +634,11 @@ def search_phones():
     if not query:
         return jsonify({'error': 'Query parameter is required'}), 400
     
-    results = []
+    # Логируем запрос
+    app.logger.info(f"Searching phones for query: {query}")
+    
     try:
-        # Попытка полнотекстового поиска с проекцией нужных полей
+        # Попытка полнотекстового поиска
         cursor = phones_collection.find(
             {'$text': {'$search': query}},
             {
@@ -649,10 +650,11 @@ def search_phones():
         ).sort([('score', {'$meta': 'textScore'})]).limit(10)
         
         results = list(cursor)
+        app.logger.info(f"Full-text search found {len(results)} results")
         
         # Если результатов нет, используем regex fallback
         if not results:
-            app.logger.info(f"No full-text results, using regex fallback for: {query}")
+            app.logger.info("No full-text results, using regex fallback")
             regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
             results = list(phones_collection.find({
                 '$or': [
@@ -666,6 +668,7 @@ def search_phones():
                 'brand': 1,
                 'model': 1
             }).limit(10))
+            app.logger.info(f"Regex search found {len(results)} results")
             
     except Exception as e:
         app.logger.error(f"Search error: {str(e)}")
@@ -715,37 +718,18 @@ def phone_details(phone_id):
             model = phone.get('model', '')
             name = f"{brand} {model}".strip()
         
-        # Собираем все характеристики без префиксов
-        specs = {}
-        prefix_groups = [
-            'Network_', 'Body_', 'Display_', 'Platform_', 
-            'Memory_', 'MainCamera_', 'SelfieCamera_', 
-            'Sound_', 'COMMS_', 'Battery_', 'Colors'
-        ]
-        
-        for key, value in phone.items():
-            # Пропускаем служебные поля
-            if key in ['_id', 'Name', 'brand', 'model']:
-                continue
-                
-            # Убираем префиксы из ключей
-            clean_key = key
-            for prefix in prefix_groups:
-                if key.startswith(prefix):
-                    clean_key = key.replace(prefix, '')
-                    break
-                    
-            specs[clean_key] = value
-        
+        # Возвращаем все характеристики как есть (без обработки префиксов)
+        # Клиент будет сам группировать их по префиксам
         normalized_phone = {
             '_id': str(phone['_id']),
             'name': name or 'Unknown Phone',
             'image_url': PLACEHOLDER,
-            'specs': specs
+            'specs': {k: v for k, v in phone.items() if k not in ['_id', 'Name', 'brand', 'model']}
         }
         
         return jsonify(normalized_phone)
     except Exception as e:
+        app.logger.error(f"Error getting phone details: {str(e)}")
         return jsonify({'error': 'Invalid phone ID'}), 400
 
 @app.route('/api/ai-analysis', methods=['POST'])
