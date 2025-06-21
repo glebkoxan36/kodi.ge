@@ -177,9 +177,9 @@
 /* Сетка элементов меню */
 .menu-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(10px, 1fr)); /* Уменьшено в 9 раз (90px → 10px) */
-    gap: 1.33px; /* Уменьшено в 9 раз (12px → 1.33px) */
-    padding: 1.67px; /* Уменьшено в 9 раз (15px → 1.67px) */
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); /* Увеличено до 60px */
+    gap: 8px; /* Увеличено */
+    padding: 10px; /* Увеличено */
     width: 100%;
     box-sizing: border-box;
     background: transparent;
@@ -191,35 +191,35 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 1.33px 0.67px; /* Уменьшено в 9 раз (12px 6px → 1.33px 0.67px) */
-    border-radius: 1.33px; /* Уменьшено в 9 раз (12px → 1.33px) */
+    padding: 8px 4px; /* Увеличено */
+    border-radius: 12px; /* Закругление сохранено */
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(0, 198, 255, 0.2);
     aspect-ratio: 1/1;
     text-align: center;
     transition: all 0.3s ease;
     cursor: pointer;
-    box-shadow: 0 0.44px 0.89px rgba(0, 0, 0, 0.2); /* Уменьшено в 9 раз */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Эффект при наведении на элемент */
 .menu-item:hover {
     background: rgba(0, 198, 255, 0.15);
-    transform: translateY(-0.56px); /* Уменьшено в 9 раз */
+    transform: translateY(-3px);
     border-color: var(--accent-color);
-    box-shadow: 0 0.89px 1.78px rgba(0, 198, 255, 0.3); /* Уменьшено в 9 раз */
+    box-shadow: 0 4px 8px rgba(0, 198, 255, 0.3);
 }
 
 /* Иконка в элементе меню */
 .menu-item i {
-    font-size: 1.5rem; /* Исходный размер */
-    margin-bottom: 8px; /* Исходный размер */
+    font-size: 1.5rem; /* Размер иконки сохранен */
+    margin-bottom: 6px; /* Отступ немного уменьшен */
     color: var(--accent-color);
 }
 
 /* Текст в элементе меню */
 .menu-item span {
-    font-size: 0.7rem;
+    font-size: 0.65rem; /* Размер текста немного уменьшен */
     line-height: 1.2;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -240,13 +240,16 @@
         font-size: 0.9rem;
     }
     .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(8.33px, 1fr)); /* 75px → 8.33px */
-        gap: 1.11px; /* 10px → 1.11px */
-        padding: 1.39px; /* 12.5px → 1.39px */
+        grid-template-columns: repeat(auto-fit, minmax(55px, 1fr));
+        gap: 7px;
+        padding: 8px;
     }
-    .menu-item {
-        padding: 1.11px 0.56px; /* 10px 5px → 1.11px 0.56px */
-        border-radius: 1.11px; /* 10px → 1.11px */
+    .menu-item i {
+        font-size: 1.4rem;
+        margin-bottom: 5px;
+    }
+    .menu-item span {
+        font-size: 0.6rem;
     }
 }
 
@@ -266,16 +269,19 @@
         font-size: 0.8rem;
     }
     .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(7.22px, 1fr)); /* 65px → 7.22px */
-        gap: 0.89px; /* 8px → 0.89px */
-        padding: 1.33px; /* 12px → 1.33px */
+        grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+        gap: 6px;
+        padding: 8px;
     }
     .menu-item {
-        padding: 1.11px 0.56px; /* 10px 5px → 1.11px 0.56px */
-        border-radius: 1.11px; /* 10px → 1.11px */
+        padding: 6px 3px;
     }
     .menu-item i {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
+        margin-bottom: 4px;
+    }
+    .menu-item span {
+        font-size: 0.55rem;
     }
 }
 
@@ -295,19 +301,19 @@
         font-size: 0.9rem;
     }
     .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(11.11px, 1fr)); /* 100px → 11.11px */
-        gap: 2.22px; /* 20px → 2.22px */
-        padding: 2.78px; /* 25px → 2.78px */
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+        gap: 12px;
+        padding: 15px;
     }
     .menu-item {
-        padding: 1.67px; /* 15px → 1.67px */
-        border-radius: 1.67px; /* 15px → 1.67px */
+        padding: 10px 5px;
     }
     .menu-item i {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
+        margin-bottom: 8px;
     }
     .menu-item span {
-        font-size: 0.85rem;
+        font-size: 0.75rem;
     }
 }
 
@@ -325,12 +331,11 @@
 @media (max-width: 340px) {
     .menu-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 0.67px; /* 6px → 0.67px */
+        gap: 5px;
     }
     .menu-item {
-        aspect-ratio: 1/1.2;
-        padding: 0.89px 0.44px; /* 8px 4px → 0.89px 0.44px */
-        border-radius: 0.89px; /* 8px → 0.89px */
+        aspect-ratio: 1/1.1;
+        padding: 6px 3px;
     }
     .mobile-menu-modal {
         height: 80vh;
@@ -349,7 +354,10 @@
         font-size: 0.7rem;
     }
     .menu-item i {
-        font-size: 1.3rem;
+        font-size: 1.1rem;
+    }
+    .menu-item span {
+        font-size: 0.5rem;
     }
 }
 
