@@ -177,9 +177,9 @@
 /* Сетка элементов меню */
 .menu-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(30px, 1fr)); /* Уменьшено в 3 раза (90px → 30px) */
-    gap: 4px; /* Уменьшено в 3 раза (12px → 4px) */
-    padding: 5px; /* Уменьшено в 3 раза (15px → 5px) */
+    grid-template-columns: repeat(auto-fit, minmax(10px, 1fr)); /* Уменьшено в 9 раз (90px → 10px) */
+    gap: 1.33px; /* Уменьшено в 9 раз (12px → 1.33px) */
+    padding: 1.67px; /* Уменьшено в 9 раз (15px → 1.67px) */
     width: 100%;
     box-sizing: border-box;
     background: transparent;
@@ -191,23 +191,23 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 4px 2px; /* Уменьшено в 3 раза (12px 6px → 4px 2px) */
-    border-radius: 4px; /* Уменьшено в 3 раза (12px → 4px) */
+    padding: 1.33px 0.67px; /* Уменьшено в 9 раз (12px 6px → 1.33px 0.67px) */
+    border-radius: 1.33px; /* Уменьшено в 9 раз (12px → 1.33px) */
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(0, 198, 255, 0.2);
     aspect-ratio: 1/1;
     text-align: center;
     transition: all 0.3s ease;
     cursor: pointer;
-    box-shadow: 0 1.33px 2.67px rgba(0, 0, 0, 0.2); /* Уменьшено в 3 раза */
+    box-shadow: 0 0.44px 0.89px rgba(0, 0, 0, 0.2); /* Уменьшено в 9 раз */
 }
 
 /* Эффект при наведении на элемент */
 .menu-item:hover {
     background: rgba(0, 198, 255, 0.15);
-    transform: translateY(-1.67px); /* Уменьшено в 3 раза */
+    transform: translateY(-0.56px); /* Уменьшено в 9 раз */
     border-color: var(--accent-color);
-    box-shadow: 0 2.67px 5.33px rgba(0, 198, 255, 0.3); /* Уменьшено в 3 раза */
+    box-shadow: 0 0.89px 1.78px rgba(0, 198, 255, 0.3); /* Уменьшено в 9 раз */
 }
 
 /* Иконка в элементе меню */
@@ -240,13 +240,13 @@
         font-size: 0.9rem;
     }
     .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(25px, 1fr)); /* 75px → 25px */
-        gap: 3.33px; /* 10px → 3.33px */
-        padding: 4.17px; /* 12.5px → 4.17px */
+        grid-template-columns: repeat(auto-fit, minmax(8.33px, 1fr)); /* 75px → 8.33px */
+        gap: 1.11px; /* 10px → 1.11px */
+        padding: 1.39px; /* 12.5px → 1.39px */
     }
     .menu-item {
-        padding: 3.33px 1.67px; /* 10px 5px → 3.33px 1.67px */
-        border-radius: 3.33px; /* 10px → 3.33px */
+        padding: 1.11px 0.56px; /* 10px 5px → 1.11px 0.56px */
+        border-radius: 1.11px; /* 10px → 1.11px */
     }
 }
 
@@ -266,13 +266,13 @@
         font-size: 0.8rem;
     }
     .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(21.67px, 1fr)); /* 65px → 21.67px */
-        gap: 2.67px; /* 8px → 2.67px */
-        padding: 4px; /* 12px → 4px */
+        grid-template-columns: repeat(auto-fit, minmax(7.22px, 1fr)); /* 65px → 7.22px */
+        gap: 0.89px; /* 8px → 0.89px */
+        padding: 1.33px; /* 12px → 1.33px */
     }
     .menu-item {
-        padding: 3.33px 1.67px; /* 10px 5px → 3.33px 1.67px */
-        border-radius: 3.33px; /* 10px → 3.33px */
+        padding: 1.11px 0.56px; /* 10px 5px → 1.11px 0.56px */
+        border-radius: 1.11px; /* 10px → 1.11px */
     }
     .menu-item i {
         font-size: 1.3rem;
@@ -295,13 +295,13 @@
         font-size: 0.9rem;
     }
     .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(33.33px, 1fr)); /* 100px → 33.33px */
-        gap: 6.67px; /* 20px → 6.67px */
-        padding: 8.33px; /* 25px → 8.33px */
+        grid-template-columns: repeat(auto-fit, minmax(11.11px, 1fr)); /* 100px → 11.11px */
+        gap: 2.22px; /* 20px → 2.22px */
+        padding: 2.78px; /* 25px → 2.78px */
     }
     .menu-item {
-        padding: 5px; /* 15px → 5px */
-        border-radius: 5px; /* 15px → 5px */
+        padding: 1.67px; /* 15px → 1.67px */
+        border-radius: 1.67px; /* 15px → 1.67px */
     }
     .menu-item i {
         font-size: 1.8rem;
@@ -325,12 +325,12 @@
 @media (max-width: 340px) {
     .menu-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 2px; /* 6px → 2px */
+        gap: 0.67px; /* 6px → 0.67px */
     }
     .menu-item {
         aspect-ratio: 1/1.2;
-        padding: 2.67px 1.33px; /* 8px 4px → 2.67px 1.33px */
-        border-radius: 2.67px; /* 8px → 2.67px */
+        padding: 0.89px 0.44px; /* 8px 4px → 0.89px 0.44px */
+        border-radius: 0.89px; /* 8px → 0.89px */
     }
     .mobile-menu-modal {
         height: 80vh;
