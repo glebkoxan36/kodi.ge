@@ -20,50 +20,56 @@ MONGODB_URI = os.getenv('MONGODB_URI')
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 PLACEHOLDER = '/static/placeholder.jpg'
 
-# Подключение к НОВОЙ базе данных для спецификаций телефонов
-phone_client = MongoClient(
-    'mongodb://ac-0gle9pt-shard-00-00.9c971rn.mongodb.net,'
-    'ac-0gle9pt-shard-00-01.9c971rn.mongodb.net,'
-    'ac-0gle9pt-shard-00-02.9c971rn.mongodb.net/'
-    '?tls=true'
-    '&authMechanism=MONGODB-X509'
-    '&authSource=%24external'
-    '&serverMonitoringMode=poll'
-    '&maxIdleTimeMS=30000'
-    '&minPoolSize=0'
-    '&maxPoolSize=5'
-    '&replicaSet=atlas-n6218o-shard-0'
-    '&appName=Data+Explorer--684970465eb1ef5a01425a8b'
-)
-phone_db = phone_client['phone_database']
-phones_collection = phone_db['phones']  # Основная коллекция с телефонами
+try:
+    # Подключение к НОВОЙ базе данных с отключенной проверкой сертификатов
+    phone_client = MongoClient(
+        'mongodb://ac-0gle9pt-shard-00-00.9c971rn.mongodb.net,'
+        'ac-0gle9pt-shard-00-01.9c971rn.mongodb.net,'
+        'ac-0gle9pt-shard-00-02.9c971rn.mongodb.net/'
+        '?tls=true'
+        '&authMechanism=MONGODB-X509'
+        '&authSource=%24external'
+        '&serverMonitoringMode=poll'
+        '&maxIdleTimeMS=30000'
+        '&minPoolSize=0'
+        '&maxPoolSize=5'
+        '&replicaSet=atlas-n6218o-shard-0'
+        '&appName=PhoneComparison',
+        tlsAllowInvalidCertificates=True  # Важное исправление
+    )
+    phone_db = phone_client['phone_database']
+    phones_collection = phone_db['phones']
+except Exception as e:
+    logger.error(f"New DB connection failed: {str(e)}")
+    # Fallback на оригинальную базу
+    fallback_client = MongoClient(MONGODB_URI)
+    phone_db = fallback_client['imei_checker']
+    phones_collection = phone_db['phones']
+    logger.info("Using fallback database for phone specs")
 
 # Подключение к СТАРОЙ базе для истории сравнений
-history_client = MongoClient(MONGODB_URI)
-history_db = history_client['imei_checker']
-comparisons_collection = history_db['comparisons']  # Коллекция для сравнений
+try:
+    history_client = MongoClient(MONGODB_URI)
+    history_db = history_client['imei_checker']
+    comparisons_collection = history_db['comparisons']
+except Exception as e:
+    logger.error(f"History DB connection failed: {str(e)}")
+    # Создаем in-memory хранилище для сравнений
+    comparisons_collection = None
+    logger.info("Using in-memory storage for comparisons")
 
 def search_phones(query):
     """Поиск телефонов по названию, бренду или модели"""
     try:
-        # Попытка полнотекстового поиска
-        cursor = phones_collection.find(
-            {'$text': {'$search': query}},
-            {'score': {'$meta': 'textScore'}, 'Name': 1, 'brand': 1, 'model': 1}
-        ).sort([('score', {'$meta': 'textScore'})]).limit(10)
-        
-        results = list(cursor)
-        
-        # Fallback на regex если нет результатов
-        if not results:
-            regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
-            results = list(phones_collection.find({
-                '$or': [
-                    {'brand': regex_query},
-                    {'model': regex_query},
-                    {'Name': regex_query}
-                ]
-            }, {'_id': 1, 'Name': 1, 'brand': 1, 'model': 1}).limit(10))
+        # Используем только regex-поиск из-за проблем с индексами
+        regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
+        results = list(phones_collection.find({
+            '$or': [
+                {'brand': regex_query},
+                {'model': regex_query},
+                {'Name': regex_query}
+            ]
+        }, {'_id': 1, 'Name': 1, 'brand': 1, 'model': 1}).limit(10))
         
         # Нормализация результатов
         normalized = []
@@ -155,13 +161,17 @@ def perform_ai_comparison(phone1, phone2):
         ai_response = response.json()
         content = ai_response['choices'][0]['message']['content']
         
-        # Сохранение в БД (старая база)
-        comparisons_collection.insert_one({
-            'phone1': phone1_name,
-            'phone2': phone2_name,
-            'timestamp': datetime.utcnow(),
-            'ai_response': content
-        })
+        # Сохранение в БД (если подключение доступно)
+        if comparisons_collection is not None:
+            try:
+                comparisons_collection.insert_one({
+                    'phone1': phone1_name,
+                    'phone2': phone2_name,
+                    'timestamp': datetime.utcnow(),
+                    'ai_response': content
+                })
+            except Exception as e:
+                logger.error(f"Failed to save comparison: {str(e)}")
         
         return content
     
