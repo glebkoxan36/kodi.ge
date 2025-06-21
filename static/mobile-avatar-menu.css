@@ -9,7 +9,7 @@
     left: 0;
     right: 0;
     text-align: center;
-    z-index: 1050; /* Увеличен для надежности */
+    z-index: 1050;
 }
 
 /* Стили самой кнопки меню */
@@ -337,6 +337,7 @@
     }
 }
 
+/* ОСНОВНЫЕ ИСПРАВЛЕНИЯ: */
 /* Показать меню на мобильных устройствах */
 @media (max-width: 1024px) {
     .mobile-menu-bottom {
@@ -346,7 +347,10 @@
 
 /* Скрыть меню на ПК */
 @media (min-width: 1025px) {
+    .mobile-menu-bottom {
+        display: none; /* Скрыть кнопку на ПК */
+    }
     .mobile-menu-modal {
-        display: none !important; /* Скрытие на ПК */
+        display: none !important; /* Скрыть меню на ПК */
     }
 }
