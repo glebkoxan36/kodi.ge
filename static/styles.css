@@ -1,6 +1,6 @@
 /* styles.css */
 /* Глобальные стили */
-/*@import url("static/mobile-avatar-menu.css"); /* Импорт стилей мобильного меню и аватарки */
+@import url("static/mobile-avatar-menu.css"); /* Импорт стилей мобильного меню и аватарки */
 
 *, *::before, *::after {
     box-sizing: border-box;
