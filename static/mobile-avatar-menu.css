@@ -177,9 +177,9 @@
 /* Сетка элементов меню */
 .menu-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-    gap: 12px;
-    padding: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(30px, 1fr)); /* Уменьшено в 3 раза (90px → 30px) */
+    gap: 4px; /* Уменьшено в 3 раза (12px → 4px) */
+    padding: 5px; /* Уменьшено в 3 раза (15px → 5px) */
     width: 100%;
     box-sizing: border-box;
     background: transparent;
@@ -191,29 +191,30 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 12px 6px;
-    border-radius: 12px;
+    padding: 4px 2px; /* Уменьшено в 3 раза (12px 6px → 4px 2px) */
+    border-radius: 4px; /* Уменьшено в 3 раза (12px → 4px) */
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(0, 198, 255, 0.2);
     aspect-ratio: 1/1;
     text-align: center;
     transition: all 0.3s ease;
     cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1.33px 2.67px rgba(0, 0, 0, 0.2); /* Уменьшено в 3 раза */
 }
 
 /* Эффект при наведении на элемент */
 .menu-item:hover {
     background: rgba(0, 198, 255, 0.15);
-    transform: translateY(-5px);
+    transform: translateY(-1.67px); /* Уменьшено в 3 раза */
     border-color: var(--accent-color);
-    box-shadow: 0 8px 16px rgba(0, 198, 255, 0.3);
+    box-shadow: 0 2.67px 5.33px rgba(0, 198, 255, 0.3); /* Уменьшено в 3 раза */
 }
 
-/* Иконка в элементе меню - уменьшена в 3 раза */
+/* Иконка в элементе меню */
 .menu-item i {
-    font-size: 0.5rem; /* Было 1.5rem */
-    margin-bottom: 2.67px; /* Уменьшено пропорционально */
+    font-size: 1.5rem; /* Исходный размер */
+    margin-bottom: 8px; /* Исходный размер */
+    color: var(--accent-color);
 }
 
 /* Текст в элементе меню */
@@ -238,6 +239,15 @@
     .avatar-placeholder {
         font-size: 0.9rem;
     }
+    .menu-grid {
+        grid-template-columns: repeat(auto-fit, minmax(25px, 1fr)); /* 75px → 25px */
+        gap: 3.33px; /* 10px → 3.33px */
+        padding: 4.17px; /* 12.5px → 4.17px */
+    }
+    .menu-item {
+        padding: 3.33px 1.67px; /* 10px 5px → 3.33px 1.67px */
+        border-radius: 3.33px; /* 10px → 3.33px */
+    }
 }
 
 /* Адаптивные стили для мобильных */
@@ -256,14 +266,16 @@
         font-size: 0.8rem;
     }
     .menu-grid {
-        gap: 8px;
-        padding: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(21.67px, 1fr)); /* 65px → 21.67px */
+        gap: 2.67px; /* 8px → 2.67px */
+        padding: 4px; /* 12px → 4px */
     }
     .menu-item {
-        padding: 10px 5px;
+        padding: 3.33px 1.67px; /* 10px 5px → 3.33px 1.67px */
+        border-radius: 3.33px; /* 10px → 3.33px */
     }
     .menu-item i {
-        font-size: 0.43rem; /* Было 1.3rem */
+        font-size: 1.3rem;
     }
 }
 
@@ -283,15 +295,16 @@
         font-size: 0.9rem;
     }
     .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        gap: 20px;
-        padding: 25px;
+        grid-template-columns: repeat(auto-fit, minmax(33.33px, 1fr)); /* 100px → 33.33px */
+        gap: 6.67px; /* 20px → 6.67px */
+        padding: 8.33px; /* 25px → 8.33px */
     }
     .menu-item {
-        padding: 15px;
+        padding: 5px; /* 15px → 5px */
+        border-radius: 5px; /* 15px → 5px */
     }
     .menu-item i {
-        font-size: 0.6rem; /* Было 1.8rem */
+        font-size: 1.8rem;
     }
     .menu-item span {
         font-size: 0.85rem;
@@ -312,11 +325,12 @@
 @media (max-width: 340px) {
     .menu-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 6px;
+        gap: 2px; /* 6px → 2px */
     }
     .menu-item {
         aspect-ratio: 1/1.2;
-        padding: 8px 4px;
+        padding: 2.67px 1.33px; /* 8px 4px → 2.67px 1.33px */
+        border-radius: 2.67px; /* 8px → 2.67px */
     }
     .mobile-menu-modal {
         height: 80vh;
@@ -335,7 +349,7 @@
         font-size: 0.7rem;
     }
     .menu-item i {
-        font-size: 0.43rem;
+        font-size: 1.3rem;
     }
 }
 
