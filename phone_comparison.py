@@ -5,7 +5,7 @@ from bson import ObjectId
 from pymongo import MongoClient
 from flask import jsonify
 from datetime import datetime
-import google.generativeai as genai  # Импорт Gemini
+import google.generativeai as genai
 
 # Настройка логгера
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ logger.addHandler(handler)
 
 # Конфигурация
 MONGODB_URI = os.getenv('MONGODB_URI')
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')  # Изменено на Gemini
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 PLACEHOLDER = '/static/placeholder.jpg'
 
 # Настройка Gemini
@@ -142,8 +142,8 @@ def perform_ai_comparison(phone1, phone2):
             გთხოვთ მოგვაწოდოთ დეტალური ანალიზი ქართულ ენაზე.
         """
         
-        # Создаем модель и отправляем запрос
-        model = genai.GenerativeModel('gemini-pro')
+        # Используем актуальную версию модели Gemini
+        model = genai.GenerativeModel('gemini-1.0-pro')
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
