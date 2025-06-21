@@ -96,18 +96,18 @@ if not admin_users_collection.find_one({'username': 'admin'}):
 # Пересоздание текстового индекса
 try:
     # Проверяем существование текстового индекса
-    index_name = 'text_search'
     existing_indexes = phones_collection.index_information()
     
-    # Если индекс существует - удаляем его
-    if index_name in existing_indexes:
-        phones_collection.drop_index(index_name)
-        app.logger.info(f"Dropped existing index: {index_name}")
+    # Удаляем все существующие текстовые индексы
+    for index_name, index_info in existing_indexes.items():
+        if 'text' in index_info.get('key', [])[0][1]:
+            phones_collection.drop_index(index_name)
+            app.logger.info(f"Dropped existing text index: {index_name}")
     
     # Создаем новый индекс с правильными настройками
     phones_collection.create_index(
         [('brand', 'text'), ('model', 'text'), ('Name', 'text')],
-        name=index_name,
+        name='text_search',
         default_language='none'  # Ключевое исправление для грузинского языка
     )
     app.logger.info("Text index recreated successfully with 'none' language")
