@@ -95,9 +95,13 @@
 /* Тело модального окна */
 .mobile-menu-modal .modal-body {
     flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-bottom: 20px;
+    /* ОТКЛЮЧАЕМ ПРОКРУТКУ */
+    overflow: hidden;
+    padding-bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
 }
 
 /* Контейнер плавающей аватарки */
@@ -173,47 +177,49 @@
     pointer-events: auto;
 }
 
-/* Сетка элементов меню */
+/* --- Сетка 3x3 --- */
 .menu-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-rows: repeat(3, 1fr) !important;
     gap: 12px;
-    padding: 15px;
     width: 100%;
-    box-sizing: border-box;
+    max-width: 340px;
+    height: 340px;
+    margin: 0 auto;
     background: transparent;
+    box-sizing: border-box;
+    padding: 0;
 }
-
-/* Элемент меню */
 .menu-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 12px 6px;
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(0, 198, 255, 0.2);
-    aspect-ratio: 1/1;
+    aspect-ratio: 1 / 1;
     text-align: center;
     transition: all 0.3s ease;
     cursor: pointer;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    min-width: 0;
+    min-height: 0;
+    padding: 10px 5px;
+    box-sizing: border-box;
 }
-
 .menu-item:hover {
     background: rgba(0, 198, 255, 0.15);
     transform: translateY(-5px);
     border-color: var(--accent-color);
     box-shadow: 0 8px 16px rgba(0, 198, 255, 0.3);
 }
-
 .menu-item i {
     font-size: 1.5rem;
     margin-bottom: 8px;
     color: var(--accent-color);
 }
-
 .menu-item span {
     font-size: 0.7rem;
     line-height: 1.2;
@@ -223,7 +229,34 @@
     overflow: hidden;
 }
 
-/* === Адаптивность === */
+/* Для маленьких экранов сетка остается 3x3, но уменьшается размер */
+@media (max-width: 400px) {
+    .menu-grid {
+        max-width: 270px;
+        height: 270px;
+        gap: 8px;
+    }
+    .menu-item {
+        padding: 6px 2px;
+    }
+    .floating-avatar {
+        width: 55px;
+        height: 55px;
+    }
+}
+
+/* Отключаем старые адаптивные сетки */
+@media (max-width: 1024px),
+       (min-width: 341px) and (max-width: 400px),
+       (max-width: 340px) {
+    .menu-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        grid-template-rows: repeat(3, 1fr) !important;
+        gap: 8px;
+    }
+}
+
+/* === Адаптивность для других элементов === */
 @media (max-width: 768px) {
     .mobile-menu-modal {
         height: 65vh;
@@ -253,13 +286,7 @@
     .avatar-placeholder {
         font-size: 0.8rem;
     }
-    .menu-grid {
-        gap: 8px;
-        padding: 12px;
-    }
-    .menu-item {
-        padding: 10px 5px;
-    }
+    /* .menu-grid и .menu-item переопределяются выше для 3x3 */
     .menu-item i {
         font-size: 1.3rem;
     }
@@ -280,53 +307,12 @@
     .user-balance {
         font-size: 0.9rem;
     }
-    .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        gap: 20px;
-        padding: 25px;
-    }
-    .menu-item {
-        padding: 15px;
-    }
+    /* .menu-grid и .menu-item переопределяются выше для 3x3 */
     .menu-item i {
         font-size: 1.8rem;
     }
     .menu-item span {
         font-size: 0.85rem;
-    }
-}
-
-@media (min-width: 341px) and (max-width: 400px) {
-    .menu-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    .menu-item {
-        aspect-ratio: 1/1;
-    }
-}
-
-@media (max-width: 340px) {
-    .menu-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 6px;
-    }
-    .menu-item {
-        aspect-ratio: 1/1.2;
-        padding: 8px 4px;
-    }
-    .mobile-menu-modal {
-        height: 80vh;
-        padding-top: 50px;
-    }
-    .floating-avatar {
-        width: 55px;
-        height: 55px;
-    }
-    .floating-avatar-info {
-        font-size: 0.75rem;
-    }
-    .avatar-placeholder {
-        font-size: 0.7rem;
     }
 }
 
