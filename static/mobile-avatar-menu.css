@@ -3,7 +3,7 @@
 
 /* Кнопка вызова мобильного меню внизу экрана */
 .mobile-menu-bottom {
-    display: none;
+    display: none; /* По умолчанию скрыта */
     position: fixed;
     bottom: 20px;
     left: 0;
@@ -230,10 +230,10 @@
 @media (max-width: 768px) {
     .mobile-menu-modal {
         height: 65vh;
-        padding-top: 65px; /* Оптимизировано */
+        padding-top: 65px;
     }
     .floating-avatar {
-        width: 75px; /* Оптимизировано */
+        width: 75px;
         height: 75px;
     }
     .avatar-placeholder {
@@ -248,7 +248,7 @@
         padding-top: 60px;
     }
     .floating-avatar {
-        width: 65px; /* Оптимизировано */
+        width: 65px;
         height: 65px;
     }
     .floating-avatar-info {
@@ -326,7 +326,7 @@
         padding-top: 50px;
     }
     .floating-avatar {
-        width: 55px; /* Оптимизировано */
+        width: 55px;
         height: 55px;
     }
     .floating-avatar-info {
@@ -337,15 +337,16 @@
     }
 }
 
-/* Условия отображения для не-PC устройств */
+/* Показать меню на мобильных устройствах */
 @media (max-width: 1024px) {
     .mobile-menu-bottom {
-        display: block;
+        display: block; /* Видимость на мобильных */
     }
 }
 
+/* Скрыть меню на ПК */
 @media (min-width: 1025px) {
     .mobile-menu-modal {
-        display: none !important;
+        display: none !important; /* Скрытие на ПК */
     }
 }
