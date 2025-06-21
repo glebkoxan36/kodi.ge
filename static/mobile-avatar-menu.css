@@ -9,12 +9,12 @@
     left: 0;
     right: 0;
     text-align: center;
-    z-index: 9999; /* Увеличен для надежности */
+    z-index: 1050; /* Увеличен для надежности */
 }
 
 /* Стили самой кнопки меню */
 .mobile-menu-btn {
-    background: linear-gradient(135deg, #00c6ff, #0066ff);
+    background: var(--accent-color);
     color: white;
     border: none;
     width: 60px;
@@ -22,17 +22,11 @@
     border-radius: 50%;
     font-size: 1.6rem;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(0, 198, 255, 0.6);
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto;
-    transition: all 0.3s ease;
-}
-
-.mobile-menu-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 25px rgba(0, 198, 255, 0.8);
 }
 
 /* Модальное окно мобильного меню */
@@ -45,9 +39,9 @@
     height: 70vh;
     max-height: 90%;
     background: transparent;
-    z-index: 9998; /* Чуть ниже кнопки */
+    z-index: 1100;
     align-items: flex-end;
-    backdrop-filter: blur(10px); /* Размытие фона */
+    backdrop-filter: blur(0px);
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
     opacity: 0;
@@ -64,10 +58,10 @@
 
 /* Контент модального окна */
 .mobile-menu-modal .modal-content {
-    background: rgba(10, 14, 23, 0.98); /* Более темный фон */
-    border: 2px solid var(--accent-color); /* Толще граница */
+    background: rgba(18, 26, 43, 0.95);
+    border: 3px solid rgba(0, 198, 255, 0.4);
     border-radius: 30px 30px 0 0;
-    box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.7); /* Тень сверху */
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
     overflow: visible;
     position: relative;
     width: 100%;
@@ -75,24 +69,10 @@
     margin-top: 20px;
 }
 
-/* Индикатор для захвата (как в Apple) */
-.mobile-menu-modal .modal-content::before {
-    content: '';
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 50px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.4);
-    border-radius: 2px;
-    z-index: 10;
-}
-
 /* Шапка модального окна */
 .mobile-menu-modal .modal-header {
-    padding: 15px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 12px 20px;
+    border-bottom: none;
     text-align: center;
     position: sticky;
     top: 0;
@@ -103,19 +83,13 @@
 /* Кнопка закрытия меню */
 .mobile-menu-modal .close-modal {
     position: absolute;
-    top: 15px;
-    right: 15px;
-    background: rgba(0, 0, 0, 0.3);
+    top: 10px;
+    right: 10px;
+    background: none;
     border: none;
     color: var(--text-secondary);
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     cursor: pointer;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 /* Тело модального окна */
@@ -123,33 +97,33 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 60px 0 20px 0; /* Верхний отступ для аватарки */
+    padding-bottom: 20px;
 }
 
 /* Контейнер плавающей аватарки */
 .floating-avatar-container {
     position: absolute;
-    top: -45px; /* Поднимаем аватарку выше */
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 10000; /* Выше всех */
+    z-index: 1500;
     width: 110px;
     text-align: center;
-    border-bottom: none; /* Убираем границу */
-    padding-bottom: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
 }
 
 /* Стили аватарки */
 .floating-avatar {
-    width: 85px;
-    height: 85px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     object-fit: cover;
     background: transparent;
     position: relative;
     z-index: 2;
     border: 3px solid var(--accent-color);
-    box-shadow: 0 0 20px rgba(0, 198, 255, 0.7);
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -202,9 +176,9 @@
 /* Сетка элементов меню */
 .menu-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Увеличиваем минимальный размер */
-    gap: 15px; /* Больше промежуток */
-    padding: 20px 15px; /* Больше отступы */
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 12px;
+    padding: 15px;
     width: 100%;
     box-sizing: border-box;
     background: transparent;
@@ -216,35 +190,35 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 15px 10px; /* Больше внутренние отступы */
-    border-radius: 16px; /* Больше скругление */
+    padding: 12px 6px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(0, 198, 255, 0.3); /* Ярче граница */
+    border: 1px solid rgba(0, 198, 255, 0.2);
     aspect-ratio: 1/1;
     text-align: center;
     transition: all 0.3s ease;
     cursor: pointer;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Сильнее тень */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Эффект при наведении на элемент */
 .menu-item:hover {
     background: rgba(0, 198, 255, 0.15);
-    transform: translateY(-7px); /* Сильнее смещение */
+    transform: translateY(-5px);
     border-color: var(--accent-color);
-    box-shadow: 0 10px 20px rgba(0, 198, 255, 0.4); /* Ярче тень */
+    box-shadow: 0 8px 16px rgba(0, 198, 255, 0.3);
 }
 
 /* Иконка в элементе меню */
 .menu-item i {
-    font-size: 1.8rem; /* Крупнее иконка */
-    margin-bottom: 12px; /* Больше отступ */
+    font-size: 1.5rem;
+    margin-bottom: 8px;
     color: var(--accent-color);
 }
 
 /* Текст в элементе меню */
 .menu-item span {
-    font-size: 0.85rem; /* Крупнее текст */
+    font-size: 0.7rem;
     line-height: 1.2;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -259,16 +233,11 @@
         padding-top: 65px;
     }
     .floating-avatar {
-        width: 80px;
-        height: 80px;
+        width: 75px;
+        height: 75px;
     }
     .avatar-placeholder {
         font-size: 0.9rem;
-    }
-    .menu-grid {
-        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-        gap: 12px;
-        padding: 15px;
     }
 }
 
@@ -279,8 +248,8 @@
         padding-top: 60px;
     }
     .floating-avatar {
-        width: 70px;
-        height: 70px;
+        width: 65px;
+        height: 65px;
     }
     .floating-avatar-info {
         font-size: 0.8rem;
@@ -293,10 +262,10 @@
         padding: 12px;
     }
     .menu-item {
-        padding: 12px 8px;
+        padding: 10px 5px;
     }
     .menu-item i {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
     }
 }
 
@@ -345,7 +314,7 @@
 /* Маленькие мобильные */
 @media (max-width: 340px) {
     .menu-grid {
-        grid-template-columns: repeat(3, 1fr); /* Всегда 3 колонки */
+        grid-template-columns: repeat(2, 1fr);
         gap: 6px;
     }
     .menu-item {
@@ -380,4 +349,4 @@
     .mobile-menu-modal {
         display: none !important; /* Скрытие на ПК */
     }
-        }
+}
