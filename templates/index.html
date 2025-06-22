@@ -17,53 +17,21 @@
             top: 0;
             left: 0;
         }
-        
-        .mobile-menu-modal {
-            z-index: 1100;
-            display: flex;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
-        }
-        
-        .mobile-menu-modal.open {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateY(0);
-        }
-        
-        .gradient-bg {
-            z-index: 0;
-        }
-        
-        .main-content {
-            z-index: 1;
-            position: relative;
-        }
-        
-        .mobile-menu-bottom {
-            z-index: 1000;
-            transition: opacity 0.3s ease;
-        }
-        .mobile-menu-bottom.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body>
     <!-- Gradient background elements -->
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
-    
+
     <!-- Bottom mobile menu button -->
     <div class="mobile-menu-bottom" id="mobileMenuBottom">
-        <button class="mobile-menu-btn" id="mobileMenuBtn" 
+        <button class="mobile-menu-btn" id="mobileMenuBtn"
                 aria-expanded="false" aria-controls="mobileMenuModal">
             <i class="fas fa-bars"></i>
         </button>
     </div>
-    
+
     <!-- Sidebar -->
     <div class="sidebar">
         <!-- Logo -->
@@ -78,7 +46,7 @@
             </div>
             <h2>KODI.GE</h2>
         </div>
-        
+
         <!-- User profile in sidebar -->
         <div class="user-profile-section" onclick="goToLogin()">
             <div class="user-avatar-container">
@@ -99,7 +67,7 @@
                 {% endif %}
             </div>
         </div>
-        
+
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link active" href="#">
@@ -174,7 +142,7 @@
             </li>
         </ul>
     </div>
-    
+
     <!-- Main content -->
     <div class="main-content">
         <!-- Hero Section with Logo and Carousel -->
@@ -191,7 +159,7 @@
                 <h1 class="display-4 fw-bold mt-3">KODI.GE</h1>
                 <p class="lead">პროფესიონალური IMEI შემოწმების სერვისი</p>
             </div>
-            
+
             <!-- Carousel without images -->
             <div id="mainCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
                 <div class="carousel-inner rounded">
@@ -237,7 +205,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- About Section -->
         <div id="about" class="card">
             <div class="card-header">
@@ -246,11 +214,11 @@
             </div>
             <div class="card-body">
                 <p class="lead">ჩვენ ვართ ლიდერი IMEI შემოწმების სერვისი საქართველოში</p>
-                <p>ჩვენი მისიაა უზრუნველვყოთ საიმეო ხარისხიანი სერვისი iPhone მომხმარებლებისთვის.</p>
-                <p>გთავაზობთ სრულ ინფორმაციას თქვენი მოწყობილობის სტატუსის შესახებ.</p>
+                <p>ჩვენი მისიაა უზრუნველვყოთ საიმეო ხარისხიანი სერვისი iPhone მომხმარე�[...]</p>
+                <p>გთავაზობთ სრულ ინფორმაციას თქვენი მოწყობილობის სტატუსის შესახე��[...]</p>
             </div>
         </div>
-        
+
         <!-- IMEI Info Section -->
         <div id="imei-info" class="card mt-5">
             <div class="card-header">
@@ -258,7 +226,7 @@
                 რა არის IMEI?
             </div>
             <div class="card-body">
-                <p>IMEI (International Mobile Equipment Identity) არის უნიკალური 15-ნიშნა ნომერი, რომელიც ყველა მობილურ ტელეფონს აქვს.</p>
+                <p>IMEI (International Mobile Equipment Identity) არის უნიკალური 15-ნიშნა ნომერი, რომელიც ყველა მობ��[...]</p>
                 <p>ამ ნომრის საშუალებით შეგიძლიათ:</p>
                 <ul>
                     <li>შეამოწმოთ ტელეფონის ავთენტურობა</li>
@@ -268,7 +236,7 @@
                 </ul>
             </div>
         </div>
-        
+
         <!-- Services Section -->
         <div id="pricing" class="mt-5">
             <h2 class="section-title">ჩვენი სერვისები</h2>
@@ -328,7 +296,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Statistics Section -->
         <div class="row mt-4">
             <div class="col-md-4 mb-4">
@@ -353,7 +321,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Footer -->
         <footer id="contacts" class="mt-5 pt-4 border-top border-secondary">
             <div class="row">
@@ -383,10 +351,9 @@
             </div>
         </footer>
     </div>
-    
+
     <!-- Mobile Menu Modal -->
     <div class="mobile-menu-modal" id="mobileMenuModal">
-        <!-- Avatar placed outside modal content -->
         <div class="floating-avatar-container" onclick="goToLogin()">
             {% if user %}
                 <div class="floating-avatar" style="background-color: {{ user.avatar_color }};">
@@ -404,49 +371,47 @@
                 <div class="user-balance" id="mobileUserBalance" style="display: none;"></div>
             {% endif %}
         </div>
-        
         <div class="modal-content">
             <div class="modal-header">
                 <button class="close-modal" onclick="closeMobileMenu()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
             <div class="modal-body">
                 <div class="menu-grid">
-                    <div class="menu-item" onclick="window.scrollTo(0,0); closeMobileMenu();">
+                    <div class="menu-item" tabindex="0" onclick="window.scrollTo(0,0); closeMobileMenu();">
                         <i class="fas fa-home"></i>
                         <span>მთავარი</span>
                     </div>
-                    <div class="menu-item" onclick="openAppleSubmenu()">
+                    <div class="menu-item" tabindex="0" onclick="openAppleSubmenu()">
                         <i class="fas fa-mobile-alt"></i>
                         <span>Apple</span>
                     </div>
-                    <div class="menu-item">
+                    <div class="menu-item" tabindex="0">
                         <i class="fab fa-android"></i>
                         <span>Android</span>
                     </div>
-                    <div class="menu-item">
+                    <div class="menu-item" tabindex="0">
                         <i class="fas fa-unlock-alt"></i>
                         <span>განბლოკვა</span>
                     </div>
-                    <div class="menu-item" onclick="window.location.href='compare'; closeAllMobileMenus();">
+                    <div class="menu-item" tabindex="0" onclick="window.location.href='compare'; closeAllMobileMenus();">
                         <i class="fas fa-exchange-alt"></i>
                         <span>შედარება</span>
                     </div>
-                    <div class="menu-item">
+                    <div class="menu-item" tabindex="0">
                         <i class="fas fa-book"></i>
                         <span>ცოდნის ბაზა</span>
                     </div>
-                    <div class="menu-item" onclick="document.getElementById('contacts').scrollIntoView({behavior: 'smooth'}); closeMobileMenu();">
+                    <div class="menu-item" tabindex="0" onclick="document.getElementById('contacts').scrollIntoView({behavior: 'smooth'}); closeMobileMenu();">
                         <i class="fas fa-address-card"></i>
                         <span>კონტაქტი</span>
                     </div>
-                    <div class="menu-item">
+                    <div class="menu-item" tabindex="0">
                         <i class="fas fa-shield-alt"></i>
                         <span>კონფიდენციალურობა</span>
                     </div>
-                    <div class="menu-item">
+                    <div class="menu-item" tabindex="0">
                         <i class="fas fa-undo"></i>
                         <span>დაბრუნება</span>
                     </div>
@@ -486,167 +451,94 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Main application logic -->
+
     <script>
-        // Track menu state
         let isMenuOpen = false;
         let scrollPosition = 0;
-        
-        // Mobile menu functions
+
         function openMobileMenu() {
             try {
-                // Save current scroll position
                 scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-                
                 const modal = document.getElementById('mobileMenuModal');
                 modal.classList.add('open');
                 isMenuOpen = true;
-                
-                // Set ARIA attributes
                 document.getElementById('mobileMenuBtn').setAttribute('aria-expanded', 'true');
-                
-                // Hide menu button
                 document.getElementById('mobileMenuBottom').classList.add('hidden');
-                
-                // Lock page scrolling
                 document.querySelector('.main-content').classList.add('content-locked');
-                
-                // Move focus to first menu item
                 setTimeout(() => {
                     const firstMenuItem = document.querySelector('.menu-item');
                     if (firstMenuItem) firstMenuItem.focus();
                 }, 100);
-            } catch(e) {
-                console.error('Error opening mobile menu:', e);
-            }
+            } catch(e) { console.error('Error opening mobile menu:', e);}
         }
-        
         function closeMobileMenu() {
             try {
                 const modal = document.getElementById('mobileMenuModal');
                 modal.classList.remove('open');
                 isMenuOpen = false;
-                
-                // Set ARIA attributes
                 document.getElementById('mobileMenuBtn').setAttribute('aria-expanded', 'false');
-                
-                // Unlock page scrolling
                 document.querySelector('.main-content').classList.remove('content-locked');
-                
-                // Show menu button
                 document.getElementById('mobileMenuBottom').classList.remove('hidden');
-                
-                // Restore scroll position
                 window.scrollTo(0, scrollPosition);
-            } catch(e) {
-                console.error('Error closing mobile menu:', e);
-            }
+            } catch(e) { console.error('Error closing mobile menu:', e);}
         }
-        
         function openAppleSubmenu() {
             try {
                 const appleModal = document.getElementById('appleSubmenuModal');
                 appleModal.classList.add('open');
                 isMenuOpen = true;
-                
-                // Hide menu button
                 document.getElementById('mobileMenuBottom').classList.add('hidden');
-            } catch(e) {
-                console.error('Error opening Apple submenu:', e);
-            }
+            } catch(e){console.error('Error opening Apple submenu:', e);}
         }
-        
         function closeAppleSubmenu() {
             try {
                 const appleModal = document.getElementById('appleSubmenuModal');
                 appleModal.classList.remove('open');
                 isMenuOpen = false;
-                
-                // Show menu button
                 document.getElementById('mobileMenuBottom').classList.remove('hidden');
-            } catch(e) {
-                console.error('Error closing Apple submenu:', e);
-            }
+            } catch(e){console.error('Error closing Apple submenu:', e);}
         }
-        
         function closeAllMobileMenus() {
             closeMobileMenu();
             closeAppleSubmenu();
         }
-        
-        // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize carousel with error handling
-            try {
-                const carouselElement = document.getElementById('mainCarousel');
-                if (carouselElement) {
-                    const myCarousel = new bootstrap.Carousel(carouselElement, {
-                        interval: 2000,
-                        ride: 'carousel'
-                    });
-                } else {
-                    console.warn('Carousel element not found');
-                }
-            } catch(e) {
-                console.error('Carousel initialization failed:', e);
-            }
-
-            // Mobile menu button setup
             try {
                 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
                 if (mobileMenuBtn) {
                     mobileMenuBtn.addEventListener('click', openMobileMenu);
-                } else {
-                    console.warn('Mobile menu button not found');
                 }
-            } catch(e) {
-                console.error('Mobile menu setup error:', e);
-            }
-
-            // Close menu when clicking outside
+            } catch(e){console.error('Mobile menu setup error:', e);}
+            
             document.addEventListener('click', (e) => {
                 try {
                     const mobileMenuModal = document.getElementById('mobileMenuModal');
                     const appleSubmenuModal = document.getElementById('appleSubmenuModal');
                     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-                    
-                    // Check if click is outside menu content
-                    const isClickInsideMobileMenu = mobileMenuModal.classList.contains('open') && 
+                    const isClickInsideMobileMenu = mobileMenuModal.classList.contains('open') &&
                         mobileMenuModal.querySelector('.modal-content').contains(e.target);
-                    
-                    const isClickInsideAppleMenu = appleSubmenuModal.classList.contains('open') && 
+                    const isClickInsideAppleMenu = appleSubmenuModal.classList.contains('open') &&
                         appleSubmenuModal.querySelector('.modal-content').contains(e.target);
-                    
-                    // Close mobile menu if click is outside
-                    if (mobileMenuModal.classList.contains('open') && 
-                        !isClickInsideMobileMenu && 
+                    if (mobileMenuModal.classList.contains('open') &&
+                        !isClickInsideMobileMenu &&
                         e.target !== mobileMenuBtn) {
                         closeMobileMenu();
                     }
-                    
-                    // Close apple submenu if click is outside
-                    if (appleSubmenuModal.classList.contains('open') && 
+                    if (appleSubmenuModal.classList.contains('open') &&
                         !isClickInsideAppleMenu) {
                         closeAppleSubmenu();
                     }
-                } catch(e) {
-                    console.error('Click handler error:', e);
-                }
+                } catch(e){console.error('Click handler error:', e);}
             });
-            
-            // Close menu with Escape key
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && isMenuOpen) {
                     closeAllMobileMenus();
                 }
             });
         });
-        
-        // Redirect to login or dashboard
         function goToLogin() {
             closeAllMobileMenus();
             {% if user %}
@@ -655,15 +547,13 @@
                 window.location.href = "{{ url_for('auth.login') }}";
             {% endif %}
         }
-        
-        // Simulate statistics counter
         setInterval(() => {
             try {
-                document.getElementById('daily-checks').textContent = 
+                document.getElementById('daily-checks').textContent =
                     parseInt(document.getElementById('daily-checks').textContent) + 1;
-                document.getElementById('weekly-checks').textContent = 
+                document.getElementById('weekly-checks').textContent =
                     parseInt(document.getElementById('weekly-checks').textContent) + 1;
-                document.getElementById('monthly-checks').textContent = 
+                document.getElementById('monthly-checks').textContent =
                     parseInt(document.getElementById('monthly-checks').textContent) + 1;
             } catch(e) {
                 console.warn('Error updating counters:', e);
