@@ -342,6 +342,11 @@
     
     <!-- Mobile Menu Modal -->
     <div class="mobile-menu-modal" id="mobileMenuModal">
+        <!-- Кнопка закрытия в правом верхнем углу -->
+        <button class="close-modal" onclick="closeMobileMenu()">
+            <i class="fas fa-times"></i>
+        </button>
+        
         <!-- Avatar placed outside modal content -->
         <div class="floating-avatar-container" onclick="goToLogin()">
             {% if user %}
@@ -362,12 +367,6 @@
         </div>
         
         <div class="modal-content">
-            <div class="modal-header">
-                <button class="close-modal" onclick="closeMobileMenu()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
             <div class="modal-body">
                 <div class="menu-grid">
                     <div class="menu-item" onclick="window.scrollTo(0,0); closeMobileMenu();">
@@ -413,12 +412,13 @@
 
     <!-- Apple Submenu Modal -->
     <div class="mobile-menu-modal" id="appleSubmenuModal">
+        <button class="close-modal" onclick="closeAppleSubmenu()">
+            <i class="fas fa-times"></i>
+        </button>
+        
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Apple შემოწმება</h3>
-                <button class="close-modal" onclick="closeAppleSubmenu()">
-                    <i class="fas fa-times"></i>
-                </button>
             </div>
             <div class="modal-body">
                 <div class="menu-grid">
@@ -583,4 +583,4 @@
         }, 5000);
     </script>
 </body>
-</html>
+    </html>
