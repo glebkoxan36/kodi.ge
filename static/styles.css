@@ -5,7 +5,7 @@
     --secondary-color: #1d2a4a;
     --accent-color: #00c6ff;
     --text-color: #ffffff;
-    --text-secondary: #c0c0d0;
+    --text-secondary: #ffffff; /* Изменено на белый */
     --card-bg: #121a2b;
     --card-hover-bg: #16203a;
     --success-color: #00d68f;
@@ -949,7 +949,7 @@ footer h5 {
     background: transparent;
     box-sizing: border-box;
     padding: 0;
-    margin-top: 160px;
+    margin-top: 180px; /* Увеличено для опускания ячеек */
 }
 
 .menu-item {
@@ -995,6 +995,20 @@ footer h5 {
     word-break: break-word;
     hyphens: auto;
     padding: 0 2px;
+}
+
+/* Стили для карусели */
+.carousel-item {
+    background: linear-gradient(
+        to right, 
+        rgba(13, 21, 37, 0.8), 
+        rgba(29, 42, 74, 0.8)
+    );
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 198, 255, 0.3);
 }
 
 /* Адаптивность */
@@ -1142,7 +1156,7 @@ footer h5 {
         gap: 20px;
         max-width: 380px;
         height: 380px;
-        margin-top: 140px;
+        margin-top: 160px; /* Увеличено */
     }
 }
 
@@ -1212,7 +1226,7 @@ footer h5 {
         max-width: 360px;
         height: 360px;
         gap: 16px;
-        margin-top: 120px;
+        margin-top: 140px; /* Увеличено */
     }
     .user-balance {
         font-size: 0.85rem;
@@ -1238,7 +1252,7 @@ footer h5 {
         max-width: 340px;
         height: 340px;
         gap: 18px;
-        margin-top: 110px;
+        margin-top: 130px; /* Увеличено */
     }
 }
 
@@ -1277,7 +1291,7 @@ footer h5 {
     .menu-grid {
         max-width: 320px;
         height: 320px;
-        margin-top: 100px;
+        margin-top: 120px; /* Увеличено */
         gap: 16px;
     }
 }
@@ -1311,7 +1325,7 @@ footer h5 {
         max-width: 450px;
         height: 450px;
         gap: 25px;
-        margin-top: 170px;
+        margin-top: 190px; /* Увеличено */
     }
 }
 
