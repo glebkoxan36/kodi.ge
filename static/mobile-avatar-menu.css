@@ -197,7 +197,8 @@
     background: transparent;
     box-sizing: border-box;
     padding: 0;
-    margin-top: 120px; /* Уменьшен для новой позиции аватарки */
+    /* ИЗМЕНЕНО: уменьшен верхний отступ */
+    margin-top: 100px; /* Было 120px */
 }
 
 .menu-item {
@@ -264,7 +265,8 @@
         max-width: 300px;
         height: 300px;
         gap: 18px;
-        margin-top: 100px;
+        /* ИЗМЕНЕНО: уменьшен верхний отступ */
+        margin-top: 80px; /* Было 100px */
     }
     .menu-item {
         padding: 10px 6px;
@@ -289,7 +291,8 @@
         gap: 20px;
         max-width: 340px;
         height: 340px;
-        margin-top: 110px;
+        /* ИЗМЕНЕНО: уменьшен верхний отступ */
+        margin-top: 90px; /* Было 110px */
     }
 }
 
@@ -317,7 +320,8 @@
         max-width: 320px;
         height: 320px;
         gap: 16px;
-        margin-top: 100px;
+        /* ИЗМЕНЕНО: уменьшен верхний отступ */
+        margin-top: 80px; /* Было 100px */
     }
     .user-balance {
         font-size: 0.85rem;
@@ -351,7 +355,8 @@
         max-width: 420px;
         height: 420px;
         gap: 25px;
-        margin-top: 140px;
+        /* ИЗМЕНЕНО: уменьшен верхний отступ */
+        margin-top: 120px; /* Было 140px */
     }
 }
 
