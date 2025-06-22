@@ -6,48 +6,198 @@
     <title>Kodi.ge - Apple IMEI Checker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='mobile-avatar-menu.css') }}"> 
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="static/mobile-avatar-menu.css">
     <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        .check-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px;
+            background-color: #1e1e1e;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .check-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .check-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .free-icon { background: linear-gradient(135deg, #00c6ff, #0072ff); }
+        .paid-icon { background: linear-gradient(135deg, #f6d365, #fda085); }
+        .premium-icon { background: linear-gradient(135deg, #a8ff78, #78ffd6); }
+        
+        .check-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .check-description {
+            color: #adb5bd;
+            margin-top: 5px;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: #f8f9fa;
+        }
+        
+        .form-control {
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-color: #00c6ff;
+            box-shadow: 0 0 0 0.25rem rgba(0, 198, 255, 0.25);
+            color: #f8f9fa;
+        }
+        
+        .btn-check {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 10px;
+            border: none;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .btn-check:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #4a00e0, #8e2de2);
+            z-index: -1;
+            transition: transform 0.5s ease;
+            transform: scaleX(0);
+            transform-origin: right;
+        }
+        
+        .btn-check:hover:before {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+        
+        .btn-check:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            color: #adb5bd;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+        
+        .back-button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #f8f9fa;
+        }
+    </style>
 </head>
 <body>
     <!-- Gradient background elements -->
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
     
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="logo-container">
-                <div class="logo-animated">
-                    <div class="logo-ring"></div>
-                    <div class="logo-ring"></div>
-                    <div class="logo-ring"></div>
-                    <div class="logo-core">
-                        <div class="logo-letter">K</div>
-                    </div>
-                </div>
-                <h1 class="m-0">KODI.GE</h1>
-            </div>
-        </div>
-    </header>
+    <!-- Bottom mobile menu button -->
+    <div class="mobile-menu-bottom" id="mobileMenuBottom">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
     
-    <!-- Main content -->
-    <div class="container py-5">
+    <!-- Header -->
+    <div class="container py-4">
         <a href="index.html" class="back-button">
             <i class="fas fa-arrow-left"></i>
             უკან დაბრუნება
         </a>
         
         <div class="text-center mb-5">
-            <h2 class="display-4 fw-bold">Apple IMEI შემოწმება</h2>
+            <h1 class="display-4 fw-bold">Apple IMEI შემოწმება</h1>
             <p class="lead text-muted">შეამოწმეთ თქვენი Apple მოწყობილობა სანდო სერვისით</p>
+        </div>
+        
+        <!-- Check Section -->
+        <div id="check-section" class="mb-5">
+            <div class="check-container">
+                <div class="check-header">
+                    <div class="check-icon free-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <div>
+                        <h2 class="check-title">უფასო შემოწმება</h2>
+                        <p class="check-description">მიიღეთ ძირითადი ინფორმაცია თქვენი Apple მოწყობილობის შესახებ</p>
+                    </div>
+                </div>
+                
+                <form id="imeiForm">
+                    <div class="mb-4">
+                        <label for="imeiInput" class="form-label">შეიყვანეთ IMEI ნომერი</label>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="imeiInput" 
+                            placeholder="15-ნიშნა IMEI" 
+                            required
+                            pattern="[0-9]{15}"
+                            title="15-ნიშნა IMEI ნომერი">
+                        <div class="form-text mt-2">
+                            IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში ან დარეკეთ *#06#
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-check" onclick="checkImei()">
+                        <span id="check-button-text">უფასო შემოწმება</span>
+                        <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                </form>
+            </div>
         </div>
         
         <!-- Service Cards -->
         <div class="row mb-5">
             <div class="col-md-4 mb-4">
-                <div class="service-card h-100">
+                <div class="card h-100 service-card">
                     <div class="service-icon text-info">
                         <i class="fas fa-mobile-alt"></i>
                     </div>
@@ -56,16 +206,17 @@
                         <li>ძირითადი ინფორმაცია</li>
                         <li>მოწყობილობის მოდელის დადგენა</li>
                         <li>ქსელის ბლოკირების შემოწმება</li>
+                        <li>სერიული ნომრის შემოწმება</li>
+                        <li>მოწყობილობის ფერის დადგენა</li>
                     </ul>
                     <div class="service-price">0 ₾</div>
-                    <div class="service-instruction" onclick="showCheck('free')">
-                        <i class="fas fa-arrow-right me-1"></i>
-                        აირჩიეთ ეს სერვისი
-                    </div>
+                    <a href="applecheck.html?type=free" class="service-action">
+                        <i class="fas fa-arrow-right me-1"></i> არჩევა
+                    </a>
                 </div>
             </div>
             <div class="col-md-4 mb-4">
-                <div class="service-card h-100">
+                <div class="card h-100 service-card">
                     <div class="service-icon text-warning">
                         <i class="fas fa-shopping-cart"></i>
                     </div>
@@ -75,16 +226,17 @@
                         <li>iCloud სტატუსის შემოწმება</li>
                         <li>მოპარვის/დაკარგვის სტატუსი</li>
                         <li>სერვისის სტატუსი</li>
+                        <li>გარანტიის ინფორმაცია</li>
+                        <li>შეძენის თარიღი</li>
                     </ul>
                     <div class="service-price">2.99 ₾</div>
-                    <div class="service-instruction" onclick="showCheck('paid')">
-                        <i class="fas fa-arrow-right me-1"></i>
-                        აირჩიეთ ეს სერვისი
-                    </div>
+                    <a href="applecheck.html?type=paid" class="service-action">
+                        <i class="fas fa-arrow-right me-1"></i> არჩევა
+                    </a>
                 </div>
             </div>
             <div class="col-md-4 mb-4">
-                <div class="service-card h-100">
+                <div class="card h-100 service-card">
                     <div class="service-icon text-success">
                         <i class="fas fa-crown"></i>
                     </div>
@@ -94,56 +246,17 @@
                         <li>სრული ისტორიის მიმოხილვა</li>
                         <li>გარანტია განბლოკვაზე</li>
                         <li>24/7 პრიორიტეტული მხარდაჭერა</li>
+                        <li>დეტალური ანალიზი</li>
+                        <li>ბატარეის მდგომარეობა</li>
                     </ul>
                     <div class="service-price">4.99 ₾</div>
-                    <div class="service-instruction" onclick="showCheck('premium')">
-                        <i class="fas fa-arrow-right me-1"></i>
-                        აირჩიეთ ეს სერვისი
-                    </div>
+                    <a href="applecheck.html?type=premium" class="service-action">
+                        <i class="fas fa-arrow-right me-1"></i> არჩევა
+                    </a>
                 </div>
             </div>
         </div>
-        
-        <!-- Check Section (dynamically filled) -->
-        <div id="check-section"></div>
     </div>
-    
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4 mb-4">
-                    <h5 class="footer-title">Kodi.ge</h5>
-                    <p>iPhone IMEI შემოწმების პროფესიონალური სერვისი</p>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <h5 class="footer-title">მენიუ</h5>
-                    <ul class="footer-links">
-                        <li><a href="index.html">მთავარი გვერდი</a></li>
-                        <li><a href="#">შემოწმება Android</a></li>
-                        <li><a href="#">ტელეფონის განბლოკვა</a></li>
-                        <li><a href="compare">ტელეფონების შედარება</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <h5 class="footer-title">კონტაქტი</h5>
-                    <ul class="footer-links">
-                        <li><i class="fas fa-phone me-2"></i> +995 555 12 34 56</li>
-                        <li><i class="fas fa-envelope me-2"></i> info@kodi.ge</li>
-                        <li><i class="fas fa-map-marker-alt me-2"></i> თბილისი, საქართველო</li>
-                    </ul>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-telegram"></i></a>
-                    </div>
-                </div>
-            </div>
-            <div class="copyright">
-                <p class="mb-0">© 2023 Kodi.ge. ყველა უფლება დაცულია.</p>
-            </div>
-        </div>
-    </footer>
     
     <!-- Result Modal -->
     <div class="result-modal" id="resultModal">
@@ -171,83 +284,120 @@
     <!-- Main application logic -->
     <script>
         // Global variables
-        let currentServiceType = null;
+        let stripeInstance = null;
+        let currentServiceType = 'free';
         
-        // Show check form based on service type
-        function showCheck(serviceType) {
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Stripe with error handling
             try {
-                currentServiceType = serviceType;
-                const checkSection = document.getElementById('check-section');
+                stripeInstance = Stripe("{{ STRIPE_PUBLIC_KEY }}");
+            } catch(e) {
+                console.error('Stripe initialization failed:', e);
+                // Show user-friendly error message
+                const stripeError = document.createElement('div');
+                stripeError.className = 'alert alert-danger position-fixed top-0 start-0 m-3';
+                stripeError.style.zIndex = '9999';
+                stripeError.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Payment Error:</strong> Payment system initialization failed. Please refresh the page.
+                `;
+                document.body.appendChild(stripeError);
                 
-                // Scroll to check section
-                document.getElementById('check-section').scrollIntoView({ behavior: 'smooth' });
-                
-                // Create HTML based on service type
-                let html = '';
-                let title = '';
-                let iconClass = '';
-                let description = '';
-                
-                switch(serviceType) {
-                    case 'free':
-                        title = 'უფასო შემოწმება';
-                        iconClass = 'fas fa-mobile-alt free-icon';
-                        description = 'მიიღეთ ძირითადი ინფორმაცია თქვენი Apple მოწყობილობის შესახებ';
-                        break;
-                    case 'paid':
-                        title = 'პლატანი შემოწმება';
-                        iconClass = 'fas fa-shopping-cart paid-icon';
-                        description = 'სრული ინფორმაცია მოწყობილობის სტატუსისა და ბლოკირების შესახებ';
-                        break;
-                    case 'premium':
-                        title = 'პრემიუმ შემოწმება';
-                        iconClass = 'fas fa-crown premium-icon';
-                        description = 'ყველაზე სრულყოფილი შემოწმება გარანტიით და პრიორიტეტული მხარდაჭერით';
-                        break;
-                }
-                
-                html = `
-                    <div class="check-container">
-                        <div class="check-header">
-                            <div class="check-icon">
-                                <i class="${iconClass}"></i>
-                            </div>
-                            <div>
-                                <h2 class="check-title">${title}</h2>
-                                <p class="check-description">${description}</p>
-                            </div>
-                        </div>
-                        
-                        <form id="imeiForm">
-                            <div class="mb-4">
-                                <label for="imeiInput" class="form-label">შეიყვანეთ IMEI ნომერი</label>
-                                <input 
-                                    type="text" 
-                                    class="form-control" 
-                                    id="imeiInput" 
-                                    placeholder="15-ნიშნა IMEI" 
-                                    required
-                                    pattern="[0-9]{15}"
-                                    title="15-ნიშნა IMEI ნომერი">
-                                <div class="form-text mt-2">
-                                    IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში ან დარეკეთ *#06#
-                                </div>
-                            </div>
-                            
-                            <button type="button" class="btn btn-check" onclick="checkImei()">
-                                ${serviceType === 'free' ? 'უფასო შემოწმება' : 
-                                  serviceType === 'paid' ? 'გადახდა: 2.99 ₾' : 
-                                  'გადახდა: 4.99 ₾'}
-                                <i class="fas fa-arrow-right ms-2"></i>
-                            </button>
-                        </form>
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    try {
+                        stripeError.style.opacity = '0';
+                        setTimeout(() => {
+                            if (document.body.contains(stripeError)) {
+                                document.body.removeChild(stripeError);
+                            }
+                        }, 500);
+                    } catch(err) {
+                        console.error('Error removing error message:', err);
+                    }
+                }, 5000);
+            }
+
+            // Get service type from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const serviceType = urlParams.get('type');
+            
+            if (serviceType && ['free', 'paid', 'premium'].includes(serviceType)) {
+                updateCheckSection(serviceType);
+            }
+            
+            // Handle session_id after payment
+            const sessionId = urlParams.get('session_id');
+            if(sessionId) {
+                showSpinner(true);
+                fetch(`/get_check_result?session_id=${sessionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        showSpinner(false);
+                        if(data.error) {
+                            displayResult({ error: data.error });
+                        } else {
+                            displayResult(data.result);
+                        }
+                    })
+                    .catch(error => {
+                        showSpinner(false);
+                        displayResult({ error: 'Failed to get result: ' + error.message });
+                    });
+            }
+        });
+        
+        // Update check section based on service type
+        function updateCheckSection(serviceType) {
+            currentServiceType = serviceType;
+            const checkSection = document.querySelector('.check-container');
+            
+            if (!checkSection) return;
+            
+            let title = '';
+            let iconClass = '';
+            let description = '';
+            let buttonText = '';
+            
+            switch(serviceType) {
+                case 'free':
+                    title = 'უფასო შემოწმება';
+                    iconClass = 'fas fa-mobile-alt free-icon';
+                    description = 'მიიღეთ ძირითადი ინფორმაცია თქვენი Apple მოწყობილობის შესახებ';
+                    buttonText = 'უფასო შემოწმება';
+                    break;
+                case 'paid':
+                    title = 'პლატანი შემოწმება';
+                    iconClass = 'fas fa-shopping-cart paid-icon';
+                    description = 'სრული ინფორმაცია მოწყობილობის სტატუსისა და ბლოკირების შესახებ';
+                    buttonText = 'გადახდა: 2.99 ₾';
+                    break;
+                case 'premium':
+                    title = 'პრემიუმ შემოწმება';
+                    iconClass = 'fas fa-crown premium-icon';
+                    description = 'ყველაზე სრულყოფილი შემოწმება გარანტიით და პრიორიტეტული მხარდაჭერით';
+                    buttonText = 'გადახდა: 4.99 ₾';
+                    break;
+            }
+            
+            const header = checkSection.querySelector('.check-header');
+            const buttonTextSpan = document.getElementById('check-button-text');
+            
+            if (header) {
+                header.innerHTML = `
+                    <div class="check-icon">
+                        <i class="${iconClass}"></i>
+                    </div>
+                    <div>
+                        <h2 class="check-title">${title}</h2>
+                        <p class="check-description">${description}</p>
                     </div>
                 `;
-                
-                checkSection.innerHTML = html;
-            } catch(e) {
-                console.error('Error showing check:', e);
-                alert('Error initializing check service');
+            }
+            
+            if (buttonTextSpan) {
+                buttonTextSpan.textContent = buttonText;
             }
         }
         
@@ -281,53 +431,65 @@
                 
                 showSpinner(true);
                 
-                // Simulate API call
-                setTimeout(() => {
-                    showSpinner(false);
-                    displayResult(generateResult(imei, currentServiceType));
-                }, 2000);
+                if(currentServiceType === 'free') {
+                    // Free check
+                    fetch('/perform_check', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            imei: imei,
+                            service_type: 'free'
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        showSpinner(false);
+                        displayResult(data);
+                    })
+                    .catch(error => {
+                        showSpinner(false);
+                        displayResult({ error: 'Request failed: ' + error.message });
+                    });
+                } else {
+                    // Paid check
+                    fetch('/create-checkout-session', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            imei: imei,
+                            service_type: currentServiceType
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.error) {
+                            throw new Error(data.error);
+                        }
+                        if (!stripeInstance) {
+                            throw new Error('Payment system not initialized');
+                        }
+                        return stripeInstance.redirectToCheckout({ sessionId: data.id });
+                    })
+                    .then(result => {
+                        if(result.error) {
+                            showSpinner(false);
+                            alert(result.error.message);
+                        }
+                    })
+                    .catch(error => {
+                        showSpinner(false);
+                        alert('Payment failed: ' + error.message);
+                    });
+                }
             } catch(e) {
                 console.error('Error in IMEI check:', e);
                 showSpinner(false);
                 alert('An error occurred during IMEI check');
             }
-        }
-        
-        // Generate mock result data
-        function generateResult(imei, serviceType) {
-            const models = ['iPhone 13 Pro Max', 'iPhone 12', 'iPhone SE (2020)', 'iPhone 11 Pro'];
-            const colors = ['Space Gray', 'Silver', 'Gold', 'Midnight Green'];
-            const capacities = ['128GB', '256GB', '512GB', '1TB'];
-            const statuses = ['სუფთა', 'დაბლოკილია', 'მოპარულია', 'ქულდებაშია'];
-            const carriers = ['Magti', 'Silknet', 'Geocell', 'Beeline'];
-            
-            const result = {
-                imei: imei,
-                model: models[Math.floor(Math.random() * models.length)],
-                color: colors[Math.floor(Math.random() * colors.length)],
-                capacity: capacities[Math.floor(Math.random() * capacities.length)],
-                serial: 'C' + Math.floor(Math.random() * 100000000).toString().padStart(8, '0'),
-                purchase_date: '2022-' + (Math.floor(Math.random() * 12) + 1).toString().padStart(2, '0') + '-' + (Math.floor(Math.random() * 28) + 1).toString().padStart(2, '0'),
-                warranty: Math.random() > 0.5 ? 'აქტიური' : 'ვადაგასული',
-                activation_status: Math.random() > 0.3 ? 'აქტივირებული' : 'არააქტივირებული',
-                carrier: carriers[Math.floor(Math.random() * carriers.length)],
-                country: 'საქართველო',
-                blacklist_status: Math.random() > 0.7 ? 'შავ სიაშია' : 'არაა შავ სიაში'
-            };
-            
-            if (serviceType !== 'free') {
-                result.fmi_status = Math.random() > 0.5 ? 'ჩართულია' : 'გამორთულია';
-                result.simlock_status = Math.random() > 0.6 ? 'დაბლოკილია' : 'არაა დაბლოკილი';
-                result.theft_status = Math.random() > 0.8 ? 'მოპარულია/დაკარგულია' : 'სუფთა';
-            }
-            
-            if (serviceType === 'premium') {
-                result.repair_history = Math.random() > 0.5 ? 'არ აქვს სარემონტო ისტორია' : 'არაოფიციალური შეკეთება';
-                result.battery_health = Math.floor(Math.random() * 40) + 60 + '%';
-                result.unlock_guarantee = Math.random() > 0.2 ? 'დაგეგმილია 3 სამუშაო დღეში' : 'შეუძლებელია განბლოკვა';
-            }
-            
-            return result;
         }
         
         // Display result in modal
@@ -339,86 +501,35 @@
                     throw new Error('Result modal content element not found');
                 }
                 
-                let html = `
-                    <div class="device-info">
-                        <div class="device-image">
-                            <img src="https://cdn.dribbble.com/users/759083/screenshots/16287793/media/8f1b7d172d8f1e7c3f7c0a3b0f3e3e3e.png" alt="iPhone">
+                if(data.error) {
+                    modalContent.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i> შეცდომა: ${data.error}
                         </div>
-                        <div class="device-details">
-                            <div class="device-model">${data.model} ${data.color} ${data.capacity}</div>
-                            <div class="device-status status-${data.theft_status && data.theft_status.includes('მოპარულია') ? 'danger' : 
-                                                           data.blacklist_status && data.blacklist_status.includes('შავ სიაშია') ? 'warning' : 'clean'}">
-                                ${data.theft_status && data.theft_status.includes('მოპარულია') ? data.theft_status : 
-                                  data.blacklist_status && data.blacklist_status.includes('შავ სიაშია') ? data.blacklist_status : 'სუფთა სტატუსი'}
-                            </div>
+                    `;
+                } else {
+                    let html = `
+                        <div class="alert alert-success mb-4">
+                            <i class="fas fa-check-circle me-2"></i> შემოწმება წარმატებით დასრულდა!
                         </div>
-                    </div>
+                    `;
                     
-                    <div class="result-item">
-                        <div class="result-label">IMEI ნომერი:</div>
-                        <div class="result-value">${data.imei}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">სერიული ნომერი:</div>
-                        <div class="result-value">${data.serial}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">შეძენის თარიღი:</div>
-                        <div class="result-value">${data.purchase_date}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">გარანტია:</div>
-                        <div class="result-value">${data.warranty}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">აქტივაციის სტატუსი:</div>
-                        <div class="result-value">${data.activation_status}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">ოპერატორი:</div>
-                        <div class="result-value">${data.carrier}</div>
-                    </div>
-                    <div class="result-item">
-                        <div class="result-label">ქვეყანა:</div>
-                        <div class="result-value">${data.country}</div>
-                    </div>
-                `;
-                
-                if (currentServiceType !== 'free') {
-                    html += `
-                        <div class="result-item">
-                            <div class="result-label">FMI ჩართვა:</div>
-                            <div class="result-value">${data.fmi_status}</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-label">SIM ლოკი:</div>
-                            <div class="result-value">${data.simlock_status}</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-label">მოპარვის სტატუსი:</div>
-                            <div class="result-value">${data.theft_status}</div>
-                        </div>
-                    `;
+                    for(const [key, value] of Object.entries(data)) {
+                        if(key === 'html_content') {
+                            html += `<div class="mt-4">${value}</div>`;
+                        } else {
+                            html += `
+                                <div class="result-item">
+                                    <div class="result-label">${formatLabel(key)}:</div>
+                                    <div class="result-value">${value}</div>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    modalContent.innerHTML = html;
                 }
                 
-                if (currentServiceType === 'premium') {
-                    html += `
-                        <div class="result-item">
-                            <div class="result-label">სარემონტო ისტორია:</div>
-                            <div class="result-value">${data.repair_history}</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-label">ბატარეის ჯანმრთელობა:</div>
-                            <div class="result-value">${data.battery_health}</div>
-                        </div>
-                        <div class="result-item">
-                            <div class="result-label">განბლოკვის გარანტია:</div>
-                            <div class="result-value">${data.unlock_guarantee}</div>
-                        </div>
-                    `;
-                }
-                
-                modalContent.innerHTML = html;
                 document.getElementById('resultModal').style.display = 'flex';
             } catch(e) {
                 console.error('Error displaying result:', e);
@@ -426,10 +537,28 @@
             }
         }
         
-        // Initialize page with free check by default
-        document.addEventListener('DOMContentLoaded', () => {
-            showCheck('free');
-        });
+        // Format labels for display
+        function formatLabel(key) {
+            const labels = {
+                'model': 'მოდელი',
+                'serial': 'სერიული ნომერი',
+                'status': 'სტატუსი',
+                'fmi': 'FMI ჩართვა',
+                'blacklist': 'შავი სია',
+                'simlock': 'SIM ლოკი',
+                'warranty': 'გარანტია',
+                'purchase_date': 'შეძენის თარიღი',
+                'activation_status': 'აქტივაციის სტატუსი',
+                'carrier': 'ოპერატორი',
+                'country': 'ქვეყანა',
+                'device': 'მოწყობილობა',
+                'imei': 'IMEI ნომერი',
+                'iccid': 'ICCID',
+                'blacklist_status': 'შავი სიის სტატუსი'
+            };
+            
+            return labels[key] || key;
+        }
     </script>
 </body>
-  </html>
+</html>
