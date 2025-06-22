@@ -54,6 +54,18 @@
             background: rgba(255, 170, 0, 0.15);
             color: var(--warning-color);
         }
+        
+        /* Стили для мобильного меню */
+        @media (max-width: 991px) {
+            .mobile-only-section {
+                display: block;
+            }
+        }
+        @media (min-width: 992px) {
+            .mobile-only-section {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -99,7 +111,13 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('user.history_checks') }}">
                     <i class="fas fa-history"></i>
-                    <span>ისტორია</span>
+                    <span>IMEI შემოწმებები</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('user.history_comparisons') }}">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>ტელეფონების შედარებები</span>
                 </a>
             </li>
             <li class="nav-item">
@@ -191,87 +209,18 @@
             </div>
         </div>
         
-        <!-- Recent checks and comparisons -->
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-mobile-alt me-2"></i>
-                            IMEI-ის ბოლო შემოწმებები
-                        </div>
-                        <a href="{{ url_for('user.history_checks') }}" class="view-all-link">ყველას ნახვა</a>
-                    </div>
-                    <div class="card-body">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th>თარიღი</th>
-                                    <th>IMEI</th>
-                                    <th>სტატუსი</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for check in checks %}
-                                <tr>
-                                    <td>{{ check.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
-                                    <td>{{ check.imei[:2] + '*'*12 + check.imei[-2:] }}</td>
-                                    <td>
-                                        {% if check.status == 'clean' %}
-                                            <span class="status-badge status-clean">სუფთა</span>
-                                        {% elif check.status == 'blacklisted' %}
-                                            <span class="status-badge status-blacklisted">შავ სიაშია</span>
-                                        {% elif check.status == 'warning' %}
-                                            <span class="status-badge status-warning">გაფრთხილება</span>
-                                        {% else %}
-                                            <span class="status-badge">{{ check.status }}</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+        <!-- Mobile-only section for history buttons -->
+        <div class="mobile-only-section">
+            <div class="row mb-4">
+                <div class="col-6">
+                    <a href="{{ url_for('user.history_checks') }}" class="btn btn-primary w-100">
+                        <i class="fas fa-mobile-alt me-2"></i>IMEI ისტორია
+                    </a>
                 </div>
-            </div>
-            
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-exchange-alt me-2"></i>
-                            ბოლო შედარებები
-                        </div>
-                        <a href="{{ url_for('user.history_comparisons') }}" class="view-all-link">ყველას ნახვა</a>
-                    </div>
-                    <div class="card-body">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th>თარიღი</th>
-                                    <th>მოდელები</th>
-                                    <th>შედეგი</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for comp in comparisons %}
-                                <tr>
-                                    <td>{{ comp.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
-                                    <td>{{ comp.model1 }} vs {{ comp.model2 }}</td>
-                                    <td>
-                                        {% if comp.result == 'model1' %}
-                                            <span class="status-badge status-clean">{{ comp.model1 }} უკეთესია</span>
-                                        {% elif comp.result == 'model2' %}
-                                            <span class="status-badge status-clean">{{ comp.model2 }} უკეთესია</span>
-                                        {% else %}
-                                            <span class="status-badge status-warning">ძალიან ახლოსაა</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="col-6">
+                    <a href="{{ url_for('user.history_comparisons') }}" class="btn btn-info w-100">
+                        <i class="fas fa-exchange-alt me-2"></i>შედარებები
+                    </a>
                 </div>
             </div>
         </div>
@@ -298,7 +247,7 @@
                     <tbody>
                         {% for payment in payments %}
                         <tr>
-                            <td>{{ payment.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
+                            <td>{{ payment.timestamp }}</td>
                             <td>{{ payment.amount }} ₾</td>
                             <td>{{ payment.type }}</td>
                             <td>
@@ -447,8 +396,12 @@
                         <span>ანგარიშები</span>
                     </div>
                     <div class="menu-item" onclick="window.location.href='{{ url_for('user.history_checks') }}'; closeAllMobileMenus();">
-                        <i class="fas fa-history"></i>
-                        <span>ისტორია</span>
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>IMEI შემოწმებები</span>
+                    </div>
+                    <div class="menu-item" onclick="window.location.href='{{ url_for('user.history_comparisons') }}'; closeAllMobileMenus();">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>ტელეფონების შედარებები</span>
                     </div>
                     <div class="menu-item" onclick="window.location.href='#'; closeAllMobileMenus();">
                         <i class="fas fa-cog"></i>
@@ -605,4 +558,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
