@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kodi.ge - Apple IMEI Checker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            
+</head>
+<body>
+    <!-- Gradient background elements -->
+    <div class="gradient-bg gradient-1"></div>
+    <div class="gradient-bg gradient-2"></div>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo-container">
+                <div class="logo-animated">
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-core">
+                        <div class="logo-letter">K</div>
+                    </div>
+                </div>
+                <h1 class="m-0">KODI.GE</h1>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main content -->
+    <div class="container py-5">
+        <a href="index.html" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+            უკან დაბრუნება
+        </a>
+        
+        <div class="text-center mb-5">
+            <h2 class="display-4 fw-bold">Apple IMEI შემოწმება</h2>
+            <p class="lead text-muted">შეამოწმეთ თქვენი Apple მოწყობილობა სანდო სერვისით</p>
+        </div>
+        
+        <!-- Service Cards -->
+        <div class="row mb-5">
+            <div class="col-md-4 mb-4">
+                <div class="service-card h-100">
+                    <div class="service-icon text-info">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 class="service-title">უფასო შემოწმება</h3>
+                    <ul class="list-unstyled">
+                        <li>ძირითადი ინფორმაცია</li>
+                        <li>მოწყობილობის მოდელის დადგენა</li>
+                        <li>ქსელის ბლოკირების შემოწმება</li>
+                    </ul>
+                    <div class="service-price">0 ₾</div>
+                    <div class="service-instruction" onclick="showCheck('free')">
+                        <i class="fas fa-arrow-right me-1"></i>
+                        აირჩიეთ ეს სერვისი
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="service-card h-100">
+                    <div class="service-icon text-warning">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <h3 class="service-title">პლატანი შემოწმება</h3>
+                    <ul class="list-unstyled">
+                        <li>ყველა ძირითადი ინფორმაცია</li>
+                        <li>iCloud სტატუსის შემოწმება</li>
+                        <li>მოპარვის/დაკარგვის სტატუსი</li>
+                        <li>სერვისის სტატუსი</li>
+                    </ul>
+                    <div class="service-price">2.99 ₾</div>
+                    <div class="service-instruction" onclick="showCheck('paid')">
+                        <i class="fas fa-arrow-right me-1"></i>
+                        აირჩიეთ ეს სერვისი
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="service-card h-100">
+                    <div class="service-icon text-success">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 class="service-title">პრემიუმ შემოწმება</h3>
+                    <ul class="list-unstyled">
+                        <li>ყველა პლატანი შემოწმების ფუნქცია</li>
+                        <li>სრული ისტორიის მიმოხილვა</li>
+                        <li>გარანტია განბლოკვაზე</li>
+                        <li>24/7 პრიორიტეტული მხარდაჭერა</li>
+                    </ul>
+                    <div class="service-price">4.99 ₾</div>
+                    <div class="service-instruction" onclick="showCheck('premium')">
+                        <i class="fas fa-arrow-right me-1"></i>
+                        აირჩიეთ ეს სერვისი
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Check Section (dynamically filled) -->
+        <div id="check-section"></div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <h5 class="footer-title">Kodi.ge</h5>
+                    <p>iPhone IMEI შემოწმების პროფესიონალური სერვისი</p>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5 class="footer-title">მენიუ</h5>
+                    <ul class="footer-links">
+                        <li><a href="index.html">მთავარი გვერდი</a></li>
+                        <li><a href="#">შემოწმება Android</a></li>
+                        <li><a href="#">ტელეფონის განბლოკვა</a></li>
+                        <li><a href="compare">ტელეფონების შედარება</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5 class="footer-title">კონტაქტი</h5>
+                    <ul class="footer-links">
+                        <li><i class="fas fa-phone me-2"></i> +995 555 12 34 56</li>
+                        <li><i class="fas fa-envelope me-2"></i> info@kodi.ge</li>
+                        <li><i class="fas fa-map-marker-alt me-2"></i> თბილისი, საქართველო</li>
+                    </ul>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-telegram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright">
+                <p class="mb-0">© 2023 Kodi.ge. ყველა უფლება დაცულია.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Result Modal -->
+    <div class="result-modal" id="resultModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">შემოწმების შედეგი</h3>
+                <button class="close-modal" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalResultContent">
+                <!-- Result will be displayed here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Spinner -->
+    <div class="spinner-container" id="spinner">
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Main application logic -->
+    <script>
+        // Global variables
+        let currentServiceType = null;
+        
+        // Show check form based on service type
+        function showCheck(serviceType) {
+            try {
+                currentServiceType = serviceType;
+                const checkSection = document.getElementById('check-section');
+                
+                // Scroll to check section
+                document.getElementById('check-section').scrollIntoView({ behavior: 'smooth' });
+                
+                // Create HTML based on service type
+                let html = '';
+                let title = '';
+                let iconClass = '';
+                let description = '';
+                
+                switch(serviceType) {
+                    case 'free':
+                        title = 'უფასო შემოწმება';
+                        iconClass = 'fas fa-mobile-alt free-icon';
+                        description = 'მიიღეთ ძირითადი ინფორმაცია თქვენი Apple მოწყობილობის შესახებ';
+                        break;
+                    case 'paid':
+                        title = 'პლატანი შემოწმება';
+                        iconClass = 'fas fa-shopping-cart paid-icon';
+                        description = 'სრული ინფორმაცია მოწყობილობის სტატუსისა და ბლოკირების შესახებ';
+                        break;
+                    case 'premium':
+                        title = 'პრემიუმ შემოწმება';
+                        iconClass = 'fas fa-crown premium-icon';
+                        description = 'ყველაზე სრულყოფილი შემოწმება გარანტიით და პრიორიტეტული მხარდაჭერით';
+                        break;
+                }
+                
+                html = `
+                    <div class="check-container">
+                        <div class="check-header">
+                            <div class="check-icon">
+                                <i class="${iconClass}"></i>
+                            </div>
+                            <div>
+                                <h2 class="check-title">${title}</h2>
+                                <p class="check-description">${description}</p>
+                            </div>
+                        </div>
+                        
+                        <form id="imeiForm">
+                            <div class="mb-4">
+                                <label for="imeiInput" class="form-label">შეიყვანეთ IMEI ნომერი</label>
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    id="imeiInput" 
+                                    placeholder="15-ნიშნა IMEI" 
+                                    required
+                                    pattern="[0-9]{15}"
+                                    title="15-ნიშნა IMEI ნომერი">
+                                <div class="form-text mt-2">
+                                    IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში ან დარეკეთ *#06#
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="btn btn-check" onclick="checkImei()">
+                                ${serviceType === 'free' ? 'უფასო შემოწმება' : 
+                                  serviceType === 'paid' ? 'გადახდა: 2.99 ₾' : 
+                                  'გადახდა: 4.99 ₾'}
+                                <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </form>
+                    </div>
+                `;
+                
+                checkSection.innerHTML = html;
+            } catch(e) {
+                console.error('Error showing check:', e);
+                alert('Error initializing check service');
+            }
+        }
+        
+        // Close modal
+        function closeModal() {
+            try {
+                document.getElementById('resultModal').style.display = 'none';
+            } catch(e) {
+                console.error('Error closing modal:', e);
+            }
+        }
+        
+        // Show spinner
+        function showSpinner(show) {
+            try {
+                document.getElementById('spinner').style.display = show ? 'flex' : 'none';
+            } catch(e) {
+                console.error('Error toggling spinner:', e);
+            }
+        }
+        
+        // Perform IMEI check
+        function checkImei() {
+            try {
+                const imei = document.getElementById('imeiInput').value.trim();
+                
+                if(!imei || imei.length !== 15 || !/^\d+$/.test(imei)) {
+                    alert('გთხოვთ შეიყვანოთ სწორი 15-ნიშნა IMEI ნომერი');
+                    return;
+                }
+                
+                showSpinner(true);
+                
+                // Simulate API call
+                setTimeout(() => {
+                    showSpinner(false);
+                    displayResult(generateResult(imei, currentServiceType));
+                }, 2000);
+            } catch(e) {
+                console.error('Error in IMEI check:', e);
+                showSpinner(false);
+                alert('An error occurred during IMEI check');
+            }
+        }
+        
+        // Generate mock result data
+        function generateResult(imei, serviceType) {
+            const models = ['iPhone 13 Pro Max', 'iPhone 12', 'iPhone SE (2020)', 'iPhone 11 Pro'];
+            const colors = ['Space Gray', 'Silver', 'Gold', 'Midnight Green'];
+            const capacities = ['128GB', '256GB', '512GB', '1TB'];
+            const statuses = ['სუფთა', 'დაბლოკილია', 'მოპარულია', 'ქულდებაშია'];
+            const carriers = ['Magti', 'Silknet', 'Geocell', 'Beeline'];
+            
+            const result = {
+                imei: imei,
+                model: models[Math.floor(Math.random() * models.length)],
+                color: colors[Math.floor(Math.random() * colors.length)],
+                capacity: capacities[Math.floor(Math.random() * capacities.length)],
+                serial: 'C' + Math.floor(Math.random() * 100000000).toString().padStart(8, '0'),
+                purchase_date: '2022-' + (Math.floor(Math.random() * 12) + 1).toString().padStart(2, '0') + '-' + (Math.floor(Math.random() * 28) + 1).toString().padStart(2, '0'),
+                warranty: Math.random() > 0.5 ? 'აქტიური' : 'ვადაგასული',
+                activation_status: Math.random() > 0.3 ? 'აქტივირებული' : 'არააქტივირებული',
+                carrier: carriers[Math.floor(Math.random() * carriers.length)],
+                country: 'საქართველო',
+                blacklist_status: Math.random() > 0.7 ? 'შავ სიაშია' : 'არაა შავ სიაში'
+            };
+            
+            if (serviceType !== 'free') {
+                result.fmi_status = Math.random() > 0.5 ? 'ჩართულია' : 'გამორთულია';
+                result.simlock_status = Math.random() > 0.6 ? 'დაბლოკილია' : 'არაა დაბლოკილი';
+                result.theft_status = Math.random() > 0.8 ? 'მოპარულია/დაკარგულია' : 'სუფთა';
+            }
+            
+            if (serviceType === 'premium') {
+                result.repair_history = Math.random() > 0.5 ? 'არ აქვს სარემონტო ისტორია' : 'არაოფიციალური შეკეთება';
+                result.battery_health = Math.floor(Math.random() * 40) + 60 + '%';
+                result.unlock_guarantee = Math.random() > 0.2 ? 'დაგეგმილია 3 სამუშაო დღეში' : 'შეუძლებელია განბლოკვა';
+            }
+            
+            return result;
+        }
+        
+        // Display result in modal
+        function displayResult(data) {
+            try {
+                const modalContent = document.getElementById('modalResultContent');
+                
+                if(!modalContent) {
+                    throw new Error('Result modal content element not found');
+                }
+                
+                let html = `
+                    <div class="device-info">
+                        <div class="device-image">
+                            <img src="https://cdn.dribbble.com/users/759083/screenshots/16287793/media/8f1b7d172d8f1e7c3f7c0a3b0f3e3e3e.png" alt="iPhone">
+                        </div>
+                        <div class="device-details">
+                            <div class="device-model">${data.model} ${data.color} ${data.capacity}</div>
+                            <div class="device-status status-${data.theft_status && data.theft_status.includes('მოპარულია') ? 'danger' : 
+                                                           data.blacklist_status && data.blacklist_status.includes('შავ სიაშია') ? 'warning' : 'clean'}">
+                                ${data.theft_status && data.theft_status.includes('მოპარულია') ? data.theft_status : 
+                                  data.blacklist_status && data.blacklist_status.includes('შავ სიაშია') ? data.blacklist_status : 'სუფთა სტატუსი'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-item">
+                        <div class="result-label">IMEI ნომერი:</div>
+                        <div class="result-value">${data.imei}</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">სერიული ნომერი:</div>
+                        <div class="result-value">${data.serial}</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">შეძენის თარიღი:</div>
+                        <div class="result-value">${data.purchase_date}</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">გარანტია:</div>
+                        <div class="result-value">${data.warranty}</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">აქტივაციის სტატუსი:</div>
+                        <div class="result-value">${data.activation_status}</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">ოპერატორი:</div>
+                        <div class="result-value">${data.carrier}</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">ქვეყანა:</div>
+                        <div class="result-value">${data.country}</div>
+                    </div>
+                `;
+                
+                if (currentServiceType !== 'free') {
+                    html += `
+                        <div class="result-item">
+                            <div class="result-label">FMI ჩართვა:</div>
+                            <div class="result-value">${data.fmi_status}</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">SIM ლოკი:</div>
+                            <div class="result-value">${data.simlock_status}</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">მოპარვის სტატუსი:</div>
+                            <div class="result-value">${data.theft_status}</div>
+                        </div>
+                    `;
+                }
+                
+                if (currentServiceType === 'premium') {
+                    html += `
+                        <div class="result-item">
+                            <div class="result-label">სარემონტო ისტორია:</div>
+                            <div class="result-value">${data.repair_history}</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">ბატარეის ჯანმრთელობა:</div>
+                            <div class="result-value">${data.battery_health}</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">განბლოკვის გარანტია:</div>
+                            <div class="result-value">${data.unlock_guarantee}</div>
+                        </div>
+                    `;
+                }
+                
+                modalContent.innerHTML = html;
+                document.getElementById('resultModal').style.display = 'flex';
+            } catch(e) {
+                console.error('Error displaying result:', e);
+                alert('Error displaying results');
+            }
+        }
+        
+        // Initialize page with free check by default
+        document.addEventListener('DOMContentLoaded', () => {
+            showCheck('free');
+        });
+    </script>
+</body>
+  </html>
