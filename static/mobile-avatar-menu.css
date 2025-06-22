@@ -114,6 +114,15 @@
     padding-bottom: 15px;
 }
 
+/* Обертка для контента под аватаркой */
+.floating-content-wrapper {
+    max-width: 380px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 15px;
+    box-sizing: border-box;
+}
+
 /* Стили аватарки - ФИКСИРОВАНО (увеличена на 10%) */
 .floating-avatar {
     width: 110px; /* Было 100px */
@@ -164,7 +173,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     width: 100%;
-    padding: 0 15px;
     box-sizing: border-box;
     letter-spacing: 0.5px;
     margin-top: 25px; /* Увеличен отступ сверху */
@@ -188,7 +196,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding: 0 15px;
     /* Добавлено оформление как у ячеек */
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(0, 198, 255, 0.3);
@@ -269,6 +276,9 @@
         width: 94px; /* Было 85px */
         height: 94px; /* Было 85px */
     }
+    .floating-content-wrapper {
+        max-width: 300px;
+    }
     .floating-avatar-info {
         font-size: 0.95rem;
         margin-top: 20px; /* Адаптированный отступ */
@@ -302,6 +312,9 @@
         width: 100px; /* Было 90px */
         height: 100px; /* Было 90px */
     }
+    .floating-content-wrapper {
+        max-width: 340px;
+    }
     .floating-avatar-info {
         font-size: 1rem;
         margin-top: 22px; /* Адаптированный отступ */
@@ -325,6 +338,9 @@
     .floating-avatar {
         width: 90px; /* Было 80px */
         height: 90px; /* Было 80px */
+    }
+    .floating-content-wrapper {
+        max-width: 320px;
     }
     .floating-avatar-info {
         font-size: 0.95rem;
@@ -362,6 +378,9 @@
         width: 120px; /* Было 110px */
         height: 120px; /* Было 110px */
     }
+    .floating-content-wrapper {
+        max-width: 420px;
+    }
     .floating-avatar-info {
         font-size: 1.1rem;
         margin-top: 28px; /* Адаптированный отступ */
@@ -397,4 +416,4 @@
     .mobile-menu-modal {
         display: none !important;
     }
-}
+        }
