@@ -66,7 +66,7 @@
     position: relative;
     width: 100%;
     height: 100%;
-    margin-top: 20px;
+    /* Убрано margin-top для корректного позиционирования */
 }
 
 /* Шапка модального окна */
@@ -106,7 +106,7 @@
 /* Контейнер плавающей аватарки - ОБНОВЛЕНО */
 .floating-avatar-container {
     position: absolute;
-    top: 20px; /* Значительно увеличено для опускания вниз */
+    top: 0; /* Прижат к верху модального окна */
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
@@ -132,7 +132,7 @@
     justify-content: center;
     overflow: hidden;
     margin: 0 auto;
-    margin-top: -100px; /* Отрицательный отступ для частичного выхода за границу */
+    margin-top: -50px; /* Половина высоты (100px/2) */
 }
 
 /* Заглушка аватарки */
@@ -261,10 +261,10 @@
     .floating-avatar {
         width: 85px;
         height: 85px;
-        margin-top: -35px;
+        margin-top: -42.5px; /* Половина высоты (85px/2) */
     }
     .floating-avatar-container {
-        top: 15px;
+        top: 0; /* Единое значение для всех разрешений */
     }
     .floating-avatar-info {
         font-size: 0.95rem;
@@ -282,10 +282,10 @@
     .floating-avatar {
         width: 90px;
         height: 90px;
-        margin-top: -38px;
+        margin-top: -45px; /* Половина высоты (90px/2) */
     }
     .floating-avatar-container {
-        top: 18px;
+        top: 0;
     }
     .floating-avatar-info {
         font-size: 1rem;
@@ -306,10 +306,10 @@
     .floating-avatar {
         width: 80px;
         height: 80px;
-        margin-top: -30px;
+        margin-top: -40px; /* Половина высоты (80px/2) */
     }
     .floating-avatar-container {
-        top: 15px;
+        top: 0;
     }
     .floating-avatar-info {
         font-size: 0.95rem;
@@ -339,10 +339,10 @@
     .floating-avatar {
         width: 110px;
         height: 110px;
-        margin-top: -50px;
+        margin-top: -55px; /* Половина высоты (110px/2) */
     }
     .floating-avatar-container {
-        top: 25px;
+        top: 0;
     }
     .floating-avatar-info {
         font-size: 1.1rem;
