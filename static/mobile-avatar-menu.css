@@ -31,7 +31,6 @@
 
 /* Модальное окно мобильного меню */
 .mobile-menu-modal {
-    display: none;
     position: fixed;
     bottom: 0;
     left: 0;
@@ -39,21 +38,19 @@
     height: 70vh;
     max-height: 90%;
     background: transparent;
-    z-index: 1100;
     align-items: flex-end;
     backdrop-filter: blur(0px);
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
-    opacity: 0;
     overflow: visible;
     padding-top: 0;
 }
 
 /* Состояние открытого меню */
 .mobile-menu-modal.open {
-    display: flex;
     transform: translateY(0);
     opacity: 1;
+    display: flex;
 }
 
 /* Контент модального окна */
@@ -102,7 +99,7 @@
     height: 100%;
 }
 
-/* Контейнер плавающей аватарки - ФИКСИРОВАНО */
+/* Контейнер плавающей аватарки */
 .floating-avatar-container {
     position: absolute;
     top: -55px;
@@ -123,7 +120,7 @@
     box-sizing: border-box;
 }
 
-/* Стили аватарки - ФИКСИРОВАНО (увеличена на 10%) */
+/* Стили аватарки */
 .floating-avatar {
     width: 110px;
     height: 110px;
@@ -203,7 +200,7 @@
     transition: all 0.3s ease;
 }
 
-/* --- Сетка 3x3 - ФИКСИРОВАНО --- */
+/* --- Сетка 3x3 --- */
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr) !important;
@@ -264,7 +261,7 @@
     padding: 0 2px;
 }
 
-/* Адаптивные стили - ФИКСИРОВАНО */
+/* Адаптивные стили */
 @media (max-width: 400px) {
     .floating-avatar-container {
         top: -47px;
@@ -409,4 +406,4 @@
     .mobile-menu-modal {
         display: none !important;
     }
-}
+    }
