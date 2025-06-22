@@ -8,8 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='mobile-avatar-menu.css') }}">
-
-    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
     <!-- Gradient background elements -->
@@ -24,7 +22,7 @@
     </div>
     
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
         <!-- Logo -->
         <div class="sidebar-logo">
             <div class="logo-animated">
@@ -39,23 +37,13 @@
         </div>
         
         <!-- User profile in sidebar -->
-        <div class="user-profile-section">
-            <div class="user-avatar-container" onclick="goToLogin()">
-                {% if user %}
-                    <div class="user-avatar" style="background-color: {{ user.avatar_color }};">
-                        {{ user.first_name[0] }}{{ user.last_name[0] }}
-                    </div>
-                {% else %}
-                    <img src="https://via.placeholder.com/80" alt="User Avatar" class="user-avatar" id="sidebarAvatar">
-                {% endif %}
+        <div class="user-profile-section" onclick="goToLogin()">
+            <div class="user-avatar">
+                <span>JD</span>
             </div>
-            <div class="user-name" onclick="goToLogin()">
-                {% if user %}
-                    {{ user.first_name }} {{ user.last_name }}<br>
-                    <small>ბალანსი: {{ user.balance }} ₾</small>
-                {% else %}
-                    ლოგინი/რეგისტრაცია
-                {% endif %}
+            <div class="user-name">
+                John Doe<br>
+                <small>ბალანსი: 25.50 ₾</small>
             </div>
         </div>
         
@@ -74,15 +62,15 @@
                 </a>
                 <div class="collapse" id="appleSubmenu">
                     <div class="submenu">
-                        <a class="nav-link" href="#" onclick="showCheck('free')">
+                        <a class="nav-link" href="applecheck.html?type=free">
                             <i class="fas fa-check-circle"></i>
                             <span>უფასო შემოწმება</span>
                         </a>
-                        <a class="nav-link" href="#" onclick="showCheck('paid')">
+                        <a class="nav-link" href="applecheck.html?type=paid">
                             <i class="fas fa-shopping-cart"></i>
                             <span>პლატანი შემოწმება</span>
                         </a>
-                        <a class="nav-link" href="#" onclick="showCheck('premium')">
+                        <a class="nav-link" href="applecheck.html?type=premium">
                             <i class="fas fa-crown"></i>
                             <span>პრემიუმ შემოწმება</span>
                         </a>
@@ -137,7 +125,7 @@
     <!-- Main content -->
     <div class="main-content">
         <!-- Hero Section with Logo and Carousel -->
-        <div class="hero-section mb-5">
+        <div class="hero-section">
             <div class="text-center mb-4">
                 <div class="logo-animated">
                     <div class="logo-ring"></div>
@@ -155,11 +143,9 @@
             <div id="mainCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
                 <div class="carousel-inner rounded">
                     <div class="carousel-item active">
-                        <!-- Исправлено: добавлен alt текст и обработчик ошибок -->
-                        <img src="https://source.unsplash.com/random/1200x400/?iphone,apple" 
+                        <img src="https://images.unsplash.com/photo-1600086827871-ffa7b914c235?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&h=400&q=80" 
                              class="d-block w-100" 
-                             alt="iPhone"
-                             onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1600086827871-ffa7b914c235?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&h=400&q=80'">
+                             alt="iPhone">
                         <div class="carousel-caption">
                             <div class="logo-animated carousel-logo">
                                 <div class="logo-ring"></div>
@@ -173,11 +159,9 @@
                         </div>
                     </div>
                     <div class="carousel-item">
-                        <!-- Исправлено: добавлен alt текст и обработчик ошибок -->
-                        <img src="https://source.unsplash.com/random/1200x400/?mobile,security" 
+                        <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&h=400&q=80" 
                              class="d-block w-100" 
-                             alt="Mobile Security"
-                             onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1600086827871-ffa7b914c235?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&h=400&q=80'">
+                             alt="Mobile Security">
                         <div class="carousel-caption">
                             <div class="logo-animated carousel-logo">
                                 <div class="logo-ring"></div>
@@ -191,11 +175,9 @@
                         </div>
                     </div>
                     <div class="carousel-item">
-                        <!-- Исправлено: добавлен alt текст и обработчик ошибок -->
-                        <img src="https://source.unsplash.com/random/1200x400/?unlock,phone" 
+                        <img src="https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&h=400&q=80" 
                              class="d-block w-100" 
-                             alt="Unlock Phone"
-                             onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1600086827871-ffa7b914c235?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&h=400&q=80'">
+                             alt="Unlock Phone">
                         <div class="carousel-caption">
                             <div class="logo-animated carousel-logo">
                                 <div class="logo-ring"></div>
@@ -220,8 +202,8 @@
             </div>
             <div class="card-body">
                 <p class="lead">ჩვენ ვართ ლიდერი IMEI შემოწმების სერვისი საქართველოში</p>
-                <p>ჩვენი მისიაა უზრუნველვყოთ საიმეო ხარისხიანი სერვისი iPhone მომხმარებლებისთვის.</p>
-                <p>გთავაზობთ სრულ ინფორმაციას თქვენი მოწყობილობის სტატუსის შესახებ.</p>
+                <p>ჩვენი მისიაა უზრუნველვყოთ საიმეო ხარისხიანი სერვისი iPhone მომხმარებლებისთვის. 2015 წლიდან ვმუშაობთ ტექნოლოგიების სფეროში და გვაქვს უდიდესი გამოცდილება მობილური მოწყობილობების შემოწმებასა და განბლოკვაში.</p>
+                <p>გთავაზობთ სრულ ინფორმაციას თქვენი მოწყობილობის სტატუსის შესახებ, რათა თავიდან აიცილოთ ყველანაირი რისკი მოწყობილობის შეძენისას.</p>
             </div>
         </div>
         
@@ -239,68 +221,73 @@
                     <li>გაიგოთ დაბლოკილია თუ არა მოწყობილობა</li>
                     <li>გაიგოთ მოწყობილობის სტატუსი (ქულდებაში, მოპარული, უკანონო)</li>
                     <li>გაიგოთ ტელეფონის მოდელი და სერიული ნომერი</li>
+                    <li>გაიგოთ მოწყობილობის ტექნიკური მდგომარეობა</li>
                 </ul>
+                <p class="mt-3">IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში, ყუთზე ან დარეკვით *#06#.</p>
             </div>
         </div>
         
-        <!-- Pricing Section -->
+        <!-- Services Section -->
         <div id="pricing" class="mt-5">
             <h2 class="section-title">ჩვენი სერვისები</h2>
             <div class="row">
                 <div class="col-md-4 mb-4">
-                    <div class="card h-100 service-card">
+                    <div class="service-card">
                         <div class="service-icon text-info">
                             <i class="fas fa-mobile-alt"></i>
                         </div>
                         <h3 class="service-title">უფასო შემოწმება</h3>
-                        <ul class="list-unstyled">
+                        <ul>
                             <li>ძირითადი ინფორმაცია</li>
                             <li>მოწყობილობის მოდელის დადგენა</li>
                             <li>ქსელის ბლოკირების შემოწმება</li>
+                            <li>სერიული ნომრის შემოწმება</li>
+                            <li>მოწყობილობის ფერის დადგენა</li>
                         </ul>
                         <div class="service-price">0 ₾</div>
-                        <div class="service-instruction">
-                            <i class="fas fa-arrow-left me-1"></i>
-                            გამოიყენეთ მარცხენა მენიუ შესამოწმებლად
-                        </div>
+                        <a href="applecheck.html?type=free" class="service-action">
+                            <i class="fas fa-arrow-right me-2"></i> გადასვლა
+                        </a>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
-                    <div class="card h-100 service-card">
+                    <div class="service-card">
                         <div class="service-icon text-warning">
                             <i class="fas fa-shopping-cart"></i>
                         </div>
                         <h3 class="service-title">პლატანი შემოწმება</h3>
-                        <ul class="list-unstyled">
+                        <ul>
                             <li>ყველა ძირითადი ინფორმაცია</li>
                             <li>iCloud სტატუსის შემოწმება</li>
                             <li>მოპარვის/დაკარგვის სტატუსი</li>
                             <li>სერვისის სტატუსი</li>
+                            <li>გარანტიის ინფორმაცია</li>
+                            <li>შეძენის თარიღი</li>
                         </ul>
                         <div class="service-price">2.99 ₾</div>
-                        <div class="service-instruction">
-                            <i class="fas fa-arrow-left me-1"></i>
-                            გამოიყენეთ მარცხენა მენიუ შესამოწმებლად
-                        </div>
+                        <a href="applecheck.html?type=paid" class="service-action">
+                            <i class="fas fa-arrow-right me-2"></i> გადასვლა
+                        </a>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
-                    <div class="card h-100 service-card">
+                    <div class="service-card">
                         <div class="service-icon text-success">
                             <i class="fas fa-crown"></i>
                         </div>
                         <h3 class="service-title">პრემიუმ შემოწმება</h3>
-                        <ul class="list-unstyled">
+                        <ul>
                             <li>ყველა პლატანი შემოწმების ფუნქცია</li>
                             <li>სრული ისტორიის მიმოხილვა</li>
                             <li>გარანტია განბლოკვაზე</li>
                             <li>24/7 პრიორიტეტული მხარდაჭერა</li>
+                            <li>დეტალური ანალიზი</li>
+                            <li>ბატარეის მდგომარეობა</li>
                         </ul>
                         <div class="service-price">4.99 ₾</div>
-                        <div class="service-instruction">
-                            <i class="fas fa-arrow-left me-1"></i>
-                            გამოიყენეთ მარცხენა მენიუ შესამოწმებლად
-                        </div>
+                        <a href="applecheck.html?type=premium" class="service-action">
+                            <i class="fas fa-arrow-right me-2"></i> გადასვლა
+                        </a>
                     </div>
                 </div>
             </div>
@@ -331,12 +318,55 @@
             </div>
         </div>
         
+        <!-- Why Choose Us Section -->
+        <div class="card mt-5">
+            <div class="card-header">
+                <i class="fas fa-star me-2"></i>
+                რატომ ავირჩიოთ Kodi.ge?
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="text-center p-3">
+                            <i class="fas fa-shield-alt fa-3x mb-3 text-primary"></i>
+                            <h4>სანდოობა</h4>
+                            <p>ჩვენი სერვისი იყენებს ოფიციალურ Apple მონაცემთა ბაზებს, რაც უზრუნველყოფს ყველაზე სანდო შედეგებს.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="text-center p-3">
+                            <i class="fas fa-bolt fa-3x mb-3 text-warning"></i>
+                            <h4>სწრაფი შედეგი</h4>
+                            <p>შედეგებს ვაწვდით რამდენიმე წამში, რაც საშუალებას გაძლევთ სწრაფად მიიღოთ გადაწყვეტილება.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="text-center p-3">
+                            <i class="fas fa-headset fa-3x mb-3 text-success"></i>
+                            <h4>მხარდაჭერა</h4>
+                            <p>ჩვენი გუნდი მუდმივად მზადაა დაგეხმაროთ ნებისმიერი საკითხის მოგვარებაში 24/7.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Footer -->
         <footer id="contacts" class="mt-5 pt-4 border-top border-secondary">
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <h5>Kodi.ge</h5>
                     <p>iPhone IMEI შემოწმების პროფესიონალური სერვისი</p>
+                    <div class="mt-3">
+                        <div class="logo-animated" style="width: 60px; height: 60px;">
+                            <div class="logo-ring"></div>
+                            <div class="logo-ring"></div>
+                            <div class="logo-ring"></div>
+                            <div class="logo-core">
+                                <div class="logo-letter">K</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-3 mb-3">
                     <h5>კონტაქტი</h5>
@@ -353,6 +383,12 @@
                         <a href="#" class="text-light"><i class="fab fa-instagram fa-2x"></i></a>
                         <a href="#" class="text-light"><i class="fab fa-telegram fa-2x"></i></a>
                     </div>
+                    <h5 class="mt-4">სერვისები</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="applecheck.html?type=free" class="text-light">უფასო შემოწმება</a></li>
+                        <li><a href="applecheck.html?type=paid" class="text-light">პლატანი შემოწმება</a></li>
+                        <li><a href="applecheck.html?type=premium" class="text-light">პრემიუმ შემოწმება</a></li>
+                    </ul>
                 </div>
             </div>
             <div class="text-center py-3">
@@ -361,149 +397,15 @@
         </footer>
     </div>
     
-    <!-- Result Modal -->
-    <div class="result-modal" id="resultModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">შემოწმების შედეგი</h3>
-                <button class="close-modal" onclick="closeModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body" id="modalResultContent">
-                <!-- Result will be displayed here -->
-            </div>
-        </div>
-    </div>
-    
-    <!-- Mobile Menu Modal -->
-    <div class="mobile-menu-modal" id="mobileMenuModal">
-        <!-- Avatar placed outside modal content -->
-        <div class="floating-avatar-container" onclick="goToLogin()">
-            {% if user %}
-                <div class="floating-avatar" style="background-color: {{ user.avatar_color }};">
-                    {{ user.first_name[0] }}{{ user.last_name[0] }}
-                </div>
-                <div class="floating-avatar-info">
-                    {{ user.first_name }} {{ user.last_name }}
-                </div>
-                <div class="user-balance">ბალანსი: {{ user.balance }} ₾</div>
-            {% else %}
-                <div class="floating-avatar" id="mobileAvatar">
-                    <div class="avatar-placeholder">KODI.GE</div>
-                </div>
-                <div class="floating-avatar-info" id="mobileUserName">ლოგინი/რეგისტრაცია</div>
-                <div class="user-balance" id="mobileUserBalance" style="display: none;"></div>
-            {% endif %}
-        </div>
-        
-        <div class="modal-content">
-            <div class="modal-header">
-                <button class="close-modal" onclick="closeMobileMenu()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="modal-body">
-                <div class="menu-grid">
-                    <div class="menu-item" onclick="window.scrollTo(0,0); closeMobileMenu();">
-                        <i class="fas fa-home"></i>
-                        <span>მთავარი</span>
-                    </div>
-                    <div class="menu-item" onclick="openAppleSubmenu()">
-                        <i class="fas fa-mobile-alt"></i>
-                        <span>Apple</span>
-                    </div>
-                    <div class="menu-item">
-                        <i class="fab fa-android"></i>
-                        <span>Android</span>
-                    </div>
-                    <div class="menu-item">
-                        <i class="fas fa-unlock-alt"></i>
-                        <span>განბლოკვა</span>
-                    </div>
-                    <div class="menu-item" onclick="window.location.href='compare'; closeAllMobileMenus();">
-                        <i class="fas fa-exchange-alt"></i>
-                        <span>შედარება</span>
-                    </div>
-                    <div class="menu-item">
-                        <i class="fas fa-book"></i>
-                        <span>ცოდნის ბაზა</span>
-                    </div>
-                    <div class="menu-item" onclick="document.getElementById('contacts').scrollIntoView({behavior: 'smooth'}); closeMobileMenu();">
-                        <i class="fas fa-address-card"></i>
-                        <span>კონტაქტი</span>
-                    </div>
-                    <div class="menu-item">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>კონფიდენციალურობა</span>
-                    </div>
-                    <div class="menu-item">
-                        <i class="fas fa-undo"></i>
-                        <span>დაბრუნება</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Apple Submenu Modal -->
-    <div class="mobile-menu-modal" id="appleSubmenuModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Apple შემოწმება</h3>
-                <button class="close-modal" onclick="closeAppleSubmenu()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="menu-grid">
-                    <div class="menu-item" onclick="showCheck('free'); closeAllMobileMenus();">
-                        <i class="fas fa-check-circle"></i>
-                        <span>უფასო</span>
-                    </div>
-                    <div class="menu-item" onclick="showCheck('paid'); closeAllMobileMenus();">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span>პლატანი</span>
-                    </div>
-                    <div class="menu-item" onclick="showCheck('premium'); closeAllMobileMenus();">
-                        <i class="fas fa-crown"></i>
-                        <span>პრემიუმ</span>
-                    </div>
-                    <div class="menu-item" onclick="closeAppleSubmenu()">
-                        <i class="fas fa-arrow-left"></i>
-                        <span>უკან</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Spinner -->
-    <div class="spinner-container" id="spinner">
-        <div class="spinner"></div>
-    </div>
-    
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Main application logic -->
     <script>
-        // Global stripe instance
-        let stripeInstance = null;
-        
-        // User authentication state
-        let isAuthenticated = {% if user %}true{% else %}false{% endif %};
-        let currentServiceType = null;
-
         // Mobile menu functions
         function openMobileMenu() {
             try {
-                const modal = document.getElementById('mobileMenuModal');
-                modal.style.display = 'flex';
-                setTimeout(() => {
-                    modal.classList.add('open');
-                }, 10);
+                document.getElementById('sidebar').classList.add('active');
             } catch(e) {
                 console.error('Error opening mobile menu:', e);
             }
@@ -511,85 +413,20 @@
         
         function closeMobileMenu() {
             try {
-                const modal = document.getElementById('mobileMenuModal');
-                modal.classList.remove('open');
-                setTimeout(() => {
-                    modal.style.display = 'none';
-                }, 400);
+                document.getElementById('sidebar').classList.remove('active');
             } catch(e) {
                 console.error('Error closing mobile menu:', e);
             }
         }
         
-        function openAppleSubmenu() {
-            try {
-                closeMobileMenu();
-                const appleModal = document.getElementById('appleSubmenuModal');
-                appleModal.style.display = 'flex';
-                setTimeout(() => {
-                    appleModal.classList.add('open');
-                }, 10);
-            } catch(e) {
-                console.error('Error opening Apple submenu:', e);
-            }
-        }
-        
-        function closeAppleSubmenu() {
-            try {
-                const appleModal = document.getElementById('appleSubmenuModal');
-                appleModal.classList.remove('open');
-                setTimeout(() => {
-                    appleModal.style.display = 'none';
-                    openMobileMenu();
-                }, 400);
-            } catch(e) {
-                console.error('Error closing Apple submenu:', e);
-            }
-        }
-        
-        function closeAllMobileMenus() {
-            closeMobileMenu();
-            closeAppleSubmenu();
-        }
-        
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize Stripe with error handling
-            try {
-                stripeInstance = Stripe("{{ STRIPE_PUBLIC_KEY }}");
-            } catch(e) {
-                console.error('Stripe initialization failed:', e);
-                // Show user-friendly error message
-                const stripeError = document.createElement('div');
-                stripeError.className = 'alert alert-danger position-fixed top-0 start-0 m-3';
-                stripeError.style.zIndex = '9999';
-                stripeError.innerHTML = `
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Payment Error:</strong> Payment system initialization failed. Please refresh the page.
-                `;
-                document.body.appendChild(stripeError);
-                
-                // Auto-hide after 5 seconds
-                setTimeout(() => {
-                    try {
-                        stripeError.style.opacity = '0';
-                        setTimeout(() => {
-                            if (document.body.contains(stripeError)) {
-                                document.body.removeChild(stripeError);
-                            }
-                        }, 500);
-                    } catch(err) {
-                        console.error('Error removing error message:', err);
-                    }
-                }, 5000);
-            }
-
             // Initialize carousel with error handling
             try {
                 const carouselElement = document.getElementById('mainCarousel');
                 if (carouselElement) {
                     const myCarousel = new bootstrap.Carousel(carouselElement, {
-                        interval: 2000,
+                        interval: 3000,
                         ride: 'carousel'
                     });
                 } else {
@@ -610,51 +447,18 @@
             } catch(e) {
                 console.error('Mobile menu setup error:', e);
             }
-
-            // Handle session_id after payment
-            try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const sessionId = urlParams.get('session_id');
-                
-                if(sessionId) {
-                    showSpinner(true);
-                    fetch(`/get_check_result?session_id=${sessionId}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            showSpinner(false);
-                            if(data.error) {
-                                displayResult({ error: data.error });
-                            } else {
-                                displayResult(data.result);
-                            }
-                        })
-                        .catch(error => {
-                            showSpinner(false);
-                            displayResult({ error: 'Failed to get result: ' + error.message });
-                        });
-                }
-            } catch(e) {
-                console.error('Session ID processing error:', e);
-            }
             
             // Close menu when clicking outside
             document.addEventListener('click', (e) => {
                 try {
-                    const mobileMenuModal = document.getElementById('mobileMenuModal');
-                    const appleSubmenuModal = document.getElementById('appleSubmenuModal');
+                    const sidebar = document.getElementById('sidebar');
+                    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
                     
                     // Close mobile menu if click is outside
-                    if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
-                        !mobileMenuModal.contains(e.target) && 
-                        e.target.id !== 'mobileMenuBtn') {
+                    if (sidebar && sidebar.classList.contains('active') && 
+                        !sidebar.contains(e.target) && 
+                        e.target !== mobileMenuBtn) {
                         closeMobileMenu();
-                    }
-                    
-                    // Close apple submenu if click is outside
-                    if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
-                        !appleSubmenuModal.contains(e.target) && 
-                        e.target.id !== 'mobileMenuBtn') {
-                        closeAppleSubmenu();
                     }
                 } catch(e) {
                     console.error('Click handler error:', e);
@@ -664,268 +468,26 @@
         
         // Redirect to login or dashboard
         function goToLogin() {
-            closeAllMobileMenus();
-            {% if user %}
-                window.location.href = "{{ url_for('user.dashboard') }}";
-            {% else %}
-                window.location.href = "{{ url_for('auth.login') }}";
-            {% endif %}
+            closeMobileMenu();
+            window.location.href = "#";
         }
         
-        // Show check form based on service type
-        function showCheck(serviceType) {
-            try {
-                currentServiceType = serviceType;
-                const checkSection = document.getElementById('check-section');
-                const checkTitle = document.getElementById('check-title');
-                const checkButton = document.getElementById('check-button');
-                
-                // If check section doesn't exist, create it
-                if (!checkSection) {
-                    createCheckSection();
-                } else {
-                    checkSection.classList.remove('d-none');
-                }
-                
-                document.getElementById('check-section').scrollIntoView({ behavior: 'smooth' });
-                
-                // Update title and button based on service type
-                switch(serviceType) {
-                    case 'free':
-                        checkTitle.innerHTML = '<i class="fas fa-mobile-alt me-2"></i>უფასო შემოწმება';
-                        checkButton.textContent = 'უფასო შემოწმება';
-                        checkButton.classList.remove('btn-warning', 'btn-success');
-                        checkButton.classList.add('btn-info');
-                        break;
-                    case 'paid':
-                        checkTitle.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>პლატანი შემოწმება';
-                        checkButton.textContent = `გადახდა: 2.99 ₾`;
-                        checkButton.classList.remove('btn-info', 'btn-success');
-                        checkButton.classList.add('btn-warning');
-                        break;
-                    case 'premium':
-                        checkTitle.innerHTML = '<i class="fas fa-crown me-2"></i>პრემიუმ შემოწმება';
-                        checkButton.textContent = `გადახდა: 4.99 ₾`;
-                        checkButton.classList.remove('btn-info', 'btn-warning');
-                        checkButton.classList.add('btn-success');
-                        break;
-                }
-            } catch(e) {
-                console.error('Error showing check:', e);
-                alert('Error initializing check service');
-            }
-        }
-        
-        // Create check section dynamically
-        function createCheckSection() {
-            try {
-                const mainContent = document.querySelector('.main-content');
-                const pricingSection = document.getElementById('pricing');
-                
-                const checkSection = document.createElement('div');
-                checkSection.id = 'check-section';
-                checkSection.className = 'card';
-                checkSection.innerHTML = `
-                    <div class="card-header">
-                        <i class="fas fa-mobile-alt me-2"></i>
-                        <span id="check-title">IMEI შემოწმება</span>
-                    </div>
-                    <div class="card-body">
-                        <form id="imeiForm">
-                            <div class="mb-4">
-                                <label for="imeiInput" class="form-label">შეიყვანეთ IMEI ნომერი</label>
-                                <input 
-                                    type="text" 
-                                    class="form-control bg-dark text-light" 
-                                    id="imeiInput" 
-                                    placeholder="15-ნიშნა IMEI" 
-                                    required
-                                    pattern="[0-9]{15}"
-                                    title="15-ნიშნა IMEI ნომერი">
-                            </div>
-                            
-                            <div class="d-grid gap-3">
-                                <button type="button" class="btn btn-lg" id="check-button" onclick="checkImei()">
-                                    შემოწმების დაწყება
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                `;
-                
-                mainContent.insertBefore(checkSection, pricingSection);
-            } catch(e) {
-                console.error('Error creating check section:', e);
-            }
-        }
-        
-        // Close modal
-        function closeModal() {
-            try {
-                document.getElementById('resultModal').style.display = 'none';
-            } catch(e) {
-                console.error('Error closing modal:', e);
-            }
-        }
-        
-        // Show spinner
-        function showSpinner(show) {
-            try {
-                document.getElementById('spinner').style.display = show ? 'flex' : 'none';
-            } catch(e) {
-                console.error('Error toggling spinner:', e);
-            }
-        }
-        
-        // Perform IMEI check
-        function checkImei() {
-            try {
-                const imei = document.getElementById('imeiInput').value.trim();
-                
-                if(!imei || imei.length !== 15 || !/^\d+$/.test(imei)) {
-                    alert('გთხოვთ შეიყვანოთ სწორი 15-ნიშნა IMEI ნომერი');
-                    return;
-                }
-                
-                // Increment counters
-                try {
-                    document.getElementById('daily-checks').textContent = parseInt(document.getElementById('daily-checks').textContent) + 1;
-                    document.getElementById('weekly-checks').textContent = parseInt(document.getElementById('weekly-checks').textContent) + 1;
-                    document.getElementById('monthly-checks').textContent = parseInt(document.getElementById('monthly-checks').textContent) + 1;
-                } catch(e) {
-                    console.warn('Error updating counters:', e);
-                }
-                
-                showSpinner(true);
-                
-                if(currentServiceType === 'free') {
-                    // Free check
-                    fetch('/perform_check', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            imei: imei,
-                            service_type: 'free'
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        showSpinner(false);
-                        displayResult(data);
-                    })
-                    .catch(error => {
-                        showSpinner(false);
-                        displayResult({ error: 'Request failed: ' + error.message });
-                    });
-                } else {
-                    // Paid check
-                    fetch('/create-checkout-session', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            imei: imei,
-                            service_type: currentServiceType
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if(data.error) {
-                            throw new Error(data.error);
-                        }
-                        if (!stripeInstance) {
-                            throw new Error('Payment system not initialized');
-                        }
-                        return stripeInstance.redirectToCheckout({ sessionId: data.id });
-                    })
-                    .then(result => {
-                        if(result.error) {
-                            showSpinner(false);
-                            alert(result.error.message);
-                        }
-                    })
-                    .catch(error => {
-                        showSpinner(false);
-                        alert('Payment failed: ' + error.message);
-                    });
-                }
-            } catch(e) {
-                console.error('Error in IMEI check:', e);
-                showSpinner(false);
-                alert('An error occurred during IMEI check');
-            }
-        }
-        
-        // Display result in modal
-        function displayResult(data) {
-            try {
-                const modalContent = document.getElementById('modalResultContent');
-                
-                if(!modalContent) {
-                    throw new Error('Result modal content element not found');
-                }
-                
-                if(data.error) {
-                    modalContent.innerHTML = `
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-circle me-2"></i> შეცდომა: ${data.error}
-                        </div>
-                    `;
-                } else {
-                    let html = `
-                        <div class="alert alert-success mb-4">
-                            <i class="fas fa-check-circle me-2"></i> შემოწმება წარმატებით დასრულდა!
-                        </div>
-                    `;
-                    
-                    for(const [key, value] of Object.entries(data)) {
-                        if(key === 'html_content') {
-                            html += `<div class="mt-4">${value}</div>`;
-                        } else {
-                            html += `
-                                <div class="result-item">
-                                    <div class="result-label">${formatLabel(key)}:</div>
-                                    <div class="result-value">${value}</div>
-                                </div>
-                            `;
-                        }
-                    }
-                    
-                    modalContent.innerHTML = html;
-                }
-                
-                document.getElementById('resultModal').style.display = 'flex';
-            } catch(e) {
-                console.error('Error displaying result:', e);
-                alert('Error displaying results');
-            }
-        }
-        
-        // Format labels for display
-        function formatLabel(key) {
-            const labels = {
-                'model': 'მოდელი',
-                'serial': 'სერიული ნომერი',
-                'status': 'სტატუსი',
-                'fmi': 'FMI ჩართვა',
-                'blacklist': 'შავი სია',
-                'simlock': 'SIM ლოკი',
-                'warranty': 'გარანტია',
-                'purchase_date': 'შეძენის თარიღი',
-                'activation_status': 'აქტივაციის სტატუსი',
-                'carrier': 'ოპერატორი',
-                'country': 'ქვეყანა',
-                'device': 'მოწყობილობა',
-                'imei': 'IMEI ნომერი',
-                'iccid': 'ICCID',
-                'blacklist_status': 'შავი სიის სტატუსი'
-            };
+        // Simulate statistics counter
+        setInterval(() => {
+            const daily = document.getElementById('daily-checks');
+            const weekly = document.getElementById('weekly-checks');
+            const monthly = document.getElementById('monthly-checks');
             
-            return labels[key] || key;
-        }
+            if(daily && weekly && monthly) {
+                const newDaily = parseInt(daily.textContent) + Math.floor(Math.random() * 3);
+                const newWeekly = parseInt(weekly.textContent) + Math.floor(Math.random() * 10);
+                const newMonthly = parseInt(monthly.textContent) + Math.floor(Math.random() * 40);
+                
+                daily.textContent = newDaily;
+                weekly.textContent = newWeekly;
+                monthly.textContent = newMonthly;
+            }
+        }, 5000);
     </script>
 </body>
-    </html>
+</html>
