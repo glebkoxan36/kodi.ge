@@ -229,37 +229,47 @@
                 return;
             }
             
-            // Имитация AJAX запроса
+            const loginBtn = e.target.querySelector('.btn-primary');
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> მიმდინარეობს შესვლა';
+            loginBtn.disabled = true;
+            
             try {
-                const loginBtn = e.target.querySelector('.btn-primary');
-                const originalText = loginBtn.innerHTML;
+                // Отправка данных на сервер
+                const formData = new FormData();
+                formData.append('identifier', identifier);
+                formData.append('password', password);
                 
-                // Показать индикатор загрузки
-                loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> მიმდინარეობს შესვლა';
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData
+                });
                 
-                // В реальном приложении здесь будет fetch запрос
-                setTimeout(() => {
-                    const success = true; // Заменить на реальный ответ сервера
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Успешный вход
+                    loginBtn.innerHTML = '<i class="fas fa-check"></i> შესრულებულია';
+                    loginBtn.style.background = 'var(--success-color)';
                     
-                    if (success) {
-                        // Анимация успешного входа
-                        loginBtn.innerHTML = '<i class="fas fa-check"></i> შესრულებულია';
-                        loginBtn.style.background = 'var(--success-color)';
-                        
-                        setTimeout(() => {
-                            window.location.href = '/';
-                        }, 1500);
-                    } else {
-                        loginBtn.innerHTML = originalText;
-                        errorElement.textContent = 'არასწორი მომხმარებელი ან პაროლი';
-                        errorElement.style.display = 'block';
-                    }
-                }, 1500);
+                    // Перенаправление в дашборд
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '/user/dashboard';
+                    }, 500);
+                } else {
+                    // Ошибка входа
+                    loginBtn.innerHTML = originalText;
+                    loginBtn.disabled = false;
+                    errorElement.textContent = data.error;
+                    errorElement.style.display = 'block';
+                }
             } catch (error) {
-                const loginBtn = e.target.querySelector('.btn-primary');
-                loginBtn.innerHTML = 'შესვლა';
+                // Обработка ошибки сети
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
                 errorElement.textContent = 'სერვერული შეცდომა';
                 errorElement.style.display = 'block';
+                console.error('Login error:', error);
             }
         });
         
