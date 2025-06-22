@@ -46,14 +46,14 @@
     transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
     opacity: 0;
     overflow: visible;
-    padding-top: 0; /* Убрали верхний отступ */
+    padding-top: 0;
 }
 
 /* Состояние открытого меню */
 .mobile-menu-modal.open {
+    display: flex;
     transform: translateY(0);
     opacity: 1;
-    display: flex;
 }
 
 /* Контент модального окна */
@@ -105,7 +105,7 @@
 /* Контейнер плавающей аватарки - ФИКСИРОВАНО */
 .floating-avatar-container {
     position: absolute;
-    top: -55px; /* Сдвиг вверх на половину высоты аватарки (110px/2=55px) */
+    top: -55px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
@@ -125,8 +125,8 @@
 
 /* Стили аватарки - ФИКСИРОВАНО (увеличена на 10%) */
 .floating-avatar {
-    width: 110px; /* Было 100px */
-    height: 110px; /* Было 100px */
+    width: 110px;
+    height: 110px;
     border-radius: 50%;
     object-fit: cover;
     background: transparent;
@@ -140,7 +140,7 @@
     justify-content: center;
     overflow: hidden;
     margin: 0 auto;
-    margin-top: 0; /* Убрали старый отступ */
+    margin-top: 0;
 }
 
 /* Заглушка аватарки */
@@ -175,9 +175,8 @@
     width: 100%;
     box-sizing: border-box;
     letter-spacing: 0.5px;
-    margin-top: 25px; /* Увеличен отступ сверху */
+    margin-top: 25px;
     display: block;
-    /* Добавлено оформление как у ячеек */
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(0, 198, 255, 0.3);
     border-radius: 15px;
@@ -191,12 +190,11 @@
     font-size: 0.95rem;
     font-weight: 700;
     color: #00ff9d;
-    margin-top: 15px; /* Увеличен отступ сверху */
+    margin-top: 15px;
     text-shadow: 0 0 8px rgba(0, 255, 157, 0.6);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    /* Добавлено оформление как у ячеек */
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(0, 198, 255, 0.3);
     border-radius: 15px;
@@ -218,8 +216,7 @@
     background: transparent;
     box-sizing: border-box;
     padding: 0;
-    /* ИЗМЕНЕНО: уменьшен верхний отступ */
-    margin-top: 100px; /* Было 120px */
+    margin-top: 100px;
 }
 
 .menu-item {
@@ -270,31 +267,30 @@
 /* Адаптивные стили - ФИКСИРОВАНО */
 @media (max-width: 400px) {
     .floating-avatar-container {
-        top: -47px; /* Для 94px: 94/2 = 47px (было 42.5px) */
+        top: -47px;
     }
     .floating-avatar {
-        width: 94px; /* Было 85px */
-        height: 94px; /* Было 85px */
+        width: 94px;
+        height: 94px;
     }
     .floating-content-wrapper {
         max-width: 300px;
     }
     .floating-avatar-info {
         font-size: 0.95rem;
-        margin-top: 20px; /* Адаптированный отступ */
-        padding: 8px 12px; /* Адаптированный padding */
+        margin-top: 20px;
+        padding: 8px 12px;
     }
     .user-balance {
         font-size: 0.9rem;
-        margin-top: 12px; /* Адаптированный отступ */
-        padding: 6px 12px; /* Адаптированный padding */
+        margin-top: 12px;
+        padding: 6px 12px;
     }
     .menu-grid {
         max-width: 300px;
         height: 300px;
         gap: 18px;
-        /* ИЗМЕНЕНО: уменьшен верхний отступ */
-        margin-top: 80px; /* Было 100px */
+        margin-top: 80px;
     }
     .menu-item {
         padding: 10px 6px;
@@ -306,25 +302,24 @@
         height: 65vh;
     }
     .floating-avatar-container {
-        top: -50px; /* Для 100px (было 45px) */
+        top: -50px;
     }
     .floating-avatar {
-        width: 100px; /* Было 90px */
-        height: 100px; /* Было 90px */
+        width: 100px;
+        height: 100px;
     }
     .floating-content-wrapper {
         max-width: 340px;
     }
     .floating-avatar-info {
         font-size: 1rem;
-        margin-top: 22px; /* Адаптированный отступ */
+        margin-top: 22px;
     }
     .menu-grid {
         gap: 20px;
         max-width: 340px;
         height: 340px;
-        /* ИЗМЕНЕНО: уменьшен верхний отступ */
-        margin-top: 90px; /* Было 110px */
+        margin-top: 90px;
     }
 }
 
@@ -333,19 +328,19 @@
         height: 75vh;
     }
     .floating-avatar-container {
-        top: -45px; /* Для 90px (было 40px) */
+        top: -45px;
     }
     .floating-avatar {
-        width: 90px; /* Было 80px */
-        height: 90px; /* Было 80px */
+        width: 90px;
+        height: 90px;
     }
     .floating-content-wrapper {
         max-width: 320px;
     }
     .floating-avatar-info {
         font-size: 0.95rem;
-        margin-top: 20px; /* Адаптированный отступ */
-        padding: 8px 12px; /* Адаптированный padding */
+        margin-top: 20px;
+        padding: 8px 12px;
     }
     .avatar-placeholder {
         font-size: 0.8rem;
@@ -357,13 +352,12 @@
         max-width: 320px;
         height: 320px;
         gap: 16px;
-        /* ИЗМЕНЕНО: уменьшен верхний отступ */
-        margin-top: 80px; /* Было 100px */
+        margin-top: 80px;
     }
     .user-balance {
         font-size: 0.85rem;
-        margin-top: 12px; /* Адаптированный отступ */
-        padding: 6px 12px; /* Адаптированный padding */
+        margin-top: 12px;
+        padding: 6px 12px;
     }
 }
 
@@ -372,22 +366,22 @@
         height: 55vh;
     }
     .floating-avatar-container {
-        top: -60px; /* Для 120px (было 55px) */
+        top: -60px;
     }
     .floating-avatar {
-        width: 120px; /* Было 110px */
-        height: 120px; /* Было 110px */
+        width: 120px;
+        height: 120px;
     }
     .floating-content-wrapper {
         max-width: 420px;
     }
     .floating-avatar-info {
         font-size: 1.1rem;
-        margin-top: 28px; /* Адаптированный отступ */
+        margin-top: 28px;
     }
     .user-balance {
         font-size: 1rem;
-        margin-top: 18px; /* Адаптированный отступ */
+        margin-top: 18px;
     }
     .menu-item i {
         font-size: 2rem;
@@ -399,8 +393,7 @@
         max-width: 420px;
         height: 420px;
         gap: 25px;
-        /* ИЗМЕНЕНО: уменьшен верхний отступ */
-        margin-top: 120px; /* Было 140px */
+        margin-top: 120px;
     }
 }
 
@@ -416,4 +409,4 @@
     .mobile-menu-modal {
         display: none !important;
     }
-        }
+}
