@@ -800,14 +800,8 @@ def dashboard():
         return redirect(url_for('auth.login'))
     
     balance = user.get('balance', 0)
-    checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
-    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
-    for check in checks:
-        check['timestamp'] = check['timestamp'].strftime('%d.%m.%Y %H:%M')
-    for comp in comparisons:
-        comp['timestamp'] = comp['timestamp'].strftime('%d.%m.%Y %H:%M')
     for payment in payments:
         payment['timestamp'] = payment['timestamp'].strftime('%d.%m.%Y %H:%M')
     
@@ -818,8 +812,6 @@ def dashboard():
         'dashboard.html',
         user=user,
         balance=balance,
-        checks=checks,
-        comparisons=comparisons,
         payments=payments,
         total_checks=total_checks,
         total_comparisons=total_comparisons,
@@ -838,8 +830,20 @@ def history_checks():
     user_id = session['user_id']
     checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1))
     
+    # Обработка статусов
     for check in checks:
         check['timestamp'] = check['timestamp'].strftime('%d.%m.%Y %H:%M')
+        result = check.get('result', {})
+        if 'blacklist_status' in result:
+            status = result['blacklist_status'].lower()
+            if 'clean' in status:
+                check['status'] = 'clean'
+            elif 'blacklisted' in status:
+                check['status'] = 'blacklisted'
+            else:
+                check['status'] = 'warning'
+        else:
+            check['status'] = 'unknown'
     
     return render_template('history_checks.html', checks=checks)
 
@@ -849,8 +853,12 @@ def history_comparisons():
     user_id = session['user_id']
     comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1))
     
+    # Обработка сравнений
     for comp in comparisons:
         comp['timestamp'] = comp['timestamp'].strftime('%d.%m.%Y %H:%M')
+        comp['model1'] = comp.get('phone1', 'Unknown').split()[0]
+        comp['model2'] = comp.get('phone2', 'Unknown').split()[0]
+        comp['result'] = 'model1' if len(comp.get('ai_response', '')) > len(comp.get('phone2', '')) else 'model2'
     
     return render_template('history_comparisons.html', comparisons=comparisons)
 
