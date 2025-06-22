@@ -9,8 +9,6 @@
     <link rel="stylesheet" href="static/styles.css">
     <link rel="stylesheet" href="static/mobile-avatar-menu.css">
     <style>
-        /* Удалены старые стили body.menu-open */
-        
         .content-locked {
             overflow: hidden;
             position: fixed;
@@ -21,7 +19,17 @@
         }
         
         .mobile-menu-modal {
-            z-index: 1060 !important;
+            z-index: 1100;
+            display: flex;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        
+        .mobile-menu-modal.open {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
         }
         
         .gradient-bg {
@@ -521,6 +529,7 @@
             try {
                 const modal = document.getElementById('mobileMenuModal');
                 modal.classList.remove('open');
+                isMenuOpen = false;
                 
                 // Set ARIA attributes
                 document.getElementById('mobileMenuBtn').setAttribute('aria-expanded', 'false');
@@ -528,14 +537,11 @@
                 // Unlock page scrolling
                 document.querySelector('.main-content').classList.remove('content-locked');
                 
+                // Show menu button
+                document.getElementById('mobileMenuBottom').classList.remove('hidden');
+                
                 // Restore scroll position
                 window.scrollTo(0, scrollPosition);
-                
-                // Show menu button after animation completes
-                setTimeout(() => {
-                    isMenuOpen = false;
-                    document.getElementById('mobileMenuBottom').classList.remove('hidden');
-                }, 400);
             } catch(e) {
                 console.error('Error closing mobile menu:', e);
             }
@@ -558,12 +564,10 @@
             try {
                 const appleModal = document.getElementById('appleSubmenuModal');
                 appleModal.classList.remove('open');
+                isMenuOpen = false;
                 
-                // Show menu button after animation completes
-                setTimeout(() => {
-                    isMenuOpen = false;
-                    document.getElementById('mobileMenuBottom').classList.remove('hidden');
-                }, 400);
+                // Show menu button
+                document.getElementById('mobileMenuBottom').classList.remove('hidden');
             } catch(e) {
                 console.error('Error closing Apple submenu:', e);
             }
@@ -667,4 +671,4 @@
         }, 5000);
     </script>
 </body>
-            </html>
+</html>
