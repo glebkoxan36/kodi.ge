@@ -106,7 +106,7 @@
 /* Контейнер плавающей аватарки - ОБНОВЛЕНО */
 .floating-avatar-container {
     position: absolute;
-    top: -15px; /* Значительно уменьшено для более глубокого входа в меню */
+    top: 20px; /* Значительно увеличено для опускания вниз */
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
@@ -132,6 +132,7 @@
     justify-content: center;
     overflow: hidden;
     margin: 0 auto;
+    margin-top: -40px; /* Отрицательный отступ для частичного выхода за границу */
 }
 
 /* Заглушка аватарки */
@@ -167,7 +168,7 @@
     padding: 0 15px; /* Отступы по бокам */
     box-sizing: border-box;
     letter-spacing: 0.5px;
-    margin-top: 20px; /* Больший отступ сверху */
+    margin-top: 10px; /* Уменьшенный отступ */
     display: block;
 }
 
@@ -176,7 +177,7 @@
     font-size: 0.95rem;
     font-weight: 700;
     color: #00ff9d; /* Яркий акцентный цвет */
-    margin-top: 10px; /* Больший отступ */
+    margin-top: 5px; /* Стандартный отступ */
     text-shadow: 0 0 8px rgba(0, 255, 157, 0.6);
     white-space: nowrap;
     overflow: hidden;
@@ -197,7 +198,7 @@
     background: transparent;
     box-sizing: border-box;
     padding: 0;
-    margin-top: 40px; /* Значительно увеличенный отступ сверху */
+    margin-top: 70px; /* Значительно увеличенный отступ сверху */
 }
 
 .menu-item {
@@ -232,6 +233,7 @@
     color: var(--accent-color);
 }
 
+/* ОБНОВЛЕНО: Добавлен перенос слов в ячейках */
 .menu-item span {
     font-size: 0.8rem; /* Увеличено */
     line-height: 1.3;
@@ -240,6 +242,9 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     font-weight: 500;
+    word-break: break-word; /* Перенос длинных слов */
+    hyphens: auto; /* Автоматическая расстановка переносов */
+    padding: 0 2px; /* Небольшие отступы */
 }
 
 /* Адаптивные стили - ОБНОВЛЕНО */
@@ -248,7 +253,7 @@
         max-width: 300px;
         height: 300px;
         gap: 18px;
-        margin-top: 35px;
+        margin-top: 60px;
     }
     .menu-item {
         padding: 10px 6px;
@@ -256,16 +261,16 @@
     .floating-avatar {
         width: 85px;
         height: 85px;
+        margin-top: -35px;
     }
     .floating-avatar-container {
-        top: -12px;
+        top: 15px;
     }
     .floating-avatar-info {
         font-size: 0.95rem;
-        margin-top: 15px;
     }
     .user-balance {
-        margin-top: 8px;
+        font-size: 0.9rem;
     }
 }
 
@@ -277,19 +282,19 @@
     .floating-avatar {
         width: 90px;
         height: 90px;
+        margin-top: -38px;
     }
     .floating-avatar-container {
-        top: -13px;
+        top: 18px;
     }
     .floating-avatar-info {
         font-size: 1rem;
-        margin-top: 18px;
     }
     .menu-grid {
         gap: 20px;
         max-width: 340px;
         height: 340px;
-        margin-top: 35px;
+        margin-top: 65px;
     }
 }
 
@@ -301,13 +306,13 @@
     .floating-avatar {
         width: 80px;
         height: 80px;
+        margin-top: -30px;
     }
     .floating-avatar-container {
-        top: -10px;
+        top: 15px;
     }
     .floating-avatar-info {
         font-size: 0.95rem;
-        margin-top: 15px;
     }
     .avatar-placeholder {
         font-size: 0.8rem;
@@ -319,10 +324,10 @@
         max-width: 320px;
         height: 320px;
         gap: 16px;
-        margin-top: 30px;
+        margin-top: 60px;
     }
     .user-balance {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
 }
 
@@ -334,17 +339,16 @@
     .floating-avatar {
         width: 110px;
         height: 110px;
+        margin-top: -50px;
     }
     .floating-avatar-container {
-        top: -20px;
+        top: 25px;
     }
     .floating-avatar-info {
         font-size: 1.1rem;
-        margin-top: 25px;
     }
     .user-balance {
         font-size: 1rem;
-        margin-top: 15px;
     }
     .menu-item i {
         font-size: 2rem;
@@ -356,7 +360,7 @@
         max-width: 420px;
         height: 420px;
         gap: 25px;
-        margin-top: 45px;
+        margin-top: 80px;
     }
 }
 
