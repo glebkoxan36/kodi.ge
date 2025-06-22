@@ -3,1294 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kodi.ge - Личный кабинет</title>
+    <title>Kodi.ge - პირადი კაბინეტი</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='mobile-avatar-menu.css') }}">
     <script src="https://js.stripe.com/v3/"></script>
-    <style>
-        /* Глобальный border-box */
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-        
-        :root {
-            --primary-color: #0a0e17;
-            --secondary-color: #1a2138;
-            --accent-color: #00c6ff;
-            --text-color: #f0f0f0;
-            --text-secondary: #c0c0d0;
-            --card-bg: #121a2b;
-            --success-color: #00d68f;
-            --warning-color: #ffaa00;
-            --danger-color: #ff3d71;
-            --ring-color-1: #00c6ff;
-            --ring-color-2: #ff3d71;
-            --ring-color-3: #00d68f;
-        }
-        
-        body {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: var(--text-color);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            overflow-x: hidden;
-            font-weight: 450;
-        }
-        
-        /* Анимированный логотип */
-        .logo-animated {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto;
-            perspective: 1000px;
-        }
-
-        .logo-core {
-            position: relative;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--accent-color), #0066ff);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transform-style: preserve-3d;
-            box-shadow: 0 0 20px rgba(0, 198, 255, 0.6);
-            overflow: hidden;
-            z-index: 2;
-        }
-
-        .logo-letter {
-            font-weight: bold;
-            font-size: 32px;
-            color: white;
-            text-shadow: 0 0 10px rgba(0,0,0,0.5);
-            z-index: 2;
-            transform: translateZ(20px);
-        }
-
-        .logo-ring {
-            position: absolute;
-            border-radius: 50%;
-            opacity: 0.7;
-            animation: logoRotate 12s linear infinite;
-            border-style: solid;
-        }
-
-        .logo-ring:nth-child(1) {
-            width: 80px;
-            height: 80px;
-            animation-duration: 15s;
-            border-width: 1px;
-            border-color: var(--ring-color-1);
-            border-radius: 50% 40% 60% 30% / 60% 50% 70% 40%;
-        }
-
-        .logo-ring:nth-child(2) {
-            width: 100px;
-            height: 100px;
-            animation-duration: 20s;
-            animation-direction: reverse;
-            border-width: 1.5px;
-            border-color: var(--ring-color-2);
-            border-radius: 40% 60% 30% 70% / 50% 70% 30% 60%;
-        }
-
-        .logo-ring:nth-child(3) {
-            width: 120px;
-            height: 120px;
-            animation-duration: 25s;
-            border-width: 2px;
-            border-color: var(--ring-color-3);
-            border-radius: 60% 30% 70% 40% / 30% 60% 40% 70%;
-        }
-
-        @keyframes logoRotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Bottom mobile menu button */
-        .mobile-menu-bottom {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            z-index: 1000;
-        }
-
-        .mobile-menu-btn {
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            font-size: 1.6rem;
-            cursor: pointer;
-            box-shadow: 0 0 20px rgba(0, 198, 255, 0.7);
-            animation: neonPulse 2s infinite alternate;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto;
-        }
-
-        .mobile-menu-btn i {
-            color: white;
-            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-        }
-
-        @keyframes neonPulse {
-            0% {
-                box-shadow: 0 0 10px rgba(0, 198, 255, 0.7);
-            }
-            100% {
-                box-shadow: 0 0 20px rgba(0, 198, 255, 1), 
-                            0 0 30px rgba(0, 198, 255, 0.8);
-            }
-        }
-        
-        /* Sidebar styling */
-        .sidebar {
-            background: rgba(10, 14, 23, 0.98);
-            backdrop-filter: blur(10px);
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 300px;
-            z-index: 100;
-            padding: 20px 0;
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            scrollbar-width: none;
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-            overflow-y: auto;
-        }
-        
-        .sidebar::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .sidebar-logo {
-            text-align: center;
-            padding: 20px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 20px;
-        }
-        
-        .sidebar-logo h2 {
-            font-weight: 700;
-            color: var(--accent-color);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 15px;
-        }
-        
-        .nav-link {
-            color: var(--text-color);
-            padding: 12px 25px;
-            margin: 5px 15px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            white-space: nowrap;
-        }
-        
-        .nav-link i {
-            width: 25px;
-            text-align: center;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-        
-        .nav-link span {
-            flex: 1;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .nav-link:hover, .nav-link.active {
-            background: rgba(0, 198, 255, 0.15);
-            color: var(--accent-color);
-        }
-
-        /* Submenu styling */
-        .submenu {
-            padding-left: 30px;
-        }
-
-        .submenu .nav-link {
-            padding: 8px 15px;
-            margin: 3px 0;
-        }
-
-        /* Disabled menu items */
-        .nav-link.disabled {
-            text-decoration: line-through;
-            opacity: 0.7;
-            pointer-events: none;
-            color: var(--text-secondary);
-        }
-        
-        /* Main content */
-        .main-content {
-            margin-left: 300px;
-            padding: 30px;
-        }
-        
-        .section-title {
-            position: relative;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 60px;
-            height: 3px;
-            background: var(--accent-color);
-            border-radius: 3px;
-        }
-        
-        /* Card styling with neon glow */
-        .card {
-            background: var(--card-bg);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            margin-bottom: 25px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        /* Neon glow animation */
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0, 198, 255, 0.2);
-            opacity: 0.8;
-            animation: neonGlow 3s infinite alternate;
-            pointer-events: none;
-            z-index: 0; /* Ensure it's behind content */
-        }
-        
-        .stat-card::before {
-            box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
-        }
-        
-        .service-card::before {
-            box-shadow: 0 0 20px rgba(0, 198, 255, 0.4);
-        }
-        
-        @keyframes neonGlow {
-            0% {
-                box-shadow: 0 0 10px rgba(0, 198, 255, 0.4);
-            }
-            50% {
-                box-shadow: 0 0 25px rgba(0, 198, 255, 0.7);
-            }
-            100% {
-                box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
-            }
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
-        }
-        
-        .card:hover::before {
-            animation: neonGlow 1.5s infinite alternate;
-        }
-        
-        .card-header {
-            background: rgba(0, 198, 255, 0.1);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 15px 20px;
-            font-weight: 600;
-            color: var(--accent-color);
-            position: relative;
-            z-index: 1; /* Ensure content is above glow */
-        }
-        
-        .card-body {
-            padding: 20px;
-            position: relative;
-            z-index: 1; /* Ensure content is above glow */
-        }
-        
-        /* Service cards */
-        .service-card {
-            text-align: center;
-            padding: 30px 20px;
-            position: relative;
-        }
-        
-        .service-icon {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            color: var(--accent-color);
-        }
-        
-        .service-title {
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-        
-        .service-price {
-            font-size: 2rem;
-            font-weight: 700;
-            margin: 20px 0;
-            color: var(--success-color);
-        }
-        
-        /* Result modal */
-        .result-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(5px);
-        }
-        
-        .modal-content {
-            background: var(--card-bg);
-            border-radius: 15px;
-            width: 90%;
-            max-width: 700px;
-            max-height: 90vh;
-            overflow-y: auto;
-            border: 1px solid rgba(0, 198, 255, 0.3);
-            box-shadow: 0 0 30px rgba(0, 198, 255, 0.2);
-            animation: modalAppear 0.5s ease;
-            position: relative;
-        }
-        
-        .modal-content::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0, 198, 255, 0.4);
-            opacity: 0.8;
-            animation: neonGlow 3s infinite alternate;
-            pointer-events: none;
-            z-index: 0;
-        }
-        
-        @keyframes modalAppear {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            z-index: 1;
-        }
-        
-        .modal-title {
-            font-weight: 700;
-            color: var(--accent-color);
-        }
-        
-        .close-modal {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: color 0.3s ease;
-            z-index: 2;
-        }
-        
-        .close-modal:hover {
-            color: var(--accent-color);
-        }
-        
-        .modal-body {
-            padding: 20px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .result-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .result-label {
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-        
-        .result-value {
-            font-weight: 600;
-            text-align: right;
-            max-width: 60%;
-        }
-        
-        /* Spinner */
-        .spinner-container {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .spinner {
-            width: 80px;
-            height: 80px;
-            border: 5px solid rgba(0, 198, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: var(--accent-color);
-            animation: spin 1s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        /* Gradient background elements */
-        .gradient-bg {
-            position: fixed;
-            width: 500px;
-            height: 500px;
-            border-radius: 50%;
-            filter: blur(100px);
-            opacity: 0.15;
-            z-index: -1;
-        }
-        
-        .gradient-1 {
-            background: var(--accent-color);
-            top: -200px;
-            right: -200px;
-        }
-        
-        .gradient-2 {
-            background: var(--success-color);
-            bottom: -200px;
-            left: -200px;
-        }
-        
-        /* Service instruction */
-        .service-instruction {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            margin-top: 15px;
-        }
-        
-        /* Form button styling */
-        #check-button {
-            animation: neonButton 3s infinite alternate;
-        }
-        
-        @keyframes neonButton {
-            0% {
-                box-shadow: 0 0 5px rgba(0, 198, 255, 0.3);
-            }
-            100% {
-                box-shadow: 0 0 15px rgba(0, 198, 255, 0.6);
-            }
-        }
-
-        /* Mobile Menu Modal */
-        .mobile-menu-modal {
-            display: none;
-            position: fixed;
-            top: auto;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 60vh;
-            max-height: 90%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 1100;
-            align-items: flex-end;
-            backdrop-filter: blur(10px);
-            transform: translateY(100%);
-            transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
-            opacity: 0;
-        }
-
-        .mobile-menu-modal.open {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .mobile-menu-modal .modal-content {
-            background: var(--card-bg);
-            border-radius: 20px 20px 0 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.7);
-            position: relative;
-            overflow: visible; /* Allow avatar to overflow */
-            border: 2px solid var(--accent-color);
-            border-top: none; /* Remove top border for seamless integration */
-        }
-
-        .mobile-menu-modal .modal-header {
-            padding: 12px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-            position: sticky;
-            top: 0;
-            background: var(--card-bg);
-            z-index: 10;
-            padding-top: 50px; /* Space for avatar */
-        }
-
-        .mobile-menu-modal .close-modal {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.3rem;
-            cursor: pointer;
-        }
-
-        .mobile-menu-modal .modal-body {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding-bottom: 20px;
-        }
-
-        /* Apple Submenu Modal */
-        .apple-submenu-modal {
-            display: none;
-            position: fixed;
-            top: auto;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 60vh;
-            max-height: 90%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 1200;
-            align-items: flex-end;
-            backdrop-filter: blur(10px);
-            transform: translateY(100%);
-            transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
-            opacity: 0;
-        }
-
-        .apple-submenu-modal.open {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .apple-submenu-modal .modal-content {
-            background: var(--card-bg);
-            border-radius: 20px 20px 0 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border: 2px solid var(--accent-color);
-            box-shadow: 0 -5px 30px rgba(0, 198, 255, 0.7);
-            position: relative;
-        }
-
-        .apple-submenu-modal .modal-header {
-            padding: 12px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-            position: sticky;
-            top: 0;
-            background: var(--card-bg);
-            z-index: 10;
-        }
-
-        .apple-submenu-modal .close-modal {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.3rem;
-            cursor: pointer;
-        }
-
-        .apple-submenu-modal .modal-body {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding-bottom: 20px;
-        }
-
-        /* Menu grid with 3 columns */
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-            gap: 6px;
-            padding: 10px 6px 20px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .menu-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 8px 4px;
-            border-radius: 8px;
-            background: var(--secondary-color);
-            aspect-ratio: 1/1;
-            text-align: center;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            cursor: pointer;
-        }
-
-        .menu-item:hover {
-            background: rgba(0, 198, 255, 0.15);
-            transform: translateY(-3px);
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .menu-item i {
-            font-size: 1.3rem;
-            margin-bottom: 5px;
-            color: var(--accent-color);
-        }
-
-        .menu-item span {
-            font-size: 0.65rem;
-            line-height: 1.2;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        
-        /* User profile styling */
-        .user-profile-section {
-            position: relative;
-            text-align: center;
-            padding: 15px 0 10px;
-            background: rgba(0, 198, 255, 0.1);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .user-avatar-container {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 10px;
-        }
-        
-        .user-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--accent-color);
-            box-shadow: 0 0 15px rgba(0, 198, 255, 0.4);
-            transition: transform 0.3s ease;
-            cursor: pointer;
-        }
-        
-        .user-avatar:hover {
-            transform: scale(1.05);
-        }
-        
-        .user-name {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-color);
-            padding: 0 15px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            cursor: pointer;
-        }
-        
-        /* Scrollbar styling */
-        .modal-body::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .modal-body::-webkit-scrollbar-thumb {
-            background-color: var(--accent-color);
-            border-radius: 3px;
-        }
-        
-        /* Floating Avatar for Mobile Menu */
-        .floating-avatar-container {
-            position: absolute;
-            top: -60px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1500;
-            width: 120px;
-            height: 120px;
-            pointer-events: none;
-        }
-        
-        .floating-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            background: var(--card-bg);
-            position: relative;
-            z-index: 2;
-            box-shadow: 
-                0 0 10px rgba(0, 198, 255, 0.6),
-                0 0 20px rgba(0, 198, 255, 0.4);
-            animation: avatarGlow 2s infinite alternate;
-            cursor: pointer;
-            display: block;
-            border: 5px solid var(--card-bg); /* Match menu background */
-        }
-
-        /* Half circle border effect */
-        .floating-avatar::before {
-            content: '';
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            border: 3px solid var(--accent-color);
-            z-index: 1;
-            animation: avatarGlow 2s infinite alternate;
-        }
-        
-        .floating-avatar-name {
-            position: absolute;
-            bottom: -30px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-color);
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding: 0 10px;
-            cursor: pointer;
-        }
-        
-        @keyframes avatarGlow {
-            0% {
-                box-shadow: 
-                    0 0 10px rgba(0, 198, 255, 0.6),
-                    0 0 20px rgba(0, 198, 255, 0.4);
-            }
-            100% {
-                box-shadow: 
-                    0 0 15px rgba(0, 198, 255, 0.8),
-                    0 0 30px rgba(0, 198, 255, 0.6);
-            }
-        }
-        
-        /* Hide scrollbar but keep functionality */
-        .mobile-menu-modal .modal-body,
-        .apple-submenu-modal .modal-body {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;     /* Firefox */
-        }
-
-        .mobile-menu-modal .modal-body::-webkit-scrollbar,
-        .apple-submenu-modal .modal-body::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
-        }
-
-        /* Header adjustment for avatar space */
-        .mobile-menu-modal .modal-header {
-            padding-top: 50px !important; /* Extra space for avatar */
-        }
-        
-        /* Responsive design */
-        @media (max-width: 1199px) {
-            .sidebar {
-                width: 250px;
-            }
-            .main-content {
-                margin-left: 250px;
-            }
-        }
-        
-        @media (max-width: 992px) {
-            .sidebar {
-                width: 70px;
-            }
-            
-            .sidebar-logo h2, .nav-link span {
-                display: none;
-            }
-            
-            .nav-link {
-                text-align: center;
-                margin: 10px 5px;
-                padding: 15px 5px;
-            }
-            
-            .nav-link i {
-                margin-right: 0;
-                font-size: 1.2rem;
-            }
-            
-            .main-content {
-                margin-left: 70px;
-            }
-            
-            /* Адаптация логотипа */
-            .logo-animated {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .logo-core {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .logo-letter {
-                font-size: 24px;
-            }
-            
-            .logo-ring:nth-child(1) {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .logo-ring:nth-child(2) {
-                width: 75px;
-                height: 75px;
-            }
-            
-            .logo-ring:nth-child(3) {
-                width: 90px;
-                height: 90px;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .main-content {
-                padding: 20px 15px;
-                padding-bottom: 80px;
-            }
-
-            .carousel-item {
-                height: 300px;
-            }
-            
-            .user-avatar-container {
-                width: 80px;
-                height: 80px;
-            }
-            
-            .user-avatar {
-                width: 70px;
-                height: 70px;
-            }
-            
-            /* Floating avatar for tablet */
-            .floating-avatar-container {
-                top: -50px;
-                width: 100px;
-                height: 100px;
-            }
-            
-            .floating-avatar {
-                width: 70px;
-                height: 70px;
-            }
-            
-            .floating-avatar::before {
-                top: -8px;
-                left: -8px;
-                width: 86px;
-                height: 86px;
-            }
-        }
-        
-        @media (max-width: 576px) {
-            .mobile-menu-bottom {
-                display: block;
-            }
-            
-            .sidebar {
-                display: none;
-            }
-            
-            .main-content {
-                margin-left: 0;
-                padding-bottom: 80px;
-            }
-
-            .carousel-item {
-                height: 250px;
-            }
-            
-            .nav-link {
-                font-size: 1.1rem;
-                padding: 15px 25px;
-            }
-            
-            .submenu .nav-link {
-                font-size: 1rem;
-            }
-            
-            .card-body, .service-card, .stat-label {
-                color: #f5f5f5;
-            }
-            
-            /* Enhanced neon glow for mobile */
-            .card::before {
-                box-shadow: 0 0 15px rgba(0, 198, 255, 0.5) !important;
-                animation: neonGlow 1.5s infinite alternate;
-            }
-            
-            /* Ensure pseudo-elements are visible */
-            .card {
-                overflow: visible;
-            }
-            
-            /* Адаптация логотипа для мобильных */
-            .logo-animated {
-                width: 70px;
-                height: 70px;
-            }
-            
-            .logo-core {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .logo-letter {
-                font-size: 24px;
-            }
-            
-            .logo-ring:nth-child(1) {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .logo-ring:nth-child(2) {
-                width: 70px;
-                height: 70px;
-            }
-            
-            .logo-ring:nth-child(3) {
-                width: 80px;
-                height: 80px;
-            }
-            
-            /* User profile in mobile menu */
-            .user-avatar-container {
-                width: 70px;
-                height: 70px;
-            }
-            
-            .user-avatar {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .user-name {
-                font-size: 0.9rem;
-            }
-            
-            /* Floating avatar for mobile */
-            .floating-avatar-container {
-                top: -40px;
-                width: 90px;
-                height: 90px;
-            }
-            
-            .floating-avatar {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .floating-avatar::before {
-                top: -7px;
-                left: -7px;
-                width: 74px;
-                height: 74px;
-            }
-            
-            .floating-avatar-name {
-                font-size: 0.8rem;
-                bottom: -25px;
-            }
-            
-            .mobile-menu-modal .modal-header {
-                padding-top: 40px !important;
-            }
-        }
-
-        /* Адаптация для очень маленьких экранов */
-        @media (max-width: 340px) {
-            .menu-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .menu-item {
-                aspect-ratio: 1/1.2;
-            }
-            
-            /* Логотип для очень маленьких экранов */
-            .logo-animated {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .logo-core {
-                width: 45px;
-                height: 45px;
-            }
-            
-            .logo-letter {
-                font-size: 20px;
-            }
-            
-            .logo-ring:nth-child(1) {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .logo-ring:nth-child(2) {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .logo-ring:nth-child(3) {
-                width: 70px;
-                height: 70px;
-            }
-            
-            /* User profile in mobile menu */
-            .user-avatar-container {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .user-avatar {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .user-name {
-                font-size: 0.8rem;
-            }
-            
-            /* Floating avatar for small screens */
-            .floating-avatar-container {
-                top: -30px;
-                width: 80px;
-                height: 80px;
-            }
-            
-            .floating-avatar {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .floating-avatar::before {
-                top: -5px;
-                left: -5px;
-                width: 60px;
-                height: 60px;
-            }
-            
-            .floating-avatar-name {
-                font-size: 0.75rem;
-                bottom: -20px;
-            }
-        }
-        
-        /* Dashboard specific styles */
-        .balance-card {
-            text-align: center;
-            padding: 30px 20px;
-        }
-        
-        .balance-amount {
-            font-size: 3rem;
-            font-weight: 700;
-            margin: 20px 0;
-            color: var(--success-color);
-        }
-        
-        .topup-btn {
-            background: linear-gradient(135deg, var(--accent-color), #0066ff);
-            border: none;
-            border-radius: 30px;
-            padding: 12px 30px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: white;
-            box-shadow: 0 0 15px rgba(0, 198, 255, 0.4);
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .topup-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0 25px rgba(0, 198, 255, 0.6);
-        }
-        
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        
-        .history-table th {
-            text-align: left;
-            padding: 10px 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            font-weight: 600;
-            color: var(--accent-color);
-        }
-        
-        .history-table td {
-            padding: 10px 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .history-table tr:hover {
-            background: rgba(0, 198, 255, 0.05);
-        }
-        
-        .view-all-link {
-            display: block;
-            text-align: right;
-            margin-top: 15px;
-            color: var(--accent-color);
-            text-decoration: none;
-        }
-        
-        .view-all-link:hover {
-            text-decoration: underline;
-        }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        
-        .status-clean {
-            background: rgba(0, 214, 143, 0.15);
-            color: var(--success-color);
-        }
-        
-        .status-blacklisted {
-            background: rgba(255, 61, 113, 0.15);
-            color: var(--danger-color);
-        }
-        
-        .status-warning {
-            background: rgba(255, 170, 0, 0.15);
-            color: var(--warning-color);
-        }
-        
-        /* Avatar styles */
-        .avatar-default {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: white;
-            background-color: #007bff;
-            border: 2px solid var(--accent-color);
-            box-shadow: 0 0 15px rgba(0, 198, 255, 0.4);
-        }
-        
-        .dashboard-avatar .avatar-default {
-            width: 100px;
-            height: 100px;
-            font-size: 2.5rem;
-        }
-        
-        .dashboard-avatar {
-            width: 120px;
-            height: 120px;
-        }
-        
-        /* Larger avatar on dashboard */
-        .user-info-avatar {
-            width: 120px;
-            height: 120px;
-        }
-        
-        .user-info-avatar .avatar-default {
-            width: 100px;
-            height: 100px;
-            font-size: 2.8rem;
-        }
-    </style>
 </head>
 <body>
     <!-- Gradient background elements -->
@@ -1319,67 +37,35 @@
             <h2>KODI.GE</h2>
         </div>
         
-        <!-- User profile in sidebar -->
-        <div class="user-profile-section">
-            <div class="user-avatar-container">
-                {% if user.avatar_url %}
-                    <img src="{{ user.avatar_url }}" alt="User Avatar" class="user-avatar">
-                {% else %}
-                    <div class="avatar-default" style="background-color: {{ generate_avatar_color(user.first_name) }};">
-                        {{ user.first_name[0] if user.first_name else user.username[0] }}
-                    </div>
-                {% endif %}
-            </div>
-            <div class="user-name">{{ user.first_name }} {{ user.last_name }}</div>
-        </div>
-        
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link active" href="#">
-                    <i class="fas fa-user-circle"></i>
-                    <span>Личный кабинет</span>
+                    <i class="fas fa-home"></i>
+                    <span>მთავარი</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="fas fa-mobile-alt"></i>
-                    <span>Проверка IMEI</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="fas fa-exchange-alt"></i>
-                    <span>Сравнение телефонов</span>
+                <a class="nav-link" href="{{ url_for('user.topup_balance') }}">
+                    <i class="fas fa-wallet"></i>
+                    <span>ანგარიშები</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('user.history_checks') }}">
                     <i class="fas fa-history"></i>
-                    <span>История проверок</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('user.history_comparisons') }}">
-                    <i class="fas fa-exchange-alt"></i>
-                    <span>История сравнений</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('user.topup_balance') }}">
-                    <i class="fas fa-credit-card"></i>
-                    <span>Пополнение баланса</span>
+                    <span>ისტორია</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="#">
                     <i class="fas fa-cog"></i>
-                    <span>Настройки</span>
+                    <span>პარამეტრები</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('auth.logout') }}">
                     <i class="fas fa-sign-out-alt"></i>
-                    <span>Выход</span>
+                    <span>გასვლა</span>
                 </a>
             </li>
         </ul>
@@ -1387,7 +73,7 @@
     
     <!-- Main content -->
     <div class="main-content">
-        <h1 class="section-title">Личный кабинет</h1>
+        <h1 class="section-title">პირადი კაბინეტი</h1>
         
         <!-- User info and balance -->
         <div class="row">
@@ -1395,7 +81,7 @@
                 <div class="card">
                     <div class="card-header">
                         <i class="fas fa-user me-2"></i>
-                        Информация о пользователе
+                        მომხმარებლის ინფორმაცია
                     </div>
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-4">
@@ -1410,7 +96,7 @@
                             </div>
                             <div>
                                 <h4>{{ user.first_name }} {{ user.last_name }}</h4>
-                                <p class="mb-1">Пользователь с {{ user.created_at.strftime('%d.%m.%Y') }}</p>
+                                <p class="mb-1">მომხმარებელი {{ user.created_at.strftime('%d.%m.%Y') }}-დან</p>
                                 <p class="mb-0">{{ user.phone }}</p>
                             </div>
                         </div>
@@ -1418,25 +104,25 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="d-flex justify-content-between">
-                                    <span>Email:</span>
+                                    <span>ელ. ფოსტა:</span>
                                     <span>{{ user.email }}</span>
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <div class="d-flex justify-content-between">
-                                    <span>Статус:</span>
-                                    <span class="text-success">Активный</span>
+                                    <span>სტატუსი:</span>
+                                    <span class="text-success">აქტიური</span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="d-flex justify-content-between">
-                                    <span>Всего проверок:</span>
+                                    <span>შემოწმებები:</span>
                                     <span>{{ total_checks }}</span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="d-flex justify-content-between">
-                                    <span>Всего сравнений:</span>
+                                    <span>შედარებები:</span>
                                     <span>{{ total_comparisons }}</span>
                                 </div>
                             </div>
@@ -1450,10 +136,10 @@
                     <div class="service-icon">
                         <i class="fas fa-wallet"></i>
                     </div>
-                    <h3 class="service-title">Ваш баланс</h3>
+                    <h3 class="service-title">თქვენი ბალანსი</h3>
                     <div class="balance-amount">{{ balance }} ₾</div>
                     <button class="topup-btn" onclick="showTopupModal()">
-                        <i class="fas fa-plus me-2"></i>Пополнить баланс
+                        <i class="fas fa-plus me-2"></i>ბალანსის შევსება
                     </button>
                 </div>
             </div>
@@ -1466,17 +152,17 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
                             <i class="fas fa-mobile-alt me-2"></i>
-                            Последние проверки IMEI
+                            IMEI-ის ბოლო შემოწმებები
                         </div>
-                        <a href="{{ url_for('user.history_checks') }}" class="view-all-link">Показать все</a>
+                        <a href="{{ url_for('user.history_checks') }}" class="view-all-link">ყველას ნახვა</a>
                     </div>
                     <div class="card-body">
                         <table class="history-table">
                             <thead>
                                 <tr>
-                                    <th>Дата</th>
+                                    <th>თარიღი</th>
                                     <th>IMEI</th>
-                                    <th>Статус</th>
+                                    <th>სტატუსი</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1486,11 +172,11 @@
                                     <td>{{ check.imei[:2] + '*'*12 + check.imei[-2:] }}</td>
                                     <td>
                                         {% if check.status == 'clean' %}
-                                            <span class="status-badge status-clean">Чистый</span>
+                                            <span class="status-badge status-clean">სუფთა</span>
                                         {% elif check.status == 'blacklisted' %}
-                                            <span class="status-badge status-blacklisted">В черном списке</span>
+                                            <span class="status-badge status-blacklisted">შავ სიაშია</span>
                                         {% elif check.status == 'warning' %}
-                                            <span class="status-badge status-warning">Предупреждение</span>
+                                            <span class="status-badge status-warning">გაფრთხილება</span>
                                         {% else %}
                                             <span class="status-badge">{{ check.status }}</span>
                                         {% endif %}
@@ -1508,17 +194,17 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
                             <i class="fas fa-exchange-alt me-2"></i>
-                            Последние сравнения
+                            ბოლო შედარებები
                         </div>
-                        <a href="{{ url_for('user.history_comparisons') }}" class="view-all-link">Показать все</a>
+                        <a href="{{ url_for('user.history_comparisons') }}" class="view-all-link">ყველას ნახვა</a>
                     </div>
                     <div class="card-body">
                         <table class="history-table">
                             <thead>
                                 <tr>
-                                    <th>Дата</th>
-                                    <th>Модели</th>
-                                    <th>Результат</th>
+                                    <th>თარიღი</th>
+                                    <th>მოდელები</th>
+                                    <th>შედეგი</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1528,11 +214,11 @@
                                     <td>{{ comp.model1 }} vs {{ comp.model2 }}</td>
                                     <td>
                                         {% if comp.result == 'model1' %}
-                                            <span class="status-badge status-clean">{{ comp.model1 }} лучше</span>
+                                            <span class="status-badge status-clean">{{ comp.model1 }} უკეთესია</span>
                                         {% elif comp.result == 'model2' %}
-                                            <span class="status-badge status-clean">{{ comp.model2 }} лучше</span>
+                                            <span class="status-badge status-clean">{{ comp.model2 }} უკეთესია</span>
                                         {% else %}
-                                            <span class="status-badge status-warning">Очень близко</span>
+                                            <span class="status-badge status-warning">ძალიან ახლოსაა</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -1549,18 +235,18 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <div>
                     <i class="fas fa-credit-card me-2"></i>
-                    История платежей
+                    გადახდების ისტორია
                 </div>
-                <a href="#" class="view-all-link">Показать все</a>
+                <a href="#" class="view-all-link">ყველას ნახვა</a>
             </div>
             <div class="card-body">
                 <table class="history-table">
                     <thead>
                         <tr>
-                            <th>Дата</th>
-                            <th>Сумма</th>
-                            <th>Тип</th>
-                            <th>Статус</th>
+                            <th>თარიღი</th>
+                            <th>თანხა</th>
+                            <th>ტიპი</th>
+                            <th>სტატუსი</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1571,11 +257,11 @@
                             <td>{{ payment.type }}</td>
                             <td>
                                 {% if payment.status == 'success' %}
-                                    <span class="status-badge status-clean">Успешно</span>
+                                    <span class="status-badge status-clean">წარმატებული</span>
                                 {% elif payment.status == 'pending' %}
-                                    <span class="status-badge status-warning">В обработке</span>
+                                    <span class="status-badge status-warning">მუშავდება</span>
                                 {% else %}
-                                    <span class="status-badge status-blacklisted">Ошибка</span>
+                                    <span class="status-badge status-blacklisted">შეცდომა</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -1590,18 +276,18 @@
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <h5>Kodi.ge</h5>
-                    <p>Профессиональный сервис проверки IMEI</p>
+                    <p>IMEI შემოწმების პროფესიონალური სერვისი</p>
                 </div>
                 <div class="col-md-3 mb-3">
-                    <h5>Контакты</h5>
+                    <h5>კონტაქტი</h5>
                     <ul class="list-unstyled">
                         <li><i class="fas fa-phone me-2"></i> +995 555 12 34 56</li>
-                        <li><i class="fas fa-envelope me-2"></i> support@kodi.ge</li>
-                        <li><i class="fas fa-map-marker-alt me-2"></i> Тбилиси, Грузия</li>
+                        <li><i class="fas fa-envelope me-2"></i> info@kodi.ge</li>
+                        <li><i class="fas fa-map-marker-alt me-2"></i> თბილისი, საქართველო</li>
                     </ul>
                 </div>
                 <div class="col-md-3 mb-3">
-                    <h5>Мы в соцсетях</h5>
+                    <h5>მიჰყევით</h5>
                     <div class="d-flex gap-3">
                         <a href="#" class="text-light"><i class="fab fa-facebook fa-2x"></i></a>
                         <a href="#" class="text-light"><i class="fab fa-instagram fa-2x"></i></a>
@@ -1610,7 +296,7 @@
                 </div>
             </div>
             <div class="text-center py-3">
-                <p class="mb-0">© 2024 Kodi.ge. Все права защищены.</p>
+                <p class="mb-0">© 2024 Kodi.ge. ყველა უფლება დაცულია.</p>
             </div>
         </footer>
     </div>
@@ -1619,7 +305,7 @@
     <div class="result-modal" id="topupModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Пополнение баланса</h3>
+                <h3 class="modal-title">ბალანსის შევსება</h3>
                 <button class="close-modal" onclick="closeModal()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -1627,35 +313,35 @@
             <div class="modal-body">
                 <form id="topupForm">
                     <div class="mb-4">
-                        <label for="amount" class="form-label">Сумма пополнения (₾)</label>
+                        <label for="amount" class="form-label">შევსების თანხა (₾)</label>
                         <input 
                             type="number" 
                             class="form-control bg-dark text-light" 
                             id="amount" 
-                            placeholder="Введите сумму"
+                            placeholder="შეიყვანეთ თანხა"
                             min="1"
                             step="0.01"
                             required
                             value="10.00">
-                        <div class="form-text">Минимальная сумма пополнения: 1 ₾</div>
+                        <div class="form-text">მინიმალური თანხა: 1 ₾</div>
                     </div>
                     
                     <div class="mb-4">
-                        <label class="form-label">Способ оплаты</label>
+                        <label class="form-label">გადახდის მეთოდი</label>
                         <div class="d-flex gap-3">
                             <div class="form-check flex-grow-1">
                                 <input class="form-check-input" type="radio" name="paymentMethod" id="cardMethod" checked>
                                 <label class="form-check-label d-flex align-items-center" for="cardMethod">
                                     <i class="fab fa-cc-visa fa-2x me-2"></i>
                                     <i class="fab fa-cc-mastercard fa-2x me-3"></i>
-                                    Банковская карта
+                                    საბანკო ბარათი
                                 </label>
                             </div>
                             <div class="form-check flex-grow-1">
                                 <input class="form-check-input" type="radio" name="paymentMethod" id="cryptoMethod">
                                 <label class="form-check-label d-flex align-items-center" for="cryptoMethod">
                                     <i class="fab fa-bitcoin fa-2x me-2"></i>
-                                    Криптовалюта
+                                    კრიპტოვალუტა
                                 </label>
                             </div>
                         </div>
@@ -1663,7 +349,7 @@
                     
                     <div class="d-grid gap-3">
                         <button type="button" class="btn btn-lg topup-btn" onclick="initiatePayment()">
-                            <i class="fas fa-credit-card me-2"></i>Перейти к оплате
+                            <i class="fas fa-credit-card me-2"></i>გადახდა
                         </button>
                     </div>
                 </form>
@@ -1675,7 +361,7 @@
     <div class="result-modal" id="successModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Платеж успешно выполнен</h3>
+                <h3 class="modal-title">გადახდა წარმატებით დასრულდა</h3>
                 <button class="close-modal" onclick="closeModal()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -1684,12 +370,12 @@
                 <div class="mb-4">
                     <i class="fas fa-check-circle fa-5x text-success"></i>
                 </div>
-                <h4>Спасибо за оплату!</h4>
-                <p>Ваш баланс успешно пополнен на <span class="text-success fw-bold" id="successAmount">10.00 ₾</span></p>
-                <p>Новый баланс: <span class="text-success fw-bold" id="newBalance">35.50 ₾</span></p>
+                <h4>გმადლობთ გადახდისთვის!</h4>
+                <p>თქვენი ბალანსი შეივსო <span class="text-success fw-bold" id="successAmount">10.00 ₾</span>-ით</p>
+                <p>ახალი ბალანსი: <span class="text-success fw-bold" id="newBalance">35.50 ₾</span></p>
                 
                 <button class="btn btn-outline-light mt-3" onclick="closeModal()">
-                    <i class="fas fa-check me-2"></i>Понятно
+                    <i class="fas fa-check me-2"></i>კარგი
                 </button>
             </div>
         </div>
@@ -1704,27 +390,113 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Initialize Stripe
-        const stripe = Stripe("{{ STRIPE_PUBLIC_KEY }}");
+        // Global stripe instance
+        let stripeInstance = null;
         
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
-            // Mobile menu toggle
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            if (mobileMenuBtn) {
-                mobileMenuBtn.addEventListener('click', openMobileMenu);
+            // Initialize Stripe with error handling
+            try {
+                stripeInstance = Stripe("{{ STRIPE_PUBLIC_KEY }}");
+            } catch(e) {
+                console.error('Stripe initialization failed:', e);
+                const stripeError = document.createElement('div');
+                stripeError.className = 'alert alert-danger position-fixed top-0 start-0 m-3';
+                stripeError.style.zIndex = '9999';
+                stripeError.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>გადახდის შეცდომა:</strong> გადახდის სისტემის ინიციალიზაცია ვერ მოხერხდა. გაანახლეთ გვერდი.
+                `;
+                document.body.appendChild(stripeError);
+                
+                setTimeout(() => {
+                    try {
+                        stripeError.style.opacity = '0';
+                        setTimeout(() => {
+                            if (document.body.contains(stripeError)) {
+                                document.body.removeChild(stripeError);
+                            }
+                        }, 500);
+                    } catch(err) {
+                        console.error('Error removing error message:', err);
+                    }
+                }, 5000);
             }
-            
+
+            // Mobile menu button setup
+            try {
+                const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+                if (mobileMenuBtn) {
+                    mobileMenuBtn.addEventListener('click', openMobileMenu);
+                }
+            } catch(e) {
+                console.error('Mobile menu setup error:', e);
+            }
+
             // Close menu when clicking outside
             document.addEventListener('click', (e) => {
-                const modal = document.getElementById('mobileMenuModal');
-                if (modal && modal.style.display === 'flex' && 
-                    !modal.contains(e.target) && 
-                    !mobileMenuBtn.contains(e.target)) {
-                    closeMobileMenu();
+                try {
+                    const mobileMenuModal = document.getElementById('mobileMenuModal');
+                    const appleSubmenuModal = document.getElementById('appleSubmenuModal');
+                    
+                    if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
+                        !mobileMenuModal.contains(e.target) && 
+                        e.target.id !== 'mobileMenuBtn') {
+                        closeMobileMenu();
+                    }
+                    
+                    if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
+                        !appleSubmenuModal.contains(e.target) && 
+                        e.target.id !== 'mobileMenuBtn') {
+                        closeAppleSubmenu();
+                    }
+                } catch(e) {
+                    console.error('Click handler error:', e);
                 }
             });
         });
+        
+        // Mobile menu functions
+        function openMobileMenu() {
+            try {
+                const modal = document.getElementById('mobileMenuModal');
+                modal.style.display = 'flex';
+                setTimeout(() => {
+                    modal.classList.add('open');
+                }, 10);
+            } catch(e) {
+                console.error('Error opening mobile menu:', e);
+            }
+        }
+        
+        function closeMobileMenu() {
+            try {
+                const modal = document.getElementById('mobileMenuModal');
+                modal.classList.remove('open');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 400);
+            } catch(e) {
+                console.error('Error closing mobile menu:', e);
+            }
+        }
+        
+        function closeAppleSubmenu() {
+            try {
+                const appleModal = document.getElementById('appleSubmenuModal');
+                appleModal.classList.remove('open');
+                setTimeout(() => {
+                    appleModal.style.display = 'none';
+                }, 400);
+            } catch(e) {
+                console.error('Error closing Apple submenu:', e);
+            }
+        }
+        
+        function closeAllMobileMenus() {
+            closeMobileMenu();
+            closeAppleSubmenu();
+        }
         
         // Show topup modal
         function showTopupModal() {
@@ -1747,7 +519,7 @@
             const amount = parseFloat(document.getElementById('amount').value);
             
             if (amount < 1) {
-                alert('Минимальная сумма пополнения: 1 ₾');
+                alert('მინიმალური თანხა: 1 ₾');
                 return;
             }
             
@@ -1761,7 +533,7 @@
                 document.getElementById('topupModal').style.display = 'none';
                 document.getElementById('successAmount').textContent = amount.toFixed(2) + ' ₾';
                 
-                // Calculate new balance (in real app this would come from server)
+                // Calculate new balance
                 const currentBalance = parseFloat("{{ balance }}");
                 const newBalance = currentBalance + amount;
                 document.getElementById('newBalance').textContent = newBalance.toFixed(2) + ' ₾';
@@ -1769,13 +541,6 @@
                 document.getElementById('successModal').style.display = 'flex';
             }, 1500);
         }
-        
-        // Mobile menu functions
-        function openMobileMenu() {
-            // In a real app, this would open the mobile menu
-            alert('Мобильное меню открыто');
-        }
     </script>
 </body>
-    </html>
-
+</html>
