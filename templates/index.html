@@ -8,35 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
     <link rel="stylesheet" href="static/mobile-avatar-menu.css">
-    <style>
-        /* Add custom styles for scroll lock */
-        body.menu-open {
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-            height: 100%;
-        }
-        
-        /* Fix for Bootstrap modal conflict */
-        .mobile-menu-modal {
-            z-index: 1060 !important;
-        }
-        
-        /* Ensure background stays behind menu */
-        .gradient-bg {
-            z-index: 0;
-        }
-        
-        /* Fix for mobile menu button visibility */
-        .mobile-menu-bottom {
-            z-index: 1000;
-            transition: opacity 0.3s ease;
-        }
-        .mobile-menu-bottom.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-    </style>
 </head>
 <body>
     <!-- Gradient background elements -->
@@ -478,28 +449,13 @@
     
     <!-- Main application logic -->
     <script>
-        // Track menu state
-        let isMenuOpen = false;
-        let scrollPosition = 0;
-        
         // Mobile menu functions
         function openMobileMenu() {
             try {
-                // Save current scroll position
-                scrollPosition = window.scrollY;
-                
                 const modal = document.getElementById('mobileMenuModal');
                 modal.style.display = 'flex';
                 setTimeout(() => {
                     modal.classList.add('open');
-                    isMenuOpen = true;
-                    
-                    // Hide menu button
-                    document.getElementById('mobileMenuBottom').classList.add('hidden');
-                    
-                    // Lock page scrolling
-                    document.body.classList.add('menu-open');
-                    document.body.style.top = `-${scrollPosition}px`;
                 }, 10);
             } catch(e) {
                 console.error('Error opening mobile menu:', e);
@@ -512,15 +468,6 @@
                 modal.classList.remove('open');
                 setTimeout(() => {
                     modal.style.display = 'none';
-                    isMenuOpen = false;
-                    
-                    // Show menu button
-                    document.getElementById('mobileMenuBottom').classList.remove('hidden');
-                    
-                    // Unlock page scrolling
-                    document.body.classList.remove('menu-open');
-                    window.scrollTo(0, scrollPosition);
-                    document.body.style.top = '';
                 }, 400);
             } catch(e) {
                 console.error('Error closing mobile menu:', e);
@@ -534,14 +481,6 @@
                 appleModal.style.display = 'flex';
                 setTimeout(() => {
                     appleModal.classList.add('open');
-                    isMenuOpen = true;
-                    
-                    // Hide menu button
-                    document.getElementById('mobileMenuBottom').classList.add('hidden');
-                    
-                    // Lock page scrolling
-                    document.body.classList.add('menu-open');
-                    document.body.style.top = `-${scrollPosition}px`;
                 }, 10);
             } catch(e) {
                 console.error('Error opening Apple submenu:', e);
@@ -554,15 +493,7 @@
                 appleModal.classList.remove('open');
                 setTimeout(() => {
                     appleModal.style.display = 'none';
-                    isMenuOpen = false;
-                    
-                    // Show menu button
-                    document.getElementById('mobileMenuBottom').classList.remove('hidden');
-                    
-                    // Unlock page scrolling
-                    document.body.classList.remove('menu-open');
-                    window.scrollTo(0, scrollPosition);
-                    document.body.style.top = '';
+                    openMobileMenu();
                 }, 400);
             } catch(e) {
                 console.error('Error closing Apple submenu:', e);
@@ -608,24 +539,18 @@
                 try {
                     const mobileMenuModal = document.getElementById('mobileMenuModal');
                     const appleSubmenuModal = document.getElementById('appleSubmenuModal');
-                    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-                    
-                    // Check if click is outside menu
-                    const isClickInsideMenu = 
-                        (mobileMenuModal && mobileMenuModal.contains(e.target)) || 
-                        (appleSubmenuModal && appleSubmenuModal.contains(e.target));
                     
                     // Close mobile menu if click is outside
                     if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
-                        !isClickInsideMenu && 
-                        e.target !== mobileMenuBtn) {
+                        !mobileMenuModal.contains(e.target) && 
+                        e.target.id !== 'mobileMenuBtn') {
                         closeMobileMenu();
                     }
                     
                     // Close apple submenu if click is outside
                     if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
-                        !isClickInsideMenu && 
-                        e.target !== mobileMenuBtn) {
+                        !appleSubmenuModal.contains(e.target) && 
+                        e.target.id !== 'mobileMenuBtn') {
                         closeAppleSubmenu();
                     }
                 } catch(e) {
@@ -659,4 +584,4 @@
         }, 5000);
     </script>
 </body>
-                                                  </html>
+</html>
