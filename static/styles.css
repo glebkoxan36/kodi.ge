@@ -1,19 +1,19 @@
 /* styles.css */
 /* Обновленные глобальные стили */
-@import url("static/mobile-avatar-menu.css"); /* Импорт стилей мобильного меню и аватарки */
+@import url("static/mobile-avatar-menu.css");
 
 *, *::before, *::after {
     box-sizing: border-box;
 }
 
 :root {
-    --primary-color: #0d1525; /* Светлее исходного */
-    --secondary-color: #1d2a4a; /* Светлее исходного */
+    --primary-color: #0d1525;
+    --secondary-color: #1d2a4a;
     --accent-color: #00c6ff;
     --text-color: #ffffff;
     --text-secondary: #c0c0d0;
     --card-bg: #121a2b;
-    --card-hover-bg: #16203a; /* Новый цвет для ховера */
+    --card-hover-bg: #16203a;
     --success-color: #00d68f;
     --warning-color: #ffaa00;
     --danger-color: #ff3d71;
@@ -27,7 +27,7 @@ body {
         135deg, 
         var(--primary-color), 
         var(--secondary-color),
-        #0f1729  /* Добавлен третий цвет для глубины */
+        #0f1729
     );
     background-size: 300% 300%;
     animation: gradientShift 15s ease infinite;
@@ -55,7 +55,6 @@ body {
     align-items: center;
     justify-content: center;
     margin: 0 auto;
-    perspective: 1000px;
 }
 
 .logo-core {
@@ -67,7 +66,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transform-style: preserve-3d;
     box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
     overflow: hidden;
     z-index: 2;
@@ -75,8 +73,8 @@ body {
 }
 
 @keyframes logoFloat {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-8px) rotate(2deg); }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
 }
 
 .logo-letter {
@@ -85,7 +83,6 @@ body {
     color: white;
     text-shadow: 0 0 10px rgba(0,0,0,0.5);
     z-index: 2;
-    transform: translateZ(20px);
 }
 
 .logo-ring {
@@ -324,7 +321,7 @@ body {
 }
 
 .card:hover {
-    transform: translateY(-7px) rotate(1deg);
+    transform: translateY(-7px);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
     background: var(--card-hover-bg);
 }
@@ -565,10 +562,10 @@ body {
 /* Gradient background elements */
 .gradient-bg {
     position: fixed;
-    width: 600px; /* Увеличено для лучшего покрытия */
+    width: 600px;
     height: 600px;
     border-radius: 50%;
-    filter: blur(120px); /* Усилено размытие */
+    filter: blur(120px);
     opacity: 0.25;
     z-index: -1;
     animation: gradientFloat 25s infinite alternate ease-in-out;
@@ -1057,17 +1054,17 @@ body {
 }
 
 /* Compare page styles */
-.container {
+.compare-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 15px;
 }
 
-.search-container {
+.compare-search-container {
     margin-bottom: 30px;
 }
 
-.search-input {
+.compare-search-input {
     width: 100%;
     padding: 12px 15px;
     background: rgba(255, 255, 255, 0.1);
@@ -1078,13 +1075,13 @@ body {
     transition: all 0.3s ease;
 }
 
-.search-input:focus {
+.compare-search-input:focus {
     border-color: var(--accent-color);
     box-shadow: 0 0 0 3px rgba(0, 198, 255, 0.2);
     transform: translateY(-2px);
 }
 
-.suggestions-dropdown {
+.compare-suggestions-dropdown {
     position: absolute;
     width: 100%;
     max-height: 300px;
@@ -1098,18 +1095,18 @@ body {
     animation: fadeIn 0.3s ease-out;
 }
 
-.suggestion-item {
+.compare-suggestion-item {
     padding: 10px 15px;
     cursor: pointer;
     transition: background 0.2s, transform 0.2s;
 }
 
-.suggestion-item:hover {
+.compare-suggestion-item:hover {
     background: rgba(0, 198, 255, 0.15);
     transform: translateX(5px);
 }
 
-.btn-compare {
+.compare-btn {
     background: linear-gradient(135deg, var(--accent-color), #0066ff);
     border: none;
     border-radius: 8px;
@@ -1125,7 +1122,7 @@ body {
     overflow: hidden;
 }
 
-.btn-compare::before {
+.compare-btn::before {
     content: '';
     position: absolute;
     top: -50%;
@@ -1141,17 +1138,17 @@ body {
     transition: all 0.6s ease;
 }
 
-.btn-compare:hover {
+.compare-btn:hover {
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 198, 255, 0.4);
 }
 
-.btn-compare:hover::before {
+.compare-btn:hover::before {
     top: 50%;
     left: 50%;
 }
 
-.btn-compare:disabled {
+.compare-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
@@ -1164,7 +1161,7 @@ body {
     margin-top: 30px;
 }
 
-.phone-card {
+.compare-phone-card {
     flex: 1;
     background: var(--card-bg);
     border-radius: 12px;
@@ -1174,12 +1171,12 @@ body {
     animation: cardAppear 0.6s ease-out;
 }
 
-.phone-card:hover {
+.compare-phone-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
 }
 
-.phone-image {
+.compare-phone-image {
     max-width: 100%;
     height: 200px;
     object-fit: contain;
@@ -1187,21 +1184,21 @@ body {
     transition: transform 0.5s ease;
 }
 
-.phone-image:hover {
+.compare-phone-image:hover {
     transform: scale(1.05);
 }
 
-.phone-title {
+.compare-phone-title {
     text-align: center;
     margin-bottom: 20px;
     transition: color 0.3s ease;
 }
 
-.phone-title:hover {
+.compare-phone-title:hover {
     color: var(--accent-color);
 }
 
-.spec-group-header {
+.compare-spec-group-header {
     font-weight: 600;
     margin: 15px 0 10px;
     color: var(--accent-color);
@@ -1209,40 +1206,40 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.spec-item {
+.compare-spec-item {
     display: flex;
     margin-bottom: 8px;
     font-size: 0.95rem;
     transition: all 0.3s ease;
 }
 
-.spec-item:hover {
+.compare-spec-item:hover {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 5px;
     padding: 3px 5px;
 }
 
-.spec-label {
+.compare-spec-label {
     flex: 1;
     color: var(--text-secondary);
     transition: color 0.3s ease;
 }
 
-.spec-item:hover .spec-label {
+.compare-spec-item:hover .compare-spec-label {
     color: var(--accent-color);
 }
 
-.spec-value {
+.compare-spec-value {
     flex: 2;
     font-weight: 500;
     transition: color 0.3s ease;
 }
 
-.spec-item:hover .spec-value {
+.compare-spec-item:hover .compare-spec-value {
     color: var(--success-color);
 }
 
-.ai-analysis {
+.compare-ai-analysis {
     margin-top: 40px;
     background: var(--card-bg);
     border-radius: 12px;
@@ -1251,34 +1248,135 @@ body {
     animation: fadeIn 1s ease-out;
 }
 
-.ai-header {
+.compare-ai-header {
     display: flex;
     align-items: center;
     margin-bottom: 20px;
 }
 
-.ai-icon {
+.compare-ai-icon {
     font-size: 1.8rem;
     color: var(--accent-color);
     margin-right: 15px;
     animation: pulse 2s infinite;
 }
 
-.ai-loader {
+.compare-ai-loader {
     text-align: center;
     padding: 20px;
 }
 
-.ai-loader .fa-spinner {
+.compare-ai-loader .fa-spinner {
     animation: spin 1s linear infinite;
     font-size: 2rem;
     margin-bottom: 15px;
     color: var(--accent-color);
 }
 
-.ai-response {
+.compare-ai-response {
     line-height: 1.6;
     animation: fadeIn 1s ease-out;
+}
+
+/* Comparison grid styles */
+.comparison-grid-container {
+    margin-top: 30px;
+    display: none;
+}
+
+.specs-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.grid-header {
+    padding: 15px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--accent-color);
+    background: var(--secondary-color);
+}
+
+.spec-row {
+    display: contents;
+}
+
+.spec-cell {
+    padding: 12px 15px;
+    background: var(--card-bg);
+    display: flex;
+    align-items: center;
+}
+
+.spec-name {
+    grid-column: 1 / span 3;
+    color: var(--text-secondary);
+    justify-content: center;
+    padding: 8px 15px;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 0.95rem;
+}
+
+.spec-value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 15px;
+    text-align: center;
+    min-height: 60px;
+}
+
+.better-value {
+    color: var(--success-color);
+    font-weight: 600;
+    position: relative;
+}
+
+.value-indicator {
+    margin-right: 5px;
+    display: inline-flex;
+    font-size: 1.1rem;
+}
+
+.group-header {
+    grid-column: 1 / span 3;
+    background: rgba(0, 198, 255, 0.15);
+    padding: 10px 15px;
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-top: 5px;
+}
+
+.phone-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+}
+
+.phone-thumb {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+}
+
+.divider-cell {
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.divider-line {
+    width: 1px;
+    height: 60%;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 /* Responsive design */
@@ -1368,6 +1466,18 @@ body {
     .comparison-container {
         flex-direction: column;
     }
+    
+    .specs-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .divider-cell {
+        display: none;
+    }
+    
+    .grid-header {
+        grid-column: 1;
+    }
 }
 
 @media (max-width: 576px) {
@@ -1397,18 +1507,10 @@ body {
         color: #f5f5f5;
     }
     
-    /* Enhanced neon glow for mobile */
     .card::before {
         box-shadow: 0 0 15px rgba(0, 198, 255, 0.5) !important;
-        animation: neonGlow 1.5s infinite alternate;
     }
     
-    /* Ensure pseudo-elements are visible */
-    .card {
-        overflow: visible;
-    }
-    
-    /* Адаптация логотипа для мобильных */
     .logo-animated {
         width: 70px;
         height: 70px;
@@ -1438,7 +1540,6 @@ body {
         height: 80px;
     }
     
-    /* User profile in mobile menu */
     .user-avatar-container {
         width: 70px;
         height: 70px;
@@ -1456,7 +1557,6 @@ body {
 
 /* Адаптация для очень маленьких экранов */
 @media (max-width: 340px) {
-    /* Логотип для очень маленьких экранов */
     .logo-animated {
         width: 60px;
         height: 60px;
@@ -1486,7 +1586,6 @@ body {
         height: 70px;
     }
     
-    /* User profile in mobile menu */
     .user-avatar-container {
         width: 60px;
         height: 60px;
@@ -1506,4 +1605,4 @@ body {
     .gradient-bg {
         display: none;
     }
-    }
+        }
