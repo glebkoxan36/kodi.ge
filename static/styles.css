@@ -813,6 +813,7 @@ footer h5 {
     opacity: 1;
     overflow: visible;
     padding-top: 0;
+    border-radius: 30px 30px 0 0; /* Закругление углов фона */
 }
 
 .mobile-menu-modal.open {
@@ -823,7 +824,7 @@ footer h5 {
 .mobile-menu-modal .modal-content {
     background: rgba(18, 26, 43, 0.95);
     border: 3px solid rgba(0, 198, 255, 0.4);
-    border-radius: 30px 30px 0 0;
+    border-radius: 30px 30px 0 0; /* Закругление углов контента */
     box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
     overflow: visible;
     position: relative;
@@ -850,6 +851,13 @@ footer h5 {
     width: 100%;
     text-align: center;
     padding-bottom: 15px;
+    pointer-events: none; /* Отключаем события по умолчанию */
+}
+
+/* Элементы внутри контейнера, на которые нужно реагировать */
+.floating-avatar,
+.floating-avatar-info {
+    pointer-events: auto; /* Включаем события для этих элементов */
 }
 
 .floating-avatar {
@@ -1306,4 +1314,4 @@ footer h5 {
     .mobile-menu-modal {
         display: none !important;
     }
-    }
+                             }
