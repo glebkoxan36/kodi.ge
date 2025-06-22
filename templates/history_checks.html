@@ -1,1 +1,39 @@
+{% extends 'base.html' %}
 
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>IMEI შემოწმებების ისტორია</h3>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>თარიღი</th>
+                    <th>IMEI</th>
+                    <th>სტატუსი</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for check in checks %}
+                <tr>
+                    <td>{{ check.timestamp }}</td>
+                    <td>{{ check.imei[:2] + '***********' + check.imei[-2:] }}</td>
+                    <td>
+                        {% if check.status == 'clean' %}
+                            <span class="badge bg-success">სუფთა</span>
+                        {% elif check.status == 'blacklisted' %}
+                            <span class="badge bg-danger">შავ სიაშია</span>
+                        {% elif check.status == 'warning' %}
+                            <span class="badge bg-warning">გაფრთხილება</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ check.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
