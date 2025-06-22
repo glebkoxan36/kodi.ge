@@ -8,30 +8,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
     <link rel="stylesheet" href="static/mobile-avatar-menu.css">
-    <style>
-        .content-locked {
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-        }
-    </style>
 </head>
 <body>
     <!-- Gradient background elements -->
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
-
+    
     <!-- Bottom mobile menu button -->
     <div class="mobile-menu-bottom" id="mobileMenuBottom">
-        <button class="mobile-menu-btn" id="mobileMenuBtn"
-                aria-expanded="false" aria-controls="mobileMenuModal">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
             <i class="fas fa-bars"></i>
         </button>
     </div>
-
+    
     <!-- Sidebar -->
     <div class="sidebar">
         <!-- Logo -->
@@ -46,7 +35,7 @@
             </div>
             <h2>KODI.GE</h2>
         </div>
-
+        
         <!-- User profile in sidebar -->
         <div class="user-profile-section" onclick="goToLogin()">
             <div class="user-avatar-container">
@@ -67,7 +56,7 @@
                 {% endif %}
             </div>
         </div>
-
+        
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link active" href="#">
@@ -142,7 +131,7 @@
             </li>
         </ul>
     </div>
-
+    
     <!-- Main content -->
     <div class="main-content">
         <!-- Hero Section with Logo and Carousel -->
@@ -159,7 +148,7 @@
                 <h1 class="display-4 fw-bold mt-3">KODI.GE</h1>
                 <p class="lead">პროფესიონალური IMEI შემოწმების სერვისი</p>
             </div>
-
+            
             <!-- Carousel without images -->
             <div id="mainCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
                 <div class="carousel-inner rounded">
@@ -205,7 +194,7 @@
                 </div>
             </div>
         </div>
-
+        
         <!-- About Section -->
         <div id="about" class="card">
             <div class="card-header">
@@ -214,11 +203,11 @@
             </div>
             <div class="card-body">
                 <p class="lead">ჩვენ ვართ ლიდერი IMEI შემოწმების სერვისი საქართველოში</p>
-                <p>ჩვენი მისიაა უზრუნველვყოთ საიმეო ხარისხიანი სერვისი iPhone მომხმარე�[...]</p>
-                <p>გთავაზობთ სრულ ინფორმაციას თქვენი მოწყობილობის სტატუსის შესახე��[...]</p>
+                <p>ჩვენი მისიაა უზრუნველვყოთ საიმეო ხარისხიანი სერვისი iPhone მომხმარებლებისთვის.</p>
+                <p>გთავაზობთ სრულ ინფორმაციას თქვენი მოწყობილობის სტატუსის შესახებ.</p>
             </div>
         </div>
-
+        
         <!-- IMEI Info Section -->
         <div id="imei-info" class="card mt-5">
             <div class="card-header">
@@ -226,7 +215,7 @@
                 რა არის IMEI?
             </div>
             <div class="card-body">
-                <p>IMEI (International Mobile Equipment Identity) არის უნიკალური 15-ნიშნა ნომერი, რომელიც ყველა მობ��[...]</p>
+                <p>IMEI (International Mobile Equipment Identity) არის უნიკალური 15-ნიშნა ნომერი, რომელიც ყველა მობილურ ტელეფონს აქვს.</p>
                 <p>ამ ნომრის საშუალებით შეგიძლიათ:</p>
                 <ul>
                     <li>შეამოწმოთ ტელეფონის ავთენტურობა</li>
@@ -236,7 +225,7 @@
                 </ul>
             </div>
         </div>
-
+        
         <!-- Services Section -->
         <div id="pricing" class="mt-5">
             <h2 class="section-title">ჩვენი სერვისები</h2>
@@ -296,7 +285,7 @@
                 </div>
             </div>
         </div>
-
+        
         <!-- Statistics Section -->
         <div class="row mt-4">
             <div class="col-md-4 mb-4">
@@ -321,7 +310,7 @@
                 </div>
             </div>
         </div>
-
+        
         <!-- Footer -->
         <footer id="contacts" class="mt-5 pt-4 border-top border-secondary">
             <div class="row">
@@ -351,9 +340,10 @@
             </div>
         </footer>
     </div>
-
+    
     <!-- Mobile Menu Modal -->
     <div class="mobile-menu-modal" id="mobileMenuModal">
+        <!-- Avatar placed outside modal content -->
         <div class="floating-avatar-container" onclick="goToLogin()">
             {% if user %}
                 <div class="floating-avatar" style="background-color: {{ user.avatar_color }};">
@@ -371,47 +361,49 @@
                 <div class="user-balance" id="mobileUserBalance" style="display: none;"></div>
             {% endif %}
         </div>
+        
         <div class="modal-content">
             <div class="modal-header">
                 <button class="close-modal" onclick="closeMobileMenu()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
+            
             <div class="modal-body">
                 <div class="menu-grid">
-                    <div class="menu-item" tabindex="0" onclick="window.scrollTo(0,0); closeMobileMenu();">
+                    <div class="menu-item" onclick="window.scrollTo(0,0); closeMobileMenu();">
                         <i class="fas fa-home"></i>
                         <span>მთავარი</span>
                     </div>
-                    <div class="menu-item" tabindex="0" onclick="openAppleSubmenu()">
+                    <div class="menu-item" onclick="openAppleSubmenu()">
                         <i class="fas fa-mobile-alt"></i>
                         <span>Apple</span>
                     </div>
-                    <div class="menu-item" tabindex="0">
+                    <div class="menu-item">
                         <i class="fab fa-android"></i>
                         <span>Android</span>
                     </div>
-                    <div class="menu-item" tabindex="0">
+                    <div class="menu-item">
                         <i class="fas fa-unlock-alt"></i>
                         <span>განბლოკვა</span>
                     </div>
-                    <div class="menu-item" tabindex="0" onclick="window.location.href='compare'; closeAllMobileMenus();">
+                    <div class="menu-item" onclick="window.location.href='compare'; closeAllMobileMenus();">
                         <i class="fas fa-exchange-alt"></i>
                         <span>შედარება</span>
                     </div>
-                    <div class="menu-item" tabindex="0">
+                    <div class="menu-item">
                         <i class="fas fa-book"></i>
                         <span>ცოდნის ბაზა</span>
                     </div>
-                    <div class="menu-item" tabindex="0" onclick="document.getElementById('contacts').scrollIntoView({behavior: 'smooth'}); closeMobileMenu();">
+                    <div class="menu-item" onclick="document.getElementById('contacts').scrollIntoView({behavior: 'smooth'}); closeMobileMenu();">
                         <i class="fas fa-address-card"></i>
                         <span>კონტაქტი</span>
                     </div>
-                    <div class="menu-item" tabindex="0">
+                    <div class="menu-item">
                         <i class="fas fa-shield-alt"></i>
                         <span>კონფიდენციალურობა</span>
                     </div>
-                    <div class="menu-item" tabindex="0">
+                    <div class="menu-item">
                         <i class="fas fa-undo"></i>
                         <span>დაბრუნება</span>
                     </div>
@@ -451,94 +443,123 @@
             </div>
         </div>
     </div>
-
+    
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+    
+    <!-- Main application logic -->
     <script>
-        let isMenuOpen = false;
-        let scrollPosition = 0;
-
+        // Mobile menu functions
         function openMobileMenu() {
             try {
-                scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
                 const modal = document.getElementById('mobileMenuModal');
-                modal.classList.add('open');
-                isMenuOpen = true;
-                document.getElementById('mobileMenuBtn').setAttribute('aria-expanded', 'true');
-                document.getElementById('mobileMenuBottom').classList.add('hidden');
-                document.querySelector('.main-content').classList.add('content-locked');
+                modal.style.display = 'flex';
                 setTimeout(() => {
-                    const firstMenuItem = document.querySelector('.menu-item');
-                    if (firstMenuItem) firstMenuItem.focus();
-                }, 100);
-            } catch(e) { console.error('Error opening mobile menu:', e);}
+                    modal.classList.add('open');
+                }, 10);
+            } catch(e) {
+                console.error('Error opening mobile menu:', e);
+            }
         }
+        
         function closeMobileMenu() {
             try {
                 const modal = document.getElementById('mobileMenuModal');
                 modal.classList.remove('open');
-                isMenuOpen = false;
-                document.getElementById('mobileMenuBtn').setAttribute('aria-expanded', 'false');
-                document.querySelector('.main-content').classList.remove('content-locked');
-                document.getElementById('mobileMenuBottom').classList.remove('hidden');
-                window.scrollTo(0, scrollPosition);
-            } catch(e) { console.error('Error closing mobile menu:', e);}
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 400);
+            } catch(e) {
+                console.error('Error closing mobile menu:', e);
+            }
         }
+        
         function openAppleSubmenu() {
             try {
+                closeMobileMenu();
                 const appleModal = document.getElementById('appleSubmenuModal');
-                appleModal.classList.add('open');
-                isMenuOpen = true;
-                document.getElementById('mobileMenuBottom').classList.add('hidden');
-            } catch(e){console.error('Error opening Apple submenu:', e);}
+                appleModal.style.display = 'flex';
+                setTimeout(() => {
+                    appleModal.classList.add('open');
+                }, 10);
+            } catch(e) {
+                console.error('Error opening Apple submenu:', e);
+            }
         }
+        
         function closeAppleSubmenu() {
             try {
                 const appleModal = document.getElementById('appleSubmenuModal');
                 appleModal.classList.remove('open');
-                isMenuOpen = false;
-                document.getElementById('mobileMenuBottom').classList.remove('hidden');
-            } catch(e){console.error('Error closing Apple submenu:', e);}
+                setTimeout(() => {
+                    appleModal.style.display = 'none';
+                    openMobileMenu();
+                }, 400);
+            } catch(e) {
+                console.error('Error closing Apple submenu:', e);
+            }
         }
+        
         function closeAllMobileMenus() {
             closeMobileMenu();
             closeAppleSubmenu();
         }
+        
+        // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize carousel with error handling
+            try {
+                const carouselElement = document.getElementById('mainCarousel');
+                if (carouselElement) {
+                    const myCarousel = new bootstrap.Carousel(carouselElement, {
+                        interval: 2000,
+                        ride: 'carousel'
+                    });
+                } else {
+                    console.warn('Carousel element not found');
+                }
+            } catch(e) {
+                console.error('Carousel initialization failed:', e);
+            }
+
+            // Mobile menu button setup
             try {
                 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
                 if (mobileMenuBtn) {
                     mobileMenuBtn.addEventListener('click', openMobileMenu);
+                } else {
+                    console.warn('Mobile menu button not found');
                 }
-            } catch(e){console.error('Mobile menu setup error:', e);}
-            
+            } catch(e) {
+                console.error('Mobile menu setup error:', e);
+            }
+
+            // Close menu when clicking outside
             document.addEventListener('click', (e) => {
                 try {
                     const mobileMenuModal = document.getElementById('mobileMenuModal');
                     const appleSubmenuModal = document.getElementById('appleSubmenuModal');
-                    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-                    const isClickInsideMobileMenu = mobileMenuModal.classList.contains('open') &&
-                        mobileMenuModal.querySelector('.modal-content').contains(e.target);
-                    const isClickInsideAppleMenu = appleSubmenuModal.classList.contains('open') &&
-                        appleSubmenuModal.querySelector('.modal-content').contains(e.target);
-                    if (mobileMenuModal.classList.contains('open') &&
-                        !isClickInsideMobileMenu &&
-                        e.target !== mobileMenuBtn) {
+                    
+                    // Close mobile menu if click is outside
+                    if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
+                        !mobileMenuModal.contains(e.target) && 
+                        e.target.id !== 'mobileMenuBtn') {
                         closeMobileMenu();
                     }
-                    if (appleSubmenuModal.classList.contains('open') &&
-                        !isClickInsideAppleMenu) {
+                    
+                    // Close apple submenu if click is outside
+                    if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
+                        !appleSubmenuModal.contains(e.target) && 
+                        e.target.id !== 'mobileMenuBtn') {
                         closeAppleSubmenu();
                     }
-                } catch(e){console.error('Click handler error:', e);}
-            });
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && isMenuOpen) {
-                    closeAllMobileMenus();
+                } catch(e) {
+                    console.error('Click handler error:', e);
                 }
             });
         });
+        
+        // Redirect to login or dashboard
         function goToLogin() {
             closeAllMobileMenus();
             {% if user %}
@@ -547,13 +568,15 @@
                 window.location.href = "{{ url_for('auth.login') }}";
             {% endif %}
         }
+        
+        // Simulate statistics counter
         setInterval(() => {
             try {
-                document.getElementById('daily-checks').textContent =
+                document.getElementById('daily-checks').textContent = 
                     parseInt(document.getElementById('daily-checks').textContent) + 1;
-                document.getElementById('weekly-checks').textContent =
+                document.getElementById('weekly-checks').textContent = 
                     parseInt(document.getElementById('weekly-checks').textContent) + 1;
-                document.getElementById('monthly-checks').textContent =
+                document.getElementById('monthly-checks').textContent = 
                     parseInt(document.getElementById('monthly-checks').textContent) + 1;
             } catch(e) {
                 console.warn('Error updating counters:', e);
