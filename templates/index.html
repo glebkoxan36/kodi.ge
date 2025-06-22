@@ -9,11 +9,15 @@
     <link rel="stylesheet" href="static/styles.css">
     <link rel="stylesheet" href="static/mobile-avatar-menu.css">
     <style>
-        body.menu-open {
+        /* Удалены старые стили body.menu-open */
+        
+        .content-locked {
             overflow: hidden;
             position: fixed;
             width: 100%;
             height: 100%;
+            top: 0;
+            left: 0;
         }
         
         .mobile-menu-modal {
@@ -22,6 +26,11 @@
         
         .gradient-bg {
             z-index: 0;
+        }
+        
+        .main-content {
+            z-index: 1;
+            position: relative;
         }
         
         .mobile-menu-bottom {
@@ -41,7 +50,8 @@
     
     <!-- Bottom mobile menu button -->
     <div class="mobile-menu-bottom" id="mobileMenuBottom">
-        <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" 
+                aria-expanded="false" aria-controls="mobileMenuModal">
             <i class="fas fa-bars"></i>
         </button>
     </div>
@@ -482,21 +492,26 @@
         function openMobileMenu() {
             try {
                 // Save current scroll position
-                scrollPosition = window.scrollY;
+                scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
                 
                 const modal = document.getElementById('mobileMenuModal');
-                modal.style.display = 'flex';
+                modal.classList.add('open');
+                isMenuOpen = true;
+                
+                // Set ARIA attributes
+                document.getElementById('mobileMenuBtn').setAttribute('aria-expanded', 'true');
+                
+                // Hide menu button
+                document.getElementById('mobileMenuBottom').classList.add('hidden');
+                
+                // Lock page scrolling
+                document.querySelector('.main-content').classList.add('content-locked');
+                
+                // Move focus to first menu item
                 setTimeout(() => {
-                    modal.classList.add('open');
-                    isMenuOpen = true;
-                    
-                    // Hide menu button
-                    document.getElementById('mobileMenuBottom').classList.add('hidden');
-                    
-                    // Lock page scrolling
-                    document.body.classList.add('menu-open');
-                    document.body.style.top = `-${scrollPosition}px`;
-                }, 10);
+                    const firstMenuItem = document.querySelector('.menu-item');
+                    if (firstMenuItem) firstMenuItem.focus();
+                }, 100);
             } catch(e) {
                 console.error('Error opening mobile menu:', e);
             }
@@ -506,17 +521,20 @@
             try {
                 const modal = document.getElementById('mobileMenuModal');
                 modal.classList.remove('open');
+                
+                // Set ARIA attributes
+                document.getElementById('mobileMenuBtn').setAttribute('aria-expanded', 'false');
+                
+                // Unlock page scrolling
+                document.querySelector('.main-content').classList.remove('content-locked');
+                
+                // Restore scroll position
+                window.scrollTo(0, scrollPosition);
+                
+                // Show menu button after animation completes
                 setTimeout(() => {
-                    modal.style.display = 'none';
                     isMenuOpen = false;
-                    
-                    // Show menu button
                     document.getElementById('mobileMenuBottom').classList.remove('hidden');
-                    
-                    // Unlock page scrolling
-                    document.body.classList.remove('menu-open');
-                    window.scrollTo(0, scrollPosition);
-                    document.body.style.top = '';
                 }, 400);
             } catch(e) {
                 console.error('Error closing mobile menu:', e);
@@ -526,11 +544,11 @@
         function openAppleSubmenu() {
             try {
                 const appleModal = document.getElementById('appleSubmenuModal');
-                appleModal.style.display = 'flex';
-                setTimeout(() => {
-                    appleModal.classList.add('open');
-                    isMenuOpen = true;
-                }, 10);
+                appleModal.classList.add('open');
+                isMenuOpen = true;
+                
+                // Hide menu button
+                document.getElementById('mobileMenuBottom').classList.add('hidden');
             } catch(e) {
                 console.error('Error opening Apple submenu:', e);
             }
@@ -540,14 +558,11 @@
             try {
                 const appleModal = document.getElementById('appleSubmenuModal');
                 appleModal.classList.remove('open');
+                
+                // Show menu button after animation completes
                 setTimeout(() => {
-                    appleModal.style.display = 'none';
                     isMenuOpen = false;
-                    
-                    // Unlock page scrolling
-                    document.body.classList.remove('menu-open');
-                    window.scrollTo(0, scrollPosition);
-                    document.body.style.top = '';
+                    document.getElementById('mobileMenuBottom').classList.remove('hidden');
                 }, 400);
             } catch(e) {
                 console.error('Error closing Apple submenu:', e);
@@ -595,26 +610,34 @@
                     const appleSubmenuModal = document.getElementById('appleSubmenuModal');
                     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
                     
-                    // Check if click is outside menu
-                    const isClickInsideMenu = 
-                        (mobileMenuModal && mobileMenuModal.contains(e.target)) || 
-                        (appleSubmenuModal && appleSubmenuModal.contains(e.target));
+                    // Check if click is outside menu content
+                    const isClickInsideMobileMenu = mobileMenuModal.classList.contains('open') && 
+                        mobileMenuModal.querySelector('.modal-content').contains(e.target);
+                    
+                    const isClickInsideAppleMenu = appleSubmenuModal.classList.contains('open') && 
+                        appleSubmenuModal.querySelector('.modal-content').contains(e.target);
                     
                     // Close mobile menu if click is outside
-                    if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
-                        !isClickInsideMenu && 
+                    if (mobileMenuModal.classList.contains('open') && 
+                        !isClickInsideMobileMenu && 
                         e.target !== mobileMenuBtn) {
                         closeMobileMenu();
                     }
                     
                     // Close apple submenu if click is outside
-                    if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
-                        !isClickInsideMenu && 
-                        e.target !== mobileMenuBtn) {
+                    if (appleSubmenuModal.classList.contains('open') && 
+                        !isClickInsideAppleMenu) {
                         closeAppleSubmenu();
                     }
                 } catch(e) {
                     console.error('Click handler error:', e);
+                }
+            });
+            
+            // Close menu with Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && isMenuOpen) {
+                    closeAllMobileMenus();
                 }
             });
         });
@@ -644,4 +667,4 @@
         }, 5000);
     </script>
 </body>
-</html>
+            </html>
