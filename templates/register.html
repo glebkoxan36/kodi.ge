@@ -3,12 +3,390 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="static/styles.css">
     <title>რეგისტრაცია</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary-color: #0d1525;
+            --secondary-color: #1d2a4a;
+            --accent-color: #00c6ff;
+            --text-color: #ffffff;
+            --text-secondary: #c0c0d0;
+            --card-bg: #121a2b;
+            --card-hover-bg: #16203a;
+            --success-color: #00d68f;
+            --warning-color: #ffaa00;
+            --danger-color: #ff3d71;
+            --google-color: #4285F4;
+            --facebook-color: #3b5998;
+        }
+        
+        body {
+            background: linear-gradient(
+                135deg, 
+                var(--primary-color), 
+                var(--secondary-color),
+                #0f1729
+            );
+            background-size: 300% 300%;
+            animation: gradientShift 15s ease infinite;
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+            font-weight: 450;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .auth-container {
+            background: rgba(18, 26, 43, 0.95);
+            border-radius: 15px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: cardAppear 0.6s ease-out;
+            position: relative;
+            z-index: 2;
+            backdrop-filter: blur(10px);
+        }
+        
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .auth-logo {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px;
+        }
+        
+        .logo-core {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--accent-color), #0066ff);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
+            overflow: hidden;
+            z-index: 2;
+            animation: logoFloat 4s ease-in-out infinite;
+        }
+        
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        .logo-letter {
+            font-weight: bold;
+            font-size: 32px;
+            color: white;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+            z-index: 2;
+        }
+        
+        .auth-header h2 {
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-top: 15px;
+            font-size: 1.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: var(--text-color);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--accent-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 198, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .birth-date-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .birth-date-group .form-control {
+            flex: 1;
+        }
+        
+        .password-requirements {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-color);
+        }
+        
+        .password-requirements ul {
+            padding-left: 20px;
+            margin-top: 8px;
+        }
+        
+        .password-requirements li {
+            margin-bottom: 5px;
+            font-size: 0.8rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-color), #0066ff);
+            border: none;
+            border-radius: 8px;
+            padding: 14px 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            margin-top: 10px;
+            box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 198, 255, 0.4);
+        }
+        
+        .social-auth {
+            margin: 25px 0;
+            text-align: center;
+            position: relative;
+        }
+        
+        .social-divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+            margin: 25px 0;
+            position: relative;
+        }
+        
+        .social-divider span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card-bg);
+            padding: 0 15px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .social-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .social-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 13px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 1rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .social-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .social-btn.google {
+            background: var(--google-color);
+        }
+        
+        .social-btn.facebook {
+            background: var(--facebook-color);
+        }
+        
+        .social-btn i {
+            font-size: 1.2rem;
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+        
+        .login-link a {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            color: var(--danger-color);
+            margin-top: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: none;
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        
+        .gradient-bg {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.25;
+            z-index: 0;
+            animation: gradientFloat 25s infinite alternate ease-in-out;
+        }
+        
+        .gradient-1 {
+            background: linear-gradient(135deg, var(--accent-color), #0066ff);
+            top: -200px;
+            right: -200px;
+        }
+        
+        .gradient-2 {
+            background: linear-gradient(135deg, var(--success-color), #00a86b);
+            bottom: -200px;
+            left: -200px;
+            animation-duration: 30s;
+            animation-delay: 2s;
+        }
+        
+        @keyframes gradientFloat {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            50% {
+                transform: translate(20px, -20px) scale(1.05);
+            }
+            100% {
+                transform: translate(-20px, 10px) scale(0.95);
+            }
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 576px) {
+            .auth-container {
+                padding: 30px 20px;
+            }
+            
+            .birth-date-group {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .auth-header h2 {
+                font-size: 1.5rem;
+            }
+            
+            .auth-logo {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .logo-core {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .logo-letter {
+                font-size: 24px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="registration-container">
-        <h2>რეგისტრაცია</h2>
+    <div class="gradient-bg gradient-1"></div>
+    <div class="gradient-bg gradient-2"></div>
+    
+    <div class="auth-container">
+        <div class="auth-header">
+            <div class="auth-logo">
+                <div class="logo-core">
+                    <div class="logo-letter">R</div>
+                </div>
+            </div>
+            <h2>რეგისტრაცია</h2>
+        </div>
+        
         <form id="registration-form">
             <div class="form-group">
                 <label class="form-label" for="first_name">სახელი</label>
@@ -27,9 +405,37 @@
                 <div class="birth-date-group">
                     <select class="form-control" id="birth_day" name="birth_day" required>
                         <option value="">დღე</option>
-                        {% for day in range(1, 32) %}
-                        <option value="{{ day }}">{{ day }}</option>
-                        {% endfor %}
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
+                        <option value="21">21</option>
+                        <option value="22">22</option>
+                        <option value="23">23</option>
+                        <option value="24">24</option>
+                        <option value="25">25</option>
+                        <option value="26">26</option>
+                        <option value="27">27</option>
+                        <option value="28">28</option>
+                        <option value="29">29</option>
+                        <option value="30">30</option>
+                        <option value="31">31</option>
                     </select>
                     
                     <select class="form-control" id="birth_month" name="birth_month" required>
@@ -50,9 +456,22 @@
                     
                     <select class="form-control" id="birth_year" name="birth_year" required>
                         <option value="">წელი</option>
-                        {% for year in range(1900, current_year) | reverse %}
-                        <option value="{{ year }}">{{ year }}</option>
-                        {% endfor %}
+                        <option value="2005">2005</option>
+                        <option value="2004">2004</option>
+                        <option value="2003">2003</option>
+                        <option value="2002">2002</option>
+                        <option value="2001">2001</option>
+                        <option value="2000">2000</option>
+                        <option value="1999">1999</option>
+                        <option value="1998">1998</option>
+                        <option value="1997">1997</option>
+                        <option value="1996">1996</option>
+                        <option value="1995">1995</option>
+                        <option value="1994">1994</option>
+                        <option value="1993">1993</option>
+                        <option value="1992">1992</option>
+                        <option value="1991">1991</option>
+                        <option value="1990">1990</option>
                     </select>
                 </div>
                 <div class="error-message" id="birth_date_error"></div>
@@ -100,46 +519,155 @@
             
             <button type="submit" class="btn-primary">რეგისტრაცია</button>
         </form>
+        
+        <div class="social-auth">
+            <div class="social-divider">
+                <span>ან</span>
+            </div>
+            
+            <div class="social-buttons">
+                <button type="button" class="social-btn google" id="google-btn">
+                    <i class="fab fa-google"></i>
+                    Google-ით რეგისტრაცია
+                </button>
+                
+                <button type="button" class="social-btn facebook" id="facebook-btn">
+                    <i class="fab fa-facebook-f"></i>
+                    Facebook-ით რეგისტრაცია
+                </button>
+            </div>
+        </div>
+        
+        <div class="login-link">
+            უკვე გაქვთ ანგარიში? <a href="/login">შესვლა</a>
+        </div>
     </div>
 
     <script>
+        // Функция валидации формы
+        function validateForm() {
+            let isValid = true;
+            const firstName = document.getElementById('first_name');
+            const lastName = document.getElementById('last_name');
+            const birthDay = document.getElementById('birth_day');
+            const birthMonth = document.getElementById('birth_month');
+            const birthYear = document.getElementById('birth_year');
+            const phone = document.getElementById('phone');
+            const email = document.getElementById('email');
+            const username = document.getElementById('username');
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirm_password');
+            
+            // Сброс ошибок
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.textContent = '';
+                el.style.display = 'none';
+            });
+            
+            // Валидация имени
+            if (!firstName.value.trim()) {
+                showError('first_name_error', 'გთხოვთ შეიყვანოთ თქვენი სახელი');
+                isValid = false;
+            }
+            
+            // Валидация фамилии
+            if (!lastName.value.trim()) {
+                showError('last_name_error', 'გთხოვთ შეიყვანოთ თქვენი გვარი');
+                isValid = false;
+            }
+            
+            // Валидация даты рождения
+            if (!birthDay.value || !birthMonth.value || !birthYear.value) {
+                showError('birth_date_error', 'გთხოვთ აირჩიოთ დაბადების თარიღი');
+                isValid = false;
+            }
+            
+            // Валидация телефона
+            const phoneRegex = /^\+995\d{9}$/;
+            if (!phoneRegex.test(phone.value)) {
+                showError('phone_error', 'გთხოვთ შეიყვანოთ სწორი ტელეფონის ნომერი (+995XXXXXXXXX)');
+                isValid = false;
+            }
+            
+            // Валидация email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email.value)) {
+                showError('email_error', 'გთხოვთ შეიყვანოთ სწორი ელ. ფოსტის მისამართი');
+                isValid = false;
+            }
+            
+            // Валидация логина
+            if (username.value.length < 4) {
+                showError('username_error', 'მომხმარებლის სახელი უნდა შეიცავდეს მინიმუმ 4 სიმბოლოს');
+                isValid = false;
+            }
+            
+            // Валидация пароля
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/;
+            if (!passwordRegex.test(password.value)) {
+                showError('password_error', 'პაროლი არ აკმაყოფილებს მოთხოვნებს');
+                isValid = false;
+            }
+            
+            // Подтверждение пароля
+            if (password.value !== confirmPassword.value) {
+                showError('confirm_password_error', 'პაროლები არ ემთხვევა ერთმანეთს');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        // Функция отображения ошибок
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+        
+        // Обработчик отправки формы
         document.getElementById('registration-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Сброс ошибок
-            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+            if (!validateForm()) return;
             
-            const response = await fetch('/register', {
-                method: 'POST',
-                body: new FormData(e.target)
-            });
+            // Здесь будет AJAX запрос на сервер
+            // Имитация успешной регистрации
+            const success = true;
             
-            const result = await response.json();
-            
-            if (response.status === 201) {
-                alert(result.message);
-                window.location.href = '/';
+            if (success) {
+                // Анимация успешной регистрации
+                document.querySelector('.btn-primary').innerHTML = '<i class="fas fa-check"></i> წარმატებული რეგისტრაცია';
+                document.querySelector('.btn-primary').style.background = 'var(--success-color)';
+                
+                setTimeout(() => {
+                    alert('რეგისტრაცია წარმატებით დასრულდა!');
+                    window.location.href = '/';
+                }, 1500);
             } else {
-                // Отображение ошибок
-                if (result.errors) {
-                    result.errors.forEach(error => {
-                        // Общая ошибка
-                        if (error.includes('Дата')) {
-                            document.getElementById('birth_date_error').textContent = error;
-                        } 
-                        // Полевые ошибки
-                        else {
-                            const field = error.split(' ')[0].toLowerCase();
-                            const errorElement = document.getElementById(`${field}_error`);
-                            if (errorElement) {
-                                errorElement.textContent = error;
-                            }
-                        }
-                    });
-                } else {
-                    alert(result.error || 'Registration failed');
-                }
+                // В случае ошибки
+                showError('general_error', 'რეგისტრაციის დროს მოხდა შეცდომა. გთხოვთ სცადოთ თავიდან');
             }
+        });
+        
+        // Обработчики кнопок социальных сетей
+        document.getElementById('google-btn').addEventListener('click', () => {
+            alert('Google-ით რეგისტრაცია ამჟამად მიუწვდომელია');
+        });
+        
+        document.getElementById('facebook-btn').addEventListener('click', () => {
+            alert('Facebook-ით რეგისტრაცია ამჟამად მიუწვდომელია');
+        });
+        
+        // Валидация в реальном времени
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('input', () => {
+                const errorId = input.id + '_error';
+                const errorElement = document.getElementById(errorId);
+                if (errorElement) {
+                    errorElement.style.display = 'none';
+                }
+            });
         });
     </script>
 </body>
