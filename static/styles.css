@@ -1233,6 +1233,7 @@ body {
     flex: 2;
     font-weight: 500;
     transition: color 0.3s ease;
+    word-break: break-word; /* Добавлен перенос текста */
 }
 
 .compare-spec-item:hover .compare-spec-value {
@@ -1290,7 +1291,7 @@ body {
     gap: 1px;
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible; /* Исправлено: было hidden */
 }
 
 .grid-header {
@@ -1299,6 +1300,9 @@ body {
     font-weight: 600;
     color: var(--accent-color);
     background: var(--secondary-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .spec-row {
@@ -1306,29 +1310,36 @@ body {
 }
 
 .spec-cell {
-    padding: 12px 15px;
+    padding: 12px 10px; /* Уменьшены отступы */
     background: var(--card-bg);
     display: flex;
     align-items: center;
+    justify-content: center; /* Центрирование содержимого */
+    text-align: center; /* Центрирование текста */
+    word-break: break-word; /* Перенос длинных слов */
 }
 
 .spec-name {
     grid-column: 1 / span 3;
     color: var(--text-secondary);
-    justify-content: center;
-    padding: 8px 15px;
+    padding: 8px 10px; /* Уменьшены отступы */
     font-weight: 500;
     background: rgba(255, 255, 255, 0.03);
     font-size: 0.95rem;
+    display: flex;
+    justify-content: center; /* Центрирование содержимого */
+    align-items: center; /* Вертикальное центрирование */
+    text-align: center; /* Центрирование текста */
 }
 
 .spec-value {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 12px 15px;
-    text-align: center;
-    min-height: 60px;
+    justify-content: center; /* Центрирование содержимого */
+    padding: 12px 10px; /* Уменьшены отступы */
+    text-align: center; /* Центрирование текста */
+    min-height: auto; /* Исправлено: было 60px */
+    word-break: break-word; /* Перенос длинных слов */
 }
 
 .better-value {
@@ -1350,6 +1361,9 @@ body {
     font-weight: 600;
     color: var(--accent-color);
     margin-top: 5px;
+    display: flex;
+    justify-content: center; /* Центрирование заголовка группы */
+    text-align: center; /* Центрирование текста */
 }
 
 .phone-header {
@@ -1358,6 +1372,7 @@ body {
     align-items: center;
     gap: 10px;
     text-align: center;
+    justify-content: center; /* Центрирование содержимого */
 }
 
 .phone-thumb {
@@ -1477,6 +1492,19 @@ body {
     
     .grid-header {
         grid-column: 1;
+    }
+
+    /* Адаптивные стили для таблицы сравнения */
+    .spec-cell,
+    .spec-value,
+    .spec-name {
+        padding: 10px 5px; /* Уменьшение отступов на мобильных */
+        font-size: 0.9rem; /* Уменьшение размера шрифта */
+    }
+    
+    .phone-thumb {
+        width: 60px;
+        height: 60px;
     }
 }
 
@@ -1599,10 +1627,23 @@ body {
     .user-name {
         font-size: 0.8rem;
     }
+
+    /* Дополнительная адаптация таблицы сравнения */
+    .spec-cell,
+    .spec-value,
+    .spec-name {
+        padding: 8px 3px;
+        font-size: 0.85rem;
+    }
+    
+    .phone-thumb {
+        width: 50px;
+        height: 50px;
+    }
 }
 
 @media (max-width: 991px) {
     .gradient-bg {
         display: none;
     }
-        }
+}
