@@ -327,6 +327,45 @@ def index():
                          premium_price=prices['premium'] / 100,
                          user=user_data)
 
+# ======================================
+# Роут для страницы проверки Apple IMEI
+# ======================================
+
+@app.route('/applecheck')
+def apple_check():
+    # Определяем тип услуги из параметра URL
+    service_type = request.args.get('type', 'free')
+    if service_type not in ['free', 'paid', 'premium']:
+        service_type = 'free'
+
+    # Получаем текущие цены и конвертируем в лари
+    prices = get_current_prices()
+    paid_price_gel = prices['paid'] / 100.0
+    premium_price_gel = prices['premium'] / 100.0
+
+    # Данные пользователя (если авторизован)
+    user_data = None
+    if 'user_id' in session:
+        user_id = session['user_id']
+        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+        if user:
+            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+            user_data = {
+                'first_name': user.get('first_name', ''),
+                'last_name': user.get('last_name', ''),
+                'balance': user.get('balance', 0.0),
+                'avatar_color': avatar_color
+            }
+
+    return render_template(
+        'applecheck.html',
+        service_type=service_type,
+        paid_price=paid_price_gel,
+        premium_price=premium_price_gel,
+        stripe_public_key=STRIPE_PUBLIC_KEY,
+        user=user_data
+    )
+
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
     try:
@@ -758,40 +797,107 @@ def compare_phones():
 
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 
-@user_bp.route('/topup', methods=['POST'])
-@login_required
-def topup():
-    user_id = session['user_id']
-    amount = float(request.json.get('amount'))
-    
-    try:
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': 'Balance Topup',
-                    },
-                    'unit_amount': int(amount * 100),
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            metadata={
-                'user_id': user_id,
-                'type': 'balance_topup'
-            },
-            success_url=url_for('user.topup_success', _external=True),
-            cancel_url=url_for('user.dashboard', _external=True),
-        )
-        return jsonify({'id': session.id})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 @user_bp.route('/dashboard')
 @login_required
 def dashboard():
+    """Личный кабинет пользователя"""
+    user_id = session['user_id']
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    
+    if not user:
+        flash('User not found', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    # Получение баланса
+    balance = user.get('balance', 0)
+    
+    # Последние 5 проверок
+    checks = list(checks_collection.find({'user_id': user_id})
+        .sort('timestamp', -1)
+        .limit(5))
+    
+    # Последние 5 сравнений
+    comparisons = list(comparisons_collection.find({'user_id': user_id})
+        .sort('timestamp', -1)
+        .limit(5))
+    
+    # Последние 5 платежей
+    payments = list(payments_collection.find({'user_id': user_id})
+        .sort('timestamp', -1)
+        .limit(5))
+    
+    # Общее количество операций
+    total_checks = checks_collection.count_documents({'user_id': user_id})
+    total_comparisons = comparisons_collection.count_documents({'user_id': user_id})
+    
+    return render_template(
+        'user/dashboard.html',
+        user=user,
+        balance=balance,
+        checks=checks,
+        comparisons=comparisons,
+        payments=payments,
+        total_checks=total_checks,
+        total_comparisons=total_comparisons,
+        STRIPE_PUBLIC_KEY=STRIPE_PUBLIC_KEY
+    )
+
+@user_bp.route('/topup', methods=['GET', 'POST'])
+@login_required
+def topup_balance():
+    """Пополнение баланса"""
+    if request.method == 'POST':
+        amount = float(request.form.get('amount'))
+        if amount < 1:
+            flash('Minimum topup amount is $1', 'danger')
+            return redirect(url_for('user.topup_balance'))
+        
+        # Создаем платежную сессию Stripe
+        try:
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': 'Balance Topup',
+                        },
+                        'unit_amount': int(amount * 100),
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                metadata={
+                    'user_id': session['user_id'],
+                    'type': 'balance_topup'
+                },
+                success_url=url_for('user.topup_success', _external=True),
+                cancel_url=url_for('user.topup_balance', _external=True),
+            )
+            return redirect(session.url)
+        except Exception as e:
+            flash(f'Error creating payment session: {str(e)}', 'danger')
+            return redirect(url_for('user.topup_balance'))
+    
+    return render_template('user/topup.html', stripe_public_key=STRIPE_PUBLIC_KEY)
+
+@user_bp.route('/topup/success')
+@login_required
+def topup_success():
+    """Успешное пополнение баланса"""
+    flash('Payment successful! Your balance will be updated shortly.', 'success')
+    return redirect(url_for('user.dashboard'))
+
+@user_bp.route('/payment-methods')
+@login_required
+def payment_methods():
+    """Управление платежными методами"""
+    return render_template('user/payment_methods.html')
+
+@user_bp.route('/history/checks')
+@login_required
+def history_checks():
+    """История проверок IMEI"""
     user_id = session['user_id']
     user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
     
@@ -800,72 +906,65 @@ def dashboard():
         return redirect(url_for('auth.login'))
     
     balance = user.get('balance', 0)
-    payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
-    for payment in payments:
-        payment['timestamp'] = payment['timestamp'].strftime('%d.%m.%Y %H:%M')
+    page = int(request.args.get('page', 1))
+    per_page = 20
     
-    total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
-    total_comparisons = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
+    checks = list(checks_collection.find({'user_id': user_id})
+        .sort('timestamp', -1)
+        .skip((page - 1) * per_page)
+        .limit(per_page))
+    
+    total = checks_collection.count_documents({'user_id': user_id})
+    
+    for check in checks:
+        check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M')
     
     return render_template(
-        'dashboard.html',
+        'user/history_checks.html',
         user=user,
         balance=balance,
-        payments=payments,
-        total_checks=total_checks,
-        total_comparisons=total_comparisons,
-        STRIPE_PUBLIC_KEY=os.getenv('STRIPE_PUBLIC_KEY')
+        checks=checks,
+        page=page,
+        per_page=per_page,
+        total=total
     )
 
-@user_bp.route('/topup_success')
-@login_required
-def topup_success():
-    flash('Balance top-up successful!', 'success')
-    return redirect(url_for('user.dashboard'))
-
-@user_bp.route('/history_checks')
-@login_required
-def history_checks():
-    user_id = session['user_id']
-    checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1))
-    
-    # Обработка статусов
-    for check in checks:
-        check['timestamp'] = check['timestamp'].strftime('%d.%m.%Y %H:%M')
-        result = check.get('result', {})
-        if 'blacklist_status' in result:
-            status = result['blacklist_status'].lower()
-            if 'clean' in status:
-                check['status'] = 'clean'
-            elif 'blacklisted' in status:
-                check['status'] = 'blacklisted'
-            else:
-                check['status'] = 'warning'
-        else:
-            check['status'] = 'unknown'
-    
-    return render_template('history_checks.html', checks=checks)
-
-@user_bp.route('/history_comparisons')
+@user_bp.route('/history/comparisons')
 @login_required
 def history_comparisons():
+    """История сравнений телефонов"""
     user_id = session['user_id']
-    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1))
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
     
-    # Обработка сравнений
+    if not user:
+        flash('User not found', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    balance = user.get('balance', 0)
+    
+    page = int(request.args.get('page', 1))
+    per_page = 20
+    
+    comparisons = list(comparisons_collection.find({'user_id': user_id})
+        .sort('timestamp', -1)
+        .skip((page - 1) * per_page)
+        .limit(per_page))
+    
+    total = comparisons_collection.count_documents({'user_id': user_id})
+    
     for comp in comparisons:
-        comp['timestamp'] = comp['timestamp'].strftime('%d.%m.%Y %H:%M')
-        comp['model1'] = comp.get('phone1', 'Unknown').split()[0]
-        comp['model2'] = comp.get('phone2', 'Unknown').split()[0]
-        comp['result'] = 'model1' if len(comp.get('ai_response', '')) > len(comp.get('phone2', '')) else 'model2'
+        comp['timestamp'] = comp['timestamp'].strftime('%Y-%m-%d %H:%M')
     
-    return render_template('history_comparisons.html', comparisons=comparisons)
-
-@user_bp.route('/topup_balance')
-@login_required
-def topup_balance():
-    return render_template('topup_balance.html', stripe_public_key=STRIPE_PUBLIC_KEY)
+    return render_template(
+        'user/history_comparisons.html',
+        user=user,
+        balance=balance,
+        comparisons=comparisons,
+        page=page,
+        per_page=per_page,
+        total=total
+    )
 
 # ======================================
 # Authentication Blueprint
