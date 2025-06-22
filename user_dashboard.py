@@ -146,6 +146,14 @@ def payment_methods():
 def history_checks():
     """История проверок IMEI"""
     user_id = session['user_id']
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    
+    if not user:
+        flash('User not found', 'danger')
+        return redirect(url_for('login'))
+    
+    balance = user.get('balance', 0)
+    
     page = int(request.args.get('page', 1))
     per_page = 20
     
@@ -161,6 +169,8 @@ def history_checks():
     
     return render_template(
         'user/history_checks.html',
+        user=user,
+        balance=balance,
         checks=checks,
         page=page,
         per_page=per_page,
@@ -172,6 +182,14 @@ def history_checks():
 def history_comparisons():
     """История сравнений телефонов"""
     user_id = session['user_id']
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    
+    if not user:
+        flash('User not found', 'danger')
+        return redirect(url_for('login'))
+    
+    balance = user.get('balance', 0)
+    
     page = int(request.args.get('page', 1))
     per_page = 20
     
@@ -187,6 +205,8 @@ def history_comparisons():
     
     return render_template(
         'user/history_comparisons.html',
+        user=user,
+        balance=balance,
         comparisons=comparisons,
         page=page,
         per_page=per_page,
