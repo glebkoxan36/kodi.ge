@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="static/styles.css">
     <link rel="stylesheet" href="static/mobile-avatar-menu.css">
     <style>
-        /* Add custom styles for scroll lock */
         body.menu-open {
             overflow: hidden;
             position: fixed;
@@ -17,17 +16,14 @@
             height: 100%;
         }
         
-        /* Fix for Bootstrap modal conflict */
         .mobile-menu-modal {
             z-index: 1060 !important;
         }
         
-        /* Ensure background stays behind menu */
         .gradient-bg {
             z-index: 0;
         }
         
-        /* Fix for mobile menu button visibility */
         .mobile-menu-bottom {
             z-index: 1000;
             transition: opacity 0.3s ease;
@@ -529,19 +525,11 @@
         
         function openAppleSubmenu() {
             try {
-                closeMobileMenu();
                 const appleModal = document.getElementById('appleSubmenuModal');
                 appleModal.style.display = 'flex';
                 setTimeout(() => {
                     appleModal.classList.add('open');
                     isMenuOpen = true;
-                    
-                    // Hide menu button
-                    document.getElementById('mobileMenuBottom').classList.add('hidden');
-                    
-                    // Lock page scrolling
-                    document.body.classList.add('menu-open');
-                    document.body.style.top = `-${scrollPosition}px`;
                 }, 10);
             } catch(e) {
                 console.error('Error opening Apple submenu:', e);
@@ -555,9 +543,6 @@
                 setTimeout(() => {
                     appleModal.style.display = 'none';
                     isMenuOpen = false;
-                    
-                    // Show menu button
-                    document.getElementById('mobileMenuBottom').classList.remove('hidden');
                     
                     // Unlock page scrolling
                     document.body.classList.remove('menu-open');
@@ -659,4 +644,4 @@
         }, 5000);
     </script>
 </body>
-                                                  </html>
+</html>
