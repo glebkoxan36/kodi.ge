@@ -14,6 +14,27 @@
             overflow: hidden;
             position: fixed;
             width: 100%;
+            height: 100%;
+        }
+        
+        /* Fix for Bootstrap modal conflict */
+        .mobile-menu-modal {
+            z-index: 1060 !important;
+        }
+        
+        /* Ensure background stays behind menu */
+        .gradient-bg {
+            z-index: 0;
+        }
+        
+        /* Fix for mobile menu button visibility */
+        .mobile-menu-bottom {
+            z-index: 1000;
+            transition: opacity 0.3s ease;
+        }
+        .mobile-menu-bottom.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -459,10 +480,14 @@
     <script>
         // Track menu state
         let isMenuOpen = false;
+        let scrollPosition = 0;
         
         // Mobile menu functions
         function openMobileMenu() {
             try {
+                // Save current scroll position
+                scrollPosition = window.scrollY;
+                
                 const modal = document.getElementById('mobileMenuModal');
                 modal.style.display = 'flex';
                 setTimeout(() => {
@@ -470,10 +495,11 @@
                     isMenuOpen = true;
                     
                     // Hide menu button
-                    document.getElementById('mobileMenuBottom').classList.add('d-none');
+                    document.getElementById('mobileMenuBottom').classList.add('hidden');
                     
                     // Lock page scrolling
                     document.body.classList.add('menu-open');
+                    document.body.style.top = `-${scrollPosition}px`;
                 }, 10);
             } catch(e) {
                 console.error('Error opening mobile menu:', e);
@@ -489,10 +515,12 @@
                     isMenuOpen = false;
                     
                     // Show menu button
-                    document.getElementById('mobileMenuBottom').classList.remove('d-none');
+                    document.getElementById('mobileMenuBottom').classList.remove('hidden');
                     
                     // Unlock page scrolling
                     document.body.classList.remove('menu-open');
+                    window.scrollTo(0, scrollPosition);
+                    document.body.style.top = '';
                 }, 400);
             } catch(e) {
                 console.error('Error closing mobile menu:', e);
@@ -509,10 +537,11 @@
                     isMenuOpen = true;
                     
                     // Hide menu button
-                    document.getElementById('mobileMenuBottom').classList.add('d-none');
+                    document.getElementById('mobileMenuBottom').classList.add('hidden');
                     
                     // Lock page scrolling
                     document.body.classList.add('menu-open');
+                    document.body.style.top = `-${scrollPosition}px`;
                 }, 10);
             } catch(e) {
                 console.error('Error opening Apple submenu:', e);
@@ -528,10 +557,12 @@
                     isMenuOpen = false;
                     
                     // Show menu button
-                    document.getElementById('mobileMenuBottom').classList.remove('d-none');
+                    document.getElementById('mobileMenuBottom').classList.remove('hidden');
                     
                     // Unlock page scrolling
                     document.body.classList.remove('menu-open');
+                    window.scrollTo(0, scrollPosition);
+                    document.body.style.top = '';
                 }, 400);
             } catch(e) {
                 console.error('Error closing Apple submenu:', e);
@@ -581,28 +612,20 @@
                     
                     // Check if click is outside menu
                     const isClickInsideMenu = 
-                        (mobileMenuModal.contains(e.target) && 
-                         !e.target.classList.contains('modal-content') &&
-                         !e.target.classList.contains('menu-grid') &&
-                         !e.target.classList.contains('menu-item')) || 
-                        (appleSubmenuModal.contains(e.target) && 
-                         !e.target.classList.contains('modal-content') &&
-                         !e.target.classList.contains('menu-grid') &&
-                         !e.target.classList.contains('menu-item'));
+                        (mobileMenuModal && mobileMenuModal.contains(e.target)) || 
+                        (appleSubmenuModal && appleSubmenuModal.contains(e.target));
                     
                     // Close mobile menu if click is outside
                     if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
-                        !mobileMenuModal.contains(e.target) && 
-                        e.target !== mobileMenuBtn && 
-                        !isClickInsideMenu) {
+                        !isClickInsideMenu && 
+                        e.target !== mobileMenuBtn) {
                         closeMobileMenu();
                     }
                     
                     // Close apple submenu if click is outside
                     if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
-                        !appleSubmenuModal.contains(e.target) && 
-                        e.target !== mobileMenuBtn && 
-                        !isClickInsideMenu) {
+                        !isClickInsideMenu && 
+                        e.target !== mobileMenuBtn) {
                         closeAppleSubmenu();
                     }
                 } catch(e) {
@@ -636,4 +659,4 @@
         }, 5000);
     </script>
 </body>
-</html>
+                                                  </html>
