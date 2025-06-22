@@ -106,7 +106,7 @@
 /* Контейнер плавающей аватарки - ОБНОВЛЕНО */
 .floating-avatar-container {
     position: absolute;
-    top: -25px; /* Уменьшено для частичного входа в меню */
+    top: -15px; /* Значительно уменьшено для более глубокого входа в меню */
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
@@ -152,7 +152,6 @@
 
 /* Информация под аватаркой - ОБНОВЛЕНО */
 .floating-avatar-info {
-    margin-top: 15px;
     font-size: 1.05rem;
     font-weight: 700;
     color: white;
@@ -164,12 +163,12 @@
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis; /* Обрезка длинного текста */
-    width: 90%; /* Ширина относительно контейнера */
-    max-width: 300px; /* Максимальная ширина */
-    margin: 12px auto 0; /* Центрирование и отступы */
-    padding: 0 5px;
+    width: 100%; /* Полная ширина контейнера */
+    padding: 0 15px; /* Отступы по бокам */
     box-sizing: border-box;
     letter-spacing: 0.5px;
+    margin-top: 20px; /* Больший отступ сверху */
+    display: block;
 }
 
 /* Баланс пользователя - ОБНОВЛЕНО */
@@ -177,8 +176,12 @@
     font-size: 0.95rem;
     font-weight: 700;
     color: #00ff9d; /* Яркий акцентный цвет */
-    margin-top: 5px;
+    margin-top: 10px; /* Больший отступ */
     text-shadow: 0 0 8px rgba(0, 255, 157, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 15px;
 }
 
 /* --- Сетка 3x3 - ОБНОВЛЕНО --- */
@@ -194,7 +197,7 @@
     background: transparent;
     box-sizing: border-box;
     padding: 0;
-    margin-top: 25px; /* Отступ сверху */
+    margin-top: 40px; /* Значительно увеличенный отступ сверху */
 }
 
 .menu-item {
@@ -245,6 +248,7 @@
         max-width: 300px;
         height: 300px;
         gap: 18px;
+        margin-top: 35px;
     }
     .menu-item {
         padding: 10px 6px;
@@ -253,9 +257,15 @@
         width: 85px;
         height: 85px;
     }
+    .floating-avatar-container {
+        top: -12px;
+    }
     .floating-avatar-info {
         font-size: 0.95rem;
-        width: 95%;
+        margin-top: 15px;
+    }
+    .user-balance {
+        margin-top: 8px;
     }
 }
 
@@ -268,13 +278,18 @@
         width: 90px;
         height: 90px;
     }
+    .floating-avatar-container {
+        top: -13px;
+    }
     .floating-avatar-info {
         font-size: 1rem;
+        margin-top: 18px;
     }
     .menu-grid {
         gap: 20px;
         max-width: 340px;
         height: 340px;
+        margin-top: 35px;
     }
 }
 
@@ -287,9 +302,12 @@
         width: 80px;
         height: 80px;
     }
+    .floating-avatar-container {
+        top: -10px;
+    }
     .floating-avatar-info {
         font-size: 0.95rem;
-        width: 95%;
+        margin-top: 15px;
     }
     .avatar-placeholder {
         font-size: 0.8rem;
@@ -301,6 +319,10 @@
         max-width: 320px;
         height: 320px;
         gap: 16px;
+        margin-top: 30px;
+    }
+    .user-balance {
+        font-size: 0.9rem;
     }
 }
 
@@ -313,11 +335,16 @@
         width: 110px;
         height: 110px;
     }
+    .floating-avatar-container {
+        top: -20px;
+    }
     .floating-avatar-info {
         font-size: 1.1rem;
+        margin-top: 25px;
     }
     .user-balance {
         font-size: 1rem;
+        margin-top: 15px;
     }
     .menu-item i {
         font-size: 2rem;
@@ -329,6 +356,7 @@
         max-width: 420px;
         height: 420px;
         gap: 25px;
+        margin-top: 45px;
     }
 }
 
