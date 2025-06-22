@@ -375,7 +375,7 @@
                         <span>მთავარი</span>
                     </div>
                     <div class="menu-item" onclick="openAppleSubmenu()">
-                        <i class="fas fa-mobile-alt"></i>
+                        <i class="fab fa-apple"></i>
                         <span>Apple</span>
                     </div>
                     <div class="menu-item">
@@ -416,10 +416,30 @@
         <button class="close-modal" onclick="closeAppleSubmenu()">
             <i class="fas fa-times"></i>
         </button>
+
+        <!-- Контейнер аватарки -->
+        <div class="floating-avatar-container">
+            {% if user %}
+                <div class="floating-avatar" onclick="goToDashboard()" style="background-color: {{ user.avatar_color }};">
+                    {{ user.first_name[0] }}{{ user.last_name[0] }}
+                </div>
+                <div class="floating-avatar-info" onclick="goToDashboard()">
+                    {{ user.first_name }} {{ user.last_name }}
+                </div>
+                <div class="user-balance">ბალანსი: {{ user.balance }} ₾</div>
+            {% else %}
+                <div class="floating-avatar" id="mobileAvatar" onclick="goToLogin()">
+                    <div class="avatar-placeholder">KODI.GE</div>
+                </div>
+                <div class="floating-avatar-info" id="mobileUserName" onclick="goToLogin()">
+                    ლოგინი/რეგისტრაცია
+                </div>
+            {% endif %}
+        </div>
         
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Apple შემოწმება</h3>
+                <h3 class="modal-title" style="color: white;">Apple შემოწმება</h3>
             </div>
             <div class="modal-body">
                 <div class="menu-grid">
