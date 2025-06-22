@@ -943,13 +943,13 @@ footer h5 {
     grid-template-rows: repeat(3, 1fr);
     gap: 25px;
     width: 100%;
-    max-width: 420px;
-    height: 420px;
+    max-width: 450px;
+    height: 450px;
     margin: 0 auto;
     background: transparent;
     box-sizing: border-box;
     padding: 0;
-    margin-top: 140px;
+    margin-top: 160px;
 }
 
 .menu-item {
@@ -967,7 +967,7 @@ footer h5 {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     min-width: 0;
     min-height: 0;
-    padding: 12px 8px;
+    padding: 15px 10px;
     box-sizing: border-box;
 }
 
@@ -1140,9 +1140,9 @@ footer h5 {
     }
     .menu-grid {
         gap: 20px;
-        max-width: 360px;
-        height: 360px;
-        margin-top: 120px;
+        max-width: 380px;
+        height: 380px;
+        margin-top: 140px;
     }
 }
 
@@ -1209,10 +1209,10 @@ footer h5 {
         font-size: 1.5rem;
     }
     .menu-grid {
-        max-width: 340px;
-        height: 340px;
+        max-width: 360px;
+        height: 360px;
         gap: 16px;
-        margin-top: 100px;
+        margin-top: 120px;
     }
     .user-balance {
         font-size: 0.85rem;
@@ -1235,10 +1235,10 @@ footer h5 {
         padding: 8px 12px;
     }
     .menu-grid {
-        max-width: 320px;
-        height: 320px;
+        max-width: 340px;
+        height: 340px;
         gap: 18px;
-        margin-top: 90px;
+        margin-top: 110px;
     }
 }
 
@@ -1275,9 +1275,9 @@ footer h5 {
         font-size: 1.3rem;
     }
     .menu-grid {
-        max-width: 300px;
-        height: 300px;
-        margin-top: 80px;
+        max-width: 320px;
+        height: 320px;
+        margin-top: 100px;
         gap: 16px;
     }
 }
@@ -1308,10 +1308,10 @@ footer h5 {
         font-size: 0.9rem;
     }
     .menu-grid {
-        max-width: 420px;
-        height: 420px;
+        max-width: 450px;
+        height: 450px;
         gap: 25px;
-        margin-top: 140px;
+        margin-top: 170px;
     }
 }
 
