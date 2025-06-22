@@ -6,8 +6,9 @@
     <title>Kodi.ge - IMEI Checker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='mobile-avatar-menu.css') }}">
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="static/mobile-avatar-menu.css">
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
     <!-- Gradient background elements -->
@@ -22,7 +23,7 @@
     </div>
     
     <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
+    <div class="sidebar">
         <!-- Logo -->
         <div class="sidebar-logo">
             <div class="logo-animated">
@@ -38,8 +39,10 @@
         
         <!-- User profile in sidebar -->
         <div class="user-profile-section" onclick="goToLogin()">
-            <div class="user-avatar">
-                <span>JD</span>
+            <div class="user-avatar-container">
+                <div class="user-avatar" style="background-color: #4a00e0;">
+                    JD
+                </div>
             </div>
             <div class="user-name">
                 John Doe<br>
@@ -125,7 +128,7 @@
     <!-- Main content -->
     <div class="main-content">
         <!-- Hero Section with Logo and Carousel -->
-        <div class="hero-section">
+        <div class="hero-section mb-5">
             <div class="text-center mb-4">
                 <div class="logo-animated">
                     <div class="logo-ring"></div>
@@ -202,8 +205,8 @@
             </div>
             <div class="card-body">
                 <p class="lead">ჩვენ ვართ ლიდერი IMEI შემოწმების სერვისი საქართველოში</p>
-                <p>ჩვენი მისიაა უზრუნველვყოთ საიმეო ხარისხიანი სერვისი iPhone მომხმარებლებისთვის. 2015 წლიდან ვმუშაობთ ტექნოლოგიების სფეროში და გვაქვს უდიდესი გამოცდილება მობილური მოწყობილობების შემოწმებასა და განბლოკვაში.</p>
-                <p>გთავაზობთ სრულ ინფორმაციას თქვენი მოწყობილობის სტატუსის შესახებ, რათა თავიდან აიცილოთ ყველანაირი რისკი მოწყობილობის შეძენისას.</p>
+                <p>ჩვენი მისიაა უზრუნველვყოთ საიმეო ხარისხიანი სერვისი iPhone მომხმარებლებისთვის.</p>
+                <p>გთავაზობთ სრულ ინფორმაციას თქვენი მოწყობილობის სტატუსის შესახებ.</p>
             </div>
         </div>
         
@@ -221,9 +224,7 @@
                     <li>გაიგოთ დაბლოკილია თუ არა მოწყობილობა</li>
                     <li>გაიგოთ მოწყობილობის სტატუსი (ქულდებაში, მოპარული, უკანონო)</li>
                     <li>გაიგოთ ტელეფონის მოდელი და სერიული ნომერი</li>
-                    <li>გაიგოთ მოწყობილობის ტექნიკური მდგომარეობა</li>
                 </ul>
-                <p class="mt-3">IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში, ყუთზე ან დარეკვით *#06#.</p>
             </div>
         </div>
         
@@ -232,61 +233,55 @@
             <h2 class="section-title">ჩვენი სერვისები</h2>
             <div class="row">
                 <div class="col-md-4 mb-4">
-                    <div class="service-card">
+                    <div class="card h-100 service-card">
                         <div class="service-icon text-info">
                             <i class="fas fa-mobile-alt"></i>
                         </div>
                         <h3 class="service-title">უფასო შემოწმება</h3>
-                        <ul>
+                        <ul class="list-unstyled">
                             <li>ძირითადი ინფორმაცია</li>
                             <li>მოწყობილობის მოდელის დადგენა</li>
                             <li>ქსელის ბლოკირების შემოწმება</li>
-                            <li>სერიული ნომრის შემოწმება</li>
-                            <li>მოწყობილობის ფერის დადგენა</li>
                         </ul>
                         <div class="service-price">0 ₾</div>
                         <a href="applecheck.html?type=free" class="service-action">
-                            <i class="fas fa-arrow-right me-2"></i> გადასვლა
+                            <i class="fas fa-arrow-right me-1"></i> გადასვლა
                         </a>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
-                    <div class="service-card">
+                    <div class="card h-100 service-card">
                         <div class="service-icon text-warning">
                             <i class="fas fa-shopping-cart"></i>
                         </div>
                         <h3 class="service-title">პლატანი შემოწმება</h3>
-                        <ul>
+                        <ul class="list-unstyled">
                             <li>ყველა ძირითადი ინფორმაცია</li>
                             <li>iCloud სტატუსის შემოწმება</li>
                             <li>მოპარვის/დაკარგვის სტატუსი</li>
                             <li>სერვისის სტატუსი</li>
-                            <li>გარანტიის ინფორმაცია</li>
-                            <li>შეძენის თარიღი</li>
                         </ul>
                         <div class="service-price">2.99 ₾</div>
                         <a href="applecheck.html?type=paid" class="service-action">
-                            <i class="fas fa-arrow-right me-2"></i> გადასვლა
+                            <i class="fas fa-arrow-right me-1"></i> გადასვლა
                         </a>
                     </div>
                 </div>
                 <div class="col-md-4 mb-4">
-                    <div class="service-card">
+                    <div class="card h-100 service-card">
                         <div class="service-icon text-success">
                             <i class="fas fa-crown"></i>
                         </div>
                         <h3 class="service-title">პრემიუმ შემოწმება</h3>
-                        <ul>
+                        <ul class="list-unstyled">
                             <li>ყველა პლატანი შემოწმების ფუნქცია</li>
                             <li>სრული ისტორიის მიმოხილვა</li>
                             <li>გარანტია განბლოკვაზე</li>
                             <li>24/7 პრიორიტეტული მხარდაჭერა</li>
-                            <li>დეტალური ანალიზი</li>
-                            <li>ბატარეის მდგომარეობა</li>
                         </ul>
                         <div class="service-price">4.99 ₾</div>
                         <a href="applecheck.html?type=premium" class="service-action">
-                            <i class="fas fa-arrow-right me-2"></i> გადასვლა
+                            <i class="fas fa-arrow-right me-1"></i> გადასვლა
                         </a>
                     </div>
                 </div>
@@ -318,55 +313,12 @@
             </div>
         </div>
         
-        <!-- Why Choose Us Section -->
-        <div class="card mt-5">
-            <div class="card-header">
-                <i class="fas fa-star me-2"></i>
-                რატომ ავირჩიოთ Kodi.ge?
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-4">
-                        <div class="text-center p-3">
-                            <i class="fas fa-shield-alt fa-3x mb-3 text-primary"></i>
-                            <h4>სანდოობა</h4>
-                            <p>ჩვენი სერვისი იყენებს ოფიციალურ Apple მონაცემთა ბაზებს, რაც უზრუნველყოფს ყველაზე სანდო შედეგებს.</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="text-center p-3">
-                            <i class="fas fa-bolt fa-3x mb-3 text-warning"></i>
-                            <h4>სწრაფი შედეგი</h4>
-                            <p>შედეგებს ვაწვდით რამდენიმე წამში, რაც საშუალებას გაძლევთ სწრაფად მიიღოთ გადაწყვეტილება.</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="text-center p-3">
-                            <i class="fas fa-headset fa-3x mb-3 text-success"></i>
-                            <h4>მხარდაჭერა</h4>
-                            <p>ჩვენი გუნდი მუდმივად მზადაა დაგეხმაროთ ნებისმიერი საკითხის მოგვარებაში 24/7.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
         <!-- Footer -->
         <footer id="contacts" class="mt-5 pt-4 border-top border-secondary">
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <h5>Kodi.ge</h5>
                     <p>iPhone IMEI შემოწმების პროფესიონალური სერვისი</p>
-                    <div class="mt-3">
-                        <div class="logo-animated" style="width: 60px; height: 60px;">
-                            <div class="logo-ring"></div>
-                            <div class="logo-ring"></div>
-                            <div class="logo-ring"></div>
-                            <div class="logo-core">
-                                <div class="logo-letter">K</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div class="col-md-3 mb-3">
                     <h5>კონტაქტი</h5>
@@ -383,18 +335,107 @@
                         <a href="#" class="text-light"><i class="fab fa-instagram fa-2x"></i></a>
                         <a href="#" class="text-light"><i class="fab fa-telegram fa-2x"></i></a>
                     </div>
-                    <h5 class="mt-4">სერვისები</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="applecheck.html?type=free" class="text-light">უფასო შემოწმება</a></li>
-                        <li><a href="applecheck.html?type=paid" class="text-light">პლატანი შემოწმება</a></li>
-                        <li><a href="applecheck.html?type=premium" class="text-light">პრემიუმ შემოწმება</a></li>
-                    </ul>
                 </div>
             </div>
             <div class="text-center py-3">
                 <p class="mb-0">© 2023 Kodi.ge. ყველა უფლება დაცულია.</p>
             </div>
         </footer>
+    </div>
+    
+    <!-- Mobile Menu Modal -->
+    <div class="mobile-menu-modal" id="mobileMenuModal">
+        <!-- Avatar placed outside modal content -->
+        <div class="floating-avatar-container" onclick="goToLogin()">
+            <div class="floating-avatar" style="background-color: #4a00e0;">
+                JD
+            </div>
+            <div class="floating-avatar-info">
+                John Doe
+            </div>
+            <div class="user-balance">ბალანსი: 25.50 ₾</div>
+        </div>
+        
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="close-modal" onclick="closeMobileMenu()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="menu-grid">
+                    <div class="menu-item" onclick="window.scrollTo(0,0); closeMobileMenu();">
+                        <i class="fas fa-home"></i>
+                        <span>მთავარი</span>
+                    </div>
+                    <div class="menu-item" onclick="openAppleSubmenu()">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>Apple</span>
+                    </div>
+                    <div class="menu-item">
+                        <i class="fab fa-android"></i>
+                        <span>Android</span>
+                    </div>
+                    <div class="menu-item">
+                        <i class="fas fa-unlock-alt"></i>
+                        <span>განბლოკვა</span>
+                    </div>
+                    <div class="menu-item" onclick="window.location.href='compare'; closeAllMobileMenus();">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>შედარება</span>
+                    </div>
+                    <div class="menu-item">
+                        <i class="fas fa-book"></i>
+                        <span>ცოდნის ბაზა</span>
+                    </div>
+                    <div class="menu-item" onclick="document.getElementById('contacts').scrollIntoView({behavior: 'smooth'}); closeMobileMenu();">
+                        <i class="fas fa-address-card"></i>
+                        <span>კონტაქტი</span>
+                    </div>
+                    <div class="menu-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>კონფიდენციალურობა</span>
+                    </div>
+                    <div class="menu-item">
+                        <i class="fas fa-undo"></i>
+                        <span>დაბრუნება</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Apple Submenu Modal -->
+    <div class="mobile-menu-modal" id="appleSubmenuModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Apple შემოწმება</h3>
+                <button class="close-modal" onclick="closeAppleSubmenu()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="menu-grid">
+                    <a class="menu-item" href="applecheck.html?type=free" onclick="closeAllMobileMenus();">
+                        <i class="fas fa-check-circle"></i>
+                        <span>უფასო</span>
+                    </a>
+                    <a class="menu-item" href="applecheck.html?type=paid" onclick="closeAllMobileMenus();">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>პლატანი</span>
+                    </a>
+                    <a class="menu-item" href="applecheck.html?type=premium" onclick="closeAllMobileMenus();">
+                        <i class="fas fa-crown"></i>
+                        <span>პრემიუმ</span>
+                    </a>
+                    <div class="menu-item" onclick="closeAppleSubmenu()">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>უკან</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- Bootstrap JS -->
@@ -405,7 +446,11 @@
         // Mobile menu functions
         function openMobileMenu() {
             try {
-                document.getElementById('sidebar').classList.add('active');
+                const modal = document.getElementById('mobileMenuModal');
+                modal.style.display = 'flex';
+                setTimeout(() => {
+                    modal.classList.add('open');
+                }, 10);
             } catch(e) {
                 console.error('Error opening mobile menu:', e);
             }
@@ -413,10 +458,45 @@
         
         function closeMobileMenu() {
             try {
-                document.getElementById('sidebar').classList.remove('active');
+                const modal = document.getElementById('mobileMenuModal');
+                modal.classList.remove('open');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 400);
             } catch(e) {
                 console.error('Error closing mobile menu:', e);
             }
+        }
+        
+        function openAppleSubmenu() {
+            try {
+                closeMobileMenu();
+                const appleModal = document.getElementById('appleSubmenuModal');
+                appleModal.style.display = 'flex';
+                setTimeout(() => {
+                    appleModal.classList.add('open');
+                }, 10);
+            } catch(e) {
+                console.error('Error opening Apple submenu:', e);
+            }
+        }
+        
+        function closeAppleSubmenu() {
+            try {
+                const appleModal = document.getElementById('appleSubmenuModal');
+                appleModal.classList.remove('open');
+                setTimeout(() => {
+                    appleModal.style.display = 'none';
+                    openMobileMenu();
+                }, 400);
+            } catch(e) {
+                console.error('Error closing Apple submenu:', e);
+            }
+        }
+        
+        function closeAllMobileMenus() {
+            closeMobileMenu();
+            closeAppleSubmenu();
         }
         
         // Initialize page
@@ -426,7 +506,7 @@
                 const carouselElement = document.getElementById('mainCarousel');
                 if (carouselElement) {
                     const myCarousel = new bootstrap.Carousel(carouselElement, {
-                        interval: 3000,
+                        interval: 2000,
                         ride: 'carousel'
                     });
                 } else {
@@ -447,18 +527,25 @@
             } catch(e) {
                 console.error('Mobile menu setup error:', e);
             }
-            
+
             // Close menu when clicking outside
             document.addEventListener('click', (e) => {
                 try {
-                    const sidebar = document.getElementById('sidebar');
-                    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+                    const mobileMenuModal = document.getElementById('mobileMenuModal');
+                    const appleSubmenuModal = document.getElementById('appleSubmenuModal');
                     
                     // Close mobile menu if click is outside
-                    if (sidebar && sidebar.classList.contains('active') && 
-                        !sidebar.contains(e.target) && 
-                        e.target !== mobileMenuBtn) {
+                    if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
+                        !mobileMenuModal.contains(e.target) && 
+                        e.target.id !== 'mobileMenuBtn') {
                         closeMobileMenu();
+                    }
+                    
+                    // Close apple submenu if click is outside
+                    if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
+                        !appleSubmenuModal.contains(e.target) && 
+                        e.target.id !== 'mobileMenuBtn') {
+                        closeAppleSubmenu();
                     }
                 } catch(e) {
                     console.error('Click handler error:', e);
@@ -468,24 +555,21 @@
         
         // Redirect to login or dashboard
         function goToLogin() {
-            closeMobileMenu();
+            closeAllMobileMenus();
             window.location.href = "#";
         }
         
         // Simulate statistics counter
         setInterval(() => {
-            const daily = document.getElementById('daily-checks');
-            const weekly = document.getElementById('weekly-checks');
-            const monthly = document.getElementById('monthly-checks');
-            
-            if(daily && weekly && monthly) {
-                const newDaily = parseInt(daily.textContent) + Math.floor(Math.random() * 3);
-                const newWeekly = parseInt(weekly.textContent) + Math.floor(Math.random() * 10);
-                const newMonthly = parseInt(monthly.textContent) + Math.floor(Math.random() * 40);
-                
-                daily.textContent = newDaily;
-                weekly.textContent = newWeekly;
-                monthly.textContent = newMonthly;
+            try {
+                document.getElementById('daily-checks').textContent = 
+                    parseInt(document.getElementById('daily-checks').textContent) + 1;
+                document.getElementById('weekly-checks').textContent = 
+                    parseInt(document.getElementById('weekly-checks').textContent) + 1;
+                document.getElementById('monthly-checks').textContent = 
+                    parseInt(document.getElementById('monthly-checks').textContent) + 1;
+            } catch(e) {
+                console.warn('Error updating counters:', e);
             }
         }, 5000);
     </script>
