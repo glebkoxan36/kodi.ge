@@ -39,13 +39,21 @@
         <!-- User profile in sidebar -->
         <div class="user-profile-section" onclick="goToLogin()">
             <div class="user-avatar-container">
-                <div class="user-avatar" style="background-color: #4a00e0;">
-                    JD
-                </div>
+                {% if user %}
+                    <div class="user-avatar" style="background-color: {{ user.avatar_color }};">
+                        {{ user.first_name[0] }}{{ user.last_name[0] }}
+                    </div>
+                {% else %}
+                    <img src="https://via.placeholder.com/80" alt="User Avatar" class="user-avatar" id="sidebarAvatar">
+                {% endif %}
             </div>
             <div class="user-name">
-                John Doe<br>
-                <small>ბალანსი: 25.50 ₾</small>
+                {% if user %}
+                    {{ user.first_name }} {{ user.last_name }}<br>
+                    <small>ბალანსი: {{ user.balance }} ₾</small>
+                {% else %}
+                    ლოგინი/რეგისტრაცია
+                {% endif %}
             </div>
         </div>
         
@@ -64,15 +72,15 @@
                 </a>
                 <div class="collapse" id="appleSubmenu">
                     <div class="submenu">
-                        <a class="nav-link" href="applecheck?type=free">
+                        <a class="nav-link" href="applecheck.html?type=free">
                             <i class="fas fa-check-circle"></i>
                             <span>უფასო შემოწმება</span>
                         </a>
-                        <a class="nav-link" href="applecheck?type=paid">
+                        <a class="nav-link" href="applecheck.html?type=paid">
                             <i class="fas fa-shopping-cart"></i>
                             <span>პლატანი შემოწმება</span>
                         </a>
-                        <a class="nav-link" href="applecheck?type=premium">
+                        <a class="nav-link" href="applecheck.html?type=premium">
                             <i class="fas fa-crown"></i>
                             <span>პრემიუმ შემოწმება</span>
                         </a>
@@ -337,13 +345,21 @@
     <div class="mobile-menu-modal" id="mobileMenuModal">
         <!-- Avatar placed outside modal content -->
         <div class="floating-avatar-container" onclick="goToLogin()">
-            <div class="floating-avatar" style="background-color: #4a00e0;">
-                JD
-            </div>
-            <div class="floating-avatar-info">
-                John Doe
-            </div>
-            <div class="user-balance">ბალანსი: 25.50 ₾</div>
+            {% if user %}
+                <div class="floating-avatar" style="background-color: {{ user.avatar_color }};">
+                    {{ user.first_name[0] }}{{ user.last_name[0] }}
+                </div>
+                <div class="floating-avatar-info">
+                    {{ user.first_name }} {{ user.last_name }}
+                </div>
+                <div class="user-balance">ბალანსი: {{ user.balance }} ₾</div>
+            {% else %}
+                <div class="floating-avatar" id="mobileAvatar">
+                    <div class="avatar-placeholder">KODI.GE</div>
+                </div>
+                <div class="floating-avatar-info" id="mobileUserName">ლოგინი/რეგისტრაცია</div>
+                <div class="user-balance" id="mobileUserBalance" style="display: none;"></div>
+            {% endif %}
         </div>
         
         <div class="modal-content">
@@ -546,7 +562,11 @@
         // Redirect to login or dashboard
         function goToLogin() {
             closeAllMobileMenus();
-            window.location.href = "#";
+            {% if user %}
+                window.location.href = "{{ url_for('user.dashboard') }}";
+            {% else %}
+                window.location.href = "{{ url_for('auth.login') }}";
+            {% endif %}
         }
         
         // Simulate statistics counter
