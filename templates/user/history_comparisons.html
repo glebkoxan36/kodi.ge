@@ -1,0 +1,65 @@
+{% extends 'user/dashboard.html' %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>ტელეფონების შედარების ისტორია</h3>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>თარიღი</th>
+                    <th>მოდელები</th>
+                    <th>შედეგი</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for comp in comparisons %}
+                <tr>
+                    <td>{{ comp.timestamp }}</td>
+                    <td>{{ comp.model1 }} vs {{ comp.model2 }}</td>
+                    <td>
+                        {% if comp.result == 'model1' %}
+                            <span class="badge bg-success">{{ comp.model1 }} უკეთესია</span>
+                        {% elif comp.result == 'model2' %}
+                            <span class="badge bg-success">{{ comp.model2 }} უკეთესია</span>
+                        {% else %}
+                            <span class="badge bg-warning">ძალიან ახლოსაა</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <nav>
+            <ul class="pagination">
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page-1 }}">წინა</a>
+                </li>
+                {% endif %}
+                
+                {% for p in range(1, (total//per_page)+2) %}
+                {% if p == page %}
+                <li class="page-item active">
+                    <a class="page-link" href="#">{{ p }}</a>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if page < (total//per_page)+1 %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page+1 }}">შემდეგი</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endblock %}
