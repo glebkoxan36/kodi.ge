@@ -1,161 +1,13 @@
 <!DOCTYPE html>
-<html lang="ka">
+<html lang="ka" class="auth-page">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>რეგისტრაცია</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="static/styles.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        :root {
-            --primary-color: #0d1525;
-            --secondary-color: #1d2a4a;
-            --accent-color: #00c6ff;
-            --text-color: #ffffff;
-            --text-secondary: #c0c0d0;
-            --card-bg: #121a2b;
-            --card-hover-bg: #16203a;
-            --success-color: #00d68f;
-            --warning-color: #ffaa00;
-            --danger-color: #ff3d71;
-            --google-color: #4285F4;
-            --facebook-color: #3b5998;
-        }
-        
-        body {
-            background: linear-gradient(
-                135deg, 
-                var(--primary-color), 
-                var(--secondary-color),
-                #0f1729
-            );
-            background-size: 300% 300%;
-            animation: gradientShift 15s ease infinite;
-            color: var(--text-color);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            overflow-x: hidden;
-            font-weight: 450;
-        }
-        
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        .auth-container {
-            background: rgba(18, 26, 43, 0.95);
-            border-radius: 15px;
-            padding: 40px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            animation: cardAppear 0.6s ease-out;
-            position: relative;
-            z-index: 2;
-            backdrop-filter: blur(10px);
-        }
-        
-        @keyframes cardAppear {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .auth-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .auth-logo {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 15px;
-        }
-        
-        .logo-core {
-            position: relative;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--accent-color), #0066ff);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
-            overflow: hidden;
-            z-index: 2;
-            animation: logoFloat 4s ease-in-out infinite;
-        }
-        
-        @keyframes logoFloat {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-        
-        .logo-letter {
-            font-weight: bold;
-            font-size: 32px;
-            color: white;
-            text-shadow: 0 0 10px rgba(0,0,0,0.5);
-            z-index: 2;
-        }
-        
-        .auth-header h2 {
-            font-weight: 700;
-            color: var(--accent-color);
-            margin-top: 15px;
-            font-size: 1.8rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-            animation: fadeIn 0.8s ease-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 14px 18px;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 8px;
-            color: var(--text-color);
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus {
-            border-color: var(--accent-color);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0, 198, 255, 0.2);
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
+        /* Дополнительные стили для страницы регистрации */
         .birth-date-group {
             display: flex;
             gap: 10px;
@@ -185,190 +37,32 @@
             font-size: 0.8rem;
         }
         
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-color), #0066ff);
-            border: none;
-            border-radius: 8px;
-            padding: 14px 20px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: white;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            margin-top: 10px;
-            box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2);
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 198, 255, 0.4);
-        }
-        
-        .social-auth {
-            margin: 25px 0;
-            text-align: center;
-            position: relative;
-        }
-        
-        .social-divider {
-            height: 1px;
-            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
-            margin: 25px 0;
-            position: relative;
-        }
-        
-        .social-divider span {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--card-bg);
-            padding: 0 15px;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-        
-        .social-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 20px;
-        }
-        
-        .social-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            padding: 13px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            font-size: 1rem;
-            color: white;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .social-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        }
-        
-        .social-btn.google {
-            background: var(--google-color);
-        }
-        
-        .social-btn.facebook {
-            background: var(--facebook-color);
-        }
-        
-        .social-btn i {
-            font-size: 1.2rem;
-        }
-        
-        .login-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.95rem;
-            color: var(--text-secondary);
-        }
-        
-        .login-link a {
-            color: var(--accent-color);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-weight: 600;
-        }
-        
-        .login-link a:hover {
-            text-decoration: underline;
-        }
-        
-        .error-message {
-            color: var(--danger-color);
-            margin-top: 6px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            display: none;
-            animation: shake 0.5s;
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-5px); }
-            40%, 80% { transform: translateX(5px); }
-        }
-        
-        .gradient-bg {
-            position: fixed;
-            width: 600px;
-            height: 600px;
-            border-radius: 50%;
-            filter: blur(120px);
-            opacity: 0.25;
-            z-index: 0;
-            animation: gradientFloat 25s infinite alternate ease-in-out;
-        }
-        
-        .gradient-1 {
-            background: linear-gradient(135deg, var(--accent-color), #0066ff);
-            top: -200px;
-            right: -200px;
-        }
-        
-        .gradient-2 {
-            background: linear-gradient(135deg, var(--success-color), #00a86b);
-            bottom: -200px;
-            left: -200px;
-            animation-duration: 30s;
-            animation-delay: 2s;
-        }
-        
-        @keyframes gradientFloat {
-            0% {
-                transform: translate(0, 0) scale(1);
-            }
-            50% {
-                transform: translate(20px, -20px) scale(1.05);
-            }
-            100% {
-                transform: translate(-20px, 10px) scale(0.95);
-            }
-        }
-        
-        /* Адаптивность */
         @media (max-width: 576px) {
             .auth-container {
-                padding: 30px 20px;
+                padding: 25px 15px;
             }
             
-            .birth-date-group {
-                flex-direction: column;
-                gap: 12px;
+            .auth-header .logo-animated {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .auth-header .logo-core {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .auth-header .logo-letter {
+                font-size: 28px;
             }
             
             .auth-header h2 {
                 font-size: 1.5rem;
             }
             
-            .auth-logo {
-                width: 70px;
-                height: 70px;
-            }
-            
-            .logo-core {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .logo-letter {
-                font-size: 24px;
+            .birth-date-group {
+                flex-direction: column;
+                gap: 12px;
             }
         }
     </style>
@@ -379,9 +73,12 @@
     
     <div class="auth-container">
         <div class="auth-header">
-            <div class="auth-logo">
+            <div class="logo-animated">
+                <div class="logo-ring"></div>
+                <div class="logo-ring"></div>
+                <div class="logo-ring"></div>
                 <div class="logo-core">
-                    <div class="logo-letter">R</div>
+                    <div class="logo-letter">K</div>
                 </div>
             </div>
             <h2>რეგისტრაცია</h2>
@@ -538,8 +235,8 @@
             </div>
         </div>
         
-        <div class="login-link">
-            უკვე გაქვთ ანგარიში? <a href="/login">შესვლა</a>
+        <div class="login-options">
+            <p>უკვე გაქვთ ანგარიში? <a href="/login">შესვლა</a></p>
         </div>
     </div>
 
@@ -631,22 +328,35 @@
             
             if (!validateForm()) return;
             
-            // Здесь будет AJAX запрос на сервер
-            // Имитация успешной регистрации
-            const success = true;
+            const registerBtn = e.target.querySelector('.btn-primary');
+            const originalText = registerBtn.innerHTML;
             
-            if (success) {
-                // Анимация успешной регистрации
-                document.querySelector('.btn-primary').innerHTML = '<i class="fas fa-check"></i> წარმატებული რეგისტრაცია';
-                document.querySelector('.btn-primary').style.background = 'var(--success-color)';
-                
+            // Показать индикатор загрузки
+            registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> რეგისტრაცია';
+            
+            try {
+                // Здесь будет AJAX запрос на сервер
+                // Имитация запроса
                 setTimeout(() => {
-                    alert('რეგისტრაცია წარმატებით დასრულდა!');
-                    window.location.href = '/';
+                    const success = true;
+                    
+                    if (success) {
+                        // Анимация успешной регистрации
+                        registerBtn.innerHTML = '<i class="fas fa-check"></i> წარმატებული რეგისტრაცია';
+                        registerBtn.style.background = 'var(--success-color)';
+                        
+                        setTimeout(() => {
+                            alert('რეგისტრაცია წარმატებით დასრულდა!');
+                            window.location.href = '/';
+                        }, 1500);
+                    } else {
+                        registerBtn.innerHTML = originalText;
+                        showError('general_error', 'რეგისტრაციის დროს მოხდა შეცდომა. გთხოვთ სცადოთ თავიდან');
+                    }
                 }, 1500);
-            } else {
-                // В случае ошибки
-                showError('general_error', 'რეგისტრაციის დროს მოხდა შეცდომა. გთხოვთ სცადოთ თავიდან');
+            } catch (error) {
+                registerBtn.innerHTML = originalText;
+                showError('general_error', 'სერვერული შეცდომა. გთხოვთ სცადოთ მოგვიანებით');
             }
         });
         
@@ -671,4 +381,4 @@
         });
     </script>
 </body>
-</html>
+                    </html>
