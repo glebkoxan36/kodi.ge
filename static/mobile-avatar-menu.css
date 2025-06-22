@@ -167,8 +167,15 @@
     padding: 0 15px;
     box-sizing: border-box;
     letter-spacing: 0.5px;
-    margin-top: 15px;
+    margin-top: 25px; /* Увеличен отступ сверху */
     display: block;
+    /* Добавлено оформление как у ячеек */
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 198, 255, 0.3);
+    border-radius: 15px;
+    padding: 10px 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
 }
 
 /* Баланс пользователя */
@@ -176,12 +183,19 @@
     font-size: 0.95rem;
     font-weight: 700;
     color: #00ff9d;
-    margin-top: 8px;
+    margin-top: 15px; /* Увеличен отступ сверху */
     text-shadow: 0 0 8px rgba(0, 255, 157, 0.6);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     padding: 0 15px;
+    /* Добавлено оформление как у ячеек */
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 198, 255, 0.3);
+    border-radius: 15px;
+    padding: 8px 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
 }
 
 /* --- Сетка 3x3 - ФИКСИРОВАНО --- */
@@ -257,9 +271,13 @@
     }
     .floating-avatar-info {
         font-size: 0.95rem;
+        margin-top: 20px; /* Адаптированный отступ */
+        padding: 8px 12px; /* Адаптированный padding */
     }
     .user-balance {
         font-size: 0.9rem;
+        margin-top: 12px; /* Адаптированный отступ */
+        padding: 6px 12px; /* Адаптированный padding */
     }
     .menu-grid {
         max-width: 300px;
@@ -286,6 +304,7 @@
     }
     .floating-avatar-info {
         font-size: 1rem;
+        margin-top: 22px; /* Адаптированный отступ */
     }
     .menu-grid {
         gap: 20px;
@@ -309,6 +328,8 @@
     }
     .floating-avatar-info {
         font-size: 0.95rem;
+        margin-top: 20px; /* Адаптированный отступ */
+        padding: 8px 12px; /* Адаптированный padding */
     }
     .avatar-placeholder {
         font-size: 0.8rem;
@@ -325,6 +346,8 @@
     }
     .user-balance {
         font-size: 0.85rem;
+        margin-top: 12px; /* Адаптированный отступ */
+        padding: 6px 12px; /* Адаптированный padding */
     }
 }
 
@@ -341,9 +364,11 @@
     }
     .floating-avatar-info {
         font-size: 1.1rem;
+        margin-top: 28px; /* Адаптированный отступ */
     }
     .user-balance {
         font-size: 1rem;
+        margin-top: 18px; /* Адаптированный отступ */
     }
     .menu-item i {
         font-size: 2rem;
