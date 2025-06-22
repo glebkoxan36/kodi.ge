@@ -45,7 +45,7 @@
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.4s ease;
     opacity: 0;
-    overflow: visible; /* Исправлено на visible */
+    overflow: visible;
     padding-top: 70px;
 }
 
@@ -62,7 +62,7 @@
     border: 3px solid rgba(0, 198, 255, 0.4);
     border-radius: 30px 30px 0 0;
     box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
-    overflow: visible; /* Исправлено на visible */
+    overflow: visible;
     position: relative;
     width: 100%;
     height: 100%;
@@ -105,7 +105,7 @@
 /* Контейнер плавающей аватарки - ИСПРАВЛЕНО */
 .floating-avatar-container {
     position: absolute;
-    top: -50px; /* Точное позиционирование на границе */
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
@@ -131,6 +131,7 @@
     justify-content: center;
     overflow: hidden;
     margin: 0 auto;
+    margin-top: 50px; /* Смещение вниз на половину высоты */
 }
 
 /* Заглушка аватарки */
@@ -149,7 +150,7 @@
     text-shadow: 0 0 12px rgba(0, 198, 255, 0.8);
 }
 
-/* Информация под аватаркой - ИСПРАВЛЕНО */
+/* Информация под аватаркой */
 .floating-avatar-info {
     font-size: 1.05rem;
     font-weight: 700;
@@ -166,16 +167,16 @@
     padding: 0 15px;
     box-sizing: border-box;
     letter-spacing: 0.5px;
-    margin-top: 15px; /* Увеличенный отступ */
+    margin-top: 15px;
     display: block;
 }
 
-/* Баланс пользователя - ИСПРАВЛЕНО */
+/* Баланс пользователя */
 .user-balance {
     font-size: 0.95rem;
     font-weight: 700;
     color: #00ff9d;
-    margin-top: 8px; /* Увеличенный отступ */
+    margin-top: 8px;
     text-shadow: 0 0 8px rgba(0, 255, 157, 0.6);
     white-space: nowrap;
     overflow: hidden;
@@ -196,7 +197,7 @@
     background: transparent;
     box-sizing: border-box;
     padding: 0;
-    margin-top: 130px; /* Увеличен для текста */
+    margin-top: 170px; /* Увеличен для текста и позиции аватарки */
 }
 
 .menu-item {
@@ -250,7 +251,7 @@
         max-width: 300px;
         height: 300px;
         gap: 18px;
-        margin-top: 100px; /* Увеличен */
+        margin-top: 140px;
     }
     .menu-item {
         padding: 10px 6px;
@@ -258,17 +259,13 @@
     .floating-avatar {
         width: 85px;
         height: 85px;
-    }
-    .floating-avatar-container {
-        top: -42.5px; /* Точный расчет */
+        margin-top: 42.5px; /* Половина высоты (85px/2) */
     }
     .floating-avatar-info {
         font-size: 0.95rem;
-        margin-top: 12px; /* Увеличен */
     }
     .user-balance {
         font-size: 0.9rem;
-        margin-top: 6px; /* Увеличен */
     }
 }
 
@@ -280,19 +277,16 @@
     .floating-avatar {
         width: 90px;
         height: 90px;
-    }
-    .floating-avatar-container {
-        top: -45px; /* Точный расчет */
+        margin-top: 45px; /* Половина высоты (90px/2) */
     }
     .floating-avatar-info {
         font-size: 1rem;
-        margin-top: 14px; /* Увеличен */
     }
     .menu-grid {
         gap: 20px;
         max-width: 340px;
         height: 340px;
-        margin-top: 115px; /* Увеличен */
+        margin-top: 150px;
     }
 }
 
@@ -304,13 +298,10 @@
     .floating-avatar {
         width: 80px;
         height: 80px;
-    }
-    .floating-avatar-container {
-        top: -40px; /* Точный расчет */
+        margin-top: 40px; /* Половина высоты (80px/2) */
     }
     .floating-avatar-info {
         font-size: 0.95rem;
-        margin-top: 12px; /* Увеличен */
     }
     .avatar-placeholder {
         font-size: 0.8rem;
@@ -322,11 +313,10 @@
         max-width: 320px;
         height: 320px;
         gap: 16px;
-        margin-top: 105px; /* Увеличен */
+        margin-top: 140px;
     }
     .user-balance {
         font-size: 0.85rem;
-        margin-top: 6px; /* Увеличен */
     }
 }
 
@@ -338,17 +328,13 @@
     .floating-avatar {
         width: 110px;
         height: 110px;
-    }
-    .floating-avatar-container {
-        top: -55px; /* Точный расчет */
+        margin-top: 55px; /* Половина высоты (110px/2) */
     }
     .floating-avatar-info {
         font-size: 1.1rem;
-        margin-top: 16px; /* Увеличен */
     }
     .user-balance {
         font-size: 1rem;
-        margin-top: 8px; /* Увеличен */
     }
     .menu-item i {
         font-size: 2rem;
@@ -360,7 +346,7 @@
         max-width: 420px;
         height: 420px;
         gap: 25px;
-        margin-top: 150px; /* Увеличен */
+        margin-top: 190px;
     }
 }
 
