@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
     <link rel="stylesheet" href="static/mobile-avatar-menu.css">
+    <style>
+        /* Add custom styles for scroll lock */
+        body.menu-open {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
     <!-- Gradient background elements -->
@@ -449,6 +457,9 @@
     
     <!-- Main application logic -->
     <script>
+        // Track menu state
+        let isMenuOpen = false;
+        
         // Mobile menu functions
         function openMobileMenu() {
             try {
@@ -456,6 +467,13 @@
                 modal.style.display = 'flex';
                 setTimeout(() => {
                     modal.classList.add('open');
+                    isMenuOpen = true;
+                    
+                    // Hide menu button
+                    document.getElementById('mobileMenuBottom').classList.add('d-none');
+                    
+                    // Lock page scrolling
+                    document.body.classList.add('menu-open');
                 }, 10);
             } catch(e) {
                 console.error('Error opening mobile menu:', e);
@@ -468,6 +486,13 @@
                 modal.classList.remove('open');
                 setTimeout(() => {
                     modal.style.display = 'none';
+                    isMenuOpen = false;
+                    
+                    // Show menu button
+                    document.getElementById('mobileMenuBottom').classList.remove('d-none');
+                    
+                    // Unlock page scrolling
+                    document.body.classList.remove('menu-open');
                 }, 400);
             } catch(e) {
                 console.error('Error closing mobile menu:', e);
@@ -481,6 +506,13 @@
                 appleModal.style.display = 'flex';
                 setTimeout(() => {
                     appleModal.classList.add('open');
+                    isMenuOpen = true;
+                    
+                    // Hide menu button
+                    document.getElementById('mobileMenuBottom').classList.add('d-none');
+                    
+                    // Lock page scrolling
+                    document.body.classList.add('menu-open');
                 }, 10);
             } catch(e) {
                 console.error('Error opening Apple submenu:', e);
@@ -493,7 +525,13 @@
                 appleModal.classList.remove('open');
                 setTimeout(() => {
                     appleModal.style.display = 'none';
-                    openMobileMenu();
+                    isMenuOpen = false;
+                    
+                    // Show menu button
+                    document.getElementById('mobileMenuBottom').classList.remove('d-none');
+                    
+                    // Unlock page scrolling
+                    document.body.classList.remove('menu-open');
                 }, 400);
             } catch(e) {
                 console.error('Error closing Apple submenu:', e);
@@ -539,18 +577,32 @@
                 try {
                     const mobileMenuModal = document.getElementById('mobileMenuModal');
                     const appleSubmenuModal = document.getElementById('appleSubmenuModal');
+                    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+                    
+                    // Check if click is outside menu
+                    const isClickInsideMenu = 
+                        (mobileMenuModal.contains(e.target) && 
+                         !e.target.classList.contains('modal-content') &&
+                         !e.target.classList.contains('menu-grid') &&
+                         !e.target.classList.contains('menu-item')) || 
+                        (appleSubmenuModal.contains(e.target) && 
+                         !e.target.classList.contains('modal-content') &&
+                         !e.target.classList.contains('menu-grid') &&
+                         !e.target.classList.contains('menu-item'));
                     
                     // Close mobile menu if click is outside
                     if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
                         !mobileMenuModal.contains(e.target) && 
-                        e.target.id !== 'mobileMenuBtn') {
+                        e.target !== mobileMenuBtn && 
+                        !isClickInsideMenu) {
                         closeMobileMenu();
                     }
                     
                     // Close apple submenu if click is outside
                     if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
                         !appleSubmenuModal.contains(e.target) && 
-                        e.target.id !== 'mobileMenuBtn') {
+                        e.target !== mobileMenuBtn && 
+                        !isClickInsideMenu) {
                         closeAppleSubmenu();
                     }
                 } catch(e) {
