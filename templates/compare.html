@@ -7,6 +7,190 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        /* New styles for phone selection buttons */
+        .phone-select-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .phone-select-btn {
+            flex: 1;
+            min-width: 250px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .phone-select-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .phone-select-btn.selected {
+            background: rgba(32, 107, 196, 0.2);
+            border: 2px solid rgba(32, 107, 196, 0.5);
+        }
+        
+        .phone-select-btn i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            display: block;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .phone-select-btn .btn-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        
+        .phone-select-btn .phone-name {
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.8);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Modal styles */
+        .phone-modal .modal-content {
+            background: linear-gradient(135deg, #1a2a4f, #0d1a33);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .phone-modal .modal-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+        }
+        
+        .phone-modal .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .phone-modal .modal-body {
+            padding: 20px;
+        }
+        
+        .phone-modal .modal-footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px 20px;
+        }
+        
+        .modal-search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .modal-search-input {
+            width: 100%;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .modal-search-input:focus {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(32, 107, 196, 0.8);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(32, 107, 196, 0.3);
+        }
+        
+        .modal-suggestions-dropdown {
+            position: absolute;
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(26, 36, 60, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            z-index: 1000;
+            margin-top: 5px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            display: none;
+        }
+        
+        .modal-suggestion-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.2s ease;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .modal-suggestion-item:last-child {
+            border-bottom: none;
+        }
+        
+        .modal-suggestion-item:hover {
+            background: rgba(32, 107, 196, 0.3);
+        }
+        
+        .modal-suggestion-item.selected {
+            background: rgba(32, 107, 196, 0.5);
+            color: #fff;
+        }
+        
+        /* Button styles */
+        .btn-select {
+            background: linear-gradient(135deg, #206bc4, #1a5bb0);
+            border: none;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-select:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .btn-select:hover:not(:disabled) {
+            background: linear-gradient(135deg, #1a5bb0, #154b94);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .phone-select-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .phone-select-btn {
+                min-width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="gradient-bg gradient-1"></div>
@@ -78,14 +262,18 @@
                 </div>
                 <div class="card-body">
                     <div class="compare-search-container">
-                        <div class="row">
-                            <div class="col-md-6 position-relative mb-3">
-                                <input type="text" class="compare-search-input" id="phone1Search" placeholder="მოძებნეთ პირველი ტელეფონი...">
-                                <div id="suggestions1" class="compare-suggestions-dropdown"></div>
+                        <!-- Phone selection buttons -->
+                        <div class="phone-select-container">
+                            <div class="phone-select-btn" id="phone1Btn">
+                                <i class="fas fa-mobile-alt"></i>
+                                <div class="btn-text">ტელეფონი 1</div>
+                                <div class="phone-name" id="phone1Name">არცერთი არაა შერჩეული</div>
                             </div>
-                            <div class="col-md-6 position-relative">
-                                <input type="text" class="compare-search-input" id="phone2Search" placeholder="მოძებნეთ მეორე ტელეფონი...">
-                                <div id="suggestions2" class="compare-suggestions-dropdown"></div>
+                            
+                            <div class="phone-select-btn" id="phone2Btn">
+                                <i class="fas fa-mobile-alt"></i>
+                                <div class="btn-text">ტელეფონი 2</div>
+                                <div class="phone-name" id="phone2Name">არცერთი არაა შერჩეული</div>
                             </div>
                         </div>
                         
@@ -131,6 +319,43 @@
         </div>
     </div>
     
+    <!-- Phone Selection Modal -->
+    <div class="modal fade phone-modal" id="phoneModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">აირჩიეთ ტელეფონი</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-search-container">
+                        <input type="text" class="modal-search-input" id="modalSearch" placeholder="მოძებნეთ ტელეფონი...">
+                        <div id="modalSuggestions" class="modal-suggestions-dropdown"></div>
+                    </div>
+                    
+                    <div class="selected-phone-container" id="selectedPhoneContainer" style="display: none;">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <img src="" id="selectedPhoneImage" class="img-thumbnail me-3" style="width: 60px; height: 60px; object-fit: contain;" onerror="handleImageError(event)">
+                                    <div>
+                                        <h5 id="selectedPhoneName" class="mb-0"></h5>
+                                        <small id="selectedPhoneSpec" class="text-muted"></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">გაუქმება</button>
+                    <button type="button" class="btn btn-select" id="modalSelectBtn" disabled>არჩევა</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Function to handle image loading errors
         function handleImageError(event) {
@@ -141,22 +366,34 @@
         // Phone selection state
         let selectedPhone1 = null;
         let selectedPhone2 = null;
+        let currentSelection = null; // 'phone1' or 'phone2'
+        let modalSelectedPhone = null; // Currently selected phone in modal
         
         // DOM elements
-        const phone1Search = document.getElementById('phone1Search');
-        const phone2Search = document.getElementById('phone2Search');
-        const suggestions1 = document.getElementById('suggestions1');
-        const suggestions2 = document.getElementById('suggestions2');
+        const phone1Btn = document.getElementById('phone1Btn');
+        const phone2Btn = document.getElementById('phone2Btn');
+        const phone1Name = document.getElementById('phone1Name');
+        const phone2Name = document.getElementById('phone2Name');
         const compareButton = document.getElementById('compareButton');
         const comparisonGrid = document.getElementById('comparisonGrid');
         const specsGrid = document.querySelector('.specs-grid');
         const aiAnalysis = document.getElementById('aiAnalysis');
         const aiContent = document.getElementById('aiContent');
-        const apiError = document.getElementById('apiError');
         const phone1Thumb = document.getElementById('phone1Thumb');
         const phone2Thumb = document.getElementById('phone2Thumb');
         const phone1Title = document.getElementById('phone1Title');
         const phone2Title = document.getElementById('phone2Title');
+        
+        // Modal elements
+        const phoneModal = new bootstrap.Modal(document.getElementById('phoneModal'));
+        const modalSearch = document.getElementById('modalSearch');
+        const modalSuggestions = document.getElementById('modalSuggestions');
+        const modalSelectBtn = document.getElementById('modalSelectBtn');
+        const modalTitle = document.getElementById('modalTitle');
+        const selectedPhoneContainer = document.getElementById('selectedPhoneContainer');
+        const selectedPhoneImage = document.getElementById('selectedPhoneImage');
+        const selectedPhoneName = document.getElementById('selectedPhoneName');
+        const selectedPhoneSpec = document.getElementById('selectedPhoneSpec');
         
         // Rules for numeric comparisons
         const numericComparisonRules = {
@@ -180,24 +417,50 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
-            phone1Search.addEventListener('input', () => searchPhones(phone1Search.value, suggestions1));
-            phone2Search.addEventListener('input', () => searchPhones(phone2Search.value, suggestions2));
+            // Setup button event listeners
+            phone1Btn.addEventListener('click', () => openPhoneModal('phone1'));
+            phone2Btn.addEventListener('click', () => openPhoneModal('phone2'));
             compareButton.addEventListener('click', comparePhones);
             
+            // Setup modal event listeners
+            modalSearch.addEventListener('input', searchPhonesInModal);
+            modalSelectBtn.addEventListener('click', confirmPhoneSelection);
+            
+            // Close suggestions when clicking outside
             document.addEventListener('click', (e) => {
-                if (!e.target.closest('#suggestions1') && !e.target.closest('#phone1Search')) {
-                    suggestions1.style.display = 'none';
-                }
-                if (!e.target.closest('#suggestions2') && !e.target.closest('#phone2Search')) {
-                    suggestions2.style.display = 'none';
+                if (!e.target.closest('#modalSuggestions') && !e.target.closest('#modalSearch')) {
+                    modalSuggestions.style.display = 'none';
                 }
             });
         });
         
-        // Search phones using our API
-        async function searchPhones(query, suggestionsContainer) {
+        // Open phone selection modal
+        function openPhoneModal(target) {
+            currentSelection = target;
+            modalTitle.textContent = `აირჩიეთ ტელეფონი ${target === 'phone1' ? '1' : '2'}`;
+            modalSearch.value = '';
+            modalSuggestions.innerHTML = '';
+            modalSuggestions.style.display = 'none';
+            selectedPhoneContainer.style.display = 'none';
+            modalSelectBtn.disabled = true;
+            modalSelectedPhone = null;
+            
+            // Pre-fill search if phone is already selected
+            if (target === 'phone1' && selectedPhone1) {
+                modalSearch.value = selectedPhone1.name;
+            } else if (target === 'phone2' && selectedPhone2) {
+                modalSearch.value = selectedPhone2.name;
+            }
+            
+            phoneModal.show();
+        }
+        
+        // Search phones in modal
+        async function searchPhonesInModal() {
+            const query = modalSearch.value.trim();
+            
             if (query.length < 2) {
-                suggestionsContainer.style.display = 'none';
+                modalSuggestions.style.display = 'none';
                 return;
             }
             
@@ -211,47 +474,77 @@
                 const data = await response.json();
                 
                 if (data.length > 0) {
-                    suggestionsContainer.innerHTML = '';
+                    modalSuggestions.innerHTML = '';
                     data.forEach(phone => {
                         const item = document.createElement('div');
-                        item.className = 'compare-suggestion-item';
-                        item.textContent = phone.name;
-                        item.onclick = () => selectPhone(phone, suggestionsContainer.id);
-                        suggestionsContainer.appendChild(item);
+                        item.className = 'modal-suggestion-item';
+                        item.dataset.id = phone._id;
+                        
+                        // Highlight if this phone is already selected
+                        if ((currentSelection === 'phone1' && selectedPhone1 && selectedPhone1._id === phone._id) || 
+                            (currentSelection === 'phone2' && selectedPhone2 && selectedPhone2._id === phone._id)) {
+                            item.classList.add('selected');
+                        }
+                        
+                        item.innerHTML = `
+                            <div class="fw-bold">${phone.name}</div>
+                            <small class="text-muted">${phone.specs?.Platform_OS || 'OS not specified'}, ${phone.specs?.Memory_internal || 'Memory not specified'}</small>
+                        `;
+                        
+                        item.onclick = () => selectPhoneInModal(phone);
+                        modalSuggestions.appendChild(item);
                     });
-                    suggestionsContainer.style.display = 'block';
+                    modalSuggestions.style.display = 'block';
                 } else {
-                    suggestionsContainer.style.display = 'none';
+                    modalSuggestions.style.display = 'none';
                 }
             } catch (error) {
                 console.error('Error searching phones:', error);
-                showApiError();
             }
         }
         
-        // Show API error message
-        function showApiError() {
-            apiError.style.display = 'block';
-            setTimeout(() => {
-                apiError.style.display = 'none';
-            }, 5000);
+        // Select phone in modal
+        function selectPhoneInModal(phone) {
+            modalSelectedPhone = phone;
+            
+            // Highlight selected item
+            document.querySelectorAll('.modal-suggestion-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.target.closest('.modal-suggestion-item').classList.add('selected');
+            
+            // Show phone details
+            selectedPhoneName.textContent = phone.name;
+            selectedPhoneSpec.textContent = `${phone.specs?.Platform_OS || 'OS not specified'}, ${phone.specs?.Memory_internal || 'Memory not specified'}`;
+            selectedPhoneImage.src = phone.image_url || '/static/phone-placeholder.png';
+            selectedPhoneContainer.style.display = 'block';
+            
+            // Enable select button
+            modalSelectBtn.disabled = false;
+            
+            // Hide suggestions
+            modalSuggestions.style.display = 'none';
         }
         
-        // Select a phone from suggestions
-        function selectPhone(phone, containerId) {
-            const isPhone1 = containerId === 'suggestions1';
+        // Confirm phone selection in modal
+        function confirmPhoneSelection() {
+            if (!modalSelectedPhone) return;
             
-            if (isPhone1) {
-                selectedPhone1 = phone;
-                phone1Search.value = phone.name;
-                suggestions1.style.display = 'none';
+            if (currentSelection === 'phone1') {
+                selectedPhone1 = modalSelectedPhone;
+                phone1Name.textContent = selectedPhone1.name;
+                phone1Btn.classList.add('selected');
             } else {
-                selectedPhone2 = phone;
-                phone2Search.value = phone.name;
-                suggestions2.style.display = 'none';
+                selectedPhone2 = modalSelectedPhone;
+                phone2Name.textContent = selectedPhone2.name;
+                phone2Btn.classList.add('selected');
             }
             
+            // Enable compare button if both phones are selected
             compareButton.disabled = !(selectedPhone1 && selectedPhone2);
+            
+            // Close modal
+            phoneModal.hide();
         }
         
         // Compare the two selected phones
@@ -270,8 +563,8 @@
                 
                 phone1Title.textContent = phone1Details.name;
                 phone2Title.textContent = phone2Details.name;
-                phone1Thumb.src = phone1Details.image_url || '';
-                phone2Thumb.src = phone2Details.image_url || '';
+                phone1Thumb.src = phone1Details.image_url || '/static/phone-placeholder.png';
+                phone2Thumb.src = phone2Details.image_url || '/static/phone-placeholder.png';
                 
                 buildComparisonGrid(phone1Details, phone2Details);
                 comparisonGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -280,7 +573,6 @@
             } catch (error) {
                 console.error('Error comparing phones:', error);
                 aiContent.innerHTML = '<div class="alert alert-danger">დაფიქსირდა შეცდომა ტელეფონების შედარებისას: ' + error.message + '</div>';
-                showApiError();
             } finally {
                 compareButton.innerHTML = '<i class="fas fa-exchange-alt me-2"></i>შედარების დაწყება';
                 compareButton.disabled = false;
