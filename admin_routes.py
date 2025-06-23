@@ -1,14 +1,16 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app
 from functools import wraps
 from datetime import datetime
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
+import secrets
+import threading
 from app import (
-    admin_required, get_current_prices, log_audit_event,
+    admin_required, get_current_prices, log_audit_event, health_check,
     checks_collection, prices_collection, phones_collection, parser_logs_collection,
     admin_users_collection, audit_logs_collection, api_keys_collection, webhooks_collection,
-    db
+    db, MONGODB_URI
 )
 
 admin_bp = Blueprint('admin', __name__)
@@ -29,7 +31,7 @@ def admin_dashboard():
                 thread.start()
                 flash('Parser started in background', 'success')
             except Exception as e:
-                app.logger.error(f"Parser error: {str(e)}")
+                current_app.logger.error(f"Parser error: {str(e)}")
                 flash(f'Error starting parser: {str(e)}', 'danger')
             return redirect(url_for('admin.admin_dashboard'))
         
@@ -73,7 +75,7 @@ def admin_dashboard():
             active_section='admin_dashboard'
         )
     except Exception as e:
-        app.logger.error(f"Admin dashboard error: {str(e)}")
+        current_app.logger.error(f"Admin dashboard error: {str(e)}")
         return render_template('error.html', error="Admin error"), 500
 
 @admin_bp.route('/price', methods=['GET', 'POST'])
@@ -152,7 +154,7 @@ def price_management():
         )
     
     except Exception as e:
-        app.logger.error(f"Price management error: {str(e)}")
+        current_app.logger.error(f"Price management error: {str(e)}")
         flash(f'Error: {str(e)}', 'danger')
         return redirect(url_for('admin.admin_dashboard'))
 
@@ -203,7 +205,7 @@ def check_history():
             active_section='check_history'
         )
     except Exception as e:
-        app.logger.error(f"Check history error: {str(e)}")
+        current_app.logger.error(f"Check history error: {str(e)}")
         flash(f'Error: {str(e)}', 'danger')
         return redirect(url_for('admin.admin_dashboard'))
 
@@ -225,7 +227,7 @@ def db_management():
             collection_counts=collection_counts
         )
     except Exception as e:
-        app.logger.error(f"Database error: {str(e)}")
+        current_app.logger.error(f"Database error: {str(e)}")
         flash(f'Database error: {str(e)}', 'danger')
         return redirect(url_for('admin.admin_dashboard'))
 
@@ -269,7 +271,7 @@ def collection_view(collection_name):
             total=total
         )
     except Exception as e:
-        app.logger.error(f"Collection view error: {str(e)}")
+        current_app.logger.error(f"Collection view error: {str(e)}")
         flash(f'Error loading collection: {str(e)}', 'danger')
         return redirect(url_for('admin.db_management'))
 
@@ -313,7 +315,7 @@ def edit_document(collection_name, doc_id):
             document=doc
         )
     except Exception as e:
-        app.logger.error(f"Edit document error: {str(e)}")
+        current_app.logger.error(f"Edit document error: {str(e)}")
         flash(f'Error loading document: {str(e)}', 'danger')
         return redirect(url_for('admin.collection_view', collection_name=collection_name))
 
@@ -344,7 +346,7 @@ def add_document(collection_name):
             collection_name=collection_name
         )
     except Exception as e:
-        app.logger.error(f"Add document error: {str(e)}")
+        current_app.logger.error(f"Add document error: {str(e)}")
         flash(f'Error loading form: {str(e)}', 'danger')
         return redirect(url_for('admin.collection_view', collection_name=collection_name))
 
@@ -390,7 +392,7 @@ def manage_users():
             users=users
         )
     except Exception as e:
-        app.logger.error(f"User management error: {str(e)}")
+        current_app.logger.error(f"User management error: {str(e)}")
         flash(f'Error: {str(e)}', 'danger')
         return redirect(url_for('admin.admin_dashboard'))
 
@@ -413,7 +415,7 @@ def delete_user(user_id):
             admin_users_collection.delete_one({'_id': ObjectId(user_id)})
             flash('User deleted successfully', 'success')
     except Exception as e:
-        app.logger.error(f"Delete user error: {str(e)}")
+        current_app.logger.error(f"Delete user error: {str(e)}")
         flash(f'Error: {str(e)}', 'danger')
     
     return redirect(url_for('admin.manage_users'))
@@ -471,7 +473,7 @@ def manage_api_keys():
             api_keys=api_keys
         )
     except Exception as e:
-        app.logger.error(f"API keys management error: {str(e)}")
+        current_app.logger.error(f"API keys management error: {str(e)}")
         flash(f'Error: {str(e)}', 'danger')
         return redirect(url_for('admin.admin_dashboard'))
 
@@ -556,7 +558,7 @@ def manage_webhooks():
             webhooks=webhooks
         )
     except Exception as e:
-        app.logger.error(f"Webhooks management error: {str(e)}")
+        current_app.logger.error(f"Webhooks management error: {str(e)}")
         flash(f'Error: {str(e)}', 'danger')
         return redirect(url_for('admin.admin_dashboard'))
 
@@ -606,31 +608,36 @@ def delete_webhook(webhook_id):
 @admin_required
 def system_status():
     """Страница статуса системы"""
-    # Получаем статус health check
-    health_response = health_check()
-    health_data = health_response[0].get_json()
-    
-    # Статистика использования
-    stats = {
-        'total_checks': checks_collection.count_documents({}),
-        'active_webhooks': webhooks_collection.count_documents({'active': True}),
-        'valid_api_keys': api_keys_collection.count_documents({'revoked': False}),
-        'db_size': db.command('dbStats')['dataSize']
-    }
-    
-    # Последние события аудита
-    audit_events = list(audit_logs_collection.find()
-        .sort('timestamp', -1)
-        .limit(10))
-    
-    for event in audit_events:
-        event['_id'] = str(event['_id'])
-        event['timestamp'] = event['timestamp'].strftime('%Y-%m-%d %H:%M')
-    
-    return render_template(
-        'admin.html',
-        active_section='system_status',
-        health_data=health_data,
-        system_stats=stats,
-        audit_events=audit_events
-    )
+    try:
+        # Получаем статус health check
+        health_response = health_check()
+        health_data = health_response[0].get_json()
+        
+        # Статистика использования
+        stats = {
+            'total_checks': checks_collection.count_documents({}),
+            'active_webhooks': webhooks_collection.count_documents({'active': True}),
+            'valid_api_keys': api_keys_collection.count_documents({'revoked': False}),
+            'db_size': db.command('dbStats')['dataSize']
+        }
+        
+        # Последние события аудита
+        audit_events = list(audit_logs_collection.find()
+            .sort('timestamp', -1)
+            .limit(10))
+        
+        for event in audit_events:
+            event['_id'] = str(event['_id'])
+            event['timestamp'] = event['timestamp'].strftime('%Y-%m-%d %H:%M')
+        
+        return render_template(
+            'admin.html',
+            active_section='system_status',
+            health_data=health_data,
+            system_stats=stats,
+            audit_events=audit_events
+        )
+    except Exception as e:
+        current_app.logger.error(f"System status error: {str(e)}")
+        flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('admin.admin_dashboard'))
