@@ -1,4 +1,3 @@
-/* styles.css */
 /* Глобальные стили и переменные */
 :root {
     --primary-color: #0d1525;
@@ -17,6 +16,20 @@
     --google-color: #4285F4;
     --facebook-color: #3b5998;
 }
+
+/* Глобальный белый цвет текста */
+body, body * {
+    color: #ffffff !important;
+}
+
+/* Исключения для специальных цветов */
+.text-info, .text-info * { color: var(--accent-color) !important; }
+.text-warning, .text-warning * { color: var(--warning-color) !important; }
+.text-success, .text-success * { color: var(--success-color) !important; }
+.user-balance, .user-balance * { color: #00ff9d !important; }
+.status-clean, .status-clean * { color: var(--success-color) !important; }
+.status-blacklisted, .status-blacklisted * { color: var(--danger-color) !important; }
+.status-warning, .status-warning * { color: var(--warning-color) !important; }
 
 @keyframes gradientShift {
     0% { background-position: 0% 50%; }
@@ -409,7 +422,7 @@ body {
     border-radius: 50%;
     filter: blur(120px);
     opacity: 0.25;
-    z-index: -1; /* Исправлено на -1 */
+    z-index: -1;
     animation: gradientFloat 25s infinite alternate ease-in-out;
 }
 
@@ -747,7 +760,7 @@ footer h5 {
     opacity: 1;
     overflow: visible;
     padding-top: 0;
-    border-radius: 30px 30px 0 0; /* Закругление углов фона */
+    border-radius: 30px 30px 0 0;
 }
 
 .mobile-menu-modal.open {
@@ -758,13 +771,12 @@ footer h5 {
 .mobile-menu-modal .modal-content {
     background: rgba(18, 26, 43, 0.95);
     border: 3px solid rgba(0, 198, 255, 0.4);
-    border-radius: 30px 30px 0 0; /* Закругление углов контента */
+    border-radius: 30px 30px 0 0;
     box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
     overflow: visible;
     position: relative;
     width: 100%;
     height: 100%;
-    color: white !important; /* Белый цвет текста */
 }
 
 .mobile-menu-modal .modal-body {
@@ -782,8 +794,8 @@ footer h5 {
     position: absolute;
     top: 15px;
     right: 15px;
-    background: #ff6b6b; /* светло-красный фон */
-    color: white !important; /* белый крестик */
+    background: #ff6b6b;
+    color: white;
     border: none;
     border-radius: 50%;
     width: 35px;
@@ -813,13 +825,12 @@ footer h5 {
     width: 100%;
     text-align: center;
     padding-bottom: 15px;
-    pointer-events: none; /* Отключаем события по умолчанию */
+    pointer-events: none;
 }
 
-/* Элементы внутри контейнера, на которые нужно реагировать */
 .floating-avatar,
 .floating-avatar-info {
-    pointer-events: auto; /* Включаем события для этих элементов */
+    pointer-events: auto;
 }
 
 .floating-avatar {
@@ -858,7 +869,6 @@ footer h5 {
 .floating-avatar-info {
     font-size: 1.05rem;
     font-weight: 700;
-    color: white !important; /* Белый цвет текста */
     text-shadow: 
         0 0 10px rgba(0, 198, 255, 0.8),
         0 0 20px rgba(0, 198, 255, 0.4);
@@ -884,7 +894,6 @@ footer h5 {
 .user-balance {
     font-size: 0.95rem;
     font-weight: 700;
-    color: #00ff9d;
     margin-top: 15px;
     text-shadow: 0 0 8px rgba(0, 255, 157, 0.6);
     white-space: nowrap;
@@ -911,7 +920,7 @@ footer h5 {
     background: transparent;
     box-sizing: border-box;
     padding: 0;
-    margin-top: 180px; /* Увеличено для опускания ячеек */
+    margin-top: 180px;
 }
 
 .menu-item {
@@ -931,7 +940,6 @@ footer h5 {
     min-height: 0;
     padding: 15px 10px;
     box-sizing: border-box;
-    color: white !important; /* Белый цвет текста */
 }
 
 .menu-item:hover {
@@ -958,6 +966,92 @@ footer h5 {
     word-break: break-word;
     hyphens: auto;
     padding: 0 2px;
+}
+
+/* Ограничение ширины для текста под аватаркой */
+.floating-avatar-info, .user-balance {
+    max-width: 450px;
+    margin: 0 auto;
+}
+
+/* Уменьшенные ячейки меню */
+@media (max-width: 768px) {
+    .floating-avatar-info, .user-balance {
+        max-width: 380px;
+    }
+    
+    .menu-grid {
+        gap: 18px;
+        max-width: 380px;
+        height: 380px;
+        margin-top: 180px;
+    }
+    .menu-item {
+        padding: 12px 8px;
+    }
+    .menu-item i {
+        font-size: 1.5rem;
+    }
+    .menu-item span {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .floating-avatar-info, .user-balance {
+        max-width: 360px;
+    }
+    
+    .menu-grid {
+        gap: 16px;
+        max-width: 360px;
+        height: 360px;
+        margin-top: 160px;
+    }
+    .menu-item i {
+        font-size: 1.4rem;
+    }
+    .menu-item span {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 400px) {
+    .floating-avatar-info, .user-balance {
+        max-width: 340px;
+    }
+    
+    .menu-grid {
+        gap: 14px;
+        max-width: 340px;
+        height: 340px;
+        margin-top: 150px;
+    }
+    .menu-item i {
+        font-size: 1.3rem;
+    }
+    .menu-item span {
+        font-size: 0.65rem;
+    }
+}
+
+@media (max-width: 340px) {
+    .floating-avatar-info, .user-balance {
+        max-width: 320px;
+    }
+    
+    .menu-grid {
+        gap: 12px;
+        max-width: 320px;
+        height: 320px;
+        margin-top: 140px;
+    }
+    .menu-item i {
+        font-size: 1.2rem;
+    }
+    .menu-item span {
+        font-size: 0.6rem;
+    }
 }
 
 /* Адаптивность */
@@ -1097,12 +1191,6 @@ footer h5 {
         font-size: 1rem;
         margin-top: 22px;
     }
-    .menu-grid {
-        gap: 20px;
-        max-width: 380px;
-        height: 380px;
-        margin-top: 160px; /* Увеличено */
-    }
 }
 
 @media (max-width: 576px) {
@@ -1140,101 +1228,6 @@ footer h5 {
     .logo-letter {
         font-size: 24px;
     }
-
-    /* Адаптивные стили для мобильного меню */
-    .mobile-menu-modal {
-        height: 75vh;
-    }
-    .floating-avatar-container {
-        top: -45px;
-    }
-    .floating-avatar {
-        width: 90px;
-        height: 90px;
-    }
-    .floating-avatar-info {
-        font-size: 0.95rem;
-        margin-top: 20px;
-        padding: 8px 12px;
-    }
-    .avatar-placeholder {
-        font-size: 0.8rem;
-    }
-    .menu-item i {
-        font-size: 1.5rem;
-    }
-    .menu-grid {
-        max-width: 360px;
-        height: 360px;
-        gap: 16px;
-        margin-top: 140px; /* Увеличено */
-    }
-    .user-balance {
-        font-size: 0.85rem;
-        margin-top: 12px;
-        padding: 6px 12px;
-    }
-}
-
-@media (max-width: 400px) {
-    .floating-avatar-container {
-        top: -47px;
-    }
-    .floating-avatar {
-        width: 94px;
-        height: 94px;
-    }
-    .floating-avatar-info {
-        font-size: 0.95rem;
-        margin-top: 20px;
-        padding: 8px 12px;
-    }
-    .menu-grid {
-        max-width: 340px;
-        height: 340px;
-        gap: 18px;
-        margin-top: 130px; /* Увеличено */
-    }
-}
-
-@media (max-width: 340px) {
-    .logo-animated {
-        width: 60px;
-        height: 60px;
-    }
-    
-    .logo-core {
-        width: 45px;
-        height: 45px;
-    }
-    
-    .logo-letter {
-        font-size: 20px;
-    }
-    
-    .auth-header .logo-animated {
-        width: 70px;
-        height: 70px;
-    }
-    
-    .auth-header .logo-core {
-        width: 50px;
-        height: 50px;
-    }
-    
-    .auth-header .logo-letter {
-        font-size: 24px;
-    }
-    
-    .auth-header h2 {
-        font-size: 1.3rem;
-    }
-    .menu-grid {
-        max-width: 320px;
-        height: 320px;
-        margin-top: 120px; /* Увеличено */
-        gap: 16px;
-    }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {
@@ -1261,12 +1254,6 @@ footer h5 {
     }
     .menu-item span {
         font-size: 0.9rem;
-    }
-    .menu-grid {
-        max-width: 450px;
-        height: 450px;
-        gap: 25px;
-        margin-top: 190px; /* Увеличено */
     }
 }
 
