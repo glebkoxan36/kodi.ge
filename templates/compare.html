@@ -8,7 +8,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
-        /* New styles for phone selection buttons */
+        /* Исправления z-index для модального окна */
+        .phone-modal {
+            z-index: 1055 !important; /* Повышенный z-index */
+        }
+        
+        .modal-backdrop {
+            z-index: 1050 !important; /* Повышенный z-index */
+        }
+        
+        /* Остальные стили сравнения */
         .phone-select-container {
             display: flex;
             gap: 20px;
@@ -269,29 +278,137 @@
             }
         }
         
-        /* Modal backdrop fix */
-        .modal-backdrop {
-            z-index: 1040 !important;
-        }
-        
         /* Selected phone preview in modal */
         .selected-phone-container {
             animation: fadeIn 0.3s ease;
         }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .phone-thumb {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 10px;
         }
         
-        /* Loading animation */
-        .compare-btn .fa-spinner {
-            animation: spin 1s linear infinite;
+        .specs-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 10px;
+            margin-top: 20px;
         }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .grid-header {
+            text-align: center;
+            padding: 15px;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        
+        .phone-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .divider-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .divider-line {
+            height: 100%;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .spec-cell {
+            padding: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .spec-name {
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+        }
+        
+        .spec-value {
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .better-value {
+            background: rgba(0, 214, 143, 0.1);
+            border-radius: 6px;
+        }
+        
+        .value-indicator {
+            margin-right: 8px;
+        }
+        
+        .group-header {
+            grid-column: 1 / span 3;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(0, 198, 255, 0.1);
+            border-radius: 8px;
+        }
+        
+        /* AI Analysis styles */
+        .compare-ai-analysis {
+            margin-top: 40px;
+            padding: 25px;
+            background: rgba(18, 26, 43, 0.5);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 198, 255, 0.2);
+        }
+        
+        .compare-ai-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .compare-ai-icon {
+            font-size: 1.8rem;
+            color: var(--accent-color);
+            margin-right: 15px;
+        }
+        
+        .compare-ai-loader {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .compare-ai-response {
+            line-height: 1.8;
+        }
+        
+        .compare-ai-response p {
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 576px) {
+            .specs-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .divider-cell {
+                display: none;
+            }
+            
+            .group-header {
+                grid-column: 1;
+            }
+            
+            .spec-cell {
+                grid-column: 1;
+            }
         }
     </style>
 </head>
@@ -564,10 +681,22 @@
                     });
                     suggestionsContainer.style.display = 'block';
                 } else {
-                    suggestionsContainer.style.display = 'none';
+                    // Show "not found" message
+                    suggestionsContainer.innerHTML = `
+                        <div class="modal-suggestion-item text-center">
+                            ტელეფონი ვერ მოიძებნა
+                        </div>
+                    `;
+                    suggestionsContainer.style.display = 'block';
                 }
             } catch (error) {
                 console.error('Error searching phones:', error);
+                suggestionsContainer.innerHTML = `
+                    <div class="modal-suggestion-item text-danger text-center">
+                        შეცდომა მოძიებისას: ${error.message}
+                    </div>
+                `;
+                suggestionsContainer.style.display = 'block';
             }
         }
         
