@@ -89,30 +89,44 @@ if not admin_users_collection.find_one({'username': 'admin'}):
         'created_at': datetime.utcnow()
     })
 
-# Пересоздание текстового индекса с исправлением
+# Создание текстового индекса только по полю 'Name'
 try:
+    # Проверяем существование индекса по имени
     existing_indexes = phones_collection.index_information()
+    index_exists = False
     
     for index_name, index_info in existing_indexes.items():
         keys = index_info.get('key', [])
-        # Исправленная проверка типа индекса
+        # Проверяем, является ли индекс текстовым
         is_text_index = any(
-            isinstance(idx_type, str) and idx_type == 'text' 
-            for _, idx_type in keys
+            isinstance(key, tuple) and key[1] == 'text'
+            for key in keys
         )
         if is_text_index:
+            # Если нашли текстовый индекс - удаляем его
             phones_collection.drop_index(index_name)
             app.logger.info(f"Dropped existing text index: {index_name}")
     
-    # Создаем новый индекс
+    # Создаем новый индекс только по полю 'Name'
     phones_collection.create_index(
-        [('brand', 'text'), ('model', 'text'), ('Name', 'text')],
+        [('Name', 'text')],
         name='text_search',
         default_language='none'
     )
-    app.logger.info("Text index recreated successfully with 'none' language")
+    app.logger.info("Text index created successfully for 'Name' field")
+    
 except Exception as e:
     app.logger.error(f"Index creation error: {str(e)}")
+    # Пытаемся создать индекс, если он еще не существует
+    try:
+        phones_collection.create_index(
+            [('Name', 'text')],
+            name='text_search',
+            default_language='none'
+        )
+        app.logger.info("Text index created successfully after initial error")
+    except Exception as fallback_e:
+        app.logger.error(f"Fallback index creation failed: {str(fallback_e)}")
 
 DEFAULT_PRICES = {
     'paid': 499,
@@ -145,34 +159,43 @@ def get_current_prices():
 # ======================================
 
 def search_phones(query):
-    """Поиск телефонов по названию, бренду или модели"""
+    """Поиск телефонов по названию"""
     try:
-        regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
-        results = list(phones_collection.find({
-            '$or': [
-                {'brand': regex_query},
-                {'model': regex_query},
-                {'Name': regex_query}
-            ]
-        }, {'_id': 1, 'Name': 1, 'brand': 1, 'model': 1}).limit(10))
+        # Пробуем использовать текстовый индекс
+        results = list(phones_collection.find(
+            {'$text': {'$search': query}},
+            {'score': {'$meta': 'textScore'}, '_id': 1, 'Name': 1}
+        ).sort([('score', {'$meta': 'textScore'})]).limit(10))
         
         normalized = []
         for phone in results:
-            name = phone.get('Name', '')
-            if not name:
-                name = f"{phone.get('brand', '')} {phone.get('model', '')}".strip()
-                
+            name = phone.get('Name', 'Unknown Phone')
             normalized.append({
                 '_id': str(phone['_id']),
-                'name': name or 'Unknown Phone',
+                'name': name,
                 'image_url': PLACEHOLDER
             })
         
         return normalized
     
     except Exception as e:
-        app.logger.error(f"Search error: {str(e)}")
-        return []
+        app.logger.error(f"Text search error: {str(e)}. Falling back to regex search.")
+        # Fallback на обычный поиск если текстовый не работает
+        regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
+        results = list(phones_collection.find(
+            {'Name': regex_query},
+            {'_id': 1, 'Name': 1}
+        ).limit(10))
+        
+        normalized = []
+        for phone in results:
+            normalized.append({
+                '_id': str(phone['_id']),
+                'name': phone.get('Name', 'Unknown Phone'),
+                'image_url': PLACEHOLDER
+            })
+        
+        return normalized
 
 def get_phone_details(phone_id):
     """Получение детальной информации о телефоне"""
@@ -854,23 +877,23 @@ def dashboard():
     balance = user.get('balance', 0)
     
     # Последние 5 проверок
-    checks = list(checks_collection.find({'user_id': user_id})
+    checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
         .sort('timestamp', -1)
         .limit(5))
     
     # Последние 5 сравнений
-    comparisons = list(comparisons_collection.find({'user_id': user_id})
+    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
         .sort('timestamp', -1)
         .limit(5))
     
     # Последние 5 платежей
-    payments = list(payments_collection.find({'user_id': user_id})
+    payments = list(payments_collection.find({'user_id': ObjectId(user_id)})
         .sort('timestamp', -1)
         .limit(5))
     
     # Общее количество операций
-    total_checks = checks_collection.count_documents({'user_id': user_id})
-    total_comparisons = comparisons_collection.count_documents({'user_id': user_id})
+    total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
+    total_comparisons = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
     
     return render_template(
         'user/dashboard.html',
@@ -952,12 +975,12 @@ def history_checks():
     page = int(request.args.get('page', 1))
     per_page = 20
     
-    checks = list(checks_collection.find({'user_id': user_id})
+    checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
         .sort('timestamp', -1)
         .skip((page - 1) * per_page)
         .limit(per_page))
     
-    total = checks_collection.count_documents({'user_id': user_id})
+    total = checks_collection.count_documents({'user_id': ObjectId(user_id)})
     
     for check in checks:
         check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M')
@@ -988,12 +1011,12 @@ def history_comparisons():
     page = int(request.args.get('page', 1))
     per_page = 20
     
-    comparisons = list(comparisons_collection.find({'user_id': user_id})
+    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
         .sort('timestamp', -1)
         .skip((page - 1) * per_page)
         .limit(per_page))
     
-    total = comparisons_collection.count_documents({'user_id': user_id})
+    total = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
     
     for comp in comparisons:
         comp['timestamp'] = comp['timestamp'].strftime('%Y-%m-%d %H:%M')
