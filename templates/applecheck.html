@@ -7,7 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='mobile-avatar-menu.css') }}">
     <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
@@ -15,129 +14,137 @@
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
     
-    <!-- Bottom mobile menu button -->
-    <div class="mobile-menu-bottom" id="mobileMenuBottom">
-        <button class="mobile-menu-btn" id="mobileMenuBtn">
-            <i class="fas fa-bars"></i>
-        </button>
-    </div>
-    
-    <!-- Header -->
-    <div class="container py-4">
-        <a href="{{ url_for('index') }}" class="back-button">
-            <i class="fas fa-arrow-left"></i>
-            უკან დაბრუნება
-        </a>
-        
-        <div class="text-center mb-5">
-            <h1 class="display-4 fw-bold">Apple IMEI შემოწმება</h1>
-            <p class="lead text-muted">შეამოწმეთ თქვენი Apple მოწყობილობა სანდო სერვისით</p>
-        </div>
-        
-        <!-- Скрытый элемент с ценами для JS -->
-        <div id="prices-data" 
-             data-free-price="0"
-             data-paid-price="{{ paid_price }}"
-             data-premium-price="{{ premium_price }}"
-             style="display: none;">
-        </div>
-        
-        <!-- Check Section -->
-        <div id="check-section" class="mb-5">
-            <div class="check-container">
-                <div class="check-header">
-                    <div class="check-icon free-icon">
-                        <i class="fas fa-mobile-alt"></i>
+    <!-- Main content -->
+    <div class="main-content">
+        <div class="container py-4">
+            <!-- Back button -->
+            <a href="{{ url_for('index') }}" class="btn btn-outline-light mb-4">
+                <i class="fas fa-arrow-left me-2"></i> უკან დაბრუნება
+            </a>
+            
+            <!-- Header section -->
+            <div class="header-section text-center mb-5">
+                <div class="logo-animated mb-4">
+                    <div class="logo-core">
+                        <div class="logo-letter">A</div>
                     </div>
-                    <div>
-                        <h2 class="check-title">უფასო შემოწმება</h2>
-                        <p class="check-description">მიიღეთ ძირითადი ინფორმაცია თქვენი Apple მოწყობილობის შესახებ</p>
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                </div>
+                
+                <h1 class="fw-bold mb-3">Apple IMEI შემოწმება</h1>
+                <p class="lead text-light opacity-75">შეამოწმეთ თქვენი Apple მოწყობილობა სანდო სერვისით</p>
+            </div>
+            
+            <!-- Скрытый элемент с ценами для JS -->
+            <div id="prices-data" 
+                 data-free-price="0"
+                 data-paid-price="{{ paid_price }}"
+                 data-premium-price="{{ premium_price }}"
+                 style="display: none;">
+            </div>
+            
+            <!-- Check Section -->
+            <div class="card mb-5">
+                <div class="card-header">
+                    <div class="d-flex align-items-center">
+                        <div class="check-icon me-3">
+                            <i class="fas fa-mobile-alt fa-2x text-info"></i>
+                        </div>
+                        <div>
+                            <h2 class="mb-0">უფასო შემოწმება</h2>
+                            <p class="mb-0 opacity-75">მიიღეთ ძირითადი ინფორმაცია თქვენი Apple მოწყობილობის შესახებ</p>
+                        </div>
                     </div>
                 </div>
                 
-                <form id="imeiForm">
-                    <div class="mb-4">
-                        <label for="imeiInput" class="form-label">შეიყვანეთ IMEI ნომერი</label>
-                        <input 
-                            type="text" 
-                            class="form-control" 
-                            id="imeiInput" 
-                            placeholder="15-ნიშნა IMEI" 
-                            required
-                            pattern="[0-9]{15}"
-                            title="15-ნიშნა IMEI ნომერი">
-                        <div class="form-text mt-2">
-                            IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში ან დარეკეთ *#06#
+                <div class="card-body">
+                    <form id="imeiForm">
+                        <div class="form-group mb-4">
+                            <label for="imeiInput" class="form-label">შეიყვანეთ IMEI ნომერი</label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="imeiInput" 
+                                placeholder="15-ნიშნა IMEI" 
+                                required
+                                pattern="[0-9]{15}"
+                                title="15-ნიშნა IMEI ნომერი">
+                            <div class="form-text mt-2">
+                                IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში ან დარეკეთ *#06#
+                            </div>
                         </div>
-                    </div>
-                    
-                    <button type="button" class="btn btn-check" onclick="checkImei()">
-                        <span id="check-button-text">უფასო შემოწმება</span>
-                        <i class="fas fa-arrow-right ms-2"></i>
-                    </button>
-                </form>
-            </div>
-        </div>
-        
-        <!-- Service Cards -->
-        <div class="row mb-5">
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 service-card">
-                    <div class="service-icon text-info">
-                        <i class="fas fa-mobile-alt"></i>
-                    </div>
-                    <h3 class="service-title">უფასო შემოწმება</h3>
-                    <ul class="list-unstyled">
-                        <li>ძირითადი ინფორმაცია</li>
-                        <li>მოწყობილობის მოდელის დადგენა</li>
-                        <li>ქსელის ბლოკირების შემოწმება</li>
-                        <li>სერიული ნომრის შემოწმება</li>
-                        <li>მოწყობილობის ფერის დადგენა</li>
-                    </ul>
-                    <div class="service-price">0 ₾</div>
-                    <a href="{{ url_for('apple_check', type='free') }}" class="service-action">
-                        <i class="fas fa-arrow-right me-1"></i> არჩევა
-                    </a>
+                        
+                        <button type="button" class="btn btn-primary w-100" onclick="checkImei()">
+                            <span id="check-button-text">უფასო შემოწმება</span>
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 service-card">
-                    <div class="service-icon text-warning">
-                        <i class="fas fa-shopping-cart"></i>
+            
+            <!-- Service Cards -->
+            <h2 class="section-title text-center mb-4">შემოწმების სერვისები</h2>
+            <div class="row mb-5">
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 service-card">
+                        <div class="service-icon text-info">
+                            <i class="fas fa-mobile-alt fa-3x"></i>
+                        </div>
+                        <h3 class="service-title">უფასო შემოწმება</h3>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> ძირითადი ინფორმაცია</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> მოწყობილობის მოდელის დადგენა</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> ქსელის ბლოკირების შემოწმება</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> სერიული ნომრის შემოწმება</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> მოწყობილობის ფერის დადგენა</li>
+                        </ul>
+                        <div class="service-price">0 ₾</div>
+                        <a href="{{ url_for('apple_check', type='free') }}" class="service-action">
+                            <i class="fas fa-arrow-right me-1"></i> არჩევა
+                        </a>
                     </div>
-                    <h3 class="service-title">პლატანი შემოწმება</h3>
-                    <ul class="list-unstyled">
-                        <li>ყველა ძირითადი ინფორმაცია</li>
-                        <li>iCloud სტატუსის შემოწმება</li>
-                        <li>მოპარვის/დაკარგვის სტატუსი</li>
-                        <li>სერვისის სტატუსი</li>
-                        <li>გარანტიის ინფორმაცია</li>
-                        <li>შეძენის თარიღი</li>
-                    </ul>
-                    <div class="service-price">{{ "%.2f"|format(paid_price) }} ₾</div>
-                    <a href="{{ url_for('apple_check', type='paid') }}" class="service-action">
-                        <i class="fas fa-arrow-right me-1"></i> არჩევა
-                    </a>
                 </div>
-            </div>
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 service-card">
-                    <div class="service-icon text-success">
-                        <i class="fas fa-crown"></i>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 service-card">
+                        <div class="service-icon text-warning">
+                            <i class="fas fa-shopping-cart fa-3x"></i>
+                        </div>
+                        <h3 class="service-title">პლატანი შემოწმება</h3>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> ყველა ძირითადი ინფორმაცია</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> iCloud სტატუსის შემოწმება</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> მოპარვის/დაკარგვის სტატუსი</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> სერვისის სტატუსი</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> გარანტიის ინფორმაცია</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> შეძენის თარიღი</li>
+                        </ul>
+                        <div class="service-price">{{ "%.2f"|format(paid_price) }} ₾</div>
+                        <a href="{{ url_for('apple_check', type='paid') }}" class="service-action">
+                            <i class="fas fa-arrow-right me-1"></i> არჩევა
+                        </a>
                     </div>
-                    <h3 class="service-title">პრემიუმ შემოწმება</h3>
-                    <ul class="list-unstyled">
-                        <li>ყველა პლატანი შემოწმების ფუნქცია</li>
-                        <li>სრული ისტორიის მიმოხილვა</li>
-                        <li>გარანტია განბლოკვაზე</li>
-                        <li>24/7 პრიორიტეტული მხარდაჭერა</li>
-                        <li>დეტალური ანალიზი</li>
-                        <li>ბატარეის მდგომარეობა</li>
-                    </ul>
-                    <div class="service-price">{{ "%.2f"|format(premium_price) }} ₾</div>
-                    <a href="{{ url_for('apple_check', type='premium') }}" class="service-action">
-                        <i class="fas fa-arrow-right me-1"></i> არჩევა
-                    </a>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 service-card">
+                        <div class="service-icon text-success">
+                            <i class="fas fa-crown fa-3x"></i>
+                        </div>
+                        <h3 class="service-title">პრემიუმ შემოწმება</h3>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> ყველა პლატანი შემოწმების ფუნქცია</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> სრული ისტორიის მიმოხილვა</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> გარანტია განბლოკვაზე</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> 24/7 პრიორიტეტული მხარდაჭერა</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> დეტალური ანალიზი</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> ბატარეის მდგომარეობა</li>
+                        </ul>
+                        <div class="service-price">{{ "%.2f"|format(premium_price) }} ₾</div>
+                        <a href="{{ url_for('apple_check', type='premium') }}" class="service-action">
+                            <i class="fas fa-arrow-right me-1"></i> არჩევა
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -170,7 +177,7 @@
     <script>
         // Global variables
         let stripeInstance = null;
-        let currentServiceType = '{{ service_type }}';
+        let currentServiceType = 'free';
         
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
@@ -227,21 +234,39 @@
                         displayResult({ error: 'Failed to get result: ' + error.message });
                     });
             }
+            
+            // Handle service type selection from cards
+            document.querySelectorAll('.service-action').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const url = new URL(link.href);
+                    const type = url.searchParams.get('type');
+                    if(type) {
+                        currentServiceType = type;
+                        updateCheckSection(type);
+                        
+                        // Scroll to check section
+                        document.querySelector('.card-header').scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
         });
         
         // Update check section based on service type
         function updateCheckSection(serviceType) {
             currentServiceType = serviceType;
-            const checkSection = document.querySelector('.check-container');
+            const cardHeader = document.querySelector('.card-header');
             
-            if (!checkSection) return;
+            if (!cardHeader) return;
             
             let title = '';
             let iconClass = '';
             let description = '';
             let buttonText = '';
             
-            // Получаем цены из data-атрибутов
+            // Get prices from data attributes
             const pricesData = document.getElementById('prices-data');
             const paidPrice = parseFloat(pricesData.dataset.paidPrice);
             const premiumPrice = parseFloat(pricesData.dataset.premiumPrice);
@@ -249,35 +274,36 @@
             switch(serviceType) {
                 case 'free':
                     title = 'უფასო შემოწმება';
-                    iconClass = 'fas fa-mobile-alt free-icon';
+                    iconClass = 'fas fa-mobile-alt fa-2x text-info';
                     description = 'მიიღეთ ძირითადი ინფორმაცია თქვენი Apple მოწყობილობის შესახებ';
                     buttonText = 'უფასო შემოწმება';
                     break;
                 case 'paid':
                     title = 'პლატანი შემოწმება';
-                    iconClass = 'fas fa-shopping-cart paid-icon';
+                    iconClass = 'fas fa-shopping-cart fa-2x text-warning';
                     description = 'სრული ინფორმაცია მოწყობილობის სტატუსისა და ბლოკირების შესახებ';
                     buttonText = `გადახდა: ${paidPrice.toFixed(2)} ₾`;
                     break;
                 case 'premium':
                     title = 'პრემიუმ შემოწმება';
-                    iconClass = 'fas fa-crown premium-icon';
+                    iconClass = 'fas fa-crown fa-2x text-success';
                     description = 'ყველაზე სრულყოფილი შემოწმება გარანტიით და პრიორიტეტული მხარდაჭერით';
                     buttonText = `გადახდა: ${premiumPrice.toFixed(2)} ₾`;
                     break;
             }
             
-            const header = checkSection.querySelector('.check-header');
             const buttonTextSpan = document.getElementById('check-button-text');
             
-            if (header) {
-                header.innerHTML = `
-                    <div class="check-icon">
-                        <i class="${iconClass}"></i>
-                    </div>
-                    <div>
-                        <h2 class="check-title">${title}</h2>
-                        <p class="check-description">${description}</p>
+            if (cardHeader) {
+                cardHeader.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <div class="check-icon me-3">
+                            <i class="${iconClass}"></i>
+                        </div>
+                        <div>
+                            <h2 class="mb-0">${title}</h2>
+                            <p class="mb-0 opacity-75">${description}</p>
+                        </div>
                     </div>
                 `;
             }
@@ -398,21 +424,31 @@
                         <div class="alert alert-success mb-4">
                             <i class="fas fa-check-circle me-2"></i> შემოწმება წარმატებით დასრულდა!
                         </div>
+                        <div class="row">
                     `;
                     
+                    let count = 0;
                     for(const [key, value] of Object.entries(data)) {
                         if(key === 'html_content') {
-                            html += `<div class="mt-4">${value}</div>`;
+                            html += `</div><div class="mt-4">${value}</div>`;
                         } else {
+                            if(count % 2 === 0) html += '<div class="row">';
+                            
                             html += `
-                                <div class="result-item">
-                                    <div class="result-label">${formatLabel(key)}:</div>
-                                    <div class="result-value">${value}</div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="result-item p-3 bg-dark rounded">
+                                        <div class="result-label fw-bold text-info mb-1">${formatLabel(key)}:</div>
+                                        <div class="result-value">${value}</div>
+                                    </div>
                                 </div>
                             `;
+                            
+                            if(count % 2 === 1) html += '</div>';
+                            count++;
                         }
                     }
                     
+                    if(count % 2 === 1) html += '</div>';
                     modalContent.innerHTML = html;
                 }
                 
