@@ -756,6 +756,48 @@ def send_webhook_event(event_type, payload):
             )
 
 # ======================================
+# Carousel Image Upload Endpoints
+# ======================================
+
+@app.route('/create-carousel-folder', methods=['POST'])
+def create_carousel_folder():
+    """Создает папку для изображений карусели"""
+    data = request.json
+    path = data.get('path', 'static/img/carousel')
+    
+    try:
+        os.makedirs(path, exist_ok=True)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/upload-carousel-image', methods=['POST'])
+def upload_carousel_image():
+    """Загружает изображение для карусели"""
+    if 'carouselImage' not in request.files:
+        return jsonify({'success': False, 'error': 'No file part'}), 400
+    
+    file = request.files['carouselImage']
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No selected file'}), 400
+    
+    try:
+        # Сохраняем в папку carousel
+        upload_folder = 'static/img/carousel'
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        filename = f"carousel_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+        file_path = os.path.join(upload_folder, filename)
+        file.save(file_path)
+        
+        return jsonify({
+            'success': True, 
+            'filePath': f'/{file_path}'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ======================================
 # Сравнение телефонов (маршруты)
 # ======================================
 
