@@ -5,7 +5,7 @@
     --secondary-color: #1d2a4a;
     --accent-color: #00c6ff;
     --text-color: #ffffff;
-    --text-secondary: #ffffff; /* Изменено на белый */
+    --text-secondary: #ffffff;
     --card-bg: #121a2b;
     --card-hover-bg: #16203a;
     --success-color: #00d68f;
@@ -1312,4 +1312,171 @@ footer h5 {
     .mobile-menu-modal {
         display: none !important;
     }
+}
+
+/* ДОБАВЛЕННЫЕ СТИЛИ ДЛЯ DASHBOARD */
+.avatar-default {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: white;
+    background-color: #007bff;
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 0 15px rgba(0, 198, 255, 0.4);
+}
+
+.user-info-avatar .avatar-default {
+    width: 100px;
+    height: 100px;
+    font-size: 2.8rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-clean {
+    background: rgba(0, 214, 143, 0.15);
+    color: var(--success-color);
+}
+
+.status-blacklisted {
+    background: rgba(255, 61, 113, 0.15);
+    color: var(--danger-color);
+}
+
+.status-warning {
+    background: rgba(255, 170, 0, 0.15);
+    color: var(--warning-color);
+}
+
+.balance-card {
+    text-align: center;
+    padding: 30px 20px;
+}
+
+.balance-amount {
+    font-size: 3rem;
+    font-weight: 700;
+    margin: 20px 0;
+    color: var(--success-color);
+}
+
+.topup-btn {
+    display: inline-block;
+    padding: 12px 30px;
+    background: rgba(0, 198, 255, 0.15);
+    border-radius: 30px;
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    margin-top: 15px;
+    border: 1px solid rgba(0, 198, 255, 0.3);
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.topup-btn:hover {
+    background: rgba(0, 198, 255, 0.25);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2);
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.history-table th,
+.history-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.history-table th {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.view-all-link {
+    color: var(--accent-color);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.view-all-link:hover {
+    text-decoration: underline;
+}
+
+/* Адаптивные стили для мобильных устройств */
+@media (max-width: 991px) {
+    .mobile-only-section {
+        display: block;
+    }
+}
+
+@media (min-width: 992px) {
+    .mobile-only-section {
+        display: none;
+    }
+}
+
+/* Стили для спиннера */
+.spinner-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 5px solid rgba(0, 198, 255, 0.3);
+    border-radius: 50%;
+    border-top: 5px solid var(--accent-color);
+    animation: spin 1s linear infinite;
+}
+
+.result-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.result-modal .modal-content {
+    background: var(--card-bg);
+    border-radius: 15px;
+    padding: 30px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    animation: cardAppear 0.4s ease-out;
     }
