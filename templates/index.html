@@ -7,6 +7,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
+    <!-- Подключение нового CSS для карусели -->
+    <link rel="stylesheet" href="static/carousel.css">
 </head>
 <body>
     <!-- Gradient background elements -->
@@ -148,49 +150,12 @@
                 <p class="lead">პროფესიონალური IMEI შემოწმების სერვისი</p>
             </div>
             
-            <!-- Carousel without images -->
-            <div id="mainCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
-                <div class="carousel-inner rounded">
-                    <div class="carousel-item active">
-                        <div class="carousel-caption">
-                            <div class="logo-animated carousel-logo">
-                                <div class="logo-ring"></div>
-                                <div class="logo-ring"></div>
-                                <div class="logo-ring"></div>
-                                <div class="logo-core">
-                                    <div class="logo-letter">K</div>
-                                </div>
-                            </div>
-                            <p class="carousel-subtitle">აქ იქნება თქვენი რეკლამა</p>
-                        </div>
-                    </div>
-                    <div class="carousel-item">
-                        <div class="carousel-caption">
-                            <div class="logo-animated carousel-logo">
-                                <div class="logo-ring"></div>
-                                <div class="logo-ring"></div>
-                                <div class="logo-ring"></div>
-                                <div class="logo-core">
-                                    <div class="logo-letter">K</div>
-                                </div>
-                            </div>
-                            <p class="carousel-subtitle">აქ იქნება თქვენი რეკლამა</p>
-                        </div>
-                    </div>
-                    <div class="carousel-item">
-                        <div class="carousel-caption">
-                            <div class="logo-animated carousel-logo">
-                                <div class="logo-ring"></div>
-                                <div class="logo-ring"></div>
-                                <div class="logo-ring"></div>
-                                <div class="logo-core">
-                                    <div class="logo-letter">K</div>
-                                </div>
-                            </div>
-                            <p class="carousel-subtitle">აქ იქნება თქვენი რეკლამა</p>
-                        </div>
-                    </div>
-                </div>
+            <!-- Новая карусель -->
+            <div id="customCarousel" class="custom-carousel">
+                <div class="carousel-inner"></div>
+                <button class="carousel-control prev">❮</button>
+                <button class="carousel-control next">❯</button>
+                <div class="carousel-indicators"></div>
             </div>
         </div>
         
@@ -378,7 +343,7 @@
                         <i class="fab fa-apple"></i>
                         <span>Apple</span>
                     </div>
-                    <div class="menu-item" onclick="openAndroidSubmenu()">
+                    <div class="menu-item">
                         <i class="fab fa-android"></i>
                         <span>Android</span>
                     </div>
@@ -464,77 +429,11 @@
         </div>
     </div>
     
-    <!-- Android Submenu Modal -->
-    <div class="mobile-menu-modal" id="androidSubmenuModal">
-        <button class="close-modal" onclick="closeAndroidSubmenu()">
-            <i class="fas fa-times"></i>
-        </button>
-
-        <!-- Контейнер аватарки -->
-        <div class="floating-avatar-container">
-            {% if user %}
-                <div class="floating-avatar" onclick="goToDashboard()" style="background-color: {{ user.avatar_color }};">
-                    {{ user.first_name[0] }}{{ user.last_name[0] }}
-                </div>
-                <div class="floating-avatar-info" onclick="goToDashboard()">
-                    {{ user.first_name }} {{ user.last_name }}
-                </div>
-                <div class="user-balance">ბალანსი: {{ user.balance }} ₾</div>
-            {% else %}
-                <div class="floating-avatar" id="mobileAvatar" onclick="goToLogin()">
-                    <div class="avatar-placeholder">KODI.GE</div>
-                </div>
-                <div class="floating-avatar-info" id="mobileUserName" onclick="goToLogin()">
-                    ლოგინი/რეგისტრაცია
-                </div>
-            {% endif %}
-        </div>
-        
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title" style="color: white;">Android შემოწმება</h3>
-            </div>
-            <div class="modal-body">
-                <div class="menu-grid">
-                    <a class="menu-item" href="#" onclick="closeAllMobileMenus();">
-                        <i class="fab fa-android"></i>
-                        <span>Samsung</span>
-                    </a>
-                    <a class="menu-item" href="#" onclick="closeAllMobileMenus();">
-                        <i class="fab fa-android"></i>
-                        <span>Xiaomi</span>
-                    </a>
-                    <a class="menu-item" href="#" onclick="closeAllMobileMenus();">
-                        <i class="fab fa-android"></i>
-                        <span>Google Pixel</span>
-                    </a>
-                    <a class="menu-item" href="#" onclick="closeAllMobileMenus();">
-                        <i class="fab fa-android"></i>
-                        <span>Oppo</span>
-                    </a>
-                    <a class="menu-item" href="#" onclick="closeAllMobileMenus();">
-                        <i class="fab fa-android"></i>
-                        <span>LG</span>
-                    </a>
-                    <a class="menu-item" href="#" onclick="closeAllMobileMenus();">
-                        <i class="fab fa-android"></i>
-                        <span>Huawei</span>
-                    </a>
-                    <div class="menu-item" onclick="closeAndroidSubmenu()">
-                        <i class="fas fa-arrow-left"></i>
-                        <span>უკან</span>
-                    </div>
-                    <div class="menu-item" onclick="window.scrollTo(0,0); closeAllMobileMenus();">
-                        <i class="fas fa-home"></i>
-                        <span>მთავარი</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Подключение нового скрипта карусели -->
+    <script src="templates/scripts/carousel.js"></script>
     
     <!-- Main application logic -->
     <script>
@@ -589,36 +488,9 @@
             }
         }
         
-        function openAndroidSubmenu() {
-            try {
-                closeMobileMenu();
-                const androidModal = document.getElementById('androidSubmenuModal');
-                androidModal.style.display = 'flex';
-                setTimeout(() => {
-                    androidModal.classList.add('open');
-                }, 10);
-            } catch(e) {
-                console.error('Error opening Android submenu:', e);
-            }
-        }
-        
-        function closeAndroidSubmenu() {
-            try {
-                const androidModal = document.getElementById('androidSubmenuModal');
-                androidModal.classList.remove('open');
-                setTimeout(() => {
-                    androidModal.style.display = 'none';
-                    openMobileMenu();
-                }, 400);
-            } catch(e) {
-                console.error('Error closing Android submenu:', e);
-            }
-        }
-        
         function closeAllMobileMenus() {
             closeMobileMenu();
             closeAppleSubmenu();
-            closeAndroidSubmenu();
         }
         
         // Redirect to login
@@ -635,21 +507,6 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize carousel with error handling
-            try {
-                const carouselElement = document.getElementById('mainCarousel');
-                if (carouselElement) {
-                    const myCarousel = new bootstrap.Carousel(carouselElement, {
-                        interval: 2000,
-                        ride: 'carousel'
-                    });
-                } else {
-                    console.warn('Carousel element not found');
-                }
-            } catch(e) {
-                console.error('Carousel initialization failed:', e);
-            }
-
             // Mobile menu button setup
             try {
                 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
@@ -667,7 +524,6 @@
                 try {
                     const mobileMenuModal = document.getElementById('mobileMenuModal');
                     const appleSubmenuModal = document.getElementById('appleSubmenuModal');
-                    const androidSubmenuModal = document.getElementById('androidSubmenuModal');
                     const floatingAvatar = document.querySelector('.floating-avatar-container');
                     
                     // Close mobile menu if click is outside
@@ -683,13 +539,6 @@
                         !appleSubmenuModal.contains(e.target) && 
                         e.target.id !== 'mobileMenuBtn') {
                         closeAppleSubmenu();
-                    }
-                    
-                    // Close android submenu if click is outside
-                    if (androidSubmenuModal && androidSubmenuModal.classList.contains('open') && 
-                        !androidSubmenuModal.contains(e.target) && 
-                        e.target.id !== 'mobileMenuBtn') {
-                        closeAndroidSubmenu();
                     }
                 } catch(e) {
                     console.error('Click handler error:', e);
@@ -712,4 +561,4 @@
         }, 5000);
     </script>
 </body>
-    </html>
+</html>
