@@ -6,7 +6,6 @@
     <title>Kodi.ge - ტელეფონების შედარება</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
         /* Исправления z-index для модального окна */
         .phone-modal {
@@ -618,10 +617,15 @@
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize modal
-            phoneModal = new bootstrap.Modal(document.getElementById('phoneModal'), {
-                backdrop: 'static',
-                keyboard: false
-            });
+            const modalElement = document.getElementById('phoneModal');
+            if (modalElement) {
+                phoneModal = new bootstrap.Modal(modalElement, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            } else {
+                console.error('Modal element not found');
+            }
             
             // Setup button event listeners
             document.getElementById('phone1Btn').addEventListener('click', () => openPhoneModal('phone1'));
@@ -642,6 +646,11 @@
         
         // Open phone selection modal
         function openPhoneModal(target) {
+            if (!phoneModal) {
+                console.error('Modal not initialized');
+                return;
+            }
+            
             currentSelection = target;
             document.getElementById('modalTitle').textContent = `აირჩიეთ ტელეფონი ${target === 'phone1' ? '1' : '2'}`;
             document.getElementById('modalSearch').value = '';
@@ -662,7 +671,7 @@
             document.getElementById('modalSearch').focus();
         }
         
-        // Search phones in modal - REDESIGNED FUNCTION
+        // Search phones in modal
         async function searchPhonesInModal() {
             const query = document.getElementById('modalSearch').value.trim();
             const suggestionsContainer = document.getElementById('modalSuggestions');
@@ -746,7 +755,15 @@
             document.querySelectorAll('.modal-suggestion-item').forEach(item => {
                 item.classList.remove('selected');
             });
-            event.target.closest('.modal-suggestion-item').classList.add('selected');
+            
+            // Find the clicked item and mark as selected
+            const items = document.querySelectorAll('.modal-suggestion-item');
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].dataset.id === phone._id) {
+                    items[i].classList.add('selected');
+                    break;
+                }
+            }
             
             // Show phone details
             document.getElementById('selectedPhoneName').textContent = phone.name;
@@ -919,10 +936,6 @@
                     nameRow.textContent = specKey;
                     specsGrid.appendChild(nameRow);
                     
-                    // Create value row
-                    const valueRow = document.createElement('div');
-                    valueRow.className = 'spec-row';
-                    
                     // Create value cells
                     const value1Cell = document.createElement('div');
                     value1Cell.className = 'spec-cell spec-value';
@@ -938,8 +951,8 @@
                     const comparison = compareSpecValues(specKey, value1, value2);
                     
                     // Format values for display
-                    let displayValue1 = formatSpecValue(value1);
-                    let displayValue2 = formatSpecValue(value2);
+                    let displayValue1 = formatSpecValue(specKey, value1);
+                    let displayValue2 = formatSpecValue(specKey, value2);
                     
                     // Add indicators for better values
                     if (comparison.phone1 === 'better') {
@@ -957,18 +970,16 @@
                     value2Cell.innerHTML = displayValue2;
                     
                     // Build row
-                    valueRow.appendChild(value1Cell);
-                    valueRow.appendChild(dividerCell);
-                    valueRow.appendChild(value2Cell);
-                    
-                    specsGrid.appendChild(valueRow);
+                    specsGrid.appendChild(value1Cell);
+                    specsGrid.appendChild(dividerCell);
+                    specsGrid.appendChild(value2Cell);
                 });
             });
         }
         
         // Format specification value for display
-        function formatSpecValue(value) {
-            if (value === null || value === undefined) return 'N/A';
+        function formatSpecValue(specKey, value) {
+            if (value === null || value === undefined || value === '') return 'N/A';
             
             // Handle arrays
             if (Array.isArray(value)) {
@@ -989,6 +1000,16 @@
                     return value + ' mm';
                 if (specKey.includes('Diagonal')) return value + ' mm';
                 return value;
+            }
+            
+            // Add units for string values
+            if (typeof value === 'string') {
+                if (specKey === 'Nominal Battery Capacity' && !value.includes('mAh')) {
+                    return value + ' mAh';
+                }
+                if (specKey === 'Display Diagonal' && !value.includes('inches')) {
+                    return value + ' inches';
+                }
             }
             
             return value;
@@ -1030,7 +1051,7 @@
                 const num1 = extractNumber(value1);
                 const num2 = extractNumber(value2);
                 
-                if (isNaN(num1) return result;
+                if (isNaN(num1)) return result;
                 if (isNaN(num2)) return result;
                 
                 if (numericComparisonRules[specKey] === 'higher') {
