@@ -69,7 +69,7 @@ db = client['imei_checker']
 checks_collection = db['results']
 prices_collection = db['prices']
 comparisons_collection = db['comparisons']
-phones_collection = db['phones1']  # ИЗМЕНЕНО: phones -> phones1
+phones_collection = db['phones']  # ИЗМЕНЕНО: phones1 -> phones
 parser_logs_collection = db['parser_logs']
 admin_users_collection = db['admin_users']
 regular_users_collection = db['users']
@@ -79,10 +79,10 @@ webhooks_collection = db['webhooks']
 payments_collection = db['payments']
 failed_logins_collection = db['failed_logins']
 
-# Создаем составной индекс для Brand и Model
-if 'brand_model_index' not in phones_collection.index_information():
-    phones_collection.create_index([('Brand', 1), ('Model', 1)], name='brand_model_index')
-    app.logger.info("Created compound index on Brand and Model fields")
+# Создаем индекс для поля Name
+if 'name_index' not in phones_collection.index_information():
+    phones_collection.create_index('Name', name='name_index')
+    app.logger.info("Created index on Name field")
 
 # Создаем администратора по умолчанию
 if not admin_users_collection.find_one({'username': 'admin'}):
@@ -125,32 +125,24 @@ def get_current_prices():
 # ======================================
 
 def search_phones(query):
-    """Поиск телефонов по Brand и Model с использованием индекса"""
+    """Поиск телефонов по Name с использованием индекса"""
     try:
         if not query:
             return []
         
         app.logger.info(f"Searching phones for: {query}")
         
-        # Используем составной индекс для поиска
+        # Используем индекс для поиска по Name
         regex = re.compile(re.escape(query), re.IGNORECASE)
         results = list(phones_collection.find({
-            '$or': [
-                {'Brand': regex},
-                {'Model': regex}
-            ]
+            'Name': regex
         }).limit(10))
         
         normalized = []
         for phone in results:
-            # Формируем имя из Brand и Model
-            brand = phone.get('Brand', '')
-            model = phone.get('Model', '')
-            name = f"{brand} {model}".strip()
-            
             normalized.append({
                 '_id': str(phone['_id']),
-                'name': name,
+                'name': phone.get('Name', 'Unknown Phone'),
                 'image_url': PLACEHOLDER,
             })
         
@@ -168,14 +160,11 @@ def get_phone_details(phone_id):
         if not phone:
             return None
         
-        # Формируем имя из Brand и Model
-        brand = phone.get('Brand', '')
-        model = phone.get('Model', '')
-        name = f"{brand} {model}".strip()
+        name = phone.get('Name', 'Unknown Phone')
         
         specs = {}
         for key, value in phone.items():
-            if key not in ['_id', 'Brand', 'Model']:
+            if key not in ['_id', 'Name']:
                 if isinstance(value, ObjectId):
                     value = str(value)
                 elif isinstance(value, list):
