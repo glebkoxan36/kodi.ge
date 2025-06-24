@@ -462,9 +462,9 @@
         }
         
         // Fetch phone details from our API
-        async function fetchPhoneDetails(phoneId) {
+        async function fetchPhoneDetails(phone_id) {
             try {
-                const response = await fetch(`/api/phone_details/${phoneId}`);
+                const response = await fetch(`/api/phone_details/${phone_id}`);
                 
                 if (!response.ok) {
                     throw new Error(`API error: ${response.status}`);
@@ -495,43 +495,43 @@
             const specGroups = [
                 {
                     label: 'ზოგადი ინფორმაცია',
-                    keys: ['Brand', 'Model', 'Released', 'Announced', 'Hardware Designer', 'Manufacturer', 'General Extras']
+                    keys: ['Network_Technology', 'Network_2gbands', 'Network_3gbands', 'Network_4gbands', 'Network_Speed']
                 },
                 {
                     label: 'კორპუსი',
-                    keys: ['Width', 'Height', 'Depth', 'Dimensions', 'Mass']
-                },
-                {
-                    label: 'პლატფორმა',
-                    keys: ['Platform', 'Operating System', 'CPU Clock', 'CPU']
-                },
-                {
-                    label: 'მეხსიერება',
-                    keys: ['RAM Type', 'RAM Capacity (converted)', 'Non-volatile Memory Interface', 'Memory Capacity']
+                    keys: ['Body_Dimensions', 'Body_Weight', 'Body_SIM']
                 },
                 {
                     label: 'ეკრანი',
-                    keys: ['Display Diagonal', 'Resolution', 'Pixel Density', 'Display Area Utilization', 'Display Type', 'Scratch Resistant Screen', 'Graphical Controller']
+                    keys: ['Display_Type', 'Display_Resolution']
                 },
                 {
-                    label: 'კავშირები',
-                    keys: ['Expansion Interfaces', 'USB Services', 'USB Connector', 'Bluetooth']
+                    label: 'პლატფორმა',
+                    keys: ['Platform_OS', 'Platform_Chipset', 'Platform_Cpu', 'Platform_Gpu']
+                },
+                {
+                    label: 'მეხსიერება',
+                    keys: ['Memory_Cardslot', 'Memory_Internalmemory']
                 },
                 {
                     label: 'მთავარი კამერა',
-                    keys: ['Camera Placement', 'Camera Image Sensor', 'Aperture (W)', 'Zoom', 'Video Recording', 'Camera Extra Functions', 'Cam1_mp']
+                    keys: ['MainCamera_Cameraspecs', 'MainCamera_Features', 'MainCamera_Video']
                 },
                 {
                     label: 'ფრონტალური კამერა',
-                    keys: ['Secondary Video Recording', 'Cam2_mp']
+                    keys: ['SelfieCamera_Cameraspecs', 'SelfieCamera_Features']
                 },
                 {
                     label: 'ბატარეა',
-                    keys: ['Nominal Battery Capacity']
+                    keys: ['Battery_Type']
                 },
                 {
-                    label: 'ბაზარი',
-                    keys: ['Market Countries', 'Market Regions']
+                    label: 'კავშირები',
+                    keys: ['COMMS_WLAN', 'COMMS_Bluetooth', 'COMMS_NFC', 'COMMS_Radio', 'COMMS_USB']
+                },
+                {
+                    label: 'დამატებით',
+                    keys: ['Colors']
                 }
             ];
             
@@ -613,21 +613,20 @@
             // Handle numbers with units
             if (typeof value === 'number') {
                 // Add units based on key
-                if (specKey.includes('Battery')) return value + ' mAh';
-                if (specKey.includes('Mass')) return value + ' g';
-                if (specKey.includes('Width') || specKey.includes('Height') || specKey.includes('Depth')) 
-                    return value + ' mm';
-                if (specKey.includes('Diagonal')) return value + ' mm';
+                if (specKey === 'Display_Resolution') return value + ' ppi';
+                if (specKey === 'Platform_Cpu') return value + ' GHz';
+                if (specKey === 'Memory_Internalmemory') return value + ' GB';
+                if (specKey === 'MainCamera_Cameraspecs' || specKey === 'SelfieCamera_Cameraspecs') 
+                    return value + ' MP';
+                if (specKey === 'Body_Weight') return value + ' g';
+                if (specKey === 'Display_Type') return value + ' inches';
                 return value;
             }
             
             // Add units for string values
             if (typeof value === 'string') {
-                if (specKey === 'Nominal Battery Capacity' && !value.includes('mAh')) {
-                    return value + ' mAh';
-                }
-                if (specKey === 'Display Diagonal' && !value.includes('inches')) {
-                    return value + ' inches';
+                if (specKey === 'Display_Resolution' && !value.includes('ppi')) {
+                    return value + ' ppi';
                 }
             }
             
@@ -647,22 +646,17 @@
             
             // Numeric comparison rules
             const numericComparisonRules = {
-                'Nominal Battery Capacity': 'higher',
-                'Memory Capacity': 'higher',
-                'Display Diagonal': 'higher',
-                'Pixel Density': 'higher',
-                'Cam1_mp': 'higher',
-                'Cam2_mp': 'higher',
-                'Mass': 'lower',
-                'Depth': 'lower',
-                'Width': 'lower',
-                'Height': 'lower'
+                'Display_Resolution': 'higher',
+                'Platform_Cpu': 'higher',
+                'Memory_Internalmemory': 'higher',
+                'MainCamera_Cameraspecs': 'higher',
+                'SelfieCamera_Cameraspecs': 'higher',
+                'Body_Weight': 'lower'
             };
             
             // Text comparison rules
             const textComparisonRules = {
-                'Operating System': 'newer',
-                'CPU': 'better'
+                'Platform_OS': 'newer'
             };
             
             // Numeric comparison
