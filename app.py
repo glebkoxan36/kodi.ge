@@ -69,7 +69,7 @@ db = client['imei_checker']
 checks_collection = db['results']
 prices_collection = db['prices']
 comparisons_collection = db['comparisons']
-phones_collection = db['phones']
+phones_collection = db['phones1']  # ИЗМЕНЕНО: phones -> phones1
 parser_logs_collection = db['parser_logs']
 admin_users_collection = db['admin_users']
 regular_users_collection = db['users']
@@ -88,45 +88,6 @@ if not admin_users_collection.find_one({'username': 'admin'}):
         'role': 'superadmin',
         'created_at': datetime.utcnow()
     })
-
-# Создание текстового индекса только по полю 'Name'
-try:
-    # Проверяем существование индекса по имени
-    existing_indexes = phones_collection.index_information()
-    index_exists = False
-    
-    for index_name, index_info in existing_indexes.items():
-        keys = index_info.get('key', [])
-        # Проверяем, является ли индекс текстовым
-        is_text_index = any(
-            isinstance(key, tuple) and key[1] == 'text'
-            for key in keys
-        )
-        if is_text_index:
-            # Если нашли текстовый индекс - удаляем его
-            phones_collection.drop_index(index_name)
-            app.logger.info(f"Dropped existing text index: {index_name}")
-    
-    # Создаем новый индекс только по полю 'Name'
-    phones_collection.create_index(
-        [('Name', 'text')],
-        name='text_search',
-        default_language='none'
-    )
-    app.logger.info("Text index created successfully for 'Name' field")
-    
-except Exception as e:
-    app.logger.error(f"Index creation error: {str(e)}")
-    # Пытаемся создать индекс, если он еще не существует
-    try:
-        phones_collection.create_index(
-            [('Name', 'text')],
-            name='text_search',
-            default_language='none'
-        )
-        app.logger.info("Text index created successfully after initial error")
-    except Exception as fallback_e:
-        app.logger.error(f"Fallback index creation failed: {str(fallback_e)}")
 
 DEFAULT_PRICES = {
     'paid': 499,
@@ -155,21 +116,42 @@ def get_current_prices():
     return DEFAULT_PRICES
 
 # ======================================
-# Функции сравнения телефонов
+# Функции сравнения телефонов (ОПТИМИЗИРОВАННЫЕ)
 # ======================================
 
 def search_phones(query):
-    """Поиск телефонов по названию"""
+    """Поиск телефонов по бренду и модели с использованием индексов"""
     try:
-        # Пробуем использовать текстовый индекс
+        # Разбиваем запрос на слова
+        words = query.split()
+        if not words:
+            return []
+        
+        # Первое слово - бренд, остальные - модель
+        brand_query = words[0]
+        model_query = " ".join(words[1:]) if len(words) > 1 else ""
+        
+        # Формируем условия поиска
+        brand_condition = {'Brand': {'$regex': f'^{re.escape(brand_query)}', '$options': 'i'}}
+        conditions = [brand_condition]
+        
+        if model_query:
+            model_condition = {'Model': {'$regex': f'^{re.escape(model_query)}', '$options': 'i'}}
+            conditions.append(model_condition)
+        
+        # Выполняем поиск с использованием индексов
         results = list(phones_collection.find(
-            {'$text': {'$search': query}},
-            {'score': {'$meta': 'textScore'}, '_id': 1, 'Name': 1}
-        ).sort([('score', {'$meta': 'textScore'})]).limit(10))
+            {'$and': conditions},
+            {'_id': 1, 'Name': 1, 'Brand': 1, 'Model': 1}
+        ).limit(10))
         
         normalized = []
         for phone in results:
-            name = phone.get('Name', 'Unknown Phone')
+            # Используем Name если есть, иначе комбинируем Brand+Model
+            name = phone.get('Name')
+            if not name:
+                name = f"{phone.get('Brand', '')} {phone.get('Model', '')}".strip()
+            
             normalized.append({
                 '_id': str(phone['_id']),
                 'name': name,
@@ -179,23 +161,8 @@ def search_phones(query):
         return normalized
     
     except Exception as e:
-        app.logger.error(f"Text search error: {str(e)}. Falling back to regex search.")
-        # Fallback на обычный поиск если текстовый не работает
-        regex_query = {'$regex': f'.*{re.escape(query)}.*', '$options': 'i'}
-        results = list(phones_collection.find(
-            {'Name': regex_query},
-            {'_id': 1, 'Name': 1}
-        ).limit(10))
-        
-        normalized = []
-        for phone in results:
-            normalized.append({
-                '_id': str(phone['_id']),
-                'name': phone.get('Name', 'Unknown Phone'),
-                'image_url': PLACEHOLDER
-            })
-        
-        return normalized
+        app.logger.error(f"Phone search error: {str(e)}")
+        return []
 
 def get_phone_details(phone_id):
     """Получение детальной информации о телефоне"""
@@ -204,7 +171,8 @@ def get_phone_details(phone_id):
         if not phone:
             return None
         
-        name = phone.get('Name', '')
+        # Формируем имя из Brand и Model если Name отсутствует
+        name = phone.get('Name')
         if not name:
             name = f"{phone.get('brand', '')} {phone.get('model', '')}".strip()
         
