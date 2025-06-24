@@ -79,23 +79,10 @@ webhooks_collection = db['webhooks']
 payments_collection = db['payments']
 failed_logins_collection = db['failed_logins']
 
-# Удаление старых индексов и создание нового по полю Name
-try:
-    # Удаляем старые текстовые индексы
-    if 'phone_search_index' in phones_collection.index_information():
-        phones_collection.drop_index('phone_search_index')
-    if 'Name_text' in phones_collection.index_information():
-        phones_collection.drop_index('Name_text')
-    
-    # Создаем новый индекс только по полю Name
-    phones_collection.create_index(
-        [('Name', 'text')],
-        name='phone_search_index',
-        default_language='none'
-    )
-    app.logger.info("Created new text index on Name field")
-except Exception as e:
-    app.logger.error(f"Failed to create text index: {str(e)}")
+# Создаем составной индекс для Brand и Model
+if 'brand_model_index' not in phones_collection.index_information():
+    phones_collection.create_index([('Brand', 1), ('Model', 1)], name='brand_model_index')
+    app.logger.info("Created compound index on Brand and Model fields")
 
 # Создаем администратора по умолчанию
 if not admin_users_collection.find_one({'username': 'admin'}):
@@ -138,55 +125,41 @@ def get_current_prices():
 # ======================================
 
 def search_phones(query):
-    """Оптимизированный поиск телефонов по полю Name"""
+    """Поиск телефонов по Brand и Model с использованием индекса"""
     try:
         if not query:
             return []
         
         app.logger.info(f"Searching phones for: {query}")
         
-        # Используем текстовый поиск MongoDB по полю Name
-        results = list(phones_collection.find(
-            {'$text': {'$search': query}},
-            {'score': {'$meta': 'textScore'}}
-        ).sort([('score', {'$meta': 'textScore'})]).limit(10))
+        # Используем составной индекс для поиска
+        regex = re.compile(re.escape(query), re.IGNORECASE)
+        results = list(phones_collection.find({
+            '$or': [
+                {'Brand': regex},
+                {'Model': regex}
+            ]
+        }).limit(10))
         
         normalized = []
         for phone in results:
-            # Используем Name если есть
-            name = phone.get('Name', 'Unknown Phone')
+            # Формируем имя из Brand и Model
+            brand = phone.get('Brand', '')
+            model = phone.get('Model', '')
+            name = f"{brand} {model}".strip()
+            
             normalized.append({
                 '_id': str(phone['_id']),
                 'name': name,
                 'image_url': PLACEHOLDER,
-                'score': phone.get('score', 0)
             })
         
         app.logger.info(f"Found {len(normalized)} results")
-        return normalized[:10]  # Возвращаем не более 10 результатов
+        return normalized
     
     except Exception as e:
         app.logger.error(f"Phone search error: {str(e)}")
-        # Fallback: поиск по регулярному выражению
-        try:
-            regex = re.compile(re.escape(query), re.IGNORECASE)
-            fallback_results = list(phones_collection.find(
-                {'Name': regex},
-                {'_id': 1, 'Name': 1}
-            ).limit(10))
-            
-            normalized = []
-            for phone in fallback_results:
-                name = phone.get('Name', 'Unknown Phone')
-                normalized.append({
-                    '_id': str(phone['_id']),
-                    'name': name,
-                    'image_url': PLACEHOLDER
-                })
-            return normalized
-        except Exception as fallback_error:
-            app.logger.error(f"Fallback search error: {str(fallback_error)}")
-            return []
+        return []
 
 def get_phone_details(phone_id):
     """Получение детальной информации о телефоне"""
@@ -195,12 +168,14 @@ def get_phone_details(phone_id):
         if not phone:
             return None
         
-        # Используем Name если есть
-        name = phone.get('Name', 'Unknown Phone')
+        # Формируем имя из Brand и Model
+        brand = phone.get('Brand', '')
+        model = phone.get('Model', '')
+        name = f"{brand} {model}".strip()
         
         specs = {}
         for key, value in phone.items():
-            if key not in ['_id', 'Name']:
+            if key not in ['_id', 'Brand', 'Model']:
                 if isinstance(value, ObjectId):
                     value = str(value)
                 elif isinstance(value, list):
