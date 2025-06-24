@@ -249,24 +249,29 @@
             const query = document.getElementById('modalSearch').value.trim();
             const suggestionsContainer = document.getElementById('modalSuggestions');
             
+            suggestionsContainer.innerHTML = '';
+            suggestionsContainer.style.display = 'none';
+            
             if (query.length < 2) {
-                suggestionsContainer.style.display = 'none';
-                document.getElementById('selectedPhoneContainer').style.display = 'none';
-                document.getElementById('modalSelectBtn').disabled = true;
                 return;
             }
             
             try {
                 const response = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
-                
-                if (!response.ok) {
-                    throw new Error(`API error: ${response.status}`);
-                }
-                
                 const data = await response.json();
                 
-                if (data.length > 0) {
-                    suggestionsContainer.innerHTML = '';
+                if (!response.ok || !Array.isArray(data)) {
+                    throw new Error(data.error || 'Invalid response');
+                }
+                
+                if (data.length === 0) {
+                    suggestionsContainer.innerHTML = `
+                        <div class="modal-suggestion-item text-center">
+                            <i class="fas fa-search me-2"></i> ტელეფონი ვერ მოიძებნა
+                        </div>
+                    `;
+                    suggestionsContainer.style.display = 'block';
+                } else {
                     data.forEach(phone => {
                         const item = document.createElement('div');
                         item.className = 'modal-suggestion-item';
@@ -299,13 +304,6 @@
                         
                         suggestionsContainer.appendChild(item);
                     });
-                    suggestionsContainer.style.display = 'block';
-                } else {
-                    suggestionsContainer.innerHTML = `
-                        <div class="modal-suggestion-item text-center">
-                            <i class="fas fa-search me-2"></i> ტელეფონი ვერ მოიძებნა
-                        </div>
-                    `;
                     suggestionsContainer.style.display = 'block';
                 }
             } catch (error) {
@@ -340,7 +338,15 @@
             
             // Show phone details
             document.getElementById('selectedPhoneName').textContent = phone.name;
-            document.getElementById('selectedPhoneSpec').textContent = `${phone.specs?.Platform_OS || 'OS not specified'}, ${phone.specs?.Memory_internal || 'Memory not specified'}`;
+            
+            // Format specifications for display
+            const specs = phone.specs || {};
+            const specText = [
+                specs.Platform_OS || 'OS not specified',
+                specs.Memory_internal || 'Memory not specified'
+            ].filter(Boolean).join(', ');
+            
+            document.getElementById('selectedPhoneSpec').textContent = specText;
             document.getElementById('selectedPhoneImage').src = phone.image_url || '/static/phone-placeholder.png';
             document.getElementById('selectedPhoneContainer').style.display = 'block';
             
@@ -436,56 +442,48 @@
         function buildComparisonGrid(phone1, phone2) {
             const specsGrid = document.querySelector('.specs-grid');
             
-            // Remove all rows except the header
+            // Clear previous content except headers
             while (specsGrid.children.length > 3) {
                 specsGrid.removeChild(specsGrid.lastChild);
             }
             
-            // Get the specs objects
-            const specs1 = phone1.specs || phone1;
-            const specs2 = phone2.specs || phone2;
+            // Update headers with actual images
+            document.getElementById('phone1Thumb').src = phone1.image_url || '/static/phone-placeholder.png';
+            document.getElementById('phone2Thumb').src = phone2.image_url || '/static/phone-placeholder.png';
             
             // Define specification groups
             const specGroups = [
                 {
                     label: 'ზოგადი ინფორმაცია',
-                    keys: ['Brand', 'Model', 'Released', 'Announced', 'Hardware Designer', 'Manufacturer', 'General Extras']
-                },
-                {
-                    label: 'კორპუსი',
-                    keys: ['Width', 'Height', 'Depth', 'Dimensions', 'Mass']
-                },
-                {
-                    label: 'პლატფორმა',
-                    keys: ['Platform', 'Operating System', 'CPU Clock', 'CPU']
-                },
-                {
-                    label: 'მეხსიერება',
-                    keys: ['RAM Type', 'RAM Capacity (converted)', 'Non-volatile Memory Interface', 'Memory Capacity']
+                    keys: ['Model', 'Released', 'Dimensions', 'Weight']
                 },
                 {
                     label: 'ეკრანი',
-                    keys: ['Display Diagonal', 'Resolution', 'Pixel Density', 'Display Area Utilization', 'Display Type', 'Scratch Resistant Screen', 'Graphical Controller']
+                    keys: ['Type', 'Size', 'Resolution', 'Pixel Density']
                 },
                 {
-                    label: 'კავშირები',
-                    keys: ['Expansion Interfaces', 'USB Services', 'USB Connector', 'Bluetooth']
+                    label: 'პლატფორმა',
+                    keys: ['OS', 'Chipset', 'CPU', 'GPU']
+                },
+                {
+                    label: 'მეხსიერება',
+                    keys: ['Internal', 'Card slot', 'RAM']
                 },
                 {
                     label: 'მთავარი კამერა',
-                    keys: ['Camera Placement', 'Camera Image Sensor', 'Aperture (W)', 'Zoom', 'Video Recording', 'Camera Extra Functions', 'Cam1_mp']
+                    keys: ['Main', 'Features', 'Video']
                 },
                 {
                     label: 'ფრონტალური კამერა',
-                    keys: ['Secondary Video Recording', 'Cam2_mp']
+                    keys: ['Selfie', 'Selfie Features']
                 },
                 {
                     label: 'ბატარეა',
-                    keys: ['Nominal Battery Capacity']
+                    keys: ['Type', 'Capacity']
                 },
                 {
-                    label: 'ბაზარი',
-                    keys: ['Market Countries', 'Market Regions']
+                    label: 'კავშირები',
+                    keys: ['WLAN', 'Bluetooth', 'GPS', 'USB']
                 }
             ];
             
@@ -500,8 +498,8 @@
                 // Process each key in the group
                 group.keys.forEach(specKey => {
                     // Get values
-                    const value1 = specs1[specKey] ?? 'N/A';
-                    const value2 = specs2[specKey] ?? 'N/A';
+                    const value1 = phone1.specs[specKey] ?? 'N/A';
+                    const value2 = phone2.specs[specKey] ?? 'N/A';
                     
                     // Create spec name row
                     const nameRow = document.createElement('div');
@@ -568,19 +566,18 @@
             if (typeof value === 'number') {
                 // Add units based on key
                 if (specKey.includes('Battery')) return value + ' mAh';
-                if (specKey.includes('Mass')) return value + ' g';
-                if (specKey.includes('Width') || specKey.includes('Height') || specKey.includes('Depth')) 
-                    return value + ' mm';
-                if (specKey.includes('Diagonal')) return value + ' mm';
+                if (specKey.includes('Mass') || specKey.includes('Weight')) return value + ' g';
+                if (specKey.includes('Size')) return value + ' inches';
+                if (specKey.includes('Pixel Density')) return value + ' ppi';
                 return value;
             }
             
             // Add units for string values
             if (typeof value === 'string') {
-                if (specKey === 'Nominal Battery Capacity' && !value.includes('mAh')) {
+                if (specKey === 'Capacity' && !value.includes('mAh')) {
                     return value + ' mAh';
                 }
-                if (specKey === 'Display Diagonal' && !value.includes('inches')) {
+                if (specKey === 'Size' && !value.includes('inches')) {
                     return value + ' inches';
                 }
             }
@@ -601,22 +598,12 @@
             
             // Numeric comparison rules
             const numericComparisonRules = {
-                'Nominal Battery Capacity': 'higher',
-                'Memory Capacity': 'higher',
-                'Display Diagonal': 'higher',
+                'Capacity': 'higher',
+                'RAM': 'higher',
+                'Size': 'higher',
                 'Pixel Density': 'higher',
-                'Cam1_mp': 'higher',
-                'Cam2_mp': 'higher',
                 'Mass': 'lower',
-                'Depth': 'lower',
-                'Width': 'lower',
-                'Height': 'lower'
-            };
-            
-            // Text comparison rules
-            const textComparisonRules = {
-                'Operating System': 'newer',
-                'CPU': 'better'
+                'Weight': 'lower'
             };
             
             // Numeric comparison
@@ -633,19 +620,6 @@
                 } else {
                     if (num1 < num2) result.phone1 = 'better';
                     else if (num2 < num1) result.phone2 = 'better';
-                }
-            }
-            // Text comparison
-            else if (textComparisonRules[specKey]) {
-                if (textComparisonRules[specKey] === 'newer') {
-                    // Simple version comparison
-                    const v1 = parseFloat(value1);
-                    const v2 = parseFloat(value2);
-                    
-                    if (!isNaN(v1) && !isNaN(v2)) {
-                        if (v1 > v2) result.phone1 = 'better';
-                        else if (v2 > v1) result.phone2 = 'better';
-                    }
                 }
             }
             
