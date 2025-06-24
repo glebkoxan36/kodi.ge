@@ -79,26 +79,21 @@ webhooks_collection = db['webhooks']
 payments_collection = db['payments']
 failed_logins_collection = db['failed_logins']
 
-# Создание текстового индекса для поиска телефонов
+# Удаление старых индексов и создание нового по полю Name
 try:
-    if 'phone_search_index' not in phones_collection.index_information():
-        phones_collection.create_index(
-            [
-                ('Name', 'text'),
-                ('Brand', 'text'),
-                ('Model', 'text'),
-                ('Keywords', 'text')
-            ],
-            name='phone_search_index',
-            default_language='english',
-            weights={
-                'Name': 10,
-                'Brand': 5,
-                'Model': 5,
-                'Keywords': 3
-            }
-        )
-        app.logger.info("Created text index for phones")
+    # Удаляем старые текстовые индексы
+    if 'phone_search_index' in phones_collection.index_information():
+        phones_collection.drop_index('phone_search_index')
+    if 'Name_text' in phones_collection.index_information():
+        phones_collection.drop_index('Name_text')
+    
+    # Создаем новый индекс только по полю Name
+    phones_collection.create_index(
+        [('Name', 'text')],
+        name='phone_search_index',
+        default_language='none'
+    )
+    app.logger.info("Created new text index on Name field")
 except Exception as e:
     app.logger.error(f"Failed to create text index: {str(e)}")
 
@@ -142,117 +137,83 @@ def get_current_prices():
 # Оптимизированные функции поиска телефонов
 # ======================================
 
-def _preprocess_query(query):
-    """Очистка и нормализация поискового запроса"""
-    if not query:
-        return ""
-    
-    # Удаляем специальные символы
-    query = re.sub(r'[^\w\s]', '', query)
-    # Заменяем множественные пробелы на один
-    query = re.sub(r'\s+', ' ', query).strip()
-    # Приводим к нижнему регистру
-    return query.lower()
-
 def search_phones(query):
-    """Оптимизированный поиск телефонов"""
+    """Оптимизированный поиск телефонов по полю Name"""
     try:
         if not query:
             return []
-
-        # Нормализация запроса
-        processed_query = re.sub(r'\s+', ' ', query).strip()
-        if not processed_query:
-            return []
-
-        # Поиск по текстовому индексу
-        text_results = list(phones_collection.find(
-            {'$text': {'$search': processed_query}},
+        
+        app.logger.info(f"Searching phones for: {query}")
+        
+        # Используем текстовый поиск MongoDB по полю Name
+        results = list(phones_collection.find(
+            {'$text': {'$search': query}},
             {'score': {'$meta': 'textScore'}}
         ).sort([('score', {'$meta': 'textScore'})]).limit(10))
-
+        
         normalized = []
-        for phone in text_results:
-            # Формирование имени телефона
-            name = phone.get('Name') or f"{phone.get('Brand', '')} {phone.get('Model', '')}".strip()
-            if not name:
-                continue
-                
+        for phone in results:
+            # Используем Name если есть
+            name = phone.get('Name', 'Unknown Phone')
             normalized.append({
                 '_id': str(phone['_id']),
                 'name': name,
-                'image_url': phone.get('image_url', PLACEHOLDER),
-                'specs': {
-                    'Platform_OS': phone.get('Platform', {}).get('OS', 'N/A'),
-                    'Memory_internal': phone.get('Memory', {}).get('internal', 'N/A')
-                }
+                'image_url': PLACEHOLDER,
+                'score': phone.get('score', 0)
             })
-
-        # Fallback поиск если результатов мало
-        if len(normalized) < 5:
-            words = processed_query.split()
-            if words:
-                regex_query = '|'.join([re.escape(word) for word in words])
-                brand_regex = re.compile(f'^{regex_query}', re.IGNORECASE)
-                model_regex = re.compile(regex_query, re.IGNORECASE)
-                
-                fallback_results = phones_collection.find({
-                    '$or': [
-                        {'Brand': brand_regex},
-                        {'Model': model_regex},
-                        {'Name': re.compile(regex_query, re.IGNORECASE)}
-                    ]
-                }).limit(10 - len(normalized))
-                
-                for phone in fallback_results:
-                    name = phone.get('Name') or f"{phone.get('Brand', '')} {phone.get('Model', '')}".strip()
-                    if not name:
-                        continue
-                        
-                    # Проверка дубликатов
-                    if any(p['_id'] == str(phone['_id']) for p in normalized):
-                        continue
-                        
-                    normalized.append({
-                        '_id': str(phone['_id']),
-                        'name': name,
-                        'image_url': phone.get('image_url', PLACEHOLDER),
-                        'specs': {
-                            'Platform_OS': phone.get('Platform', {}).get('OS', 'N/A'),
-                            'Memory_internal': phone.get('Memory', {}).get('internal', 'N/A')
-                        }
-                    })
-
-        return normalized[:10]
+        
+        app.logger.info(f"Found {len(normalized)} results")
+        return normalized[:10]  # Возвращаем не более 10 результатов
     
     except Exception as e:
         app.logger.error(f"Phone search error: {str(e)}")
-        return []
+        # Fallback: поиск по регулярному выражению
+        try:
+            regex = re.compile(re.escape(query), re.IGNORECASE)
+            fallback_results = list(phones_collection.find(
+                {'Name': regex},
+                {'_id': 1, 'Name': 1}
+            ).limit(10))
+            
+            normalized = []
+            for phone in fallback_results:
+                name = phone.get('Name', 'Unknown Phone')
+                normalized.append({
+                    '_id': str(phone['_id']),
+                    'name': name,
+                    'image_url': PLACEHOLDER
+                })
+            return normalized
+        except Exception as fallback_error:
+            app.logger.error(f"Fallback search error: {str(fallback_error)}")
+            return []
 
 def get_phone_details(phone_id):
+    """Получение детальной информации о телефоне"""
     try:
         phone = phones_collection.find_one({'_id': ObjectId(phone_id)})
         if not phone:
             return None
         
-        # Формирование имени
-        name = phone.get('Name') or f"{phone.get('Brand', 'Unknown')} {phone.get('Model', 'Phone')}".strip()
+        # Используем Name если есть
+        name = phone.get('Name', 'Unknown Phone')
         
-        # Извлечение спецификаций
         specs = {}
-        for section in ['General', 'Display', 'Platform', 'Memory', 'Camera', 'Battery', 'Comms']:
-            if section in phone:
-                for key, value in phone[section].items():
-                    specs[key] = value
-        
-        # Добавление ключевых спецификаций для отображения
-        specs['Platform_OS'] = phone.get('Platform', {}).get('OS', 'N/A')
-        specs['Memory_internal'] = phone.get('Memory', {}).get('internal', 'N/A')
+        for key, value in phone.items():
+            if key not in ['_id', 'Name']:
+                if isinstance(value, ObjectId):
+                    value = str(value)
+                elif isinstance(value, list):
+                    value = ', '.join(map(str, value))
+                elif isinstance(value, float) and value.is_integer():
+                    value = int(value)
+                
+                specs[key] = value
         
         return {
             '_id': str(phone['_id']),
             'name': name,
-            'image_url': phone.get('image_url', PLACEHOLDER),
+            'image_url': PLACEHOLDER,
             'specs': specs
         }
     
