@@ -9,6 +9,13 @@
     z-index: 1050;
 }
 
+/* Добавлено: показ кнопки на мобильных устройствах */
+@media (max-width: 1024px) {
+    .mobile-menu-bottom {
+        display: block;
+    }
+}
+
 .mobile-menu-btn {
     background: var(--accent-color);
     color: white;
@@ -382,4 +389,7 @@
     .mobile-menu-modal {
         display: none !important;
     }
+    .mobile-menu-bottom {
+        display: none !important;
     }
+}
