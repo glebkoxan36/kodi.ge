@@ -440,7 +440,6 @@
         // Mobile menu functions
         function openMobileMenu() {
             try {
-                document.body.classList.add('mobile-menu-open');
                 const modal = document.getElementById('mobileMenuModal');
                 modal.style.display = 'flex';
                 setTimeout(() => {
@@ -457,11 +456,6 @@
                 modal.classList.remove('open');
                 setTimeout(() => {
                     modal.style.display = 'none';
-                    // Check if apple submenu is not open
-                    const appleModal = document.getElementById('appleSubmenuModal');
-                    if (!appleModal.classList.contains('open')) {
-                        document.body.classList.remove('mobile-menu-open');
-                    }
                 }, 400);
             } catch(e) {
                 console.error('Error closing mobile menu:', e);
@@ -471,7 +465,6 @@
         function openAppleSubmenu() {
             try {
                 closeMobileMenu();
-                document.body.classList.add('mobile-menu-open');
                 const appleModal = document.getElementById('appleSubmenuModal');
                 appleModal.style.display = 'flex';
                 setTimeout(() => {
@@ -498,7 +491,6 @@
         function closeAllMobileMenus() {
             closeMobileMenu();
             closeAppleSubmenu();
-            document.body.classList.remove('mobile-menu-open');
         }
         
         // Redirect to login
@@ -545,8 +537,7 @@
                     // Close apple submenu if click is outside
                     if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
                         !appleSubmenuModal.contains(e.target) && 
-                        e.target.id !== 'mobileMenuBtn' &&
-                        e.target !== document.querySelector('#appleSubmenuModal .close-modal')) {
+                        e.target.id !== 'mobileMenuBtn') {
                         closeAppleSubmenu();
                     }
                 } catch(e) {
@@ -570,4 +561,4 @@
         }, 5000);
     </script>
 </body>
-</html>
+    </html>
