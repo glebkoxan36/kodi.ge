@@ -83,9 +83,20 @@ failed_logins_collection = db['failed_logins']
 try:
     if 'phone_search_index' not in phones_collection.index_information():
         phones_collection.create_index(
-            [('Name', 'text'), ('Brand', 'text'), ('Model', 'text')],
+            [
+                ('Name', 'text'),
+                ('Brand', 'text'),
+                ('Model', 'text'),
+                ('Keywords', 'text')
+            ],
             name='phone_search_index',
-            default_language='none'
+            default_language='english',
+            weights={
+                'Name': 10,
+                'Brand': 5,
+                'Model': 5,
+                'Keywords': 3
+            }
         )
         app.logger.info("Created text index for phones")
 except Exception as e:
@@ -143,114 +154,105 @@ def _preprocess_query(query):
     # Приводим к нижнему регистру
     return query.lower()
 
-def _fallback_search(query):
-    """Резервный метод поиска для сложных запросов"""
-    words = query.split()
-    if not words:
-        return []
-    
-    brand_query = words[0]
-    model_query = " ".join(words[1:]) if len(words) > 1 else ""
-    
-    conditions = [{'Brand': {'$regex': f'^{re.escape(brand_query)}', '$options': 'i'}}]
-    
-    if model_query:
-        conditions.append({'Model': {'$regex': f'^{re.escape(model_query)}', '$options': 'i'}})
-    
-    results = list(phones_collection.find(
-        {'$and': conditions},
-        {'_id': 1, 'Name': 1, 'Brand': 1, 'Model': 1}
-    ).limit(10))
-    
-    normalized = []
-    for phone in results:
-        name = phone.get('Name') or f"{phone.get('Brand', '')} {phone.get('Model', '')}".strip()
-        normalized.append({
-            '_id': str(phone['_id']),
-            'name': name,
-            'image_url': PLACEHOLDER
-        })
-    
-    return normalized
-
 def search_phones(query):
-    """Оптимизированный поиск телефонов с использованием текстового индекса"""
+    """Оптимизированный поиск телефонов"""
     try:
         if not query:
             return []
-        
-        # Обработка запроса
-        processed_query = _preprocess_query(query)
+
+        # Нормализация запроса
+        processed_query = re.sub(r'\s+', ' ', query).strip()
         if not processed_query:
             return []
-        
-        # Используем текстовый поиск MongoDB
-        results = list(phones_collection.find(
+
+        # Поиск по текстовому индексу
+        text_results = list(phones_collection.find(
             {'$text': {'$search': processed_query}},
             {'score': {'$meta': 'textScore'}}
         ).sort([('score', {'$meta': 'textScore'})]).limit(10))
-        
+
         normalized = []
-        for phone in results:
-            # Используем Name если есть, иначе комбинируем Brand+Model
-            name = phone.get('Name')
+        for phone in text_results:
+            # Формирование имени телефона
+            name = phone.get('Name') or f"{phone.get('Brand', '')} {phone.get('Model', '')}".strip()
             if not name:
-                name = f"{phone.get('Brand', '')} {phone.get('Model', '')}".strip()
-            
+                continue
+                
             normalized.append({
                 '_id': str(phone['_id']),
                 'name': name,
-                'image_url': PLACEHOLDER,
-                'score': phone.get('score', 0)
+                'image_url': phone.get('image_url', PLACEHOLDER),
+                'specs': {
+                    'Platform_OS': phone.get('Platform', {}).get('OS', 'N/A'),
+                    'Memory_internal': phone.get('Memory', {}).get('internal', 'N/A')
+                }
             })
-        
-        # Сортируем по релевантности
-        normalized.sort(key=lambda x: x['score'], reverse=True)
-        
-        # Если результатов мало, добавляем результаты fallback-поиска
+
+        # Fallback поиск если результатов мало
         if len(normalized) < 5:
-            fallback_results = _fallback_search(query)
-            # Исключаем дубликаты
-            existing_ids = {item['_id'] for item in normalized}
-            for item in fallback_results:
-                if item['_id'] not in existing_ids:
-                    normalized.append(item)
-        
-        return normalized[:10]  # Возвращаем не более 10 результатов
+            words = processed_query.split()
+            if words:
+                regex_query = '|'.join([re.escape(word) for word in words])
+                brand_regex = re.compile(f'^{regex_query}', re.IGNORECASE)
+                model_regex = re.compile(regex_query, re.IGNORECASE)
+                
+                fallback_results = phones_collection.find({
+                    '$or': [
+                        {'Brand': brand_regex},
+                        {'Model': model_regex},
+                        {'Name': re.compile(regex_query, re.IGNORECASE)}
+                    ]
+                }).limit(10 - len(normalized))
+                
+                for phone in fallback_results:
+                    name = phone.get('Name') or f"{phone.get('Brand', '')} {phone.get('Model', '')}".strip()
+                    if not name:
+                        continue
+                        
+                    # Проверка дубликатов
+                    if any(p['_id'] == str(phone['_id']) for p in normalized):
+                        continue
+                        
+                    normalized.append({
+                        '_id': str(phone['_id']),
+                        'name': name,
+                        'image_url': phone.get('image_url', PLACEHOLDER),
+                        'specs': {
+                            'Platform_OS': phone.get('Platform', {}).get('OS', 'N/A'),
+                            'Memory_internal': phone.get('Memory', {}).get('internal', 'N/A')
+                        }
+                    })
+
+        return normalized[:10]
     
     except Exception as e:
         app.logger.error(f"Phone search error: {str(e)}")
-        # Используем fallback в случае ошибки
-        return _fallback_search(query)
+        return []
 
 def get_phone_details(phone_id):
-    """Получение детальной информации о телефоне"""
     try:
         phone = phones_collection.find_one({'_id': ObjectId(phone_id)})
         if not phone:
             return None
         
-        # Формируем имя из Brand и Model если Name отсутствует
-        name = phone.get('Name')
-        if not name:
-            name = f"{phone.get('brand', '')} {phone.get('model', '')}".strip()
+        # Формирование имени
+        name = phone.get('Name') or f"{phone.get('Brand', 'Unknown')} {phone.get('Model', 'Phone')}".strip()
         
+        # Извлечение спецификаций
         specs = {}
-        for key, value in phone.items():
-            if key not in ['_id', 'Name', 'brand', 'model']:
-                if isinstance(value, ObjectId):
-                    value = str(value)
-                elif isinstance(value, list):
-                    value = ', '.join(map(str, value))
-                elif isinstance(value, float) and value.is_integer():
-                    value = int(value)
-                
-                specs[key] = value
+        for section in ['General', 'Display', 'Platform', 'Memory', 'Camera', 'Battery', 'Comms']:
+            if section in phone:
+                for key, value in phone[section].items():
+                    specs[key] = value
+        
+        # Добавление ключевых спецификаций для отображения
+        specs['Platform_OS'] = phone.get('Platform', {}).get('OS', 'N/A')
+        specs['Memory_internal'] = phone.get('Memory', {}).get('internal', 'N/A')
         
         return {
             '_id': str(phone['_id']),
-            'name': name or 'Unknown Phone',
-            'image_url': PLACEHOLDER,
+            'name': name,
+            'image_url': phone.get('image_url', PLACEHOLDER),
             'specs': specs
         }
     
