@@ -126,7 +126,7 @@
         
         .modal-search-container {
             position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
         
         .modal-search-input {
@@ -147,26 +147,27 @@
             box-shadow: 0 0 0 3px rgba(32, 107, 196, 0.3);
         }
         
-        .modal-suggestions-dropdown {
-            position: absolute;
+        .modal-suggestions-column {
             width: 100%;
             max-height: 300px;
             overflow-y: auto;
             background: rgba(26, 36, 60, 0.95);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 10px;
-            z-index: 1050;
+            padding: 10px;
+            display: none;
             margin-top: 5px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-            display: none;
         }
         
         .modal-suggestion-item {
-            padding: 12px 20px;
+            padding: 12px 15px;
             cursor: pointer;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             transition: background 0.2s ease;
             color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
         }
         
         .modal-suggestion-item:last-child {
@@ -180,6 +181,29 @@
         .modal-suggestion-item.selected {
             background: rgba(32, 107, 196, 0.5);
             color: #fff;
+        }
+        
+        .suggestion-thumb {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            margin-right: 15px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .suggestion-info {
+            flex: 1;
+        }
+        
+        .suggestion-name {
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+        
+        .suggestion-specs {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
         }
         
         /* Button styles */
@@ -550,7 +574,8 @@
                 <div class="modal-body">
                     <div class="modal-search-container">
                         <input type="text" class="modal-search-input" id="modalSearch" placeholder="მოძებნეთ ტელეფონი...">
-                        <div id="modalSuggestions" class="modal-suggestions-dropdown"></div>
+                        <!-- Suggestions column below search input -->
+                        <div id="modalSuggestions" class="modal-suggestions-column"></div>
                     </div>
                     
                     <div class="selected-phone-container" id="selectedPhoneContainer" style="display: none;">
@@ -637,7 +662,7 @@
             document.getElementById('modalSearch').focus();
         }
         
-        // Search phones in modal
+        // Search phones in modal - REDESIGNED FUNCTION
         async function searchPhonesInModal() {
             const query = document.getElementById('modalSearch').value.trim();
             const suggestionsContainer = document.getElementById('modalSuggestions');
@@ -672,19 +697,31 @@
                         }
                         
                         item.innerHTML = `
-                            <div class="fw-bold">${phone.name}</div>
-                            <small class="text-muted">${phone.specs?.Platform_OS || 'OS not specified'}, ${phone.specs?.Memory_internal || 'Memory not specified'}</small>
+                            <img src="${phone.image_url || '/static/phone-placeholder.png'}" 
+                                 class="suggestion-thumb" 
+                                 onerror="handleImageError(event)">
+                            <div class="suggestion-info">
+                                <div class="suggestion-name">${phone.name}</div>
+                                <div class="suggestion-specs">
+                                    ${phone.specs?.Platform_OS || 'OS not specified'}, 
+                                    ${phone.specs?.Memory_internal || 'Memory not specified'}
+                                </div>
+                            </div>
                         `;
                         
-                        item.addEventListener('click', () => selectPhoneInModal(phone));
+                        item.addEventListener('click', () => {
+                            // Fill search field when selected
+                            document.getElementById('modalSearch').value = phone.name;
+                            selectPhoneInModal(phone);
+                        });
+                        
                         suggestionsContainer.appendChild(item);
                     });
                     suggestionsContainer.style.display = 'block';
                 } else {
-                    // Show "not found" message
                     suggestionsContainer.innerHTML = `
                         <div class="modal-suggestion-item text-center">
-                            ტელეფონი ვერ მოიძებნა
+                            <i class="fas fa-search me-2"></i> ტელეფონი ვერ მოიძებნა
                         </div>
                     `;
                     suggestionsContainer.style.display = 'block';
@@ -692,7 +729,8 @@
             } catch (error) {
                 console.error('Error searching phones:', error);
                 suggestionsContainer.innerHTML = `
-                    <div class="modal-suggestion-item text-danger text-center">
+                    <div class="modal-suggestion-item text-center text-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i> 
                         შეცდომა მოძიებისას: ${error.message}
                     </div>
                 `;
@@ -718,9 +756,6 @@
             
             // Enable select button
             document.getElementById('modalSelectBtn').disabled = false;
-            
-            // Hide suggestions
-            document.getElementById('modalSuggestions').style.display = 'none';
         }
         
         // Confirm phone selection in modal
@@ -816,66 +851,79 @@
                 specsGrid.removeChild(specsGrid.lastChild);
             }
             
+            // Get the specs objects
+            const specs1 = phone1.specs || phone1;
+            const specs2 = phone2.specs || phone2;
+            
+            // Define specification groups
             const specGroups = [
-                { key: 'Network', label: 'ქსელი' },
-                { key: 'Body', label: 'კორპუსი' },
-                { key: 'Display', label: 'ეკრანი' },
-                { key: 'Platform', label: 'პლატფორმა' },
-                { key: 'Memory', label: 'მეხსიერება' },
-                { key: 'MainCamera', label: 'მთავარი კამერა' },
-                { key: 'SelfieCamera', label: 'წინა კამერა' },
-                { key: 'Sound', label: 'ხმა' },
-                { key: 'Comms', label: 'კავშირი' },
-                { key: 'Features', label: 'ფუნქციები' },
-                { key: 'Battery', label: 'ბატარეა' },
-                { key: 'Misc', label: 'დამატებით' }
+                {
+                    label: 'ზოგადი ინფორმაცია',
+                    keys: ['Brand', 'Model', 'Released', 'Announced', 'Hardware Designer', 'Manufacturer', 'General Extras']
+                },
+                {
+                    label: 'კორპუსი',
+                    keys: ['Width', 'Height', 'Depth', 'Dimensions', 'Mass']
+                },
+                {
+                    label: 'პლატფორმა',
+                    keys: ['Platform', 'Operating System', 'CPU Clock', 'CPU']
+                },
+                {
+                    label: 'მეხსიერება',
+                    keys: ['RAM Type', 'RAM Capacity (converted)', 'Non-volatile Memory Interface', 'Memory Capacity']
+                },
+                {
+                    label: 'ეკრანი',
+                    keys: ['Display Diagonal', 'Resolution', 'Pixel Density', 'Display Area Utilization', 'Display Type', 'Scratch Resistant Screen', 'Graphical Controller']
+                },
+                {
+                    label: 'კავშირები',
+                    keys: ['Expansion Interfaces', 'USB Services', 'USB Connector', 'Bluetooth']
+                },
+                {
+                    label: 'მთავარი კამერა',
+                    keys: ['Camera Placement', 'Camera Image Sensor', 'Aperture (W)', 'Zoom', 'Video Recording', 'Camera Extra Functions', 'Cam1_mp']
+                },
+                {
+                    label: 'ფრონტალური კამერა',
+                    keys: ['Secondary Video Recording', 'Cam2_mp']
+                },
+                {
+                    label: 'ბატარეა',
+                    keys: ['Nominal Battery Capacity']
+                },
+                {
+                    label: 'ბაზარი',
+                    keys: ['Market Countries', 'Market Regions']
+                }
             ];
             
+            // Process each group
             specGroups.forEach(group => {
+                // Add group header
                 const groupHeader = document.createElement('div');
                 groupHeader.className = 'group-header';
                 groupHeader.textContent = group.label;
                 specsGrid.appendChild(groupHeader);
                 
-                const groupSpecs = {};
-                const prefix = group.key + '_';
-                const allKeys = new Set();
-                
-                if (phone1.specs) {
-                    for (const key in phone1.specs) {
-                        if (key.startsWith(prefix)) {
-                            const cleanKey = key.substring(prefix.length);
-                            groupSpecs[cleanKey] = groupSpecs[cleanKey] || {};
-                            groupSpecs[cleanKey].phone1 = phone1.specs[key];
-                            allKeys.add(cleanKey);
-                        }
-                    }
-                }
-                
-                if (phone2.specs) {
-                    for (const key in phone2.specs) {
-                        if (key.startsWith(prefix)) {
-                            const cleanKey = key.substring(prefix.length);
-                            groupSpecs[cleanKey] = groupSpecs[cleanKey] || {};
-                            groupSpecs[cleanKey].phone2 = phone2.specs[key];
-                            allKeys.add(cleanKey);
-                        }
-                    }
-                }
-                
-                allKeys.forEach(specKey => {
-                    const spec = groupSpecs[specKey] || {};
-                    const value1 = spec.phone1 || 'N/A';
-                    const value2 = spec.phone2 || 'N/A';
+                // Process each key in the group
+                group.keys.forEach(specKey => {
+                    // Get values
+                    const value1 = specs1[specKey] ?? 'N/A';
+                    const value2 = specs2[specKey] ?? 'N/A';
                     
+                    // Create spec name row
                     const nameRow = document.createElement('div');
                     nameRow.className = 'spec-cell spec-name';
                     nameRow.textContent = specKey;
                     specsGrid.appendChild(nameRow);
                     
+                    // Create value row
                     const valueRow = document.createElement('div');
                     valueRow.className = 'spec-row';
                     
+                    // Create value cells
                     const value1Cell = document.createElement('div');
                     value1Cell.className = 'spec-cell spec-value';
                     
@@ -886,24 +934,29 @@
                     const value2Cell = document.createElement('div');
                     value2Cell.className = 'spec-cell spec-value';
                     
+                    // Compare values
                     const comparison = compareSpecValues(specKey, value1, value2);
                     
-                    let content1 = value1;
-                    let content2 = value2;
+                    // Format values for display
+                    let displayValue1 = formatSpecValue(value1);
+                    let displayValue2 = formatSpecValue(value2);
                     
+                    // Add indicators for better values
                     if (comparison.phone1 === 'better') {
-                        content1 = '<i class="fas fa-check-circle text-success value-indicator"></i>' + content1;
+                        displayValue1 = '<i class="fas fa-check-circle text-success value-indicator"></i>' + displayValue1;
                         value1Cell.classList.add('better-value');
                     }
                     
                     if (comparison.phone2 === 'better') {
-                        content2 = '<i class="fas fa-check-circle text-success value-indicator"></i>' + content2;
+                        displayValue2 = '<i class="fas fa-check-circle text-success value-indicator"></i>' + displayValue2;
                         value2Cell.classList.add('better-value');
                     }
                     
-                    value1Cell.innerHTML = content1;
-                    value2Cell.innerHTML = content2;
+                    // Set cell content
+                    value1Cell.innerHTML = displayValue1;
+                    value2Cell.innerHTML = displayValue2;
                     
+                    // Build row
                     valueRow.appendChild(value1Cell);
                     valueRow.appendChild(dividerCell);
                     valueRow.appendChild(value2Cell);
@@ -913,55 +966,92 @@
             });
         }
         
+        // Format specification value for display
+        function formatSpecValue(value) {
+            if (value === null || value === undefined) return 'N/A';
+            
+            // Handle arrays
+            if (Array.isArray(value)) {
+                return value.join(', ');
+            }
+            
+            // Handle objects
+            if (typeof value === 'object') {
+                return JSON.stringify(value);
+            }
+            
+            // Handle numbers with units
+            if (typeof value === 'number') {
+                // Add units based on key
+                if (specKey.includes('Battery')) return value + ' mAh';
+                if (specKey.includes('Mass')) return value + ' g';
+                if (specKey.includes('Width') || specKey.includes('Height') || specKey.includes('Depth')) 
+                    return value + ' mm';
+                if (specKey.includes('Diagonal')) return value + ' mm';
+                return value;
+            }
+            
+            return value;
+        }
+        
         // Compare two spec values
         function compareSpecValues(specKey, value1, value2) {
             const result = { phone1: 'equal', phone2: 'equal' };
             
-            if (value1 === 'N/A' || value2 === 'N/A') {
+            // Handle missing values
+            if (value1 === 'N/A' || value2 === 'N/A' || 
+                value1 === null || value2 === null ||
+                value1 === undefined || value2 === undefined) {
                 return result;
             }
             
             // Numeric comparison rules
             const numericComparisonRules = {
-                'Battery_capacity': 'higher',
-                'Memory_internal': 'higher',
-                'Display_size': 'higher',
-                'Display_resolution': 'higher',
-                'Body_weight': 'lower',
-                'MainCamera_video': 'higher',
-                'SelfieCamera_video': 'higher',
-                'Battery_charging': 'higher'
+                'Nominal Battery Capacity': 'higher',
+                'Memory Capacity': 'higher',
+                'Display Diagonal': 'higher',
+                'Pixel Density': 'higher',
+                'Cam1_mp': 'higher',
+                'Cam2_mp': 'higher',
+                'Mass': 'lower',
+                'Depth': 'lower',
+                'Width': 'lower',
+                'Height': 'lower'
             };
             
             // Text comparison rules
             const textComparisonRules = {
-                'Platform_OS': 'match',
-                'Platform_Chipset': 'match',
-                'Memory_cardslot': 'match',
-                'Network_technology': 'match'
+                'Operating System': 'newer',
+                'CPU': 'better'
             };
             
+            // Numeric comparison
             if (numericComparisonRules[specKey]) {
                 const num1 = extractNumber(value1);
                 const num2 = extractNumber(value2);
                 
-                if (isNaN(num1) || isNaN(num2)) {
-                    return result;
-                }
+                if (isNaN(num1) return result;
+                if (isNaN(num2)) return result;
                 
                 if (numericComparisonRules[specKey] === 'higher') {
                     if (num1 > num2) result.phone1 = 'better';
-                    if (num2 > num1) result.phone2 = 'better';
+                    else if (num2 > num1) result.phone2 = 'better';
                 } else {
                     if (num1 < num2) result.phone1 = 'better';
-                    if (num2 < num1) result.phone2 = 'better';
+                    else if (num2 < num1) result.phone2 = 'better';
                 }
             }
-            else if (textComparisonRules[specKey] === 'match') {
-                if (value1.toLowerCase().includes(value2.toLowerCase())) {
-                    result.phone2 = 'better';
-                } else if (value2.toLowerCase().includes(value1.toLowerCase())) {
-                    result.phone1 = 'better';
+            // Text comparison
+            else if (textComparisonRules[specKey]) {
+                if (textComparisonRules[specKey] === 'newer') {
+                    // Simple version comparison
+                    const v1 = parseFloat(value1);
+                    const v2 = parseFloat(value2);
+                    
+                    if (!isNaN(v1) && !isNaN(v2)) {
+                        if (v1 > v2) result.phone1 = 'better';
+                        else if (v2 > v1) result.phone2 = 'better';
+                    }
                 }
             }
             
@@ -970,6 +1060,9 @@
         
         // Extract number from string
         function extractNumber(str) {
+            if (typeof str === 'number') return str;
+            if (typeof str !== 'string') return NaN;
+            
             const match = str.match(/(\d+[\.,]?\d*)/);
             return match ? parseFloat(match[0].replace(',', '.')) : NaN;
         }
