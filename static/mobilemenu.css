@@ -112,14 +112,18 @@
 
 .floating-avatar-container {
     position: absolute;
-    top: -60px; /* Поднято выше */
+    top: -50px; /* Поднято выше (уменьшено) */
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
     width: 100%;
     text-align: center;
-    padding-bottom: 5px; /* Уменьшен отступ */
+    padding-bottom: 5px;
     pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .floating-avatar,
@@ -167,41 +171,44 @@
         0 0 10px rgba(0, 198, 255, 0.8),
         0 0 20px rgba(0, 198, 255, 0.4);
     cursor: pointer;
-    white-space: nowrap;
     text-align: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
     width: 100%;
     padding: 10px 15px;
     box-sizing: border-box;
     letter-spacing: 0.5px;
-    margin-top: 5px; /* Уменьшен отступ */
-    display: block;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: rgba(255, 255, 255, 0.05);
-    border: none; /* Убрана обводка */
+    border: none;
     border-radius: 15px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
     max-width: 250px;
-    margin: 0 auto; /* Центрирование */
+    margin: 0 auto;
+    min-height: 40px;
+    white-space: normal;
+    line-height: 1.3;
 }
 
 .user-balance {
     font-size: 0.95rem;
     font-weight: 700;
-    margin-top: 5px; /* Уменьшен отступ */
+    margin-top: 5px;
     text-shadow: 0 0 8px rgba(0, 255, 157, 0.6);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
     background: rgba(255, 255, 255, 0.05);
-    border: none; /* Убрана обводка */
+    border: none;
     border-radius: 15px;
     padding: 8px 15px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
     max-width: 180px;
-    margin: 0 auto; /* Центрирование */
+    margin: 0 auto;
 }
 
 /* Увеличенные ячейки сетки */
@@ -209,15 +216,15 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    gap: 15px; /* Уменьшен промежуток */
+    gap: 15px;
     width: 100%;
-    max-width: 460px; /* Увеличена ширина */
-    height: 460px; /* Увеличена высота */
+    max-width: 460px;
+    height: 460px;
     margin: 0 auto;
     background: transparent;
     box-sizing: border-box;
     padding: 0;
-    margin-top: 150px; /* Поднято выше */
+    margin-top: 190px; /* Увеличено для опускания сетки */
 }
 
 .menu-item {
@@ -278,10 +285,10 @@
     }
     
     .menu-grid {
-        gap: 12px; /* Уменьшен промежуток */
-        max-width: 380px; /* Увеличена ширина */
-        height: 380px; /* Увеличена высота */
-        margin-top: 140px; /* Поднято выше */
+        gap: 12px;
+        max-width: 380px;
+        height: 380px;
+        margin-top: 180px; /* Скорректировано */
     }
     .menu-item {
         padding: 10px 6px;
@@ -301,10 +308,10 @@
     }
     
     .menu-grid {
-        gap: 10px; /* Уменьшен промежуток */
-        max-width: 340px; /* Увеличена ширина */
-        height: 340px; /* Увеличена высота */
-        margin-top: 130px; /* Поднято выше */
+        gap: 10px;
+        max-width: 340px;
+        height: 340px;
+        margin-top: 170px; /* Скорректировано */
     }
     .menu-item i {
         font-size: 1.3rem;
@@ -320,10 +327,10 @@
     }
     
     .menu-grid {
-        gap: 8px; /* Уменьшен промежуток */
-        max-width: 310px; /* Увеличена ширина */
-        height: 310px; /* Увеличена высота */
-        margin-top: 120px; /* Поднято выше */
+        gap: 8px;
+        max-width: 310px;
+        height: 310px;
+        margin-top: 160px; /* Скорректировано */
     }
     .menu-item i {
         font-size: 1.2rem;
@@ -339,10 +346,10 @@
     }
     
     .menu-grid {
-        gap: 6px; /* Уменьшен промежуток */
-        max-width: 280px; /* Увеличена ширина */
-        height: 280px; /* Увеличена высота */
-        margin-top: 110px; /* Поднято выше */
+        gap: 6px;
+        max-width: 280px;
+        height: 280px;
+        margin-top: 150px; /* Скорректировано */
     }
     .menu-item i {
         font-size: 1.1rem;
@@ -357,7 +364,7 @@
         height: 55vh;
     }
     .floating-avatar-container {
-        top: -60px; /* Поднято выше */
+        top: -50px; /* Уменьшено */
     }
     .floating-avatar {
         width: 120px;
@@ -365,16 +372,16 @@
     }
     .floating-avatar-info {
         font-size: 1.1rem;
-        margin-top: 5px; /* Уменьшен отступ */
+        margin-top: 5px;
     }
     .user-balance {
         font-size: 1rem;
-        margin-top: 5px; /* Уменьшен отступ */
+        margin-top: 5px;
     }
     .menu-grid {
-        max-width: 500px; /* Увеличена ширина */
-        height: 500px; /* Увеличена высота */
-        margin-top: 140px; /* Поднято выше */
+        max-width: 500px;
+        height: 500px;
+        margin-top: 180px; /* Скорректировано */
     }
     .menu-item i {
         font-size: 1.8rem;
