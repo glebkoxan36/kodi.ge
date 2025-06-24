@@ -79,6 +79,18 @@ webhooks_collection = db['webhooks']
 payments_collection = db['payments']
 failed_logins_collection = db['failed_logins']
 
+# Создание текстового индекса для поиска телефонов
+try:
+    if 'phone_search_index' not in phones_collection.index_information():
+        phones_collection.create_index(
+            [('Name', 'text'), ('Brand', 'text'), ('Model', 'text')],
+            name='phone_search_index',
+            default_language='none'
+        )
+        app.logger.info("Created text index for phones")
+except Exception as e:
+    app.logger.error(f"Failed to create text index: {str(e)}")
+
 # Создаем администратора по умолчанию
 if not admin_users_collection.find_one({'username': 'admin'}):
     admin_password = os.getenv('ADMIN_PASSWORD', 'securepassword')
@@ -116,34 +128,67 @@ def get_current_prices():
     return DEFAULT_PRICES
 
 # ======================================
-# Функции сравнения телефонов (ОПТИМИЗИРОВАННЫЕ)
+# Оптимизированные функции поиска телефонов
 # ======================================
 
+def _preprocess_query(query):
+    """Очистка и нормализация поискового запроса"""
+    if not query:
+        return ""
+    
+    # Удаляем специальные символы
+    query = re.sub(r'[^\w\s]', '', query)
+    # Заменяем множественные пробелы на один
+    query = re.sub(r'\s+', ' ', query).strip()
+    # Приводим к нижнему регистру
+    return query.lower()
+
+def _fallback_search(query):
+    """Резервный метод поиска для сложных запросов"""
+    words = query.split()
+    if not words:
+        return []
+    
+    brand_query = words[0]
+    model_query = " ".join(words[1:]) if len(words) > 1 else ""
+    
+    conditions = [{'Brand': {'$regex': f'^{re.escape(brand_query)}', '$options': 'i'}}]
+    
+    if model_query:
+        conditions.append({'Model': {'$regex': f'^{re.escape(model_query)}', '$options': 'i'}})
+    
+    results = list(phones_collection.find(
+        {'$and': conditions},
+        {'_id': 1, 'Name': 1, 'Brand': 1, 'Model': 1}
+    ).limit(10))
+    
+    normalized = []
+    for phone in results:
+        name = phone.get('Name') or f"{phone.get('Brand', '')} {phone.get('Model', '')}".strip()
+        normalized.append({
+            '_id': str(phone['_id']),
+            'name': name,
+            'image_url': PLACEHOLDER
+        })
+    
+    return normalized
+
 def search_phones(query):
-    """Поиск телефонов по бренду и модели с использованием индексов"""
+    """Оптимизированный поиск телефонов с использованием текстового индекса"""
     try:
-        # Разбиваем запрос на слова
-        words = query.split()
-        if not words:
+        if not query:
             return []
         
-        # Первое слово - бренд, остальные - модель
-        brand_query = words[0]
-        model_query = " ".join(words[1:]) if len(words) > 1 else ""
+        # Обработка запроса
+        processed_query = _preprocess_query(query)
+        if not processed_query:
+            return []
         
-        # Формируем условия поиска
-        brand_condition = {'Brand': {'$regex': f'^{re.escape(brand_query)}', '$options': 'i'}}
-        conditions = [brand_condition]
-        
-        if model_query:
-            model_condition = {'Model': {'$regex': f'^{re.escape(model_query)}', '$options': 'i'}}
-            conditions.append(model_condition)
-        
-        # Выполняем поиск с использованием индексов
+        # Используем текстовый поиск MongoDB
         results = list(phones_collection.find(
-            {'$and': conditions},
-            {'_id': 1, 'Name': 1, 'Brand': 1, 'Model': 1}
-        ).limit(10))
+            {'$text': {'$search': processed_query}},
+            {'score': {'$meta': 'textScore'}}
+        ).sort([('score', {'$meta': 'textScore'})]).limit(10))
         
         normalized = []
         for phone in results:
@@ -155,14 +200,28 @@ def search_phones(query):
             normalized.append({
                 '_id': str(phone['_id']),
                 'name': name,
-                'image_url': PLACEHOLDER
+                'image_url': PLACEHOLDER,
+                'score': phone.get('score', 0)
             })
         
-        return normalized
+        # Сортируем по релевантности
+        normalized.sort(key=lambda x: x['score'], reverse=True)
+        
+        # Если результатов мало, добавляем результаты fallback-поиска
+        if len(normalized) < 5:
+            fallback_results = _fallback_search(query)
+            # Исключаем дубликаты
+            existing_ids = {item['_id'] for item in normalized}
+            for item in fallback_results:
+                if item['_id'] not in existing_ids:
+                    normalized.append(item)
+        
+        return normalized[:10]  # Возвращаем не более 10 результатов
     
     except Exception as e:
         app.logger.error(f"Phone search error: {str(e)}")
-        return []
+        # Используем fallback в случае ошибки
+        return _fallback_search(query)
 
 def get_phone_details(phone_id):
     """Получение детальной информации о телефоне"""
