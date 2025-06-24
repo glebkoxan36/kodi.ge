@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kodi.ge - ცოდნის ბაზა</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="static/mobilemenu.css">
+</head>
+<body>
+    <!-- Gradient background elements -->
+    <div class="gradient-bg gradient-1"></div>
+    <div class="gradient-bg gradient-2"></div>
+    
+    <!-- Bottom mobile menu button -->
+    <div class="mobile-menu-bottom" id="mobileMenuBottom">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Logo -->
+        <div class="sidebar-logo">
+            <div class="logo-animated">
+                <div class="logo-ring"></div>
+                <div class="logo-ring"></div>
+                <div class="logo-ring"></div>
+                <div class="logo-core">
+                    <div class="logo-letter">K</div>
+                </div>
+            </div>
+            <h2>KODI.GE</h2>
+        </div>
+        
+        <!-- User profile in sidebar -->
+        <div class="user-profile-section" onclick="goToLogin()">
+            <div class="user-avatar-container">
+                {% if user %}
+                    <div class="user-avatar" style="background-color: {{ user.avatar_color }};">
+                        {{ user.first_name[0] }}{{ user.last_name[0] }}
+                    </div>
+                {% else %}
+                    <img src="https://via.placeholder.com/80" alt="User Avatar" class="user-avatar" id="sidebarAvatar">
+                {% endif %}
+            </div>
+            <div class="user-name">
+                {% if user %}
+                    {{ user.first_name }} {{ user.last_name }}<br>
+                    <small>ბალანსი: {{ user.balance }} ₾</small>
+                {% else %}
+                    ლოგინი/რეგისტრაცია
+                {% endif %}
+            </div>
+        </div>
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="index.html">
+                    <i class="fas fa-home"></i>
+                    <span>მთავარი</span>
+                </a>
+            </li>
+            <!-- Navigation items same as index.html -->
+            <li class="nav-item">
+                <a class="nav-link active" href="#">
+                    <i class="fas fa-book"></i>
+                    <span>ცოდნის ბაზა</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- Main content -->
+    <div class="main-content">
+        <!-- Hero Section -->
+        <div class="hero-section mb-5">
+            <div class="text-center mb-4">
+                <div class="logo-animated">
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-core">
+                        <div class="logo-letter">K</div>
+                    </div>
+                </div>
+                <h1 class="display-4 fw-bold mt-3">KODI.GE</h1>
+                <p class="lead">ცოდნის ბაზა - IMEI შემოწმების შესახებ</p>
+            </div>
+        </div>
+        
+        <!-- Search Section -->
+        <div class="card mb-5">
+            <div class="card-header">
+                <i class="fas fa-search me-2"></i>
+                ძიება ცოდნის ბაზაში
+            </div>
+            <div class="card-body">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="შეიყვანეთ საკვანძო სიტყვები...">
+                    <button class="btn btn-primary" type="button">
+                        <i class="fas fa-search me-1"></i> ძიება
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Knowledge Articles -->
+        <div class="row">
+            <!-- Article 1 -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 service-card">
+                    <div class="card-header">
+                        <i class="fas fa-qrcode me-2"></i>
+                        რა არის IMEI კოდი?
+                    </div>
+                    <div class="card-body">
+                        <img src="https://via.placeholder.com/400x200?text=IMEI+Infographic" 
+                             alt="IMEI კოდის სტრუქტურა" 
+                             class="img-fluid rounded mb-3">
+                        <p>IMEI (International Mobile Equipment Identity) არის უნიკალური 15-ნიშნა ნომერი...</p>
+                        <a href="#" class="service-action">
+                            <i class="fas fa-book-open me-1"></i> სრულად ნახვა
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Article 2 -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 service-card">
+                    <div class="card-header">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        რატომ არის საჭირო IMEI-ის შემოწმება?
+                    </div>
+                    <div class="card-body">
+                        <img src="https://via.placeholder.com/400x200?text=IMEI+Check" 
+                             alt="IMEI შემოწმების მნიშვნელობა" 
+                             class="img-fluid rounded mb-3">
+                        <p>IMEI-ის შემოწმება საშუალებას გაძლევთ გაიგოთ მოწყობილობის სტატუსი...</p>
+                        <a href="#" class="service-action">
+                            <i class="fas fa-book-open me-1"></i> სრულად ნახვა
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Article 3 -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 service-card">
+                    <div class="card-header">
+                        <i class="fas fa-unlock-alt me-2"></i>
+                        როგორ მუშაობს ტელეფონის განბლოკვა?
+                    </div>
+                    <div class="card-body">
+                        <img src="https://via.placeholder.com/400x200?text=Phone+Unlock" 
+                             alt="ტელეფონის განბლოკვის პროცესი" 
+                             class="img-fluid rounded mb-3">
+                        <p>ტელეფონის განბლოკვა არის პროცესი, რომლის დროსაც მოწყობილობა გათავისუფლებულია...</p>
+                        <a href="#" class="service-action">
+                            <i class="fas fa-book-open me-1"></i> სრულად ნახვა
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional articles section -->
+        <h2 class="section-title mt-5">მეტი სასარგებლო მასალა</h2>
+        <div class="row">
+            <!-- Additional articles would go here -->
+        </div>
+        
+        <!-- Footer -->
+        <footer class="mt-5 pt-4 border-top border-secondary">
+            <!-- Same as index.html -->
+        </footer>
+    </div>
+    
+    <!-- Mobile Menu Modals -->
+    <!-- Same as index.html -->
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Main application logic -->
+    <script>
+        // Same mobile menu functions as index.html
+    </script>
+</body>
+  </html>
