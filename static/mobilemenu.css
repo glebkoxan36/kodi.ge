@@ -105,13 +105,13 @@
 
 .floating-avatar-container {
     position: absolute;
-    top: -55px;
+    top: -60px; /* Поднято выше */
     left: 50%;
     transform: translateX(-50%);
     z-index: 1500;
     width: 100%;
     text-align: center;
-    padding-bottom: 15px;
+    padding-bottom: 5px; /* Уменьшен отступ */
     pointer-events: none;
 }
 
@@ -168,48 +168,49 @@
     padding: 10px 15px;
     box-sizing: border-box;
     letter-spacing: 0.5px;
-    margin-top: 15px;
+    margin-top: 5px; /* Уменьшен отступ */
     display: block;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(0, 198, 255, 0.3);
+    border: none; /* Убрана обводка */
     border-radius: 15px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
     max-width: 250px;
-    margin: 15px auto 0;
+    margin: 0 auto; /* Центрирование */
 }
 
 .user-balance {
     font-size: 0.95rem;
     font-weight: 700;
-    margin-top: 10px;
+    margin-top: 5px; /* Уменьшен отступ */
     text-shadow: 0 0 8px rgba(0, 255, 157, 0.6);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(0, 198, 255, 0.3);
+    border: none; /* Убрана обводка */
     border-radius: 15px;
     padding: 8px 15px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
     max-width: 180px;
-    margin: 10px auto 0;
+    margin: 0 auto; /* Центрирование */
 }
 
+/* Увеличенные ячейки сетки */
 .menu-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    gap: 20px;
+    gap: 15px; /* Уменьшен промежуток */
     width: 100%;
-    max-width: 420px;
-    height: 420px;
+    max-width: 460px; /* Увеличена ширина */
+    height: 460px; /* Увеличена высота */
     margin: 0 auto;
     background: transparent;
     box-sizing: border-box;
     padding: 0;
-    margin-top: 160px;
+    margin-top: 150px; /* Поднято выше */
 }
 
 .menu-item {
@@ -270,10 +271,10 @@
     }
     
     .menu-grid {
-        gap: 15px;
-        max-width: 330px;
-        height: 330px;
-        margin-top: 150px;
+        gap: 12px; /* Уменьшен промежуток */
+        max-width: 380px; /* Увеличена ширина */
+        height: 380px; /* Увеличена высота */
+        margin-top: 140px; /* Поднято выше */
     }
     .menu-item {
         padding: 10px 6px;
@@ -293,10 +294,10 @@
     }
     
     .menu-grid {
-        gap: 12px;
-        max-width: 300px;
-        height: 300px;
-        margin-top: 140px;
+        gap: 10px; /* Уменьшен промежуток */
+        max-width: 340px; /* Увеличена ширина */
+        height: 340px; /* Увеличена высота */
+        margin-top: 130px; /* Поднято выше */
     }
     .menu-item i {
         font-size: 1.3rem;
@@ -312,10 +313,10 @@
     }
     
     .menu-grid {
-        gap: 10px;
-        max-width: 280px;
-        height: 280px;
-        margin-top: 130px;
+        gap: 8px; /* Уменьшен промежуток */
+        max-width: 310px; /* Увеличена ширина */
+        height: 310px; /* Увеличена высота */
+        margin-top: 120px; /* Поднято выше */
     }
     .menu-item i {
         font-size: 1.2rem;
@@ -331,10 +332,10 @@
     }
     
     .menu-grid {
-        gap: 8px;
-        max-width: 260px;
-        height: 260px;
-        margin-top: 120px;
+        gap: 6px; /* Уменьшен промежуток */
+        max-width: 280px; /* Увеличена ширина */
+        height: 280px; /* Увеличена высота */
+        margin-top: 110px; /* Поднято выше */
     }
     .menu-item i {
         font-size: 1.1rem;
@@ -349,7 +350,7 @@
         height: 55vh;
     }
     .floating-avatar-container {
-        top: -60px;
+        top: -60px; /* Поднято выше */
     }
     .floating-avatar {
         width: 120px;
@@ -357,11 +358,16 @@
     }
     .floating-avatar-info {
         font-size: 1.1rem;
-        margin-top: 15px;
+        margin-top: 5px; /* Уменьшен отступ */
     }
     .user-balance {
         font-size: 1rem;
-        margin-top: 12px;
+        margin-top: 5px; /* Уменьшен отступ */
+    }
+    .menu-grid {
+        max-width: 500px; /* Увеличена ширина */
+        height: 500px; /* Увеличена высота */
+        margin-top: 140px; /* Поднято выше */
     }
     .menu-item i {
         font-size: 1.8rem;
@@ -376,4 +382,4 @@
     .mobile-menu-modal {
         display: none !important;
     }
-  }
+    }
