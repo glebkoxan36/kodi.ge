@@ -377,6 +377,43 @@ def index():
                          premium_price=prices['premium'] / 100,
                          user=user_data)
 
+# Новые маршруты для страниц контактов и базы знаний
+@app.route('/contacts')
+def contacts_page():
+    """Страница контактов"""
+    user_data = None
+    if 'user_id' in session:
+        user_id = session['user_id']
+        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+        if user:
+            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+            user_data = {
+                'first_name': user.get('first_name', ''),
+                'last_name': user.get('last_name', ''),
+                'balance': user.get('balance', 0.0),
+                'avatar_color': avatar_color
+            }
+    
+    return render_template('contacts.html', user=user_data)
+
+@app.route('/knowledge-base')
+def knowledge_base():
+    """База знаний"""
+    user_data = None
+    if 'user_id' in session:
+        user_id = session['user_id']
+        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+        if user:
+            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+            user_data = {
+                'first_name': user.get('first_name', ''),
+                'last_name': user.get('last_name', ''),
+                'balance': user.get('balance', 0.0),
+                'avatar_color': avatar_color
+            }
+    
+    return render_template('knowledge-base.html', user=user_data)
+
 # ======================================
 # Роут для страницы проверки Apple IMEI
 # ======================================
