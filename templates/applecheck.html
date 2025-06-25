@@ -370,7 +370,15 @@
             
             // Get service from URL parameters
             const urlParams = new URLSearchParams(window.location.search);
-            const serviceParam = urlParams.get('service');
+            let serviceParam = urlParams.get('service');
+            
+            // If no service in query params, try from path
+            if (!serviceParam) {
+                const pathParts = window.location.pathname.split('/');
+                if (pathParts.length > 2) {
+                    serviceParam = pathParts[pathParts.length - 1];
+                }
+            }
             
             // Automatically select service if specified in URL
             if (serviceParam && servicePrices.hasOwnProperty(serviceParam)) {
@@ -458,6 +466,12 @@
         
         // Start the check process
         function startCheck() {
+            // Check if service is selected
+            if (!currentService) {
+                showError('გთხოვთ აირჩიოთ სერვისი');
+                return;
+            }
+            
             const imei = domElements.imeiInput.value.trim();
             
             // Validate IMEI
@@ -496,7 +510,7 @@
         function validateImei(imei, serviceType) {
             // For MacBook: 12-18 alphanumeric characters
             if (serviceType === 'macbook') {
-                return /^[A-Z0-9]{12,18}$/.test(imei);
+                return /^[a-zA-Z0-9]{12,18}$/.test(imei);
             }
             // For others: 15 digits
             return /^\d{15}$/.test(imei);
@@ -693,4 +707,4 @@
         }
     </script>
 </body>
-</html>
+        </html>
