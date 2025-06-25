@@ -5,9 +5,10 @@ import re
 import hmac
 import secrets
 import hashlib
+import requests
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, Blueprint
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app
 from flask_cors import CORS
 from pymongo import MongoClient
 import stripe
@@ -18,6 +19,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 # Импорт функций из нового модуля API
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
+from stripepay import StripePayment  # Импорт класса для работы со Stripe
 
 app = Flask(__name__)
 CORS(app)
@@ -128,6 +130,14 @@ def get_current_prices():
         # Объединяем с DEFAULT_PRICES для поддержки новых сервисов
         return {**DEFAULT_PRICES, **price_doc['prices']}
     return DEFAULT_PRICES
+
+# Инициализация StripePayment
+stripe_payment = StripePayment(
+    stripe_api_key=stripe.api_key,
+    webhook_secret=STRIPE_WEBHOOK_SECRET,
+    users_collection=regular_users_collection,
+    payments_collection=payments_collection
+)
 
 # ======================================
 # Оптимизированные функции поиска телефонов
@@ -492,25 +502,13 @@ def create_checkout_session():
         
         prices = get_current_prices()
         
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': f'iPhone Check ({service_type.capitalize()})',
-                    },
-                    'unit_amount': prices[service_type],
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            metadata={
-                'imei': imei,
-                'service_type': service_type
-            },
+        # Создаем сессию оплаты через StripePayment
+        session = stripe_payment.create_checkout_session(
+            imei=imei,
+            service_type=service_type,
+            amount=prices[service_type],
             success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=url_for('index', _external=True),
+            cancel_url=url_for('index', _external=True)
         )
         
         return jsonify({'id': session.id})
@@ -798,42 +796,18 @@ def parse_free_html(html_content):
 
 @app.route('/stripe_webhook', methods=['POST'])
 def stripe_webhook():
+    """Обработка вебхуков от Stripe"""
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
-    event = None
-
+    
     try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, STRIPE_WEBHOOK_SECRET
-        )
+        # Обработка вебхука через StripePayment
+        stripe_payment.handle_webhook(payload, sig_header)
+        return jsonify({'status': 'success'})
     except ValueError as e:
         return jsonify({'error': 'Invalid payload'}), 400
     except stripe.error.SignatureVerificationError as e:
         return jsonify({'error': 'Invalid signature'}), 400
-
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        metadata = session.get('metadata', {})
-        
-        if metadata.get('type') == 'balance_topup':
-            user_id = metadata.get('user_id')
-            amount = session['amount_total'] / 100
-            
-            regular_users_collection.update_one(
-                {'_id': ObjectId(user_id)},
-                {'$inc': {'balance': amount}}
-            )
-            
-            payments_collection.insert_one({
-                'user_id': ObjectId(user_id),
-                'amount': amount,
-                'currency': session['currency'],
-                'stripe_session_id': session['id'],
-                'timestamp': datetime.utcnow(),
-                'type': 'topup'
-            })
-    
-    return jsonify({'status': 'success'})
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -1041,19 +1015,13 @@ def dashboard():
     balance = user.get('balance', 0)
     
     # Последние 5 проверок
-    checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
-        .sort('timestamp', -1)
-        .limit(5))
+    checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
     # Последние 5 сравнений
-    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
-        .sort('timestamp', -1)
-        .limit(5))
+    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
     # Последние 5 платежей
-    payments = list(payments_collection.find({'user_id': ObjectId(user_id)})
-        .sort('timestamp', -1)
-        .limit(5))
+    payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
     # Общее количество операций
     total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
@@ -1083,25 +1051,11 @@ def topup_balance():
         
         # Создаем платежную сессию Stripe
         try:
-            session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=[{
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {
-                            'name': 'Balance Topup',
-                        },
-                        'unit_amount': int(amount * 100),
-                    },
-                    'quantity': 1,
-                }],
-                mode='payment',
-                metadata={
-                    'user_id': session['user_id'],
-                    'type': 'balance_topup'
-                },
+            session = stripe_payment.create_topup_session(
+                user_id=session['user_id'],
+                amount=amount,
                 success_url=url_for('user.topup_success', _external=True),
-                cancel_url=url_for('user.topup_balance', _external=True),
+                cancel_url=url_for('user.topup_balance', _external=True)
             )
             return redirect(session.url)
         except Exception as e:
@@ -1139,10 +1093,7 @@ def history_checks():
     page = int(request.args.get('page', 1))
     per_page = 20
     
-    checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
-        .sort('timestamp', -1)
-        .skip((page - 1) * per_page)
-        .limit(per_page))
+    checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).skip((page - 1) * per_page).limit(per_page))
     
     total = checks_collection.count_documents({'user_id': ObjectId(user_id)})
     
@@ -1175,10 +1126,7 @@ def history_comparisons():
     page = int(request.args.get('page', 1))
     per_page = 20
     
-    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
-        .sort('timestamp', -1)
-        .skip((page - 1) * per_page)
-        .limit(per_page))
+    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).skip((page - 1) * per_page).limit(per_page))
     
     total = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
     
