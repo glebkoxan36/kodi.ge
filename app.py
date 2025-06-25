@@ -98,7 +98,13 @@ if not admin_users_collection.find_one({'username': 'admin'}):
 
 DEFAULT_PRICES = {
     'paid': 499,
-    'premium': 999
+    'premium': 999,
+    'fmi': 299,
+    'sim_lock': 199,
+    'blacklist': 199,
+    'activation': 199,
+    'carrier': 199,
+    'full': 999
 }
 
 if prices_collection.count_documents({'type': 'current'}) == 0:
@@ -112,7 +118,8 @@ if prices_collection.count_documents({'type': 'current'}) == 0:
 def get_current_prices():
     price_doc = prices_collection.find_one({'type': 'current'})
     if price_doc:
-        return price_doc['prices']
+        # Объединяем с DEFAULT_PRICES для поддержки новых сервисов
+        return {**DEFAULT_PRICES, **price_doc['prices']}
     return DEFAULT_PRICES
 
 # ======================================
@@ -347,13 +354,20 @@ def apple_check():
     if service_type not in ['free', 'paid', 'premium']:
         service_type = 'free'
 
-    # Получаем текущие цены и конвертируем в лари
+    # Получаем текущие цены и конвертируем в доллары
     prices = get_current_prices()
-    paid_price_gel = prices['paid'] / 100.0
-    premium_price_gel = prices['premium'] / 100.0
+    paid_price = prices['paid'] / 100.0
+    premium_price = prices['premium'] / 100.0
+    fmi_price = prices['fmi'] / 100.0
+    sim_lock_price = prices['sim_lock'] / 100.0
+    blacklist_price = prices['blacklist'] / 100.0
+    activation_price = prices['activation'] / 100.0
+    carrier_price = prices['carrier'] / 100.0
+    full_price = prices['full'] / 100.0
 
     # Данные пользователя (если авторизован)
     user_data = None
+    user_balance = 0.0
     if 'user_id' in session:
         user_id = session['user_id']
         user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
@@ -365,14 +379,22 @@ def apple_check():
                 'balance': user.get('balance', 0.0),
                 'avatar_color': avatar_color
             }
+            user_balance = user.get('balance', 0.0)
 
     return render_template(
         'applecheck.html',
         service_type=service_type,
-        paid_price=paid_price_gel,
-        premium_price=premium_price_gel,
+        paid_price=paid_price,
+        premium_price=premium_price,
+        fmi_price=fmi_price,
+        sim_lock_price=sim_lock_price,
+        blacklist_price=blacklist_price,
+        activation_price=activation_price,
+        carrier_price=carrier_price,
+        full_price=full_price,
         stripe_public_key=STRIPE_PUBLIC_KEY,
-        user=user_data
+        user=user_data,
+        user_balance=user_balance
     )
 
 @app.route('/create-checkout-session', methods=['POST'])
@@ -478,6 +500,109 @@ def get_check_result():
         'result': record['result']
     })
 
+@app.route('/check_with_balance', methods=['POST'])
+@login_required
+def check_with_balance():
+    """Выполнение проверки с использованием баланса пользователя"""
+    data = request.get_json()
+    imei = data.get('imei')
+    service_type = data.get('service_type')
+    
+    if not imei or not service_type:
+        return jsonify({'error': 'Missing parameters'}), 400
+    
+    # Получаем текущие цены
+    prices = get_current_prices()
+    
+    # Проверяем, есть ли цена для данного типа услуги
+    if service_type not in prices:
+        return jsonify({'error': f'Invalid service type: {service_type}'}), 400
+    
+    # Получаем цену услуги в долларах
+    service_price = prices[service_type] / 100.0
+    
+    # Получаем данные пользователя
+    user_id = session['user_id']
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    # Проверяем баланс пользователя
+    user_balance = user.get('balance', 0.0)
+    if user_balance < service_price:
+        return jsonify({'error': 'Insufficient balance'}), 402
+    
+    try:
+        # Выполняем проверку
+        result = perform_api_check(imei, service_type)
+        
+        if not result:
+            return jsonify({'error': 'Empty response from API'}), 500
+        
+        if 'error' in result:
+            return jsonify(result), 400
+        
+        # Для сервисов, возвращающих HTML
+        if 'html_content' in result:
+            parsed_data = parse_free_html(result['html_content'])
+            if parsed_data:
+                result = parsed_data
+            else:
+                result = {'error': 'Failed to parse HTML response'}
+        
+        # Создаем запись о проверке
+        record = {
+            'imei': imei,
+            'service_type': service_type,
+            'paid': True,
+            'payment_type': 'balance',
+            'amount': service_price,
+            'currency': 'USD',
+            'timestamp': datetime.utcnow(),
+            'result': result,
+            'user_id': ObjectId(user_id)
+        }
+        checks_collection.insert_one(record)
+        
+        # Списание средств с баланса
+        new_balance = user_balance - service_price
+        regular_users_collection.update_one(
+            {'_id': ObjectId(user_id)},
+            {'$set': {'balance': new_balance}}
+        )
+        
+        # Запись о платеже
+        payments_collection.insert_one({
+            'user_id': ObjectId(user_id),
+            'amount': -service_price,
+            'currency': 'USD',
+            'timestamp': datetime.utcnow(),
+            'type': 'check',
+            'service_type': service_type,
+            'imei': imei
+        })
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        app.logger.error(f'Check with balance error: {str(e)}')
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/get_user_balance', methods=['GET'])
+@login_required
+def get_user_balance():
+    """Получение баланса пользователя"""
+    user_id = session['user_id']
+    user = regular_users_collection.find_one(
+        {'_id': ObjectId(user_id)},
+        {'balance': 1}
+    )
+    
+    if user:
+        return jsonify({'balance': user.get('balance', 0.0)})
+    return jsonify({'balance': 0.0})
+
 @app.route('/perform_check', methods=['POST'])
 def perform_check():
     data = request.get_json()
@@ -487,7 +612,9 @@ def perform_check():
     if not imei or not service_type:
         return jsonify({'error': 'Missing parameters'}), 400
     
-    if not validate_imei(imei):
+    # Для MacBook разрешаем 17-18 символов
+    is_macbook = service_type in ['macbook', 'macbook_pro', 'macbook_air']
+    if not validate_imei(imei, allow_macbook=is_macbook):
         return jsonify({'error': 'Invalid IMEI format'}), 400
     
     try:
