@@ -396,11 +396,9 @@ def apple_check_macbook():
 
 # Общий роут для Apple проверки
 @app.route('/applecheck')
-def apple_check(service_name=None):
-    """Страница проверки Apple-устройств"""
-    # Определяем тип услуги из параметра URL или аргумента функции
-    if service_name is None:
-        service_name = request.args.get('service', 'free')
+@app.route('/applecheck/<service>')
+def apple_check(service=None):
+    service = request.args.get('service', service)
     
     # Получаем текущие цены и конвертируем в доллары
     prices = get_current_prices()
