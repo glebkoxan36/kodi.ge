@@ -561,7 +561,7 @@
         </div>
         
         <!-- Back button -->
-        <a href="#" class="back-btn">
+        <a href="/" class="back-btn">
             <i class="fas fa-arrow-left"></i> უკან დაბრუნება
         </a>
         
@@ -587,7 +587,7 @@
                 </div>
                 <h3 class="service-title">FMI შემოწმება</h3>
                 <p class="service-description">iCloud აქტივაციის სტატუსის შემოწმება</p>
-                <div class="service-price">1.99 ₾</div>
+                <div class="service-price">{{ fmi_price|default(1.99) }} ₾</div>
             </div>
             
             <!-- Card 3: SIM Operator Status -->
@@ -597,7 +597,7 @@
                 </div>
                 <h3 class="service-title">SIM ოპერატორის სტატუსი</h3>
                 <p class="service-description">SIM ბლოკირებისა და ქსელის სტატუსი</p>
-                <div class="service-price">2.49 ₾</div>
+                <div class="service-price">{{ sim_lock_price|default(2.49) }} ₾</div>
             </div>
             
             <!-- Card 4: Blacklist Check -->
@@ -607,7 +607,7 @@
                 </div>
                 <h3 class="service-title">შავი სიის შემოწმება</h3>
                 <p class="service-description">IMEI ბლოკირების სტატუსის შემოწმება</p>
-                <div class="service-price">1.79 ₾</div>
+                <div class="service-price">{{ blacklist_price|default(1.79) }} ₾</div>
             </div>
             
             <!-- Card 5: MDM -->
@@ -617,7 +617,7 @@
                 </div>
                 <h3 class="service-title">MDM შემოწმება</h3>
                 <p class="service-description">კორპორატიული ბლოკირების შემოწმება</p>
-                <div class="service-price">2.99 ₾</div>
+                <div class="service-price">{{ mdm_price|default(2.99) }} ₾</div>
             </div>
             
             <!-- Card 6: Premium -->
@@ -627,7 +627,7 @@
                 </div>
                 <h3 class="service-title">პრემიუმ შემოწმება</h3>
                 <p class="service-description">სრული ისტორიისა და ტექნიკური მონაცემების მიმოხილვა</p>
-                <div class="service-price">4.99 ₾</div>
+                <div class="service-price">{{ premium_price|default(4.99) }} ₾</div>
             </div>
             
             <!-- Card 7: MacBook -->
@@ -637,14 +637,14 @@
                 </div>
                 <h3 class="service-title">MacBook შემოწმება</h3>
                 <p class="service-description">MacBook-ის ორიგინალურობის და iCloud სტატუსის შემოწმება</p>
-                <div class="service-price">3.49 ₾</div>
+                <div class="service-price">{{ macbook_price|default(3.49) }} ₾</div>
             </div>
         </div>
         
         <!-- Selected Service Container -->
         <div class="selected-service-container" id="selectedServiceContainer">
             <div class="selected-service-header">
-                <div class="selected-service-icon text-info">
+                <div class="selected-service-icon text-info" id="selectedServiceIcon">
                     <i class="fas fa-mobile-alt"></i>
                 </div>
                 <div>
@@ -671,7 +671,7 @@
                                 <i class="fas fa-wallet"></i>
                             </div>
                             <div class="payment-name">ბალანსიდან</div>
-                            <div class="payment-desc">ხელმისაწვდომი: 12.50 ₾</div>
+                            <div class="payment-desc">ხელმისაწვდომი: <span id="balanceAmount">{{ user_balance|default(0)|round(2) }} ₾</span></div>
                         </div>
                         <div class="payment-option" data-payment="stripe">
                             <div class="payment-icon">
@@ -748,18 +748,18 @@
         // Global variables
         let currentService = null;
         let currentPaymentMethod = null;
-        const isAuthenticated = true; // For demo purposes, set to true
-        const userBalance = 12.50; // For demo purposes
-        
-        // Service prices
+        const isAuthenticated = {% if user %}true{% else %}false{% endif %};
+        const userBalance = {% if user %}{{ user_balance|default(0)|round(2) }}{% else %}0{% endif %};
+
+        // Service prices from Flask template
         const servicePrices = {
             'originality': 0,
-            'fmi': 1.99,
-            'sim_lock': 2.49,
-            'blacklist': 1.79,
-            'mdm': 2.99,
-            'premium': 4.99,
-            'macbook': 3.49
+            'fmi': {{ fmi_price|default(1.99) }},
+            'sim_lock': {{ sim_lock_price|default(2.49) }},
+            'blacklist': {{ blacklist_price|default(1.79) }},
+            'mdm': {{ mdm_price|default(2.99) }},
+            'premium': {{ premium_price|default(4.99) }},
+            'macbook': {{ macbook_price|default(3.49) }}
         };
         
         // Service descriptions
@@ -801,6 +801,8 @@
             document.querySelectorAll('.service-card').forEach(card => {
                 card.addEventListener('click', function() {
                     selectService(this.dataset.service);
+                    // Update URL without reloading
+                    history.pushState(null, null, `/applecheck/${this.dataset.service}`);
                 });
             });
             
@@ -818,6 +820,19 @@
             document.getElementById('closeModal').addEventListener('click', function() {
                 document.getElementById('resultModal').style.display = 'none';
             });
+            
+            // Automatically select service if specified in URL
+            const pathParts = window.location.pathname.split('/');
+            if (pathParts.length > 2 && pathParts[1] === 'applecheck') {
+                const serviceFromUrl = pathParts[2];
+                if (servicePrices.hasOwnProperty(serviceFromUrl)) {
+                    selectService(serviceFromUrl);
+                }
+            }
+            // Or if service is passed as template variable
+            else if ("{{ selected_service }}" && servicePrices.hasOwnProperty("{{ selected_service }}")) {
+                selectService("{{ selected_service }}");
+            }
         });
         
         // Select a service
@@ -830,7 +845,10 @@
             });
             
             // Add selected class to clicked card
-            document.querySelector(`.service-card[data-service="${service}"]`).classList.add('selected');
+            const serviceCard = document.querySelector(`.service-card[data-service="${service}"]`);
+            if (serviceCard) {
+                serviceCard.classList.add('selected');
+            }
             
             // Hide services grid and show selected service container
             document.getElementById('servicesGrid').style.display = 'none';
@@ -838,14 +856,15 @@
             
             // Update service title and description
             document.getElementById('selectedServiceTitle').textContent = 
-                document.querySelector(`.service-card[data-service="${service}"] .service-title`).textContent;
+                serviceCard ? serviceCard.querySelector('.service-title').textContent : service;
                 
-            document.getElementById('selectedServiceDescription').textContent = serviceDescriptions[service];
+            document.getElementById('selectedServiceDescription').textContent = 
+                serviceDescriptions[service] || 'Apple-მოწყობილობის შემოწმების სერვისი';
             
             // Update service icon
-            const iconElement = document.querySelector('.selected-service-icon');
-            iconElement.innerHTML = `<i class="${serviceIcons[service]}"></i>`;
-            iconElement.className = `selected-service-icon ${serviceIconColors[service]}`;
+            const iconElement = document.getElementById('selectedServiceIcon');
+            iconElement.innerHTML = `<i class="${serviceIcons[service] || 'fas fa-mobile-alt'}"></i>`;
+            iconElement.className = `selected-service-icon ${serviceIconColors[service] || 'text-info'}`;
             
             // Update IMEI hint for MacBook
             const imeiHint = document.getElementById('imeiHint');
@@ -863,9 +882,14 @@
                 paymentSection.style.display = 'block';
                 buttonText.textContent = `შემოწმების დაწყება: ${servicePrices[service].toFixed(2)} ₾`;
                 
+                // Update balance display
+                document.getElementById('balanceAmount').textContent = `${userBalance.toFixed(2)} ₾`;
+                
                 // For non-authenticated users, hide balance option
                 if (!isAuthenticated) {
                     document.querySelector('.payment-option[data-payment="balance"]').style.display = 'none';
+                } else {
+                    document.querySelector('.payment-option[data-payment="balance"]').style.display = 'block';
                 }
             } else {
                 paymentSection.style.display = 'none';
