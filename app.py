@@ -1,6 +1,5 @@
 import os
 import json
-import requests
 import logging
 import re
 import hmac
@@ -16,6 +15,9 @@ from functools import wraps
 from bs4 import BeautifulSoup
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
+
+# Импорт функций из нового модуля API
+from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
 
 app = Flask(__name__)
 CORS(app)
@@ -106,13 +108,6 @@ if prices_collection.count_documents({'type': 'current'}) == 0:
         'created_at': datetime.utcnow(),
         'updated_at': datetime.utcnow()
     })
-
-# Типы сервисов
-SERVICE_TYPES = {
-    'free': 0,
-    'paid': 205,
-    'premium': 242
-}
 
 def get_current_prices():
     price_doc = prices_collection.find_one({'type': 'current'})
@@ -439,7 +434,8 @@ def payment_success():
             error_msg = result.get('error', 'No data available for this IMEI')
             return render_template('error.html', error=error_msg)
         
-        if service_type == 'free' and 'html_content' in result:
+        # Для сервисов, возвращающих HTML
+        if 'html_content' in result:
             parsed_data = parse_free_html(result['html_content'])
             if parsed_data:
                 result = parsed_data
@@ -503,7 +499,8 @@ def perform_check():
         if 'error' in result:
             return jsonify(result), 400
         
-        if service_type == 'free' and 'html_content' in result:
+        # Для сервисов, возвращающих HTML
+        if 'html_content' in result:
             parsed_data = parse_free_html(result['html_content'])
             if parsed_data:
                 result = parsed_data
@@ -536,49 +533,12 @@ def perform_check():
         app.logger.error(f'Check error: {str(e)}')
         return jsonify({'error': 'Internal server error'}), 500
 
-def validate_imei(imei):
-    return len(imei) == 15 and imei.isdigit()
-
-def perform_api_check(imei, service_type):
-    data = {
-        "service": SERVICE_TYPES[service_type],
-        "imei": imei,
-        "key": API_KEY
-    }
-    
-    try:
-        app.logger.info(f"Sending API request to {API_URL} with data: {data}")
-        response = requests.post(API_URL, data=data, timeout=60)
-        
-        if response.status_code != 200:
-            return {'error': f'API returned HTTP code {response.status_code}'}
-        
-        try:
-            result = response.json()
-        except json.JSONDecodeError:
-            return {'error': 'Invalid JSON response from API'}
-        
-        if not result.get('success', False):
-            return {'error': result.get('error', 'Unknown API error')}
-        
-        if service_type == 'free':
-            return {
-                'html_content': result.get('response', ''),
-                'raw_response': response.text
-            }
-        else:
-            return result.get('object', {})
-    
-    except requests.exceptions.RequestException as e:
-        return {'error': f"Request error: {str(e)}"}
-    except Exception as e:
-        return {'error': f"Service error: {str(e)}"}
-
 def parse_free_html(html_content):
     try:
         soup = BeautifulSoup(html_content, 'html.parser')
         result = {}
         
+        # Парсинг табличных данных
         tables = soup.find_all('table')
         for table in tables:
             rows = table.find_all('tr')
@@ -589,9 +549,12 @@ def parse_free_html(html_content):
                     value = cols[1].get_text(strip=True)
                     result[key] = value
         
+        # Дополнительные поля для новых сервисов
         labels = [
             "Device", "Model", "Serial", "IMEI", "ICCID", 
-            "FMI", "Activation Status", "Blacklist Status"
+            "FMI", "Activation Status", "Blacklist Status",
+            "Sim Lock", "MDM Status", "Google Account Status",
+            "Carrier", "Purchase Date", "Warranty Status"
         ]
         
         for label in labels:
