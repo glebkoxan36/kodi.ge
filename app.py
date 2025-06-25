@@ -105,6 +105,7 @@ DEFAULT_PRICES = {
     'activation': 199,
     'carrier': 199,
     'full': 999,
+    'macbook': 349,
     # Android-specific prices
     'android_paid': 399,
     'android_premium': 799,
@@ -350,27 +351,49 @@ def knowledge_base():
     return render_template('knowledge-base.html', user=user_data)
 
 # ======================================
-# Роут для страницы проверки Apple IMEI
+# Роуты для страницы проверки Apple IMEI
 # ======================================
 
-@app.route('/applecheck')
-def apple_check():
-    # Определяем тип услуги из параметра URL
-    service_type = request.args.get('type', 'free')
-    if service_type not in ['free', 'paid', 'premium']:
-        service_type = 'free'
+# Отдельные роуты для каждого типа проверки
+@app.route('/applecheck/originality')
+def apple_check_originality():
+    return apple_check('originality')
 
+@app.route('/applecheck/fmi')
+def apple_check_fmi():
+    return apple_check('fmi')
+
+@app.route('/applecheck/sim_lock')
+def apple_check_sim_lock():
+    return apple_check('sim_lock')
+
+@app.route('/applecheck/blacklist')
+def apple_check_blacklist():
+    return apple_check('blacklist')
+
+@app.route('/applecheck/mdm')
+def apple_check_mdm():
+    return apple_check('mdm')
+
+@app.route('/applecheck/premium')
+def apple_check_premium():
+    return apple_check('premium')
+
+@app.route('/applecheck/macbook')
+def apple_check_macbook():
+    return apple_check('macbook')
+
+# Общий роут для Apple проверки
+@app.route('/applecheck')
+def apple_check(service_name=None):
+    """Страница проверки Apple-устройств"""
+    # Определяем тип услуги из параметра URL или аргумента функции
+    if service_name is None:
+        service_name = request.args.get('service', 'free')
+    
     # Получаем текущие цены и конвертируем в доллары
     prices = get_current_prices()
-    paid_price = prices['paid'] / 100.0
-    premium_price = prices['premium'] / 100.0
-    fmi_price = prices['fmi'] / 100.0
-    sim_lock_price = prices['sim_lock'] / 100.0
-    blacklist_price = prices['blacklist'] / 100.0
-    activation_price = prices['activation'] / 100.0
-    carrier_price = prices['carrier'] / 100.0
-    full_price = prices['full'] / 100.0
-
+    
     # Данные пользователя (если авторизован)
     user_data = None
     user_balance = 0.0
@@ -389,15 +412,16 @@ def apple_check():
 
     return render_template(
         'applecheck.html',
-        service_type=service_type,
-        paid_price=paid_price,
-        premium_price=premium_price,
-        fmi_price=fmi_price,
-        sim_lock_price=sim_lock_price,
-        blacklist_price=blacklist_price,
-        activation_price=activation_price,
-        carrier_price=carrier_price,
-        full_price=full_price,
+        selected_service=service_name,  # Передаем выбранную услугу
+        paid_price=prices['paid'] / 100.0,
+        premium_price=prices['premium'] / 100.0,
+        fmi_price=prices['fmi'] / 100.0,
+        sim_lock_price=prices['sim_lock'] / 100.0,
+        blacklist_price=prices['blacklist'] / 100.0,
+        activation_price=prices['activation'] / 100.0,
+        carrier_price=prices['carrier'] / 100.0,
+        full_price=prices['full'] / 100.0,
+        macbook_price=prices.get('macbook', 349) / 100.0,
         stripe_public_key=STRIPE_PUBLIC_KEY,
         user=user_data,
         user_balance=user_balance
