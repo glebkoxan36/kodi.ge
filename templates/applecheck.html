@@ -3,164 +3,690 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kodi.ge - Apple IMEI Checker</title>
+    <title>Apple IMEI Checker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        :root {
+            --primary-color: #0d1525;
+            --secondary-color: #1d2a4a;
+            --accent-color: #00c6ff;
+            --text-color: #ffffff;
+            --text-secondary: #ffffff;
+            --card-bg: #121a2b;
+            --card-hover-bg: #16203a;
+            --success-color: #00d68f;
+            --warning-color: #ffaa00;
+            --danger-color: #ff3d71;
+            --ring-color-1: #00c6ff;
+            --ring-color-2: #ff3d71;
+            --ring-color-3: #00d68f;
+            --google-color: #4285F4;
+            --facebook-color: #3b5998;
+            --gold-color: #ffd700;
+            --purple-color: #9370db;
+        }
+
+        body, body * {
+            color: #ffffff !important;
+        }
+
+        .text-info, .text-info * { color: var(--accent-color) !important; }
+        .text-warning, .text-warning * { color: var(--warning-color) !important; }
+        .text-success, .text-success * { color: var(--success-color) !important; }
+        .text-gold, .text-gold * { color: var(--gold-color) !important; }
+        .text-purple, .text-purple * { color: var(--purple-color) !important; }
+        .status-clean, .status-clean * { color: var(--success-color) !important; }
+        .status-blacklisted, .status-blacklisted * { color: var(--danger-color) !important; }
+        .status-warning, .status-warning * { color: var(--warning-color) !important; }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(
+                135deg, 
+                var(--primary-color), 
+                var(--secondary-color),
+                #0f1729
+            );
+            background-size: 300% 300%;
+            animation: gradientShift 15s ease infinite;
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-weight: 450;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .gradient-bg {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.25;
+            z-index: -1;
+            animation: gradientShift 25s infinite alternate ease-in-out;
+        }
+
+        .gradient-1 {
+            background: linear-gradient(135deg, var(--accent-color), #0066ff);
+            top: -200px;
+            right: -200px;
+        }
+
+        .gradient-2 {
+            background: linear-gradient(135deg, var(--success-color), #00a86b);
+            bottom: -200px;
+            left: -200px;
+            animation-duration: 30s;
+            animation-delay: 2s;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, var(--accent-color), #0066ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--accent-color), var(--success-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--accent-color);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(0, 198, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(to right, var(--accent-color), var(--success-color));
+            border-radius: 2px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .service-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            border-color: rgba(0, 198, 255, 0.3);
+        }
+
+        .service-card.selected {
+            animation: pulse 2s infinite;
+            border: 2px solid var(--accent-color);
+        }
+
+        .service-icon {
+            font-size: 2.8rem;
+            margin-bottom: 20px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .service-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .service-description {
+            font-size: 0.95rem;
+            opacity: 0.85;
+            margin-bottom: 20px;
+            min-height: 60px;
+        }
+
+        .service-price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 15px 0;
+        }
+
+        .service-card.free .service-price {
+            color: var(--accent-color);
+        }
+
+        .service-card.fmi .service-price {
+            color: var(--warning-color);
+        }
+
+        .service-card.sim_lock .service-price {
+            color: var(--accent-color);
+        }
+
+        .service-card.blacklist .service-price {
+            color: var(--danger-color);
+        }
+
+        .service-card.mdm .service-price {
+            color: var(--accent-color);
+        }
+
+        .service-card.premium .service-price {
+            color: var(--gold-color);
+        }
+
+        .service-card.macbook .service-price {
+            color: var(--purple-color);
+        }
+
+        .selected-service-container {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .selected-service-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .selected-service-icon {
+            font-size: 2.5rem;
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 198, 255, 0.1);
+        }
+
+        .selected-service-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .selected-service-description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        .imei-form {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 198, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .form-text {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+
+        .payment-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .payment-option {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .payment-option:hover {
+            transform: translateY(-3px);
+            background: rgba(0, 198, 255, 0.15);
+        }
+
+        .payment-option.selected {
+            border: 2px solid var(--success-color);
+            background: rgba(0, 214, 143, 0.15);
+        }
+
+        .payment-icon {
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+        }
+
+        .payment-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .payment-desc {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .btn-check {
+            background: linear-gradient(135deg, var(--accent-color), #0066ff);
+            border: none;
+            color: white;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-check:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0, 198, 255, 0.4);
+        }
+
+        .spinner-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(0, 198, 255, 0.3);
+            border-radius: 50%;
+            border-top: 5px solid var(--accent-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 198, 255, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .close-modal:hover {
+            opacity: 1;
+        }
+
+        .result-content {
+            line-height: 1.6;
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .result-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--accent-color);
+        }
+
+        .result-value {
+            font-size: 1.1rem;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-success {
+            background: rgba(0, 214, 143, 0.15);
+            border: 1px solid var(--success-color);
+        }
+
+        .alert-error {
+            background: rgba(255, 61, 113, 0.15);
+            border: 1px solid var(--danger-color);
+        }
+
+        @media (max-width: 768px) {
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .selected-service-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .payment-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Gradient background elements -->
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
     
-    <!-- Main content -->
-    <div class="main-content">
-        <div class="container py-4">
-            <!-- Back button -->
-            <a href="{{ url_for('index') }}" class="btn btn-outline-light mb-4">
-                <i class="fas fa-arrow-left me-2"></i> უკან დაბრუნება
-            </a>
-            
-            <!-- Header section -->
-            <div class="header-section text-center mb-5">
-                <div class="logo-animated mb-4">
-                    <div class="logo-core">
-                        <div class="logo-letter">A</div>
-                    </div>
-                    <div class="logo-ring"></div>
-                    <div class="logo-ring"></div>
-                    <div class="logo-ring"></div>
+    <div class="container">
+        <!-- Logo and title -->
+        <div class="logo">
+            <div class="logo-icon">A</div>
+            <h1>Apple IMEI Checker</h1>
+        </div>
+        
+        <!-- Back button -->
+        <a href="#" class="back-btn">
+            <i class="fas fa-arrow-left"></i> უკან დაბრუნება
+        </a>
+        
+        <!-- Section title -->
+        <h2 class="section-title">აირჩიეთ შემოწმების ტიპი</h2>
+        
+        <!-- Services Grid (7 cards) -->
+        <div class="services-grid" id="servicesGrid">
+            <!-- Card 1: Originality Check -->
+            <div class="service-card free" data-service="originality">
+                <div class="service-icon text-success">
+                    <i class="fas fa-certificate"></i>
                 </div>
-                
-                <h1 class="fw-bold mb-3">Apple IMEI შემოწმება</h1>
-                <p class="lead text-light opacity-75">შეამოწმეთ თქვენი Apple მოწყობილობა სანდო სერვისით</p>
+                <h3 class="service-title">ორიგინალობის შემოწმება</h3>
+                <p class="service-description">მოწყობილობის ავთენტურობის დადასტურება</p>
+                <div class="service-price">0 ₾</div>
             </div>
             
-            <!-- Скрытый элемент с ценами для JS -->
-            <div id="prices-data" 
-                 data-free-price="0"
-                 data-paid-price="{{ paid_price }}"
-                 data-premium-price="{{ premium_price }}"
-                 style="display: none;">
+            <!-- Card 2: FMI Check -->
+            <div class="service-card fmi" data-service="fmi">
+                <div class="service-icon text-warning">
+                    <i class="fas fa-cloud"></i>
+                </div>
+                <h3 class="service-title">FMI შემოწმება</h3>
+                <p class="service-description">iCloud აქტივაციის სტატუსის შემოწმება</p>
+                <div class="service-price">1.99 ₾</div>
             </div>
             
-            <!-- Check Section -->
-            <div class="card mb-5">
-                <div class="card-header">
-                    <div class="d-flex align-items-center">
-                        <div class="check-icon me-3">
-                            <i class="fas fa-mobile-alt fa-2x text-info"></i>
-                        </div>
-                        <div>
-                            <h2 class="mb-0">უფასო შემოწმება</h2>
-                            <p class="mb-0 opacity-75">მიიღეთ ძირითადი ინფორმაცია თქვენი Apple მოწყობილობის შესახებ</p>
-                        </div>
-                    </div>
+            <!-- Card 3: SIM Operator Status -->
+            <div class="service-card sim_lock" data-service="sim_lock">
+                <div class="service-icon text-info">
+                    <i class="fas fa-sim-card"></i>
                 </div>
-                
-                <div class="card-body">
-                    <form id="imeiForm">
-                        <div class="form-group mb-4">
-                            <label for="imeiInput" class="form-label">შეიყვანეთ IMEI ნომერი</label>
-                            <input 
-                                type="text" 
-                                class="form-control" 
-                                id="imeiInput" 
-                                placeholder="15-ნიშნა IMEI" 
-                                required
-                                pattern="[0-9]{15}"
-                                title="15-ნიშნა IMEI ნომერი">
-                            <div class="form-text mt-2">
-                                IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში ან დარეკეთ *#06#
-                            </div>
-                        </div>
-                        
-                        <button type="button" class="btn btn-primary w-100" onclick="checkImei()">
-                            <span id="check-button-text">უფასო შემოწმება</span>
-                            <i class="fas fa-arrow-right ms-2"></i>
-                        </button>
-                    </form>
-                </div>
+                <h3 class="service-title">SIM ოპერატორის სტატუსი</h3>
+                <p class="service-description">SIM ბლოკირებისა და ქსელის სტატუსი</p>
+                <div class="service-price">2.49 ₾</div>
             </div>
             
-            <!-- Service Cards -->
-            <h2 class="section-title text-center mb-4">შემოწმების სერვისები</h2>
-            <div class="row mb-5">
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 service-card">
-                        <div class="service-icon text-info">
-                            <i class="fas fa-mobile-alt fa-3x"></i>
-                        </div>
-                        <h3 class="service-title">უფასო შემოწმება</h3>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> ძირითადი ინფორმაცია</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> მოწყობილობის მოდელის დადგენა</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> ქსელის ბლოკირების შემოწმება</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> სერიული ნომრის შემოწმება</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> მოწყობილობის ფერის დადგენა</li>
-                        </ul>
-                        <div class="service-price">0 ₾</div>
-                        <a href="{{ url_for('apple_check', type='free') }}" class="service-action">
-                            <i class="fas fa-arrow-right me-1"></i> არჩევა
-                        </a>
-                    </div>
+            <!-- Card 4: Blacklist Check -->
+            <div class="service-card blacklist" data-service="blacklist">
+                <div class="service-icon text-danger">
+                    <i class="fas fa-ban"></i>
                 </div>
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 service-card">
-                        <div class="service-icon text-warning">
-                            <i class="fas fa-shopping-cart fa-3x"></i>
-                        </div>
-                        <h3 class="service-title">პლატანი შემოწმება</h3>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> ყველა ძირითადი ინფორმაცია</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> iCloud სტატუსის შემოწმება</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> მოპარვის/დაკარგვის სტატუსი</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> სერვისის სტატუსი</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> გარანტიის ინფორმაცია</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> შეძენის თარიღი</li>
-                        </ul>
-                        <div class="service-price">{{ "%.2f"|format(paid_price) }} ₾</div>
-                        <a href="{{ url_for('apple_check', type='paid') }}" class="service-action">
-                            <i class="fas fa-arrow-right me-1"></i> არჩევა
-                        </a>
-                    </div>
+                <h3 class="service-title">შავი სიის შემოწმება</h3>
+                <p class="service-description">IMEI ბლოკირების სტატუსის შემოწმება</p>
+                <div class="service-price">1.79 ₾</div>
+            </div>
+            
+            <!-- Card 5: MDM -->
+            <div class="service-card mdm" data-service="mdm">
+                <div class="service-icon text-info">
+                    <i class="fas fa-lock"></i>
                 </div>
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 service-card">
-                        <div class="service-icon text-success">
-                            <i class="fas fa-crown fa-3x"></i>
-                        </div>
-                        <h3 class="service-title">პრემიუმ შემოწმება</h3>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> ყველა პლატანი შემოწმების ფუნქცია</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> სრული ისტორიის მიმოხილვა</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> გარანტია განბლოკვაზე</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> 24/7 პრიორიტეტული მხარდაჭერა</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> დეტალური ანალიზი</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> ბატარეის მდგომარეობა</li>
-                        </ul>
-                        <div class="service-price">{{ "%.2f"|format(premium_price) }} ₾</div>
-                        <a href="{{ url_for('apple_check', type='premium') }}" class="service-action">
-                            <i class="fas fa-arrow-right me-1"></i> არჩევა
-                        </a>
-                    </div>
+                <h3 class="service-title">MDM შემოწმება</h3>
+                <p class="service-description">კორპორატიული ბლოკირების შემოწმება</p>
+                <div class="service-price">2.99 ₾</div>
+            </div>
+            
+            <!-- Card 6: Premium -->
+            <div class="service-card premium" data-service="premium">
+                <div class="service-icon text-gold">
+                    <i class="fas fa-crown"></i>
                 </div>
+                <h3 class="service-title">პრემიუმ შემოწმება</h3>
+                <p class="service-description">სრული ისტორიისა და ტექნიკური მონაცემების მიმოხილვა</p>
+                <div class="service-price">4.99 ₾</div>
+            </div>
+            
+            <!-- Card 7: MacBook -->
+            <div class="service-card macbook" data-service="macbook">
+                <div class="service-icon text-purple">
+                    <i class="fas fa-laptop"></i>
+                </div>
+                <h3 class="service-title">MacBook შემოწმება</h3>
+                <p class="service-description">MacBook-ის ორიგინალურობის და iCloud სტატუსის შემოწმება</p>
+                <div class="service-price">3.49 ₾</div>
             </div>
         </div>
-    </div>
-    
-    <!-- Result Modal -->
-    <div class="result-modal" id="resultModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">შემოწმების შედეგი</h3>
-                <button class="close-modal" onclick="closeModal()">
-                    <i class="fas fa-times"></i>
-                </button>
+        
+        <!-- Selected Service Container -->
+        <div class="selected-service-container" id="selectedServiceContainer">
+            <div class="selected-service-header">
+                <div class="selected-service-icon text-info">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <div>
+                    <h3 class="selected-service-title" id="selectedServiceTitle">ორიგინალობის შემოწმება</h3>
+                    <p class="selected-service-description" id="selectedServiceDescription">მოწყობილობის ავთენტურობის დადასტურება</p>
+                </div>
             </div>
-            <div class="modal-body" id="modalResultContent">
-                <!-- Result will be displayed here -->
+            
+            <div class="imei-form">
+                <div class="form-group">
+                    <label for="imeiInput" class="form-label">შეიყვანეთ IMEI ან სერიული ნომერი</label>
+                    <input type="text" class="form-control" id="imeiInput" placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
+                    <small class="form-text" id="imeiHint">
+                        IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში ან დარეკეთ *#06#
+                    </small>
+                </div>
+                
+                <!-- Payment Options (only for paid services) -->
+                <div id="paymentSection" style="display: none;">
+                    <h4>გადახდის მეთოდი</h4>
+                    <div class="payment-options">
+                        <div class="payment-option" data-payment="balance">
+                            <div class="payment-icon">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="payment-name">ბალანსიდან</div>
+                            <div class="payment-desc">ხელმისაწვდომი: 12.50 ₾</div>
+                        </div>
+                        <div class="payment-option" data-payment="stripe">
+                            <div class="payment-icon">
+                                <i class="fab fa-cc-stripe"></i>
+                            </div>
+                            <div class="payment-name">ბარათით გადახდა</div>
+                            <div class="payment-desc">Visa/Mastercard</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn-check" id="checkButton">
+                    <span id="buttonText">უფასო შემოწმება</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -170,316 +696,343 @@
         <div class="spinner"></div>
     </div>
     
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Result Modal -->
+    <div class="result-modal" id="resultModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">შემოწმების შედეგი</h3>
+                <button class="close-modal" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="result-content" id="resultContent">
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <div>შემოწმება წარმატებით დასრულდა!</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">მოწყობილობის მოდელი</div>
+                    <div class="result-value">iPhone 13 Pro Max</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">სერიული ნომერი</div>
+                    <div class="result-value">F17KVCQGHXJ8</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">ორიგინალურობა</div>
+                    <div class="result-value">დადასტურებული</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">FMI სტატუსი</div>
+                    <div class="result-value">გამორთული</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">ქსელის ლოკი</div>
+                    <div class="result-value">განბლოკილი</div>
+                </div>
+                
+                <div class="result-item">
+                    <div class="result-label">შავ სიაშია</div>
+                    <div class="result-value">არა</div>
+                </div>
+            </div>
+        </div>
+    </div>
     
-    <!-- Main application logic -->
     <script>
         // Global variables
-        let stripeInstance = null;
-        let currentServiceType = 'free';
+        let currentService = null;
+        let currentPaymentMethod = null;
+        const isAuthenticated = true; // For demo purposes, set to true
+        const userBalance = 12.50; // For demo purposes
+        
+        // Service prices
+        const servicePrices = {
+            'originality': 0,
+            'fmi': 1.99,
+            'sim_lock': 2.49,
+            'blacklist': 1.79,
+            'mdm': 2.99,
+            'premium': 4.99,
+            'macbook': 3.49
+        };
+        
+        // Service descriptions
+        const serviceDescriptions = {
+            'originality': 'მოწყობილობის ავთენტურობის დადასტურება და ორიგინალურობის შემოწმება',
+            'fmi': 'iCloud ბლოკირების და Find My iPhone სისტემის სტატუსის გამოვლენა',
+            'sim_lock': 'SIM ბლოკირებისა და ქსელის ლოკის მდგომარეობის შემოწმება',
+            'blacklist': 'IMEI ნომრის შავ სიაში მოხვედრის შემოწმება',
+            'mdm': 'კორპორატიული დისტანციური მართვის (MDM) სტატუსის გამოვლენა',
+            'premium': 'მოწყობილობის სრული ისტორიისა და ტექნიკური მონაცემების მიმოხილვა',
+            'macbook': 'MacBook-ის ორიგინალურობის და iCloud სტატუსის შემოწმება'
+        };
+        
+        // Service icons
+        const serviceIcons = {
+            'originality': 'fas fa-certificate',
+            'fmi': 'fas fa-cloud',
+            'sim_lock': 'fas fa-sim-card',
+            'blacklist': 'fas fa-ban',
+            'mdm': 'fas fa-lock',
+            'premium': 'fas fa-crown',
+            'macbook': 'fas fa-laptop'
+        };
+        
+        // Service icon colors
+        const serviceIconColors = {
+            'originality': 'text-success',
+            'fmi': 'text-warning',
+            'sim_lock': 'text-info',
+            'blacklist': 'text-danger',
+            'mdm': 'text-info',
+            'premium': 'text-gold',
+            'macbook': 'text-purple'
+        };
         
         // Initialize page
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initialize Stripe with error handling
-            try {
-                stripeInstance = Stripe("{{ stripe_public_key }}");
-            } catch(e) {
-                console.error('Stripe initialization failed:', e);
-                // Show user-friendly error message
-                const stripeError = document.createElement('div');
-                stripeError.className = 'alert alert-danger position-fixed top-0 start-0 m-3';
-                stripeError.style.zIndex = '9999';
-                stripeError.innerHTML = `
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Payment Error:</strong> Payment system initialization failed. Please refresh the page.
-                `;
-                document.body.appendChild(stripeError);
-                
-                // Auto-hide after 5 seconds
-                setTimeout(() => {
-                    try {
-                        stripeError.style.opacity = '0';
-                        setTimeout(() => {
-                            if (document.body.contains(stripeError)) {
-                                document.body.removeChild(stripeError);
-                            }
-                        }, 500);
-                    } catch(err) {
-                        console.error('Error removing error message:', err);
-                    }
-                }, 5000);
-            }
-
-            // Update UI based on initial service type
-            updateCheckSection(currentServiceType);
-            
-            // Handle session_id after payment
-            const urlParams = new URLSearchParams(window.location.search);
-            const sessionId = urlParams.get('session_id');
-            if(sessionId) {
-                showSpinner(true);
-                fetch(`/get_check_result?session_id=${sessionId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        showSpinner(false);
-                        if(data.error) {
-                            displayResult({ error: data.error });
-                        } else {
-                            displayResult(data.result);
-                        }
-                    })
-                    .catch(error => {
-                        showSpinner(false);
-                        displayResult({ error: 'Failed to get result: ' + error.message });
-                    });
-            }
-            
-            // Handle service type selection from cards
-            document.querySelectorAll('.service-action').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const url = new URL(link.href);
-                    const type = url.searchParams.get('type');
-                    if(type) {
-                        currentServiceType = type;
-                        updateCheckSection(type);
-                        
-                        // Scroll to check section
-                        document.querySelector('.card-header').scrollIntoView({
-                            behavior: 'smooth'
-                        });
-                    }
+        document.addEventListener('DOMContentLoaded', function() {
+            // Service card selection
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    selectService(this.dataset.service);
                 });
+            });
+            
+            // Payment option selection
+            document.querySelectorAll('.payment-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    selectPaymentMethod(this.dataset.payment);
+                });
+            });
+            
+            // Check button click
+            document.getElementById('checkButton').addEventListener('click', startCheck);
+            
+            // Close modal button
+            document.getElementById('closeModal').addEventListener('click', function() {
+                document.getElementById('resultModal').style.display = 'none';
             });
         });
         
-        // Update check section based on service type
-        function updateCheckSection(serviceType) {
-            currentServiceType = serviceType;
-            const cardHeader = document.querySelector('.card-header');
+        // Select a service
+        function selectService(service) {
+            currentService = service;
             
-            if (!cardHeader) return;
+            // Remove selected class from all cards
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.classList.remove('selected');
+            });
             
-            let title = '';
-            let iconClass = '';
-            let description = '';
-            let buttonText = '';
+            // Add selected class to clicked card
+            document.querySelector(`.service-card[data-service="${service}"]`).classList.add('selected');
             
-            // Get prices from data attributes
-            const pricesData = document.getElementById('prices-data');
-            const paidPrice = parseFloat(pricesData.dataset.paidPrice);
-            const premiumPrice = parseFloat(pricesData.dataset.premiumPrice);
+            // Hide services grid and show selected service container
+            document.getElementById('servicesGrid').style.display = 'none';
+            document.getElementById('selectedServiceContainer').style.display = 'block';
             
-            switch(serviceType) {
-                case 'free':
-                    title = 'უფასო შემოწმება';
-                    iconClass = 'fas fa-mobile-alt fa-2x text-info';
-                    description = 'მიიღეთ ძირითადი ინფორმაცია თქვენი Apple მოწყობილობის შესახებ';
-                    buttonText = 'უფასო შემოწმება';
-                    break;
-                case 'paid':
-                    title = 'პლატანი შემოწმება';
-                    iconClass = 'fas fa-shopping-cart fa-2x text-warning';
-                    description = 'სრული ინფორმაცია მოწყობილობის სტატუსისა და ბლოკირების შესახებ';
-                    buttonText = `გადახდა: ${paidPrice.toFixed(2)} ₾`;
-                    break;
-                case 'premium':
-                    title = 'პრემიუმ შემოწმება';
-                    iconClass = 'fas fa-crown fa-2x text-success';
-                    description = 'ყველაზე სრულყოფილი შემოწმება გარანტიით და პრიორიტეტული მხარდაჭერით';
-                    buttonText = `გადახდა: ${premiumPrice.toFixed(2)} ₾`;
-                    break;
+            // Update service title and description
+            document.getElementById('selectedServiceTitle').textContent = 
+                document.querySelector(`.service-card[data-service="${service}"] .service-title`).textContent;
+                
+            document.getElementById('selectedServiceDescription').textContent = serviceDescriptions[service];
+            
+            // Update service icon
+            const iconElement = document.querySelector('.selected-service-icon');
+            iconElement.innerHTML = `<i class="${serviceIcons[service]}"></i>`;
+            iconElement.className = `selected-service-icon ${serviceIconColors[service]}`;
+            
+            // Update IMEI hint for MacBook
+            const imeiHint = document.getElementById('imeiHint');
+            if (service === 'macbook') {
+                imeiHint.textContent = 'სერიული ნომერი შეგიძლიათ იხილოთ MacBook-ის ქვედა ნაწილში ან სისტემის პარამეტრებში';
+            } else {
+                imeiHint.textContent = 'IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში ან დარეკეთ *#06#';
             }
             
-            const buttonTextSpan = document.getElementById('check-button-text');
+            // Handle payment section
+            const paymentSection = document.getElementById('paymentSection');
+            const buttonText = document.getElementById('buttonText');
             
-            if (cardHeader) {
-                cardHeader.innerHTML = `
-                    <div class="d-flex align-items-center">
-                        <div class="check-icon me-3">
-                            <i class="${iconClass}"></i>
-                        </div>
-                        <div>
-                            <h2 class="mb-0">${title}</h2>
-                            <p class="mb-0 opacity-75">${description}</p>
-                        </div>
+            if (servicePrices[service] > 0) {
+                paymentSection.style.display = 'block';
+                buttonText.textContent = `შემოწმების დაწყება: ${servicePrices[service].toFixed(2)} ₾`;
+                
+                // For non-authenticated users, hide balance option
+                if (!isAuthenticated) {
+                    document.querySelector('.payment-option[data-payment="balance"]').style.display = 'none';
+                }
+            } else {
+                paymentSection.style.display = 'none';
+                buttonText.textContent = 'უფასო შემოწმება';
+            }
+        }
+        
+        // Select payment method
+        function selectPaymentMethod(method) {
+            currentPaymentMethod = method;
+            
+            // Remove selected class from all options
+            document.querySelectorAll('.payment-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked option
+            document.querySelector(`.payment-option[data-payment="${method}"]`).classList.add('selected');
+        }
+        
+        // Start the check process
+        function startCheck() {
+            const imei = document.getElementById('imeiInput').value.trim();
+            
+            // Validate IMEI
+            if (!imei) {
+                alert('გთხოვთ შეიყვანოთ IMEI ან სერიული ნომერი');
+                return;
+            }
+            
+            // For paid services, validate payment method
+            if (servicePrices[currentService] > 0) {
+                if (!currentPaymentMethod) {
+                    alert('გთხოვთ აირჩიოთ გადახდის მეთოდი');
+                    return;
+                }
+                
+                if (currentPaymentMethod === 'balance' && servicePrices[currentService] > userBalance) {
+                    alert('თქვენს ანგარიშზე საკმარისი თანხა არ არის');
+                    return;
+                }
+            }
+            
+            // Show spinner
+            document.getElementById('spinner').style.display = 'flex';
+            
+            // Simulate API call
+            setTimeout(function() {
+                // Hide spinner
+                document.getElementById('spinner').style.display = 'none';
+                
+                // Show results
+                showResults();
+            }, 2000);
+        }
+        
+        // Show results in modal
+        function showResults() {
+            // Update results based on service
+            let resultsHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <div>შემოწმება წარმატებით დასრულდა!</div>
+                </div>
+            `;
+            
+            if (currentService === 'originality') {
+                resultsHTML += `
+                    <div class="result-item">
+                        <div class="result-label">მოწყობილობის მოდელი</div>
+                        <div class="result-value">iPhone 13 Pro Max</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">სერიული ნომერი</div>
+                        <div class="result-value">F17KVCQGHXJ8</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">ორიგინალურობა</div>
+                        <div class="result-value">დადასტურებული</div>
+                    </div>
+                `;
+            } else if (currentService === 'fmi') {
+                resultsHTML += `
+                    <div class="result-item">
+                        <div class="result-label">FMI სტატუსი</div>
+                        <div class="result-value">გამორთული</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">iCloud სტატუსი</div>
+                        <div class="result-value">გასაღები ამოღებულია</div>
+                    </div>
+                `;
+            } else if (currentService === 'sim_lock') {
+                resultsHTML += `
+                    <div class="result-item">
+                        <div class="result-label">SIM ლოკის სტატუსი</div>
+                        <div class="result-value">განბლოკილი</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">ოპერატორი</div>
+                        <div class="result-value">MagtiCom</div>
+                    </div>
+                `;
+            } else if (currentService === 'blacklist') {
+                resultsHTML += `
+                    <div class="result-item">
+                        <div class="result-label">შავ სიაშია</div>
+                        <div class="result-value">არა</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">ბლოკირების მიზეზი</div>
+                        <div class="result-value">-</div>
+                    </div>
+                `;
+            } else if (currentService === 'mdm') {
+                resultsHTML += `
+                    <div class="result-item">
+                        <div class="result-label">MDM სტატუსი</div>
+                        <div class="result-value">არ არის აქტიური</div>
+                    </div>
+                `;
+            } else if (currentService === 'premium') {
+                resultsHTML += `
+                    <div class="result-item">
+                        <div class="result-label">მოდელი</div>
+                        <div class="result-value">iPhone 13 Pro Max</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">ორიგინალურობა</div>
+                        <div class="result-value">დადასტურებული</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">FMI სტატუსი</div>
+                        <div class="result-value">გამორთული</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">ქსელის ლოკი</div>
+                        <div class="result-value">განბლოკილი</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">შავ სიაშია</div>
+                        <div class="result-value">არა</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">ბატარეის მდგომარეობა</div>
+                        <div class="result-value">96%</div>
+                    </div>
+                `;
+            } else if (currentService === 'macbook') {
+                resultsHTML += `
+                    <div class="result-item">
+                        <div class="result-label">მოდელი</div>
+                        <div class="result-value">MacBook Pro 14" 2023</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">ორიგინალურობა</div>
+                        <div class="result-value">დადასტურებული</div>
+                    </div>
+                    <div class="result-item">
+                        <div class="result-label">FMI სტატუსი</div>
+                        <div class="result-value">გამორთული</div>
                     </div>
                 `;
             }
             
-            if (buttonTextSpan) {
-                buttonTextSpan.textContent = buttonText;
-            }
-        }
-        
-        // Close modal
-        function closeModal() {
-            try {
-                document.getElementById('resultModal').style.display = 'none';
-            } catch(e) {
-                console.error('Error closing modal:', e);
-            }
-        }
-        
-        // Show spinner
-        function showSpinner(show) {
-            try {
-                document.getElementById('spinner').style.display = show ? 'flex' : 'none';
-            } catch(e) {
-                console.error('Error toggling spinner:', e);
-            }
-        }
-        
-        // Perform IMEI check
-        function checkImei() {
-            try {
-                const imei = document.getElementById('imeiInput').value.trim();
-                
-                if(!imei || imei.length !== 15 || !/^\d+$/.test(imei)) {
-                    alert('გთხოვთ შეიყვანოთ სწორი 15-ნიშნა IMEI ნომერი');
-                    return;
-                }
-                
-                showSpinner(true);
-                
-                if(currentServiceType === 'free') {
-                    // Free check
-                    fetch('/perform_check', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            imei: imei,
-                            service_type: 'free'
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        showSpinner(false);
-                        displayResult(data);
-                    })
-                    .catch(error => {
-                        showSpinner(false);
-                        displayResult({ error: 'Request failed: ' + error.message });
-                    });
-                } else {
-                    // Paid check
-                    fetch('/create-checkout-session', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            imei: imei,
-                            service_type: currentServiceType
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if(data.error) {
-                            throw new Error(data.error);
-                        }
-                        if (!stripeInstance) {
-                            throw new Error('Payment system not initialized');
-                        }
-                        return stripeInstance.redirectToCheckout({ sessionId: data.id });
-                    })
-                    .then(result => {
-                        if(result.error) {
-                            showSpinner(false);
-                            alert(result.error.message);
-                        }
-                    })
-                    .catch(error => {
-                        showSpinner(false);
-                        alert('Payment failed: ' + error.message);
-                    });
-                }
-            } catch(e) {
-                console.error('Error in IMEI check:', e);
-                showSpinner(false);
-                alert('An error occurred during IMEI check');
-            }
-        }
-        
-        // Display result in modal
-        function displayResult(data) {
-            try {
-                const modalContent = document.getElementById('modalResultContent');
-                
-                if(!modalContent) {
-                    throw new Error('Result modal content element not found');
-                }
-                
-                if(data.error) {
-                    modalContent.innerHTML = `
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-circle me-2"></i> შეცდომა: ${data.error}
-                        </div>
-                    `;
-                } else {
-                    let html = `
-                        <div class="alert alert-success mb-4">
-                            <i class="fas fa-check-circle me-2"></i> შემოწმება წარმატებით დასრულდა!
-                        </div>
-                        <div class="row">
-                    `;
-                    
-                    let count = 0;
-                    for(const [key, value] of Object.entries(data)) {
-                        if(key === 'html_content') {
-                            html += `</div><div class="mt-4">${value}</div>`;
-                        } else {
-                            if(count % 2 === 0) html += '<div class="row">';
-                            
-                            html += `
-                                <div class="col-md-6 mb-3">
-                                    <div class="result-item p-3 bg-dark rounded">
-                                        <div class="result-label fw-bold text-info mb-1">${formatLabel(key)}:</div>
-                                        <div class="result-value">${value}</div>
-                                    </div>
-                                </div>
-                            `;
-                            
-                            if(count % 2 === 1) html += '</div>';
-                            count++;
-                        }
-                    }
-                    
-                    if(count % 2 === 1) html += '</div>';
-                    modalContent.innerHTML = html;
-                }
-                
-                document.getElementById('resultModal').style.display = 'flex';
-            } catch(e) {
-                console.error('Error displaying result:', e);
-                alert('Error displaying results');
-            }
-        }
-        
-        // Format labels for display
-        function formatLabel(key) {
-            const labels = {
-                'model': 'მოდელი',
-                'serial': 'სერიული ნომერი',
-                'status': 'სტატუსი',
-                'fmi': 'FMI ჩართვა',
-                'blacklist': 'შავი სია',
-                'simlock': 'SIM ლოკი',
-                'warranty': 'გარანტია',
-                'purchase_date': 'შეძენის თარიღი',
-                'activation_status': 'აქტივაციის სტატუსი',
-                'carrier': 'ოპერატორი',
-                'country': 'ქვეყანა',
-                'device': 'მოწყობილობა',
-                'imei': 'IMEI ნომერი',
-                'iccid': 'ICCID',
-                'blacklist_status': 'შავი სიის სტატუსი'
-            };
-            
-            return labels[key] || key;
+            document.getElementById('resultContent').innerHTML = resultsHTML;
+            document.getElementById('resultModal').style.display = 'flex';
         }
     </script>
 </body>
