@@ -8,99 +8,402 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
     <style>
-        /* Добавленные стили для лучшего UX */
-        .phone-select-btn {
-            transition: all 0.3s ease;
-            cursor: pointer;
+        /* Custom styles for the comparison page */
+        .comparison-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
         
-        .phone-select-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        
-        .phone-select-btn.selected {
-            border-color: #0d6efd;
-            background-color: rgba(13, 110, 253, 0.05);
-        }
-        
-        .modal-suggestion-item {
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        
-        .modal-suggestion-item:hover {
-            background-color: rgba(13, 110, 253, 0.1);
-        }
-        
-        .modal-suggestion-item.selected {
-            background-color: rgba(13, 110, 253, 0.2);
-            border-left: 3px solid #0d6efd;
-        }
-        
-        .compare-ai-loader {
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .fa-spinner {
-            font-size: 2rem;
-            margin-bottom: 15px;
-            color: #0d6efd;
-        }
-        
-        .value-indicator {
-            margin-right: 8px;
-        }
-        
-        .better-value {
-            font-weight: bold;
-            color: #198754;
-        }
-        
-        /* Новые стили для двухколоночной структуры */
-        .specs-grid {
+        /* Phone selection - new design */
+        .phone-selector-container {
             display: flex;
-            justify-content: space-between;
-            width: 100%;
+            justify-content: center;
+            align-items: center;
+            gap: 50px;
+            margin: 40px 0;
+            flex-wrap: wrap;
         }
         
-        .phone-col {
-            flex: 0 0 48%; /* Две почти равные колонки */
+        .phone-selector {
+            width: 300px;
+            height: 400px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        
+        .phone-selector-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        
+        .phone-selector:hover .phone-selector-inner {
+            transform: rotateY(15deg);
+        }
+        
+        .phone-selector.selected:hover .phone-selector-inner {
+            transform: rotateY(-15deg);
+        }
+        
+        .phone-selector.selected .phone-selector-inner {
+            transform: rotateY(0);
+        }
+        
+        .phone-selector-front, .phone-selector-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 20px;
             display: flex;
             flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(135deg, rgba(26, 36, 60, 0.8), rgba(13, 21, 37, 0.9));
+            border: 2px solid rgba(0, 198, 255, 0.3);
+            overflow: hidden;
         }
         
-        .spec-group-container {
-            margin-top: 20px;
+        .phone-selector-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(135deg, rgba(32, 107, 196, 0.8), rgba(13, 21, 37, 0.9));
+        }
+        
+        .phone-selector.selected .phone-selector-front {
+            border: 2px solid rgba(0, 198, 255, 0.8);
+            box-shadow: 0 0 25px rgba(0, 198, 255, 0.4);
+        }
+        
+        .phone-placeholder-icon {
+            font-size: 5rem;
+            color: rgba(255, 255, 255, 0.2);
+            margin-bottom: 20px;
+        }
+        
+        .phone-selector-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .phone-selector-subtitle {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 20px;
+        }
+        
+        .phone-thumb {
+            width: 180px;
+            height: 180px;
+            object-fit: contain;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .vs-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .vs-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            box-shadow: 0 0 0 10px rgba(0, 198, 255, 0.1);
+            animation: pulse 2s infinite;
+        }
+        
+        /* Comparison grid - new design */
+        .specs-container {
+            background: rgba(18, 26, 43, 0.6);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            border: 1px solid rgba(0, 198, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .specs-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .specs-phone {
+            width: 48%;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .specs-phone img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px;
         }
         
         .spec-group {
-            margin-bottom: 25px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
         .group-header {
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #444;
+            background: rgba(0, 198, 255, 0.15);
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .group-header:hover {
+            background: rgba(0, 198, 255, 0.25);
+        }
+        
+        .group-header i {
+            margin-right: 10px;
+            transition: transform 0.3s;
+        }
+        
+        .group-header.collapsed i {
+            transform: rotate(-90deg);
+        }
+        
+        .spec-items {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
         }
         
         .spec-item {
+            padding: 12px 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.02);
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        
+        .spec-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
         }
         
         .spec-name {
-            color: #aaa;
-            flex: 1;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
         }
         
         .spec-value {
+            font-weight: 500;
             text-align: right;
-            flex: 1;
+            max-width: 60%;
+        }
+        
+        .spec-value.better {
+            color: var(--success-color);
+            position: relative;
+        }
+        
+        .spec-value.better::after {
+            content: '✓';
+            display: inline-block;
+            margin-left: 8px;
+            font-weight: bold;
+            color: var(--success-color);
+        }
+        
+        .spec-value.worse {
+            color: var(--danger-color);
+            position: relative;
+        }
+        
+        .spec-value.worse::after {
+            content: '✗';
+            display: inline-block;
+            margin-left: 8px;
+            font-weight: bold;
+            color: var(--danger-color);
+        }
+        
+        /* AI Analysis - new design */
+        .ai-analysis-container {
+            background: linear-gradient(135deg, rgba(26, 36, 60, 0.8), rgba(13, 21, 37, 0.9));
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+            border: 1px solid rgba(0, 198, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ai-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .ai-icon {
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            margin-right: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .ai-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+        
+        .ai-content {
+            line-height: 1.8;
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .ai-content p {
+            margin-bottom: 15px;
+        }
+        
+        .ai-background {
+            position: absolute;
+            top: 0;
+            right: 0;
+            opacity: 0.05;
+            font-size: 15rem;
+            color: var(--accent-color);
+            z-index: 1;
+        }
+        
+        /* Compare button */
+        .compare-button-container {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .compare-btn {
+            background: linear-gradient(135deg, var(--accent-color), #0066ff);
+            border: none;
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 5px 20px rgba(0, 198, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .compare-btn:hover:not(:disabled) {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 198, 255, 0.5);
+        }
+        
+        .compare-btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .compare-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+        
+        .compare-btn:hover:not(:disabled)::before {
+            left: 100%;
+        }
+        
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 198, 255, 0.1); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(0, 198, 255, 0.2); }
+            100% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 198, 255, 0.1); }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .phone-selector-container {
+                gap: 30px;
+            }
+            
+            .phone-selector {
+                width: 250px;
+                height: 350px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .phone-selector-container {
+                flex-direction: column;
+                gap: 40px;
+            }
+            
+            .vs-container {
+                transform: rotate(90deg);
+                margin: 20px 0;
+            }
+            
+            .specs-phone {
+                font-size: 1.1rem;
+            }
+            
+            .specs-phone img {
+                width: 60px;
+                height: 60px;
+            }
         }
     </style>
 </head>
@@ -159,72 +462,143 @@
     
     <!-- Main Content -->
     <div class="main-content">
-        <div class="compare-container py-5">
+        <div class="comparison-container py-5">
             <!-- Header -->
             <div class="text-center mb-5">
                 <h1 class="section-title">ტელეფონების შედარება</h1>
                 <p class="lead">შეადარეთ ნებისმიერი ორი მოწყობილობა და გაიგეთ რომელია თქვენთვის საუკეთესო</p>
             </div>
             
-            <!-- Comparison Section -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-exchange-alt me-2"></i>
-                    ტელეფონების შედარება
-                </div>
-                <div class="card-body">
-                    <div class="compare-search-container">
-                        <!-- Phone selection buttons -->
-                        <div class="phone-select-container">
-                            <div class="phone-select-btn" id="phone1Btn">
-                                <i class="fas fa-mobile-alt"></i>
-                                <div class="btn-text">ტელეფონი 1</div>
-                                <div class="phone-name" id="phone1Name">არცერთი არაა შერჩეული</div>
-                            </div>
-                            
-                            <div class="phone-select-btn" id="phone2Btn">
-                                <i class="fas fa-mobile-alt"></i>
-                                <div class="btn-text">ტელეფონი 2</div>
-                                <div class="phone-name" id="phone2Name">არცერთი არაა შერჩეული</div>
-                            </div>
+            <!-- Phone Selection - New Design -->
+            <div class="phone-selector-container">
+                <div class="phone-selector" id="phone1Selector">
+                    <div class="phone-selector-inner">
+                        <div class="phone-selector-front">
+                            <i class="fas fa-mobile-alt phone-placeholder-icon"></i>
+                            <div class="phone-selector-title">ტელეფონი 1</div>
+                            <div class="phone-selector-subtitle">დააკლიკეთ ასარჩევად</div>
                         </div>
-                        
-                        <button id="compareButton" class="compare-btn" disabled>
-                            <i class="fas fa-play me-2"></i>შედარების დაწყება
-                        </button>
-                    </div>
-                    
-                    <!-- COMPARISON GRID CONTAINER -->
-                    <div class="comparison-grid-container" id="comparisonGrid" style="display: none;">
-                        <div class="specs-grid">
-                            <!-- Колонка для телефона 1 -->
-                            <div class="phone-col phone-col-1">
-                                <div class="grid-header phone-header">
-                                    <img src="/static/phone-placeholder.png" class="phone-thumb" id="phone1Thumb" alt="Phone 1" onerror="handleImageError(event)">
-                                    <span id="phone1Title"></span>
-                                </div>
-                                <div class="spec-group-container" id="phone1Specs"></div>
-                            </div>
-                            
-                            <!-- Колонка для телефона 2 -->
-                            <div class="phone-col phone-col-2">
-                                <div class="grid-header phone-header">
-                                    <img src="/static/phone-placeholder.png" class="phone-thumb" id="phone2Thumb" alt="Phone 2" onerror="handleImageError(event)">
-                                    <span id="phone2Title"></span>
-                                </div>
-                                <div class="spec-group-container" id="phone2Specs"></div>
-                            </div>
+                        <div class="phone-selector-back">
+                            <img src="/static/phone-placeholder.png" class="phone-thumb" id="phone1Thumb" alt="Phone 1">
+                            <div class="phone-selector-title" id="phone1Name">არცერთი არაა შერჩეული</div>
                         </div>
-                    </div>
-                    
-                    <div class="compare-ai-analysis" id="aiAnalysis" style="display: none;">
-                        <div class="compare-ai-header">
-                            <i class="fas fa-robot compare-ai-icon"></i>
-                            <h3>Kodi.ge AI შედარება</h3>
-                        </div>
-                        <div class="compare-ai-content" id="aiContent"></div>
                     </div>
                 </div>
+                
+                <div class="vs-container">
+                    <div class="vs-circle">VS</div>
+                </div>
+                
+                <div class="phone-selector" id="phone2Selector">
+                    <div class="phone-selector-inner">
+                        <div class="phone-selector-front">
+                            <i class="fas fa-mobile-alt phone-placeholder-icon"></i>
+                            <div class="phone-selector-title">ტელეფონი 2</div>
+                            <div class="phone-selector-subtitle">დააკლიკეთ ასარჩევად</div>
+                        </div>
+                        <div class="phone-selector-back">
+                            <img src="/static/phone-placeholder.png" class="phone-thumb" id="phone2Thumb" alt="Phone 2">
+                            <div class="phone-selector-title" id="phone2Name">არცერთი არაა შერჩეული</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Compare Button -->
+            <div class="compare-button-container">
+                <button id="compareButton" class="compare-btn" disabled>
+                    <i class="fas fa-play"></i>შედარების დაწყება
+                </button>
+            </div>
+            
+            <!-- Comparison Grid - New Design -->
+            <div class="specs-container" id="comparisonGrid" style="display: none;">
+                <div class="specs-header">
+                    <div class="specs-phone">
+                        <img src="/static/phone-placeholder.png" id="phone1GridThumb" alt="Phone 1">
+                        <div id="phone1GridName"></div>
+                    </div>
+                    <div class="specs-phone">
+                        <img src="/static/phone-placeholder.png" id="phone2GridThumb" alt="Phone 2">
+                        <div id="phone2GridName"></div>
+                    </div>
+                </div>
+                
+                <div class="spec-group">
+                    <div class="group-header" data-group="general">
+                        <i class="fas fa-chevron-down"></i>
+                        <span>ზოგადი ინფორმაცია</span>
+                    </div>
+                    <div class="spec-items" id="generalSpecs"></div>
+                </div>
+                
+                <div class="spec-group">
+                    <div class="group-header" data-group="body">
+                        <i class="fas fa-chevron-down"></i>
+                        <span>კორპუსი</span>
+                    </div>
+                    <div class="spec-items" id="bodySpecs"></div>
+                </div>
+                
+                <div class="spec-group">
+                    <div class="group-header" data-group="display">
+                        <i class="fas fa-chevron-down"></i>
+                        <span>ეკრანი</span>
+                    </div>
+                    <div class="spec-items" id="displaySpecs"></div>
+                </div>
+                
+                <div class="spec-group">
+                    <div class="group-header" data-group="platform">
+                        <i class="fas fa-microchip"></i>
+                        <span>პლატფორმა</span>
+                    </div>
+                    <div class="spec-items" id="platformSpecs"></div>
+                </div>
+                
+                <div class="spec-group">
+                    <div class="group-header" data-group="memory">
+                        <i class="fas fa-memory"></i>
+                        <span>მეხსიერება</span>
+                    </div>
+                    <div class="spec-items" id="memorySpecs"></div>
+                </div>
+                
+                <div class="spec-group">
+                    <div class="group-header" data-group="camera">
+                        <i class="fas fa-camera"></i>
+                        <span>კამერა</span>
+                    </div>
+                    <div class="spec-items" id="cameraSpecs"></div>
+                </div>
+                
+                <div class="spec-group">
+                    <div class="group-header" data-group="battery">
+                        <i class="fas fa-battery-full"></i>
+                        <span>ბატარეა</span>
+                    </div>
+                    <div class="spec-items" id="batterySpecs"></div>
+                </div>
+                
+                <div class="spec-group">
+                    <div class="group-header" data-group="connectivity">
+                        <i class="fas fa-wifi"></i>
+                        <span>კავშირები</span>
+                    </div>
+                    <div class="spec-items" id="connectivitySpecs"></div>
+                </div>
+            </div>
+            
+            <!-- AI Analysis - New Design -->
+            <div class="ai-analysis-container" id="aiAnalysis" style="display: none;">
+                <div class="ai-background">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="ai-header">
+                    <i class="fas fa-robot ai-icon"></i>
+                    <h2 class="ai-title">Kodi.ge AI შედარება</h2>
+                </div>
+                <div class="ai-content" id="aiContent"></div>
             </div>
             
             <!-- Footer -->
@@ -245,7 +619,6 @@
                 <div class="modal-body">
                     <div class="modal-search-container">
                         <input type="text" class="modal-search-input" id="modalSearch" placeholder="მოძებნეთ ტელეფონი...">
-                        <!-- Suggestions column below search input -->
                         <div id="modalSuggestions" class="modal-suggestions-column"></div>
                     </div>
                     
@@ -253,7 +626,7 @@
                         <div class="card bg-dark border-secondary">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
-                                    <img src="" id="selectedPhoneImage" class="img-thumbnail me-3" style="width: 60px; height: 60px; object-fit: contain;" onerror="handleImageError(event)">
+                                    <img src="" id="selectedPhoneImage" class="img-thumbnail me-3" style="width: 60px; height: 60px; object-fit: contain;">
                                     <div>
                                         <h5 id="selectedPhoneName" class="mb-0"></h5>
                                         <small id="selectedPhoneSpec" class="text-muted"></small>
@@ -300,8 +673,8 @@
             }
             
             // Setup button event listeners
-            document.getElementById('phone1Btn').addEventListener('click', () => openPhoneModal('phone1'));
-            document.getElementById('phone2Btn').addEventListener('click', () => openPhoneModal('phone2'));
+            document.getElementById('phone1Selector').addEventListener('click', () => openPhoneModal('phone1'));
+            document.getElementById('phone2Selector').addEventListener('click', () => openPhoneModal('phone2'));
             document.getElementById('compareButton').addEventListener('click', comparePhones);
             
             // Setup modal event listeners
@@ -313,6 +686,17 @@
                 if (!e.target.closest('#modalSuggestions') && !e.target.closest('#modalSearch')) {
                     document.getElementById('modalSuggestions').style.display = 'none';
                 }
+            });
+            
+            // Add event listeners for group headers
+            document.querySelectorAll('.group-header').forEach(header => {
+                header.addEventListener('click', function() {
+                    const group = this.dataset.group;
+                    const items = this.nextElementSibling;
+                    
+                    this.classList.toggle('collapsed');
+                    items.style.display = items.style.display === 'none' ? 'grid' : 'none';
+                });
             });
         });
         
@@ -446,19 +830,19 @@
         function confirmPhoneSelection() {
             if (!modalSelectedPhone) return;
             
-            const phone1Btn = document.getElementById('phone1Btn');
-            const phone2Btn = document.getElementById('phone2Btn');
-            const phone1Name = document.getElementById('phone1Name');
-            const phone2Name = document.getElementById('phone2Name');
+            const selector1 = document.getElementById('phone1Selector');
+            const selector2 = document.getElementById('phone2Selector');
             
             if (currentSelection === 'phone1') {
                 selectedPhone1 = modalSelectedPhone;
-                phone1Name.textContent = selectedPhone1.name;
-                phone1Btn.classList.add('selected');
+                document.getElementById('phone1Name').textContent = selectedPhone1.name;
+                document.getElementById('phone1Thumb').src = selectedPhone1.image_url || '/static/phone-placeholder.png';
+                selector1.classList.add('selected');
             } else {
                 selectedPhone2 = modalSelectedPhone;
-                phone2Name.textContent = selectedPhone2.name;
-                phone2Btn.classList.add('selected');
+                document.getElementById('phone2Name').textContent = selectedPhone2.name;
+                document.getElementById('phone2Thumb').src = selectedPhone2.image_url || '/static/phone-placeholder.png';
+                selector2.classList.add('selected');
             }
             
             // Enable compare button if both phones are selected
@@ -483,21 +867,24 @@
                 
                 const comparisonGrid = document.getElementById('comparisonGrid');
                 const aiAnalysis = document.getElementById('aiAnalysis');
-                const phone1Thumb = document.getElementById('phone1Thumb');
-                const phone2Thumb = document.getElementById('phone2Thumb');
-                const phone1Title = document.getElementById('phone1Title');
-                const phone2Title = document.getElementById('phone2Title');
                 
+                // Update comparison grid
+                document.getElementById('phone1GridName').textContent = phone1Details.name;
+                document.getElementById('phone2GridName').textContent = phone2Details.name;
+                document.getElementById('phone1GridThumb').src = phone1Details.image_url || '/static/phone-placeholder.png';
+                document.getElementById('phone2GridThumb').src = phone2Details.image_url || '/static/phone-placeholder.png';
+                
+                // Show comparison sections
                 comparisonGrid.style.display = 'block';
                 aiAnalysis.style.display = 'block';
                 
-                phone1Title.textContent = phone1Details.name;
-                phone2Title.textContent = phone2Details.name;
-                phone1Thumb.src = phone1Details.image_url || '/static/phone-placeholder.png';
-                phone2Thumb.src = phone2Details.image_url || '/static/phone-placeholder.png';
-                
+                // Build specs comparison
                 buildComparisonGrid(phone1Details, phone2Details);
+                
+                // Scroll to comparison
                 comparisonGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                // Perform AI analysis
                 await performAiAnalysis(phone1Details, phone2Details);
                 
             } catch (error) {
@@ -528,120 +915,95 @@
         
         // Build the comparison grid
         function buildComparisonGrid(phone1, phone2) {
-            const phone1SpecsContainer = document.getElementById('phone1Specs');
-            const phone2SpecsContainer = document.getElementById('phone2Specs');
-            
-            // Clear containers
-            phone1SpecsContainer.innerHTML = '';
-            phone2SpecsContainer.innerHTML = '';
+            // Clear previous specs
+            document.querySelectorAll('.spec-items').forEach(container => {
+                container.innerHTML = '';
+            });
             
             // Get specs objects
             const specs1 = phone1.specs || phone1;
             const specs2 = phone2.specs || phone2;
             
-            // Define specification groups
-            const specGroups = [
-                {
-                    label: 'ზოგადი ინფორმაცია',
+            // Define specification groups and keys
+            const specGroups = {
+                general: {
                     keys: ['Network_Technology', 'Network_2gbands', 'Network_3gbands', 'Network_4gbands', 'Network_Speed']
                 },
-                {
-                    label: 'კორპუსი',
+                body: {
                     keys: ['Body_Dimensions', 'Body_Weight', 'Body_SIM']
                 },
-                {
-                    label: 'ეკრანი',
+                display: {
                     keys: ['Display_Type', 'Display_Resolution']
                 },
-                {
-                    label: 'პლატფორმა',
+                platform: {
                     keys: ['Platform_OS', 'Platform_Chipset', 'Platform_Cpu', 'Platform_Gpu']
                 },
-                {
-                    label: 'მეხსიერება',
+                memory: {
                     keys: ['Memory_Cardslot', 'Memory_Internalmemory']
                 },
-                {
-                    label: 'მთავარი კამერა',
-                    keys: ['MainCamera_Cameraspecs', 'MainCamera_Features', 'MainCamera_Video']
+                camera: {
+                    keys: ['MainCamera_Cameraspecs', 'MainCamera_Features', 'MainCamera_Video', 'SelfieCamera_Cameraspecs', 'SelfieCamera_Features']
                 },
-                {
-                    label: 'ფრონტალური კამერა',
-                    keys: ['SelfieCamera_Cameraspecs', 'SelfieCamera_Features']
-                },
-                {
-                    label: 'ბატარეა',
+                battery: {
                     keys: ['Battery_Type']
                 },
-                {
-                    label: 'კავშირები',
+                connectivity: {
                     keys: ['COMMS_WLAN', 'COMMS_Bluetooth', 'COMMS_NFC', 'COMMS_Radio', 'COMMS_USB']
-                },
-                {
-                    label: 'დამატებით',
-                    keys: ['Colors']
                 }
-            ];
+            };
             
             // Process each group
-            specGroups.forEach(group => {
-                // Create group for phone 1
-                const group1 = createSpecGroup(group, specs1, specs2);
-                phone1SpecsContainer.appendChild(group1);
+            for (const groupId in specGroups) {
+                const group = specGroups[groupId];
+                const container = document.getElementById(`${groupId}Specs`);
                 
-                // Create group for phone 2
-                const group2 = createSpecGroup(group, specs2, specs1);
-                phone2SpecsContainer.appendChild(group2);
-            });
+                group.keys.forEach(specKey => {
+                    const value1 = specs1[specKey] || 'N/A';
+                    const value2 = specs2[specKey] || 'N/A';
+                    
+                    // Format values
+                    const displayValue1 = formatSpecValue(specKey, value1);
+                    const displayValue2 = formatSpecValue(specKey, value2);
+                    
+                    // Compare values
+                    const comparison = compareSpecValues(specKey, value1, value2);
+                    
+                    // Create spec items
+                    const specItem1 = createSpecItem(specKey, displayValue1, comparison.phone1);
+                    const specItem2 = createSpecItem(specKey, displayValue2, comparison.phone2);
+                    
+                    // Append to container
+                    container.appendChild(specItem1);
+                    container.appendChild(specItem2);
+                });
+            }
         }
         
-        // Helper function to create specification group
-        function createSpecGroup(group, thisSpecs, otherSpecs) {
-            const groupContainer = document.createElement('div');
-            groupContainer.className = 'spec-group';
+        // Create a spec item element
+        function createSpecItem(specName, value, comparison) {
+            const item = document.createElement('div');
+            item.className = 'spec-item';
             
-            // Group header
-            const groupHeader = document.createElement('div');
-            groupHeader.className = 'group-header';
-            groupHeader.textContent = group.label;
-            groupContainer.appendChild(groupHeader);
+            // Spec name
+            const nameElem = document.createElement('div');
+            nameElem.className = 'spec-name';
+            nameElem.textContent = specName;
+            item.appendChild(nameElem);
             
-            // Process each key in the group
-            group.keys.forEach(specKey => {
-                const value = thisSpecs[specKey] ?? 'N/A';
-                const otherValue = otherSpecs[specKey] ?? 'N/A';
-                
-                // Create spec item
-                const specItem = document.createElement('div');
-                specItem.className = 'spec-item';
-                
-                // Spec name
-                const specNameElem = document.createElement('div');
-                specNameElem.className = 'spec-name';
-                specNameElem.textContent = specKey;
-                specItem.appendChild(specNameElem);
-                
-                // Spec value
-                const specValueElem = document.createElement('div');
-                specValueElem.className = 'spec-value';
-                
-                // Format value
-                let displayValue = formatSpecValue(specKey, value);
-                
-                // Compare values
-                const comparison = compareSpecValues(specKey, value, otherValue);
-                if (comparison.phone1 === 'better') {
-                    displayValue = '<i class="fas fa-check-circle text-success value-indicator"></i>' + displayValue;
-                    specValueElem.classList.add('better-value');
-                }
-                
-                specValueElem.innerHTML = displayValue;
-                specItem.appendChild(specValueElem);
-                
-                groupContainer.appendChild(specItem);
-            });
+            // Spec value
+            const valueElem = document.createElement('div');
+            valueElem.className = 'spec-value';
+            valueElem.innerHTML = value;
             
-            return groupContainer;
+            // Apply comparison styling
+            if (comparison === 'better') {
+                valueElem.classList.add('better');
+            } else if (comparison === 'worse') {
+                valueElem.classList.add('worse');
+            }
+            
+            item.appendChild(valueElem);
+            return item;
         }
         
         // Format specification value for display
@@ -716,11 +1078,23 @@
                 if (isNaN(num2)) return result;
                 
                 if (numericComparisonRules[specKey] === 'higher') {
-                    if (num1 > num2) result.phone1 = 'better';
-                    else if (num2 > num1) result.phone2 = 'better';
+                    if (num1 > num2) {
+                        result.phone1 = 'better';
+                        result.phone2 = 'worse';
+                    }
+                    else if (num2 > num1) {
+                        result.phone2 = 'better';
+                        result.phone1 = 'worse';
+                    }
                 } else {
-                    if (num1 < num2) result.phone1 = 'better';
-                    else if (num2 < num1) result.phone2 = 'better';
+                    if (num1 < num2) {
+                        result.phone1 = 'better';
+                        result.phone2 = 'worse';
+                    }
+                    else if (num2 < num1) {
+                        result.phone2 = 'better';
+                        result.phone1 = 'worse';
+                    }
                 }
             }
             // Text comparison
@@ -731,8 +1105,14 @@
                     const v2 = parseFloat(value2);
                     
                     if (!isNaN(v1) && !isNaN(v2)) {
-                        if (v1 > v2) result.phone1 = 'better';
-                        else if (v2 > v1) result.phone2 = 'better';
+                        if (v1 > v2) {
+                            result.phone1 = 'better';
+                            result.phone2 = 'worse';
+                        }
+                        else if (v2 > v1) {
+                            result.phone2 = 'better';
+                            result.phone1 = 'worse';
+                        }
                     }
                 }
             }
@@ -791,4 +1171,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
