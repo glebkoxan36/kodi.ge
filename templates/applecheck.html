@@ -323,8 +323,11 @@
         let currentService = null;
         let currentPaymentMethod = null;
         const isAuthenticated = {% if user %}true{% else %}false{% endif %};
-        const userBalance = {% if user %}{{ user_balance|default(0)|round(2) }}{% else %}0{% endif %};
+        let userBalance = {% if user %}{{ user_balance|default(0)|round(2) }}{% else %}0{% endif %};
 
+        // Initialize Stripe with public key
+        const stripe = Stripe('{{ stripe_public_key }}');
+        
         // Service prices from Flask template
         const servicePrices = {
             'originality': 0,
@@ -404,7 +407,7 @@
             });
             
             // Confirm payment choice
-            document.getElementById('confirmPaymentChoice').addEventListener('click', function() {
+            document.getElementById('confirmPaymentChoice').addEventListener('click', async function() {
                 const selectedOption = document.querySelector('#paymentChoiceModal .payment-option.selected');
                 if (!selectedOption) {
                     alert('გთხოვთ აირჩიოთ გადახდის მეთოდი');
@@ -413,11 +416,17 @@
 
                 const method = selectedOption.dataset.payment;
                 document.getElementById('paymentChoiceModal').style.display = 'none';
+                document.getElementById('spinner').style.display = 'flex';
 
-                if (method === 'balance') {
-                    handleBalancePayment();
-                } else if (method === 'stripe') {
-                    handleStripePayment();
+                try {
+                    if (method === 'balance') {
+                        await handleBalancePayment();
+                    } else if (method === 'stripe') {
+                        await handleStripePayment();
+                    }
+                } catch (error) {
+                    document.getElementById('spinner').style.display = 'none';
+                    alert('Payment error: ' + error.message);
                 }
             });
 
@@ -518,7 +527,10 @@
             });
             
             // Add selected class to clicked option
-            document.querySelector(`.payment-option[data-payment="${method}"]`).classList.add('selected');
+            const optionElement = document.querySelector(`.payment-option[data-payment="${method}"]`);
+            if (optionElement) {
+                optionElement.classList.add('selected');
+            }
         }
         
         // Start the check process
@@ -548,47 +560,127 @@
         }
         
         // Handle Stripe payment
-        function handleStripePayment() {
-            // Show spinner
-            document.getElementById('spinner').style.display = 'flex';
+        async function handleStripePayment() {
+            const imei = document.getElementById('imeiInput').value.trim();
+            const serviceType = currentService;
+            const amount = servicePrices[currentService] * 100; // Convert to cents
             
-            // In a real app, we would create a Stripe session and redirect
-            // For now, we simulate a delay and then show the result
-            setTimeout(() => {
+            try {
+                // Create checkout session via server
+                const response = await fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imei: imei,
+                        service_type: serviceType,
+                        amount: amount,
+                        success_url: window.location.origin + '/success?session_id={CHECKOUT_SESSION_ID}',
+                        cancel_url: window.location.href
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Redirect to Stripe checkout
+                const result = await stripe.redirectToCheckout({
+                    sessionId: data.sessionId
+                });
+                
+                if (result.error) {
+                    throw new Error(result.error.message);
+                }
+            } catch (error) {
                 document.getElementById('spinner').style.display = 'none';
-                // Here we would redirect to Stripe, but for demo we just show the result
-                // For the demo, we assume payment was successful and then we do the check
-                performCheck();
-            }, 2000);
+                alert('Payment error: ' + error.message);
+                console.error('Stripe payment error:', error);
+            }
         }
         
         // Handle balance payment
-        function handleBalancePayment() {
-            // Show spinner
-            document.getElementById('spinner').style.display = 'flex';
+        async function handleBalancePayment() {
+            const imei = document.getElementById('imeiInput').value.trim();
+            const serviceType = currentService;
+            const amount = servicePrices[currentService];
             
-            // Simulate API call to deduct from balance
-            setTimeout(() => {
+            try {
+                // Deduct from balance via server
+                const response = await fetch('/pay-with-balance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imei: imei,
+                        service_type: serviceType,
+                        amount: amount
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Payment failed');
+                }
+                
+                // Update user balance
+                userBalance = data.new_balance;
+                document.getElementById('balanceAmount').textContent = `${userBalance.toFixed(2)} ₾`;
+                document.getElementById('modalBalanceAmount').textContent = `${userBalance.toFixed(2)} ₾`;
+                
+                // Perform the check
+                await performCheck();
+            } catch (error) {
                 document.getElementById('spinner').style.display = 'none';
-                performCheck();
-            }, 2000);
+                alert('Balance payment error: ' + error.message);
+                console.error('Balance payment error:', error);
+            }
         }
         
         // Perform the actual check
-        function performCheck() {
-            // Show spinner
-            document.getElementById('spinner').style.display = 'flex';
+        async function performCheck() {
+            const imei = document.getElementById('imeiInput').value.trim();
+            const serviceType = currentService;
             
-            // Simulate API call to check IMEI
-            setTimeout(() => {
+            try {
+                // Show spinner
+                document.getElementById('spinner').style.display = 'flex';
+                
+                // Call server to perform check
+                const response = await fetch('/perform-check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        imei: imei,
+                        service_type: serviceType
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Check failed');
+                }
+                
+                // Hide spinner and show results
                 document.getElementById('spinner').style.display = 'none';
-                showResults();
-            }, 2000);
+                showResults(data.result);
+            } catch (error) {
+                document.getElementById('spinner').style.display = 'none';
+                alert('Check error: ' + error.message);
+                console.error('Check error:', error);
+            }
         }
         
         // Show results in modal
-        function showResults() {
-            // Update results based on service
+        function showResults(resultData) {
             let resultsHTML = `
                 <div class="alert alert-success">
                     <i class="fas fa-check-circle"></i>
@@ -596,101 +688,102 @@
                 </div>
             `;
             
+            // Generate result items based on service and result data
             if (currentService === 'originality') {
                 resultsHTML += `
                     <div class="result-item">
                         <div class="result-label">მოწყობილობის მოდელი</div>
-                        <div class="result-value">iPhone 13 Pro Max</div>
+                        <div class="result-value">${resultData.model || 'N/A'}</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">სერიული ნომერი</div>
-                        <div class="result-value">F17KVCQGHXJ8</div>
+                        <div class="result-value">${resultData.serial || 'N/A'}</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">ორიგინალურობა</div>
-                        <div class="result-value">დადასტურებული</div>
+                        <div class="result-value">${resultData.originality || 'N/A'}</div>
                     </div>
                 `;
             } else if (currentService === 'fmi') {
                 resultsHTML += `
                     <div class="result-item">
                         <div class="result-label">FMI სტატუსი</div>
-                        <div class="result-value">გამორთული</div>
+                        <div class="result-value">${resultData.fmi_status || 'N/A'}</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">iCloud სტატუსი</div>
-                        <div class="result-value">გასაღები ამოღებულია</div>
+                        <div class="result-value">${resultData.icloud_status || 'N/A'}</div>
                     </div>
                 `;
             } else if (currentService === 'sim_lock') {
                 resultsHTML += `
                     <div class="result-item">
                         <div class="result-label">SIM ლოკის სტატუსი</div>
-                        <div class="result-value">განბლოკილი</div>
+                        <div class="result-value">${resultData.sim_lock || 'N/A'}</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">ოპერატორი</div>
-                        <div class="result-value">MagtiCom</div>
+                        <div class="result-value">${resultData.carrier || 'N/A'}</div>
                     </div>
                 `;
             } else if (currentService === 'blacklist') {
                 resultsHTML += `
                     <div class="result-item">
                         <div class="result-label">შავ სიაშია</div>
-                        <div class="result-value">არა</div>
+                        <div class="result-value">${resultData.blacklisted || 'N/A'}</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">ბლოკირების მიზეზი</div>
-                        <div class="result-value">-</div>
+                        <div class="result-value">${resultData.blacklist_reason || 'N/A'}</div>
                     </div>
                 `;
             } else if (currentService === 'mdm') {
                 resultsHTML += `
                     <div class="result-item">
                         <div class="result-label">MDM სტატუსი</div>
-                        <div class="result-value">არ არის აქტიური</div>
+                        <div class="result-value">${resultData.mdm_status || 'N/A'}</div>
                     </div>
                 `;
             } else if (currentService === 'premium') {
                 resultsHTML += `
                     <div class="result-item">
                         <div class="result-label">მოდელი</div>
-                        <div class="result-value">iPhone 13 Pro Max</div>
+                        <div class="result-value">${resultData.model || 'N/A'}</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">ორიგინალურობა</div>
-                        <div class="result-value">დადასტურებული</div>
+                        <div class="result-value">${resultData.originality || 'N/A'}</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">FMI სტატუსი</div>
-                        <div class="result-value">გამორთული</div>
+                        <div class="result-value">${resultData.fmi_status || 'N/A'}</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">ქსელის ლოკი</div>
-                        <div class="result-value">განბლოკილი</div>
+                        <div class="result-value">${resultData.network_lock || 'N/A'}</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">შავ სიაშია</div>
-                        <div class="result-value">არა</div>
+                        <div class="result-value">${resultData.blacklisted || 'N/A'}</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">ბატარეის მდგომარეობა</div>
-                        <div class="result-value">96%</div>
+                        <div class="result-value">${resultData.battery_health || 'N/A'}</div>
                     </div>
                 `;
             } else if (currentService === 'macbook') {
                 resultsHTML += `
                     <div class="result-item">
                         <div class="result-label">მოდელი</div>
-                        <div class="result-value">MacBook Pro 14" 2023</div>
+                        <div class="result-value">${resultData.model || 'N/A'}</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">ორიგინალურობა</div>
-                        <div class="result-value">დადასტურებული</div>
+                        <div class="result-value">${resultData.originality || 'N/A'}</div>
                     </div>
                     <div class="result-item">
                         <div class="result-label">FMI სტატუსი</div>
-                        <div class="result-value">გამორთული</div>
+                        <div class="result-value">${resultData.fmi_status || 'N/A'}</div>
                     </div>
                 `;
             }
