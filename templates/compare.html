@@ -57,6 +57,51 @@
             font-weight: bold;
             color: #198754;
         }
+        
+        /* Новые стили для двухколоночной структуры */
+        .specs-grid {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        
+        .phone-col {
+            flex: 0 0 48%; /* Две почти равные колонки */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .spec-group-container {
+            margin-top: 20px;
+        }
+        
+        .spec-group {
+            margin-bottom: 25px;
+        }
+        
+        .group-header {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #444;
+        }
+        
+        .spec-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .spec-name {
+            color: #aaa;
+            flex: 1;
+        }
+        
+        .spec-value {
+            text-align: right;
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -152,19 +197,22 @@
                     <!-- COMPARISON GRID CONTAINER -->
                     <div class="comparison-grid-container" id="comparisonGrid" style="display: none;">
                         <div class="specs-grid">
-                            <!-- Header row -->
-                            <div class="grid-header phone-header">
-                                <img src="/static/phone-placeholder.png" class="phone-thumb" id="phone1Thumb" alt="Phone 1" onerror="handleImageError(event)">
-                                <span id="phone1Title"></span>
+                            <!-- Колонка для телефона 1 -->
+                            <div class="phone-col phone-col-1">
+                                <div class="grid-header phone-header">
+                                    <img src="/static/phone-placeholder.png" class="phone-thumb" id="phone1Thumb" alt="Phone 1" onerror="handleImageError(event)">
+                                    <span id="phone1Title"></span>
+                                </div>
+                                <div class="spec-group-container" id="phone1Specs"></div>
                             </div>
                             
-                            <div class="divider-cell">
-                                <div class="divider-line"></div>
-                            </div>
-                            
-                            <div class="grid-header phone-header">
-                                <img src="/static/phone-placeholder.png" class="phone-thumb" id="phone2Thumb" alt="Phone 2" onerror="handleImageError(event)">
-                                <span id="phone2Title"></span>
+                            <!-- Колонка для телефона 2 -->
+                            <div class="phone-col phone-col-2">
+                                <div class="grid-header phone-header">
+                                    <img src="/static/phone-placeholder.png" class="phone-thumb" id="phone2Thumb" alt="Phone 2" onerror="handleImageError(event)">
+                                    <span id="phone2Title"></span>
+                                </div>
+                                <div class="spec-group-container" id="phone2Specs"></div>
                             </div>
                         </div>
                     </div>
@@ -480,14 +528,14 @@
         
         // Build the comparison grid
         function buildComparisonGrid(phone1, phone2) {
-            const specsGrid = document.querySelector('.specs-grid');
+            const phone1SpecsContainer = document.getElementById('phone1Specs');
+            const phone2SpecsContainer = document.getElementById('phone2Specs');
             
-            // Remove all rows except the header
-            while (specsGrid.children.length > 3) {
-                specsGrid.removeChild(specsGrid.lastChild);
-            }
+            // Clear containers
+            phone1SpecsContainer.innerHTML = '';
+            phone2SpecsContainer.innerHTML = '';
             
-            // Get the specs objects
+            // Get specs objects
             const specs1 = phone1.specs || phone1;
             const specs2 = phone2.specs || phone2;
             
@@ -537,63 +585,63 @@
             
             // Process each group
             specGroups.forEach(group => {
-                // Add group header
-                const groupHeader = document.createElement('div');
-                groupHeader.className = 'group-header';
-                groupHeader.textContent = group.label;
-                specsGrid.appendChild(groupHeader);
+                // Create group for phone 1
+                const group1 = createSpecGroup(group, specs1, specs2);
+                phone1SpecsContainer.appendChild(group1);
                 
-                // Process each key in the group
-                group.keys.forEach(specKey => {
-                    // Get values
-                    const value1 = specs1[specKey] ?? 'N/A';
-                    const value2 = specs2[specKey] ?? 'N/A';
-                    
-                    // Create spec name row
-                    const nameRow = document.createElement('div');
-                    nameRow.className = 'spec-cell spec-name';
-                    nameRow.textContent = specKey;
-                    specsGrid.appendChild(nameRow);
-                    
-                    // Create value cells
-                    const value1Cell = document.createElement('div');
-                    value1Cell.className = 'spec-cell spec-value';
-                    
-                    const dividerCell = document.createElement('div');
-                    dividerCell.className = 'divider-cell';
-                    dividerCell.innerHTML = '<div class="divider-line"></div>';
-                    
-                    const value2Cell = document.createElement('div');
-                    value2Cell.className = 'spec-cell spec-value';
-                    
-                    // Compare values
-                    const comparison = compareSpecValues(specKey, value1, value2);
-                    
-                    // Format values for display
-                    let displayValue1 = formatSpecValue(specKey, value1);
-                    let displayValue2 = formatSpecValue(specKey, value2);
-                    
-                    // Add indicators for better values
-                    if (comparison.phone1 === 'better') {
-                        displayValue1 = '<i class="fas fa-check-circle text-success value-indicator"></i>' + displayValue1;
-                        value1Cell.classList.add('better-value');
-                    }
-                    
-                    if (comparison.phone2 === 'better') {
-                        displayValue2 = '<i class="fas fa-check-circle text-success value-indicator"></i>' + displayValue2;
-                        value2Cell.classList.add('better-value');
-                    }
-                    
-                    // Set cell content
-                    value1Cell.innerHTML = displayValue1;
-                    value2Cell.innerHTML = displayValue2;
-                    
-                    // Build row
-                    specsGrid.appendChild(value1Cell);
-                    specsGrid.appendChild(dividerCell);
-                    specsGrid.appendChild(value2Cell);
-                });
+                // Create group for phone 2
+                const group2 = createSpecGroup(group, specs2, specs1);
+                phone2SpecsContainer.appendChild(group2);
             });
+        }
+        
+        // Helper function to create specification group
+        function createSpecGroup(group, thisSpecs, otherSpecs) {
+            const groupContainer = document.createElement('div');
+            groupContainer.className = 'spec-group';
+            
+            // Group header
+            const groupHeader = document.createElement('div');
+            groupHeader.className = 'group-header';
+            groupHeader.textContent = group.label;
+            groupContainer.appendChild(groupHeader);
+            
+            // Process each key in the group
+            group.keys.forEach(specKey => {
+                const value = thisSpecs[specKey] ?? 'N/A';
+                const otherValue = otherSpecs[specKey] ?? 'N/A';
+                
+                // Create spec item
+                const specItem = document.createElement('div');
+                specItem.className = 'spec-item';
+                
+                // Spec name
+                const specNameElem = document.createElement('div');
+                specNameElem.className = 'spec-name';
+                specNameElem.textContent = specKey;
+                specItem.appendChild(specNameElem);
+                
+                // Spec value
+                const specValueElem = document.createElement('div');
+                specValueElem.className = 'spec-value';
+                
+                // Format value
+                let displayValue = formatSpecValue(specKey, value);
+                
+                // Compare values
+                const comparison = compareSpecValues(specKey, value, otherValue);
+                if (comparison.phone1 === 'better') {
+                    displayValue = '<i class="fas fa-check-circle text-success value-indicator"></i>' + displayValue;
+                    specValueElem.classList.add('better-value');
+                }
+                
+                specValueElem.innerHTML = displayValue;
+                specItem.appendChild(specValueElem);
+                
+                groupContainer.appendChild(specItem);
+            });
+            
+            return groupContainer;
         }
         
         // Format specification value for display
@@ -743,4 +791,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
