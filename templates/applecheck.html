@@ -821,13 +821,13 @@
                 document.getElementById('resultModal').style.display = 'none';
             });
             
+            // Get service from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const serviceParam = urlParams.get('service');
+            
             // Automatically select service if specified in URL
-            const pathParts = window.location.pathname.split('/');
-            if (pathParts.length > 2 && pathParts[1] === 'applecheck') {
-                const serviceFromUrl = pathParts[2];
-                if (servicePrices.hasOwnProperty(serviceFromUrl)) {
-                    selectService(serviceFromUrl);
-                }
+            if (serviceParam && servicePrices.hasOwnProperty(serviceParam)) {
+                selectService(serviceParam);
             }
             // Or if service is passed as template variable
             else if ("{{ selected_service }}" && servicePrices.hasOwnProperty("{{ selected_service }}")) {
