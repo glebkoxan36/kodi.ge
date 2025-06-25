@@ -16,6 +16,7 @@ from functools import wraps
 from bs4 import BeautifulSoup
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Blueprint
 
 # Импорт функций из нового модуля API
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
@@ -664,7 +665,11 @@ def check_with_balance():
             'imei': imei
         })
         
-        return jsonify(result)
+        return jsonify({
+            'success': True,
+            'result': result,
+            'new_balance': new_balance
+        })
     
     except Exception as e:
         app.logger.error(f'Check with balance error: {str(e)}')
@@ -687,13 +692,13 @@ def get_user_balance():
 @app.route('/perform_check', methods=['POST'])
 def perform_check():
     data = request.get_json()
-    imei = data.get('imei')
-    service_type = data.get('service_type')
+    imei = data.get('imei', '').strip()
+    service_type = data.get('service_type', 'free')
     
     if not imei or not service_type:
         return jsonify({'error': 'Missing parameters'}), 400
     
-    # Для MacBook разрешаем 17-18 символов
+    # Для MacBook разрешаем 12-18 символов
     is_macbook = service_type in ['macbook', 'macbook_pro', 'macbook_air']
     if not validate_imei(imei, allow_macbook=is_macbook):
         return jsonify({'error': 'Invalid IMEI format'}), 400
