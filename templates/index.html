@@ -74,15 +74,15 @@
                 </a>
                 <div class="collapse" id="appleSubmenu">
                     <div class="submenu">
-                        <a class="nav-link" href="applecheck?type=free">
+                        <a class="nav-link" href="/applecheck?type=free">
                             <i class="fas fa-check-circle"></i>
                             <span>უფასო შემოწმება</span>
                         </a>
-                        <a class="nav-link" href="applecheck?type=paid">
+                        <a class="nav-link" href="/applecheck?type=paid">
                             <i class="fas fa-shopping-cart"></i>
                             <span>პლატანი შემოწმება</span>
                         </a>
-                        <a class="nav-link" href="applecheck?type=premium">
+                        <a class="nav-link" href="/applecheck?type=premium">
                             <i class="fas fa-crown"></i>
                             <span>პრემიუმ შემოწმება</span>
                         </a>
@@ -90,7 +90,7 @@
                 </div>
             </li>
             <li class="nav-item">
-                <a class="nav-link disabled" href="#">
+                <a class="nav-link" href="/androidcheck">
                     <i class="fab fa-android"></i>
                     <span>შემოწმება Android</span>
                 </a>
@@ -102,19 +102,19 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="compare">
+                <a class="nav-link" href="/compare">
                     <i class="fas fa-exchange-alt"></i>
                     <span>ტელეფონების შედარება</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link disabled" href="knowledge-base">
+                <a class="nav-link" href="/knowledge-base">
                     <i class="fas fa-book"></i>
                     <span>ცოდნის ბაზა</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="contacts">
+                <a class="nav-link" href="/contacts">
                     <i class="fas fa-address-card"></i>
                     <span>კონტაქტი</span>
                 </a>
@@ -207,7 +207,7 @@
                             <li>ქსელის ბლოკირების შემოწმება</li>
                         </ul>
                         <div class="service-price">0 ₾</div>
-                        <a href="applecheck.html?type=free" class="service-action">
+                        <a href="/applecheck?type=free" class="service-action">
                             <i class="fas fa-arrow-right me-1"></i> გადასვლა
                         </a>
                     </div>
@@ -225,7 +225,7 @@
                             <li>სერვისის სტატუსი</li>
                         </ul>
                         <div class="service-price">2.99 ₾</div>
-                        <a href="applecheck.html?type=paid" class="service-action">
+                        <a href="/applecheck?type=paid" class="service-action">
                             <i class="fas fa-arrow-right me-1"></i> გადასვლა
                         </a>
                     </div>
@@ -243,7 +243,7 @@
                             <li>24/7 პრიორიტეტული მხარდაჭერა</li>
                         </ul>
                         <div class="service-price">4.99 ₾</div>
-                        <a href="applecheck.html?type=premium" class="service-action">
+                        <a href="/applecheck?type=premium" class="service-action">
                             <i class="fas fa-arrow-right me-1"></i> გადასვლა
                         </a>
                     </div>
@@ -336,10 +336,10 @@
         <div class="modal-content">
             <div class="modal-body">
                 <div class="menu-grid">
-                    <div class="menu-item" onclick="window.scrollTo(0,0); closeMobileMenu();">
+                    <a class="menu-item" href="/" onclick="closeAllMobileMenus();">
                         <i class="fas fa-home"></i>
                         <span>მთავარი</span>
-                    </div>
+                    </a>
                     <div class="menu-item" onclick="openAppleSubmenu()">
                         <i class="fab fa-apple"></i>
                         <span>Apple</span>
@@ -352,18 +352,18 @@
                         <i class="fas fa-unlock-alt"></i>
                         <span>განბლოკვა</span>
                     </div>
-                    <div class="menu-item" onclick="window.location.href='compare'; closeAllMobileMenus();">
+                    <a class="menu-item" href="/compare" onclick="closeAllMobileMenus();">
                         <i class="fas fa-exchange-alt"></i>
                         <span>შედარება</span>
-                    </div>
-                    <div class="menu-item">
+                    </a>
+                    <a class="menu-item" href="/knowledge-base" onclick="closeAllMobileMenus();">
                         <i class="fas fa-book"></i>
                         <span>ცოდნის ბაზა</span>
-                    </div>
-                    <div class="menu-item" onclick="document.getElementById('contacts').scrollIntoView({behavior: 'smooth'}); closeMobileMenu();">
+                    </a>
+                    <a class="menu-item" href="/contacts" onclick="closeAllMobileMenus();">
                         <i class="fas fa-address-card"></i>
                         <span>კონტაქტი</span>
-                    </div>
+                    </a>
                     <div class="menu-item">
                         <i class="fas fa-shield-alt"></i>
                         <span>კონფიდენციალურობა</span>
@@ -406,15 +406,15 @@
         <div class="modal-content">
             <div class="modal-body">
                 <div class="menu-grid">
-                    <a class="menu-item" href="applecheck.html?type=free" onclick="closeAllMobileMenus();">
+                    <a class="menu-item" href="/applecheck?type=free" onclick="closeAllMobileMenus();">
                         <i class="fas fa-certificate"></i>
                         <span>ორიგინალობა</span>
                     </a>
-                    <a class="menu-item" href="applecheck.html?type=paid" onclick="closeAllMobileMenus();">
+                    <a class="menu-item" href="/applecheck?type=paid" onclick="closeAllMobileMenus();">
                         <i class="fas fa-cloud"></i>
                         <span>FMI ICLOUD</span>
                     </a>
-                    <a class="menu-item" href="applecheck.html?type=premium" onclick="closeAllMobileMenus();">
+                    <a class="menu-item" href="/applecheck?type=premium" onclick="closeAllMobileMenus();">
                         <i class="fas fa-sim-card"></i>
                         <span>SIM OPERATOR</span>
                     </a>
@@ -472,31 +472,31 @@
         <div class="modal-content">
             <div class="modal-body">
                 <div class="menu-grid">
-                    <a class="menu-item" href="#" onclick="closeAllMobileMenus();">
+                    <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
                         <i class="fab fa-samsung"></i>
                         <span>Samsung</span>
                     </a>
-                    <a class="menu-item" href="#" onclick="closeAllMobileMenus();">
+                    <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
                         <i class="fas fa-bolt"></i>
                         <span>Xiaomi</span>
                     </a>
-                    <a class="menu-item" href="#" onclick="closeAllMobileMenus();">
+                    <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
                         <i class="fab fa-google"></i>
                         <span>Pixel</span>
                     </a>
-                    <a class="menu-item" href="#" onclick="closeAllMobileMenus();">
+                    <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
                         <i class="fab fa-huawei"></i>
                         <span>Huawei</span>
                     </a>
-                    <a class="menu-item" href="#" onclick="closeAllMobileMenus();">
+                    <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
                         <i class="fas fa-circle"></i>
                         <span>Oppo</span>
                     </a>
-                    <a class="menu-item" href="#" onclick="closeAllMobileMenus();">
+                    <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
                         <i class="fab fa-android"></i>
                         <span>LG</span>
                     </a>
-                    <a class="menu-item" href="#" onclick="closeAllMobileMenus();">
+                    <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
                         <i class="fas fa-ellipsis-h"></i>
                         <span>სხვა</span>
                     </a>
