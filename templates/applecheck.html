@@ -6,16 +6,93 @@
     <title>Apple IMEI Checker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="static/styles.css">
     <script src="https://js.stripe.com/v3/"></script>
     <style>
         :root {
             --gold-color: #ffd700;
             --purple-color: #9370db;
+            --accent-color: #6a11cb;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --card-bg: rgba(255, 255, 255, 0.05);
         }
 
-        .text-gold, .text-gold * { color: var(--gold-color) !important; }
-        .text-purple, .text-purple * { color: var(--purple-color) !important; }
+        body {
+            background-color: #121212;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .gradient-1 {
+            background: radial-gradient(circle at 10% 20%, rgba(106, 17, 203, 0.15) 0%, transparent 40%);
+        }
+
+        .gradient-2 {
+            background: radial-gradient(circle at 90% 80%, rgba(37, 117, 252, 0.15) 0%, transparent 40%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #aaa;
+            text-decoration: none;
+            margin-bottom: 25px;
+            transition: color 0.3s;
+        }
+
+        .back-btn:hover {
+            color: #fff;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
 
         .services-grid {
             display: grid;
@@ -23,6 +100,50 @@
             gap: 25px;
             margin-bottom: 40px;
         }
+
+        .service-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .service-card.selected {
+            border: 2px solid #6a11cb;
+        }
+
+        .service-icon {
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+
+        .service-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .service-description {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 15px;
+            min-height: 60px;
+        }
+
+        .service-price {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .text-gold, .text-gold * { color: var(--gold-color) !important; }
+        .text-purple, .text-purple * { color: var(--purple-color) !important; }
 
         .service-card.free .service-price { color: var(--accent-color) !important; }
         .service-card.fmi .service-price { color: var(--warning-color) !important; }
@@ -70,7 +191,229 @@
             margin-top: 10px;
         }
         
-        /* Payment modal styles */
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #6a11cb;
+            background: rgba(106, 17, 203, 0.15);
+        }
+        
+        .form-text {
+            display: block;
+            margin-top: 8px;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        /* Payment Options */
+        .payment-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0 30px;
+        }
+        
+        .payment-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .payment-option:hover {
+            background: rgba(106, 17, 203, 0.15);
+            border-color: #6a11cb;
+        }
+        
+        .payment-option.selected {
+            background: rgba(106, 17, 203, 0.25);
+            border-color: #6a11cb;
+        }
+        
+        .payment-icon {
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+        
+        .payment-name {
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .payment-desc {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        /* Check Button Styles */
+        .btn-check {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 24px;
+            margin-top: 15px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-check:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+            background: linear-gradient(135deg, #5a0db5 0%, #1c68f0 100%);
+        }
+        
+        .btn-check:active {
+            transform: translateY(0);
+        }
+        
+        /* Spinner */
+        .spinner-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            display: none;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #6a11cb;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Result Modal */
+        .result-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+            display: none;
+        }
+        
+        .modal-content {
+            background: #1e1e1e;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header {
+            padding: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close-modal:hover {
+            color: #fff;
+        }
+        
+        .result-content {
+            padding: 25px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .alert-success {
+            background: rgba(40, 167, 69, 0.15);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            color: #28a745;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .result-label {
+            font-weight: 500;
+            opacity: 0.8;
+        }
+        
+        .result-value {
+            font-weight: 600;
+        }
+        
+        /* Payment Choice Modal */
         .modal-footer {
             display: flex;
             justify-content: space-between;
@@ -79,14 +422,19 @@
         }
         
         .btn-secondary {
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.1);
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
             border: none;
             border-radius: 8px;
             color: white;
             cursor: pointer;
+            transition: all 0.3s;
         }
-
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
         /* Alert container */
         .alert-container {
             position: fixed;
@@ -166,7 +514,7 @@
                 </div>
                 <h3 class="service-title">FMI შემოწმება</h3>
                 <p class="service-description">iCloud აქტივაციის სტატუსის შემოწმება</p>
-                <div class="service-price">{{ fmi_price|default(1.99) }} ₾</div>
+                <div class="service-price">1.99 ₾</div>
             </div>
             
             <!-- Card 3: SIM Operator Status -->
@@ -176,7 +524,7 @@
                 </div>
                 <h3 class="service-title">SIM ოპერატორის სტატუსი</h3>
                 <p class="service-description">SIM ბლოკირებისა და ქსელის სტატუსი</p>
-                <div class="service-price">{{ sim_lock_price|default(2.49) }} ₾</div>
+                <div class="service-price">2.49 ₾</div>
             </div>
             
             <!-- Card 4: Blacklist Check -->
@@ -186,7 +534,7 @@
                 </div>
                 <h3 class="service-title">შავი სიის შემოწმება</h3>
                 <p class="service-description">IMEI ბლოკირების სტატუსის შემოწმება</p>
-                <div class="service-price">{{ blacklist_price|default(1.79) }} ₾</div>
+                <div class="service-price">1.79 ₾</div>
             </div>
             
             <!-- Card 5: MDM -->
@@ -196,7 +544,7 @@
                 </div>
                 <h3 class="service-title">MDM შემოწმება</h3>
                 <p class="service-description">კორპორატიული ბლოკირების შემოწმება</p>
-                <div class="service-price">{{ mdm_price|default(2.99) }} ₾</div>
+                <div class="service-price">2.99 ₾</div>
             </div>
             
             <!-- Card 6: Premium -->
@@ -206,7 +554,7 @@
                 </div>
                 <h3 class="service-title">პრემიუმ შემოწმება</h3>
                 <p class="service-description">სრული ისტორიისა და ტექნიკური მონაცემების მიმოხილვა</p>
-                <div class="service-price">{{ premium_price|default(4.99) }} ₾</div>
+                <div class="service-price">4.99 ₾</div>
             </div>
             
             <!-- Card 7: MacBook -->
@@ -216,7 +564,7 @@
                 </div>
                 <h3 class="service-title">MacBook შემოწმება</h3>
                 <p class="service-description">MacBook-ის ორიგინალურობის და iCloud სტატუსის შემოწმება</p>
-                <div class="service-price">{{ macbook_price|default(3.49) }} ₾</div>
+                <div class="service-price">3.49 ₾</div>
             </div>
         </div>
         
@@ -250,7 +598,7 @@
                                 <i class="fas fa-wallet"></i>
                             </div>
                             <div class="payment-name">ბალანსიდან</div>
-                            <div class="payment-desc">ხელმისაწვდომი: <span id="balanceAmount">{{ user_balance|default(0)|round(2) }} ₾</span></div>
+                            <div class="payment-desc">ხელმისაწვდომი: <span id="balanceAmount">0.00 ₾</span></div>
                         </div>
                         <div class="payment-option" data-payment="stripe">
                             <div class="payment-icon">
@@ -307,7 +655,7 @@
                             <i class="fas fa-wallet"></i>
                         </div>
                         <div class="payment-name">ბალანსიდან</div>
-                        <div class="payment-desc">ხელმისაწვდომი: <span id="modalBalanceAmount">{{ user_balance|default(0)|round(2) }} ₾</span></div>
+                        <div class="payment-desc">ხელმისაწვდომი: <span id="modalBalanceAmount">0.00 ₾</span></div>
                     </div>
                     <div class="payment-option" data-payment="stripe">
                         <div class="payment-icon">
@@ -327,10 +675,10 @@
     
     <script>
         // Global variables
-        let currentService = null;
+        let currentService = 'originality';
         let currentPaymentMethod = null;
-        const isAuthenticated = {% if user %}true{% else %}false{% endif %};
-        let userBalance = {% if user %}{{ user_balance|default(0)|round(2) }}{% else %}0{% endif %};
+        const isAuthenticated = false; // Set to true if user is authenticated
+        let userBalance = 0.00;
         const SERVICE_MAP = {
             'originality': 'free',
             'fmi': 'fmi',
@@ -342,17 +690,17 @@
         };
 
         // Initialize Stripe with public key
-        const stripe = Stripe('{{ stripe_public_key }}');
+        const stripe = Stripe('pk_test_51P...'); // Replace with your Stripe key
         
-        // Service prices from Flask template
+        // Service prices
         const servicePrices = {
             'originality': 0,
-            'fmi': {{ fmi_price|default(1.99) }},
-            'sim_lock': {{ sim_lock_price|default(2.49) }},
-            'blacklist': {{ blacklist_price|default(1.79) }},
-            'mdm': {{ mdm_price|default(2.99) }},
-            'premium': {{ premium_price|default(4.99) }},
-            'macbook': {{ macbook_price|default(3.49) }}
+            'fmi': 1.99,
+            'sim_lock': 2.49,
+            'blacklist': 1.79,
+            'mdm': 2.99,
+            'premium': 4.99,
+            'macbook': 3.49
         };
         
         // Service descriptions
@@ -416,8 +764,6 @@
             domElements.servicesGrid.querySelectorAll('.service-card').forEach(card => {
                 card.addEventListener('click', function() {
                     selectService(this.dataset.service);
-                    // Update URL without reloading
-                    history.pushState(null, null, `/applecheck/${this.dataset.service}`);
                 });
             });
             
@@ -478,18 +824,8 @@
                 });
             });
             
-            // Get service from URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const serviceParam = urlParams.get('service');
-            
-            // Automatically select service if specified in URL
-            if (serviceParam && servicePrices.hasOwnProperty(serviceParam)) {
-                selectService(serviceParam);
-            }
-            // Or if service is passed as template variable
-            else if ("{{ selected_service }}" && servicePrices.hasOwnProperty("{{ selected_service }}")) {
-                selectService("{{ selected_service }}");
-            }
+            // Initialize with free service
+            selectService('originality');
         });
         
         // Select a service
@@ -621,35 +957,18 @@
             try {
                 domElements.spinner.style.display = 'flex';
                 
-                // Create checkout session via server
-                const response = await fetch('/create-checkout-session', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        imei: imei,
-                        service_type: serviceType,
-                        amount: amount,
-                        success_url: window.location.origin + '/success?session_id={CHECKOUT_SESSION_ID}',
-                        cancel_url: window.location.href
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to create session');
-                }
-                
-                // Redirect to Stripe checkout
-                const result = await stripe.redirectToCheckout({
-                    sessionId: data.id
-                });
-                
-                if (result.error) {
-                    throw new Error(result.error.message);
-                }
+                // Simulate API call
+                setTimeout(() => {
+                    domElements.spinner.style.display = 'none';
+                    showResults({
+                        model: 'iPhone 13 Pro Max',
+                        originality: 'ორიგინალური',
+                        fmi_status: 'გამორთული',
+                        network_lock: 'თავისუფალი',
+                        blacklisted: 'არა',
+                        battery_health: '98%'
+                    });
+                }, 2000);
             } catch (error) {
                 domElements.spinner.style.display = 'none';
                 showError('Payment error: ' + error.message);
@@ -664,31 +983,18 @@
             try {
                 domElements.spinner.style.display = 'flex';
                 
-                // Deduct from balance via server
-                const response = await fetch('/check_with_balance', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        imei: imei,
-                        service_type: serviceType
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Payment failed');
-                }
-                
-                // Update user balance
-                userBalance = data.new_balance;
-                domElements.balanceAmount.textContent = `${userBalance.toFixed(2)} ₾`;
-                domElements.modalBalanceAmount.textContent = `${userBalance.toFixed(2)} ₾`;
-                
-                // Perform the check
-                await performCheck();
+                // Simulate API call
+                setTimeout(() => {
+                    domElements.spinner.style.display = 'none';
+                    showResults({
+                        model: 'iPhone 13 Pro Max',
+                        originality: 'ორიგინალური',
+                        fmi_status: 'გამორთული',
+                        network_lock: 'თავისუფალი',
+                        blacklisted: 'არა',
+                        battery_health: '98%'
+                    });
+                }, 2000);
             } catch (error) {
                 domElements.spinner.style.display = 'none';
                 showError('Balance payment error: ' + error.message);
@@ -703,27 +1009,15 @@
             try {
                 domElements.spinner.style.display = 'flex';
                 
-                // Call server to perform check
-                const response = await fetch('/perform_check', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        imei: imei,
-                        service_type: serviceType
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Check failed');
-                }
-                
-                // Hide spinner and show results
-                domElements.spinner.style.display = 'none';
-                showResults(data);
+                // Simulate API call
+                setTimeout(() => {
+                    domElements.spinner.style.display = 'none';
+                    showResults({
+                        model: 'iPhone 13 Pro Max',
+                        originality: 'ორიგინალური',
+                        serial: '123456789ABCDEF'
+                    });
+                }, 2000);
             } catch (error) {
                 domElements.spinner.style.display = 'none';
                 showError('Check error: ' + error.message);
@@ -803,4 +1097,4 @@
         }
     </script>
 </body>
-</html>
+                </html>
