@@ -104,7 +104,13 @@ DEFAULT_PRICES = {
     'blacklist': 199,
     'activation': 199,
     'carrier': 199,
-    'full': 999
+    'full': 999,
+    # Android-specific prices
+    'android_paid': 399,
+    'android_premium': 799,
+    'google_account': 299,
+    'frp_lock': 199,
+    'android_full': 799
 }
 
 if prices_collection.count_documents({'type': 'current'}) == 0:
@@ -390,6 +396,59 @@ def apple_check():
         sim_lock_price=sim_lock_price,
         blacklist_price=blacklist_price,
         activation_price=activation_price,
+        carrier_price=carrier_price,
+        full_price=full_price,
+        stripe_public_key=STRIPE_PUBLIC_KEY,
+        user=user_data,
+        user_balance=user_balance
+    )
+
+# ======================================
+# Роут для страницы проверки Android IMEI
+# ======================================
+
+@app.route('/androidcheck')
+def android_check():
+    """Страница проверки Android-устройств"""
+    # Определяем тип услуги из параметра URL
+    service_type = request.args.get('type', 'free')
+    if service_type not in ['free', 'paid', 'premium']:
+        service_type = 'free'
+
+    # Получаем текущие цены для Android-услуг
+    prices = get_current_prices()
+    paid_price = prices.get('android_paid', 399) / 100.0
+    premium_price = prices.get('android_premium', 799) / 100.0
+    google_account_price = prices.get('google_account', 299) / 100.0
+    frp_lock_price = prices.get('frp_lock', 199) / 100.0
+    blacklist_price = prices.get('blacklist', 199) / 100.0
+    carrier_price = prices.get('carrier', 199) / 100.0
+    full_price = prices.get('android_full', 799) / 100.0
+
+    # Данные пользователя (если авторизован)
+    user_data = None
+    user_balance = 0.0
+    if 'user_id' in session:
+        user_id = session['user_id']
+        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+        if user:
+            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+            user_data = {
+                'first_name': user.get('first_name', ''),
+                'last_name': user.get('last_name', ''),
+                'balance': user.get('balance', 0.0),
+                'avatar_color': avatar_color
+            }
+            user_balance = user.get('balance', 0.0)
+
+    return render_template(
+        'androidcheck.html',
+        service_type=service_type,
+        paid_price=paid_price,
+        premium_price=premium_price,
+        google_account_price=google_account_price,
+        frp_lock_price=frp_lock_price,
+        blacklist_price=blacklist_price,
         carrier_price=carrier_price,
         full_price=full_price,
         stripe_public_key=STRIPE_PUBLIC_KEY,
