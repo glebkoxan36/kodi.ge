@@ -9,175 +9,12 @@
     <script src="https://js.stripe.com/v3/"></script>
     <style>
         :root {
-            --primary-color: #0d1525;
-            --secondary-color: #1d2a4a;
-            --accent-color: #00c6ff;
-            --text-color: #ffffff;
-            --text-secondary: #ffffff;
-            --card-bg: #121a2b;
-            --card-hover-bg: #16203a;
-            --success-color: #00d68f;
-            --warning-color: #ffaa00;
-            --danger-color: #ff3d71;
-            --ring-color-1: #00c6ff;
-            --ring-color-2: #ff3d71;
-            --ring-color-3: #00d68f;
-            --google-color: #4285F4;
-            --facebook-color: #3b5998;
             --gold-color: #ffd700;
             --purple-color: #9370db;
         }
 
-        body, body * {
-            color: #ffffff !important;
-        }
-
-        .text-info, .text-info * { color: var(--accent-color) !important; }
-        .text-warning, .text-warning * { color: var(--warning-color) !important; }
-        .text-success, .text-success * { color: var(--success-color) !important; }
         .text-gold, .text-gold * { color: var(--gold-color) !important; }
         .text-purple, .text-purple * { color: var(--purple-color) !important; }
-        .status-clean, .status-clean * { color: var(--success-color) !important; }
-        .status-blacklisted, .status-blacklisted * { color: var(--danger-color) !important; }
-        .status-warning, .status-warning * { color: var(--warning-color) !important; }
-
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: linear-gradient(
-                135deg, 
-                var(--primary-color), 
-                var(--secondary-color),
-                #0f1729
-            );
-            background-size: 300% 300%;
-            animation: gradientShift 15s ease infinite;
-            color: var(--text-color);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            overflow-x: hidden;
-            font-weight: 450;
-            line-height: 1.6;
-            padding: 20px;
-        }
-
-        .gradient-bg {
-            position: fixed;
-            width: 600px;
-            height: 600px;
-            border-radius: 50%;
-            filter: blur(120px);
-            opacity: 0.25;
-            z-index: -1;
-            animation: gradientShift 25s infinite alternate ease-in-out;
-        }
-
-        .gradient-1 {
-            background: linear-gradient(135deg, var(--accent-color), #0066ff);
-            top: -200px;
-            right: -200px;
-        }
-
-        .gradient-2 {
-            background: linear-gradient(135deg, var(--success-color), #00a86b);
-            bottom: -200px;
-            left: -200px;
-            animation-duration: 30s;
-            animation-delay: 2s;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .logo-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 15px;
-            background: linear-gradient(135deg, var(--accent-color), #0066ff);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: white;
-            box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
-        }
-
-        .logo h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            background: linear-gradient(to right, var(--accent-color), var(--success-color));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .back-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: var(--accent-color);
-            padding: 10px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .back-btn:hover {
-            background: rgba(0, 198, 255, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .section-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 30px;
-            position: relative;
-            padding-bottom: 15px;
-        }
-
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100px;
-            height: 4px;
-            background: linear-gradient(to right, var(--accent-color), var(--success-color));
-            border-radius: 2px;
-        }
 
         .services-grid {
             display: grid;
@@ -186,84 +23,13 @@
             margin-bottom: 40px;
         }
 
-        .service-card {
-            background: var(--card-bg);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 30px 25px;
-            text-align: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .service-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-            border-color: rgba(0, 198, 255, 0.3);
-        }
-
-        .service-card.selected {
-            animation: pulse 2s infinite;
-            border: 2px solid var(--accent-color);
-        }
-
-        .service-icon {
-            font-size: 2.8rem;
-            margin-bottom: 20px;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .service-title {
-            font-size: 1.4rem;
-            font-weight: 600;
-            margin-bottom: 15px;
-        }
-
-        .service-description {
-            font-size: 0.95rem;
-            opacity: 0.85;
-            margin-bottom: 20px;
-            min-height: 60px;
-        }
-
-        .service-price {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin: 15px 0;
-        }
-
-        .service-card.free .service-price {
-            color: var(--accent-color);
-        }
-
-        .service-card.fmi .service-price {
-            color: var(--warning-color);
-        }
-
-        .service-card.sim_lock .service-price {
-            color: var(--accent-color);
-        }
-
-        .service-card.blacklist .service-price {
-            color: var(--danger-color);
-        }
-
-        .service-card.mdm .service-price {
-            color: var(--accent-color);
-        }
-
-        .service-card.premium .service-price {
-            color: var(--gold-color);
-        }
-
-        .service-card.macbook .service-price {
-            color: var(--purple-color);
-        }
+        .service-card.free .service-price { color: var(--accent-color) !important; }
+        .service-card.fmi .service-price { color: var(--warning-color) !important; }
+        .service-card.sim_lock .service-price { color: var(--accent-color) !important; }
+        .service-card.blacklist .service-price { color: var(--danger-color) !important; }
+        .service-card.mdm .service-price { color: var(--accent-color) !important; }
+        .service-card.premium .service-price { color: var(--gold-color) !important; }
+        .service-card.macbook .service-price { color: var(--purple-color) !important; }
 
         .selected-service-container {
             background: var(--card-bg);
@@ -302,249 +68,22 @@
             opacity: 0.9;
             margin-top: 10px;
         }
-
-        .imei-form {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 25px;
-            margin-top: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: 500;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 14px 18px;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 8px;
-            color: white;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus {
-            border-color: var(--accent-color);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0, 198, 255, 0.2);
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .form-text {
-            font-size: 0.9rem;
-            opacity: 0.7;
-            margin-top: 8px;
-        }
-
-        .payment-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 25px 0;
-        }
-
-        .payment-option {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .payment-option:hover {
-            transform: translateY(-3px);
-            background: rgba(0, 198, 255, 0.15);
-        }
-
-        .payment-option.selected {
-            border: 2px solid var(--success-color);
-            background: rgba(0, 214, 143, 0.15);
-        }
-
-        .payment-icon {
-            font-size: 2.2rem;
-            margin-bottom: 15px;
-        }
-
-        .payment-name {
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .payment-desc {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        .btn-check {
-            background: linear-gradient(135deg, var(--accent-color), #0066ff);
-            border: none;
-            color: white;
-            padding: 16px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 10px;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .btn-check:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 20px rgba(0, 198, 255, 0.4);
-        }
-
-        .spinner-container {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 5px solid rgba(0, 198, 255, 0.3);
-            border-radius: 50%;
-            border-top: 5px solid var(--accent-color);
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .result-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: var(--card-bg);
-            border-radius: 15px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 30px;
-            position: relative;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(0, 198, 255, 0.3);
-        }
-
-        .modal-header {
+        
+        /* Payment modal styles */
+        .modal-footer {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
         }
-
-        .modal-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--accent-color);
-        }
-
-        .close-modal {
-            background: none;
+        
+        .btn-secondary {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
             border: none;
+            border-radius: 8px;
             color: white;
-            font-size: 1.5rem;
             cursor: pointer;
-            opacity: 0.7;
-            transition: opacity 0.3s;
-        }
-
-        .close-modal:hover {
-            opacity: 1;
-        }
-
-        .result-content {
-            line-height: 1.6;
-        }
-
-        .result-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-
-        .result-label {
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--accent-color);
-        }
-
-        .result-value {
-            font-size: 1.1rem;
-        }
-
-        .alert {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .alert-success {
-            background: rgba(0, 214, 143, 0.15);
-            border: 1px solid var(--success-color);
-        }
-
-        .alert-error {
-            background: rgba(255, 61, 113, 0.15);
-            border: 1px solid var(--danger-color);
-        }
-
-        @media (max-width: 768px) {
-            .services-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .selected-service-header {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .payment-options {
-                grid-template-columns: 1fr;
-            }
-            
-            .modal-content {
-                width: 95%;
-                padding: 20px;
-            }
         }
     </style>
 </head>
@@ -744,6 +283,41 @@
         </div>
     </div>
     
+    <!-- Payment Choice Modal -->
+    <div class="result-modal" id="paymentChoiceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">გადახდის მეთოდი</h3>
+                <button class="close-modal" id="closePaymentChoice">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>აირჩიეთ გადახდის მეთოდი</p>
+                <div class="payment-options">
+                    <div class="payment-option" data-payment="balance">
+                        <div class="payment-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="payment-name">ბალანსიდან</div>
+                        <div class="payment-desc">ხელმისაწვდომი: <span id="modalBalanceAmount">{{ user_balance|default(0)|round(2) }} ₾</span></div>
+                    </div>
+                    <div class="payment-option" data-payment="stripe">
+                        <div class="payment-icon">
+                            <i class="fab fa-cc-stripe"></i>
+                        </div>
+                        <div class="payment-name">ბარათით გადახდა</div>
+                        <div class="payment-desc">Visa/Mastercard</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancelPaymentChoice">გაუქმება</button>
+                <button class="btn-check" id="confirmPaymentChoice">დადასტურება</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
         // Global variables
         let currentService = null;
@@ -816,9 +390,45 @@
             // Check button click
             document.getElementById('checkButton').addEventListener('click', startCheck);
             
-            // Close modal button
+            // Close modal buttons
             document.getElementById('closeModal').addEventListener('click', function() {
                 document.getElementById('resultModal').style.display = 'none';
+            });
+            
+            document.getElementById('closePaymentChoice').addEventListener('click', function() {
+                document.getElementById('paymentChoiceModal').style.display = 'none';
+            });
+            
+            document.getElementById('cancelPaymentChoice').addEventListener('click', function() {
+                document.getElementById('paymentChoiceModal').style.display = 'none';
+            });
+            
+            // Confirm payment choice
+            document.getElementById('confirmPaymentChoice').addEventListener('click', function() {
+                const selectedOption = document.querySelector('#paymentChoiceModal .payment-option.selected');
+                if (!selectedOption) {
+                    alert('გთხოვთ აირჩიოთ გადახდის მეთოდი');
+                    return;
+                }
+
+                const method = selectedOption.dataset.payment;
+                document.getElementById('paymentChoiceModal').style.display = 'none';
+
+                if (method === 'balance') {
+                    handleBalancePayment();
+                } else if (method === 'stripe') {
+                    handleStripePayment();
+                }
+            });
+
+            // Payment option selection in modal
+            document.querySelectorAll('#paymentChoiceModal .payment-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('#paymentChoiceModal .payment-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                });
             });
             
             // Get service from URL parameters
@@ -884,6 +494,7 @@
                 
                 // Update balance display
                 document.getElementById('balanceAmount').textContent = `${userBalance.toFixed(2)} ₾`;
+                document.getElementById('modalBalanceAmount').textContent = `${userBalance.toFixed(2)} ₾`;
                 
                 // For non-authenticated users, hide balance option
                 if (!isAuthenticated) {
@@ -920,28 +531,57 @@
                 return;
             }
             
-            // For paid services, validate payment method
-            if (servicePrices[currentService] > 0) {
-                if (!currentPaymentMethod) {
-                    alert('გთხოვთ აირჩიოთ გადახდის მეთოდი');
-                    return;
-                }
-                
-                if (currentPaymentMethod === 'balance' && servicePrices[currentService] > userBalance) {
-                    alert('თქვენს ანგარიშზე საკმარისი თანხა არ არის');
-                    return;
-                }
+            // For free service
+            if (servicePrices[currentService] === 0) {
+                performCheck();
+                return;
             }
             
+            // For paid services
+            if (!isAuthenticated) {
+                // Redirect to Stripe for unauthenticated users
+                handleStripePayment();
+            } else {
+                // Show payment choice modal for authenticated users
+                document.getElementById('paymentChoiceModal').style.display = 'flex';
+            }
+        }
+        
+        // Handle Stripe payment
+        function handleStripePayment() {
             // Show spinner
             document.getElementById('spinner').style.display = 'flex';
             
-            // Simulate API call
-            setTimeout(function() {
-                // Hide spinner
+            // In a real app, we would create a Stripe session and redirect
+            // For now, we simulate a delay and then show the result
+            setTimeout(() => {
                 document.getElementById('spinner').style.display = 'none';
-                
-                // Show results
+                // Here we would redirect to Stripe, but for demo we just show the result
+                // For the demo, we assume payment was successful and then we do the check
+                performCheck();
+            }, 2000);
+        }
+        
+        // Handle balance payment
+        function handleBalancePayment() {
+            // Show spinner
+            document.getElementById('spinner').style.display = 'flex';
+            
+            // Simulate API call to deduct from balance
+            setTimeout(() => {
+                document.getElementById('spinner').style.display = 'none';
+                performCheck();
+            }, 2000);
+        }
+        
+        // Perform the actual check
+        function performCheck() {
+            // Show spinner
+            document.getElementById('spinner').style.display = 'flex';
+            
+            // Simulate API call to check IMEI
+            setTimeout(() => {
+                document.getElementById('spinner').style.display = 'none';
                 showResults();
             }, 2000);
         }
