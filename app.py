@@ -400,6 +400,10 @@ def apple_check_macbook():
 def apple_check(service=None):
     service = request.args.get('service', service)
     
+    # Установка значения по умолчанию, если service не указан
+    if not service:
+        service = 'originality'
+    
     # Получаем текущие цены и конвертируем в доллары
     prices = get_current_prices()
     
@@ -421,7 +425,7 @@ def apple_check(service=None):
 
     return render_template(
         'applecheck.html',
-        selected_service=service_name,  # Передаем выбранную услугу
+        selected_service=service,  # Исправлено: передаем service вместо service_name
         paid_price=prices['paid'] / 100.0,
         premium_price=prices['premium'] / 100.0,
         fmi_price=prices['fmi'] / 100.0,
