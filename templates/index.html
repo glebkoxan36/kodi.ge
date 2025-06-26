@@ -12,8 +12,8 @@
     <link rel="stylesheet" href="static/carousel.css">
     <style>
         .menu-icon-img {
-            width: 34px;
-            height: 34px;
+            width: 38px;
+            height: 38px;
             object-fit: contain;
             display: block;
             margin: 0 auto 5px;
@@ -339,8 +339,9 @@
                     <div class="avatar-placeholder">KODI.GE</div>
                 </div>
                 <div class="user-info-container">
-                    <div id="mobileLoginLink" onclick="goToLogin()">ლოგინი</div>
-                    <div id="mobileRegisterLink" onclick="goToRegister()">რეგისტრაცია</div>
+                    <div id="mobileLoginRegister" onclick="goToLogin()">
+                        ლოგინი|რეგისტრაცია
+                    </div>
                 </div>
             {% endif %}
         </div>
@@ -412,8 +413,9 @@
                     <div class="avatar-placeholder">KODI.GE</div>
                 </div>
                 <div class="user-info-container">
-                    <div id="mobileLoginLink" onclick="goToLogin()">ლოგინი</div>
-                    <div id="mobileRegisterLink" onclick="goToRegister()">რეგისტრაცია</div>
+                    <div id="mobileLoginRegister" onclick="goToLogin()">
+                        ლოგინი/რეგისტრაცია
+                    </div>
                 </div>
             {% endif %}
         </div>
@@ -488,8 +490,9 @@
                     <div class="avatar-placeholder">KODI.GE</div>
                 </div>
                 <div class="user-info-container">
-                    <div id="mobileLoginLink" onclick="goToLogin()">ლოგინი</div>
-                    <div id="mobileRegisterLink" onclick="goToRegister()">რეგისტრაცია</div>
+                    <div id="mobileLoginRegister" onclick="goToLogin()">
+                        ლოგინი/რეგისტრაცია
+                    </div>
                 </div>
             {% endif %}
         </div>
@@ -631,12 +634,6 @@
             window.location.href = "{{ url_for('auth.login') }}";
         }
         
-        // New function for registration
-        function goToRegister() {
-            closeAllMobileMenus();
-            window.location.href = "{{ url_for('auth.register') }}";
-        }
-        
         // Redirect to dashboard
         function goToDashboard() {
             closeAllMobileMenus();
@@ -707,4 +704,4 @@
         }, 5000);
     </script>
 </body>
-                                </html>
+    </html>
