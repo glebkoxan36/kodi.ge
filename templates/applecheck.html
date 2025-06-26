@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ka">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iFree - Проверка IMEI Apple</title>
+    <title>KODI.GE - Apple IMEI შემოწმება</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -279,40 +279,54 @@
     <div class="gradient-bg gradient-2"></div>
     
     <div class="main-content">
+        <!-- Added logo and site name -->
+        <div class="text-center mb-4">
+            <div class="logo-animated">
+                <div class="logo-ring"></div>
+                <div class="logo-ring"></div>
+                <div class="logo-ring"></div>
+                <div class="logo-core">
+                    <div class="logo-letter">K</div>
+                </div>
+            </div>
+            <h1 class="display-4 fw-bold mt-3">KODI.GE</h1>
+            <p class="lead">Apple IMEI-ის შემოწმების სერვისი</p>
+        </div>
+        
         <div class="section-title">
-            <h1>Проверка IMEI Apple</h1>
-            <p>Выберите тип проверки и введите IMEI или серийный номер устройства</p>
+            <h1>Apple IMEI შემოწმება</h1>
+            <p>აირჩიეთ შემოწმების ტიპი და შეიყვანეთ IMEI ან სერიული ნომერი</p>
         </div>
         
         <div id="services-container" class="services-grid">
-            <!-- Карточки услуг будут сгенерированы JavaScript -->
+            <!-- JavaScript will generate service cards -->
         </div>
         
         <div id="selected-service-container" class="selected-service-container">
             <button id="back-to-services" class="btn-back">
-                <i class="fas fa-arrow-left"></i> Вернуться к выбору услуги
+                <i class="fas fa-arrow-left"></i> სერვისების არჩევას დაბრუნება
             </button>
             
             <div class="service-card">
                 <div class="service-icon">
                     <i id="selected-service-icon" class="fas"></i>
                 </div>
-                <div class="service-title" id="selected-service-title-full">Название услуги</div>
-                <div class="service-price" id="selected-service-price">Цена услуги</div>
-                <div class="service-description" id="selected-service-description">Описание услуги</div>
+                <div class="service-title" id="selected-service-title-full">სერვისის დასახელება</div>
+                <div class="service-price" id="selected-service-price">სერვისის ღირებულება</div>
+                <div class="service-description" id="selected-service-description">სერვისის აღწერა</div>
             </div>
             
             <div class="imei-form-container" id="imei-form-container">
                 <div class="form-header">
-                    <h2>Проверка устройства</h2>
+                    <h2>მოწყობილობის შემოწმება</h2>
                 </div>
                 <div class="form-body">
                     <div class="form-group">
-                        <label class="form-label">Введите IMEI или серийный номер:</label>
-                        <input type="text" class="form-control" id="imei-input" placeholder="15-значный IMEI или серийный номер">
+                        <label class="form-label">შეიყვანეთ IMEI ან სერიული ნომერი:</label>
+                        <input type="text" class="form-control" id="imei-input" placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
                         <div class="error-message" id="imei-error"></div>
                     </div>
-                    <button class="btn-primary" id="check-btn">Запустить проверку</button>
+                    <button class="btn-primary" id="check-btn">შემოწმების დაწყება</button>
                 </div>
             </div>
         </div>
@@ -321,41 +335,41 @@
     <div class="result-modal" id="result-modal">
         <div class="modal-content">
             <div class="card-header">
-                <h2>Результаты проверки</h2>
+                <h2>შემოწმების შედეგები</h2>
                 <button class="close-modal" id="close-modal">&times;</button>
             </div>
             <div class="card-body" id="result-content"></div>
             <div class="card-footer" style="text-align: center; padding: 20px;">
-                <button class="btn-primary" onclick="window.location.href = '{{ url_for('apple_check') }}'">Сделать новую проверку</button>
+                <button class="btn-primary" onclick="window.location.href = '{{ url_for('apple_check') }}'">ახალი შემოწმების დაწყება</button>
             </div>
         </div>
     </div>
     
-    <!-- Модальное окно выбора способа оплаты -->
+    <!-- გადახდის მეთოდის არჩევის მოდალური ფანჯარა -->
     <div class="payment-method-modal" id="payment-method-modal">
         <div class="payment-method-content">
             <div class="payment-method-header">
-                <h2>Выберите способ оплаты</h2>
+                <h2>აირჩიეთ გადახდის მეთოდი</h2>
             </div>
             <div class="payment-method-options">
                 <div class="payment-option balance" id="balance-option">
                     <i class="fas fa-wallet"></i>
                     <div class="option-details">
-                        <div class="option-title">Оплатить с баланса</div>
-                        <div class="balance-info" id="balance-info">Ваш баланс: <span id="user-balance">0.00</span> ₾</div>
+                        <div class="option-title">ბალანსიდან გადახდა</div>
+                        <div class="balance-info" id="balance-info">თქვენი ბალანსი: <span id="user-balance">0.00</span> ₾</div>
                         <div class="balance-info" id="balance-status"></div>
                     </div>
                 </div>
                 <div class="payment-option card" id="card-option">
                     <i class="fas fa-credit-card"></i>
                     <div class="option-details">
-                        <div class="option-title">Оплатить картой</div>
-                        <div>Безопасная оплата через Stripe</div>
+                        <div class="option-title">ბარათით გადახდა</div>
+                        <div>უსაფრთხო გადახდა Stripe-ით</div>
                     </div>
                 </div>
             </div>
             <div class="payment-method-footer">
-                <button class="btn-secondary" id="cancel-payment">Отмена</button>
+                <button class="btn-secondary" id="cancel-payment">გაუქმება</button>
             </div>
         </div>
     </div>
@@ -366,15 +380,10 @@
     
     <script src="https://js.stripe.com/v3/"></script>
     <script>
-        // Инициализация Stripe с публичным ключом
+        // ინიციალიზაცია Stripe-ის გამოყენებით საჯარო გასაღების
         const stripe = Stripe('{{ stripe_public_key }}');
         
-        // Удаляем возможные остатки от share-modal.js
-        if (typeof window.ShareModal !== 'undefined') {
-            delete window.ShareModal;
-        }
-        
-        // Используем данные из сервера вместо статичного объявления
+        // ვიყენებთ სერვერიდან მიღებულ მონაცემებს სტატიკური დეკლარაციის ნაცვლად
         const services = {{ services_data | tojson | safe }};
         
         let currentImei = '';
@@ -383,21 +392,21 @@
         document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('services-container');
             
-            // Проверяем существование контейнера
+            // ვამოწმებთ კონტეინერის არსებობას
             if (!container) {
-                console.error('Services container not found');
+                console.error('სერვისების კონტეინერი ვერ მოიძებნა');
                 return;
             }
             
-            container.innerHTML = ''; // Очищаем контейнер
+            container.innerHTML = ''; // ვასუფთავებთ კონტეინერს
             
-            // Если нет услуг, показываем сообщение
+            // თუ სერვისები არ არის, ვაჩვენებთ შეტყობინებას
             if (!services || services.length === 0) {
-                container.innerHTML = '<p>Услуги временно недоступны</p>';
+                container.innerHTML = '<p>სერვისები დროებით მიუწვდომელია</p>';
                 return;
             }
             
-            // Создаем карточки услуг
+            // ვქმნით სერვისების ბარათებს
             services.forEach(service => {
                 const card = document.createElement('div');
                 card.className = 'service-card';
@@ -409,7 +418,7 @@
                     <div class="service-title">${service.title}</div>
                     <div class="service-description">${service.description}</div>
                     <div class="service-price">${service.price}</div>
-                    <div class="service-action">Выбрать</div>
+                    <div class="service-action">არჩევა</div>
                 `;
                 container.appendChild(card);
             });
@@ -421,12 +430,12 @@
             const imeiParam = urlParams.get('imei');
             const sessionParam = urlParams.get('session_id');
             
-            // Автоматический выбор услуги из URL
+            // URL-დან სერვისის ავტომატური არჩევა
             if (serviceParam && services.some(s => s.id === serviceParam)) {
                 selectService(serviceParam);
             }
             
-            // Если есть IMEI и сессия, показываем результат
+            // თუ IMEI და სესია არსებობს, ვაჩვენებთ შედეგს
             if (imeiParam && sessionParam) {
                 currentImei = imeiParam;
                 currentServiceType = serviceParam;
@@ -464,7 +473,7 @@
                 document.getElementById('result-modal').style.display = 'none';
             });
             
-            // Назначение обработчиков для модалки оплаты
+            // გადახდის მოდალის დამმუშავებლები
             document.getElementById('balance-option').addEventListener('click', () => {
                 processPayment(true);
             });
@@ -494,13 +503,13 @@
             const errorElement = document.getElementById('imei-error');
             
             if (!imei) {
-                errorElement.textContent = 'Пожалуйста, введите IMEI или серийный номер';
+                errorElement.textContent = 'გთხოვთ შეიყვანოთ IMEI ან სერიული ნომერი';
                 errorElement.style.display = 'block';
                 return;
             }
             
             if (!/^\d{15}$/.test(imei)) {
-                errorElement.textContent = 'IMEI должен состоять из 15 цифр';
+                errorElement.textContent = 'IMEI უნდა შედგებოდეს 15 ციფრისგან';
                 errorElement.style.display = 'block';
                 return;
             }
@@ -510,7 +519,7 @@
             const serviceType = urlParams.get('type');
             
             if (!serviceType) {
-                errorElement.textContent = 'Пожалуйста, выберите тип проверки';
+                errorElement.textContent = 'გთხოვთ აირჩიოთ შემოწმების ტიპი';
                 errorElement.style.display = 'block';
                 return;
             }
@@ -518,13 +527,13 @@
             currentImei = imei;
             currentServiceType = serviceType;
             
-            // Для бесплатной проверки сразу выполняем
+            // უფასო შემოწმებისთვის
             if (serviceType === 'free') {
                 performCheck(imei, serviceType);
                 return;
             }
             
-            // Для авторизованных пользователей показываем выбор оплаты
+            // ავტორიზებული მომხმარებლებისთვის
             if ({{ 'true' if user else 'false' }}) {
                 fetchUserBalance().then(balance => {
                     const service = services.find(s => s.id === serviceType);
@@ -535,16 +544,16 @@
                     
                     if (balance >= price) {
                         document.getElementById('balance-status').innerHTML = 
-                            `<span class="balance-sufficient">Баланса достаточно</span>`;
+                            `<span class="balance-sufficient">ბალანსი საკმარისია</span>`;
                     } else {
                         document.getElementById('balance-status').innerHTML = 
-                            `<span class="balance-insufficient">Недостаточно средств</span>`;
+                            `<span class="balance-insufficient">არასაკმარისი თანხა</span>`;
                     }
                     
                     document.getElementById('payment-method-modal').style.display = 'flex';
                 });
             } else {
-                // Для неавторизованных - сразу оплата картой
+                // არაავტორიზებული მომხმარებლებისთვის
                 processPayment(false);
             }
         }
@@ -574,7 +583,7 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP შეცდომა! სტატუსი: ${response.status}`);
                 }
                 return response.json();
             })
@@ -593,7 +602,7 @@
                             .then(result => {
                                 if (result.error) {
                                     const errorElement = document.getElementById('imei-error');
-                                    errorElement.textContent = `Stripe error: ${result.error.message}`;
+                                    errorElement.textContent = `Stripe შეცდომა: ${result.error.message}`;
                                     errorElement.style.display = 'block';
                                 }
                             });
@@ -603,9 +612,9 @@
             .catch(error => {
                 document.getElementById('spinner').style.display = 'none';
                 const errorElement = document.getElementById('imei-error');
-                errorElement.textContent = 'Ошибка оплаты. Пожалуйста, попробуйте позже.';
+                errorElement.textContent = 'გადახდის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.';
                 errorElement.style.display = 'block';
-                console.error('Ошибка оплаты:', error);
+                console.error('გადახდის შეცდომა:', error);
             });
         }
         
@@ -614,7 +623,7 @@
             
             fetch('/get_check_result?session_id=' + sessionId)
                 .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
+                    if (!response.ok) throw new Error('ქსელის პასუხი არასწორია');
                     return response.json();
                 })
                 .then(data => {
@@ -631,9 +640,9 @@
                 .catch(error => {
                     document.getElementById('spinner').style.display = 'none';
                     const errorElement = document.getElementById('imei-error');
-                    errorElement.textContent = 'Ошибка получения результата';
+                    errorElement.textContent = 'შედეგის მიღების შეცდომა';
                     errorElement.style.display = 'block';
-                    console.error('Ошибка получения результата:', error);
+                    console.error('შედეგის მიღების შეცდომა:', error);
                 });
         }
         
@@ -652,7 +661,7 @@
                 })
             })
             .then(response => {
-                if (!response.ok) throw new Error('Ошибка сети');
+                if (!response.ok) throw new Error('ქსელის შეცდომა');
                 return response.json();
             })
             .then(data => {
@@ -672,9 +681,9 @@
             .catch(error => {
                 document.getElementById('spinner').style.display = 'none';
                 const errorElement = document.getElementById('imei-error');
-                errorElement.textContent = 'Ошибка сети. Пожалуйста, попробуйте позже.';
+                errorElement.textContent = 'ქსელის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.';
                 errorElement.style.display = 'block';
-                console.error('Ошибка проверки:', error);
+                console.error('შემოწმების შეცდომა:', error);
             });
         }
         
@@ -684,9 +693,9 @@
             let resultsHTML = `
                 <div class="text-center mb-4">
                     <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
-                    <h3 class="mt-3">Проверка завершена</h3>
+                    <h3 class="mt-3">შემოწმება დასრულებულია</h3>
                     <p>IMEI: ${imei}</p>
-                    <p>Тип проверки: ${services.find(s => s.id === serviceType).title}</p>
+                    <p>შემოწმების ტიპი: ${services.find(s => s.id === serviceType).title}</p>
                 </div>
             `;
             
@@ -694,8 +703,8 @@
                 resultsHTML += `
                     <table class="history-table">
                         <tr>
-                            <th>Параметр</th>
-                            <th>Значение</th>
+                            <th>პარამეტრი</th>
+                            <th>მნიშვნელობა</th>
                         </tr>
                 `;
                 
@@ -728,7 +737,7 @@
                 
                 resultsHTML += `</table>`;
             } else {
-                resultsHTML += `<p class="text-center">Данные не получены</p>`;
+                resultsHTML += `<p class="text-center">მონაცემები ვერ მოიძებნა</p>`;
             }
             
             resultContent.innerHTML = resultsHTML;
