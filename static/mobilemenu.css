@@ -442,22 +442,15 @@
     }
 }
 
-/* Новые стили для разделения элементов авторизации */
-#mobileLoginLink,
-#mobileRegisterLink {
+/* Новые стили для элементов авторизации */
+#mobileLoginRegister {
     display: block;
-    margin: 5px 0;
+    margin-top: 25px; /* Опускаем текст ниже */
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
-#mobileLoginLink:hover,
-#mobileRegisterLink:hover {
+#mobileLoginRegister:hover {
     color: #00c6ff;
     transform: translateY(-2px);
-}
-
-/* Дополнительный отступ для неавторизованных пользователей */
-#mobileUserName {
-    margin-top: 25px;
     }
