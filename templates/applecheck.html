@@ -225,8 +225,6 @@
         </div>
     </div>
     <script>
-    // --- Copilot: полностью переписанная DOM-логика, гарантирующая работу кнопки ---
-
     let currentService = null;
     let currentPaymentMethod = null;
     let isChecking = false;
@@ -297,7 +295,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // DOM-элементы
         domElements = {
             servicesGrid: document.getElementById('servicesGrid'),
             selectedServiceContainer: document.getElementById('selectedServiceContainer'),
@@ -320,12 +317,6 @@
             backButton: document.getElementById('backButton')
         };
 
-        // Сбросить все обработчики (на всякий случай)
-        for (const el of Object.values(domElements)) {
-            if (el && el.removeAllListeners instanceof Function) el.removeAllListeners();
-        }
-
-        // --- События ---
         domElements.servicesGrid.addEventListener('click', function(e) {
             const card = e.target.closest('.service-card');
             if (card) {
@@ -406,14 +397,21 @@
             }
         });
 
-        // ---- АВТОВЫБОР УСЛУГИ по URL ----
         const pathParts = window.location.pathname.split('/');
         if (pathParts.length > 2 && servicePrices.hasOwnProperty(pathParts[2])) {
             selectService(pathParts[2]);
         }
     });
 
-    // --- Остальные функции как были ---
+    function validateImei(imei, serviceType) {
+        if (!imei || !serviceType) return false;
+        const cleaned = imei.replace(/[^a-zA-Z0-9]/g, '');
+        if (serviceType === 'macbook') {
+            return /^[a-zA-Z0-9]{10,18}$/.test(cleaned);
+        }
+        return /^\d{15}$/.test(cleaned);
+    }
+
     function selectService(service) {
         if (!servicePrices.hasOwnProperty(service)) {
             showError('არასწორი სერვისის ტიპი');
@@ -458,18 +456,9 @@
             domElements.paymentSection.style.display = 'none';
             domElements.buttonText.textContent = 'უფასო შემოწმება';
         }
-        domElements.imeiInput.value = '';
-        domElements.imeiInput.classList.remove('is-invalid');
-        domElements.checkButton.disabled = true;
-    }
-
-    function validateImei(imei, serviceType) {
-        if (!imei) return false;
-        const cleaned = imei.replace(/[^a-zA-Z0-9]/g, '');
-        if (serviceType === 'macbook') {
-            return /^[a-zA-Z0-9]{10,18}$/.test(cleaned);
-        }
-        return /^\d{15}$/.test(cleaned);
+        const imei = domElements.imeiInput.value.trim();
+        const valid = validateImei(imei, service);
+        domElements.checkButton.disabled = !valid || isChecking;
     }
 
     function startCheck() {
