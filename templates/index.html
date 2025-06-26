@@ -319,10 +319,12 @@
                 <div class="floating-avatar" onclick="goToDashboard()" style="background-color: {{ user.avatar_color }};">
                     {{ user.first_name[0] }}{{ user.last_name[0] }}
                 </div>
-                <div class="floating-avatar-info" onclick="goToDashboard()">
-                    {{ user.first_name }} {{ user.last_name }}
+                <div class="user-info-container">
+                    <div class="floating-avatar-info" onclick="goToDashboard()">
+                        {{ user.first_name }} {{ user.last_name }}
+                    </div>
+                    <div class="user-balance">ბალანსი: {{ user.balance }} ₾</div>
                 </div>
-                <div class="user-balance">ბალანსი: {{ user.balance }} ₾</div>
             {% else %}
                 <div class="floating-avatar" id="mobileAvatar" onclick="goToLogin()">
                     <div class="avatar-placeholder">KODI.GE</div>
@@ -389,10 +391,12 @@
                 <div class="floating-avatar" onclick="goToDashboard()" style="background-color: {{ user.avatar_color }};">
                     {{ user.first_name[0] }}{{ user.last_name[0] }}
                 </div>
-                <div class="floating-avatar-info" onclick="goToDashboard()">
-                    {{ user.first_name }} {{ user.last_name }}
+                <div class="user-info-container">
+                    <div class="floating-avatar-info" onclick="goToDashboard()">
+                        {{ user.first_name }} {{ user.last_name }}
+                    </div>
+                    <div class="user-balance">ბალანსი: {{ user.balance }} ₾</div>
                 </div>
-                <div class="user-balance">ბალანსი: {{ user.balance }} ₾</div>
             {% else %}
                 <div class="floating-avatar" id="mobileAvatar" onclick="goToLogin()">
                     <div class="avatar-placeholder">KODI.GE</div>
@@ -455,10 +459,12 @@
                 <div class="floating-avatar" onclick="goToDashboard()" style="background-color: {{ user.avatar_color }};">
                     {{ user.first_name[0] }}{{ user.last_name[0] }}
                 </div>
-                <div class="floating-avatar-info" onclick="goToDashboard()">
-                    {{ user.first_name }} {{ user.last_name }}
+                <div class="user-info-container">
+                    <div class="floating-avatar-info" onclick="goToDashboard()">
+                        {{ user.first_name }} {{ user.last_name }}
+                    </div>
+                    <div class="user-balance">ბალანსი: {{ user.balance }} ₾</div>
                 </div>
-                <div class="user-balance">ბალანსი: {{ user.balance }} ₾</div>
             {% else %}
                 <div class="floating-avatar" id="mobileAvatar" onclick="goToLogin()">
                     <div class="avatar-placeholder">KODI.GE</div>
