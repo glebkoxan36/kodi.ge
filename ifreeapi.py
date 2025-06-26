@@ -33,10 +33,10 @@ def validate_imei(imei: str) -> bool:
 def perform_api_check(imei: str, service_type: str) -> dict:
     """Выполняет проверку IMEI через внешний API"""
     if service_type not in SERVICE_TYPES:
-        return {'error': f'Неизвестный тип проверки: {service_type}'}
+        return {'error': f'შემოწმების უცნობი ტიპი: {service_type}'}
     
     if not validate_imei(imei):
-        return {'error': 'Неверный формат IMEI. Должно быть 15 цифр.'}
+        return {'error': 'IMEI-ის არასწორი ფორმატი. უნდა შედგებოდეს 15 ციფრისგან.'}
     
     service_code = SERVICE_TYPES[service_type]
     data = {
@@ -50,7 +50,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         
         if response.status_code != 200:
             return {
-                'error': f'Ошибка сервера: {response.status_code}',
+                'error': f'სერვერის შეცდომა: {response.status_code}',
                 'details': response.text[:200] + '...' if len(response.text) > 200 else response.text
             }
         
@@ -63,8 +63,8 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             json_data = response.json()
             
             if not json_data.get('success'):
-                error_msg = json_data.get('error', 'Неизвестная ошибка API')
-                return {'error': f'Ошибка проверки: {error_msg}'}
+                error_msg = json_data.get('error', 'API-ის უცნობი შეცდომა')
+                return {'error': f'შემოწმების შეცდომა: {error_msg}'}
                 
             return json_data.get('data', {})
             
@@ -73,6 +73,6 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             return {'html_content': response.text}
     
     except requests.exceptions.RequestException as e:
-        return {'error': f'Ошибка сети: {str(e)}'}
+        return {'error': f'ქსელის შეცდომა: {str(e)}'}
     except Exception as e:
-        return {'error': f'Неожиданная ошибка: {str(e)}'}
+        return {'error': f'გაუთვალისწინებელი შეცდომა: {str(e)}'}
