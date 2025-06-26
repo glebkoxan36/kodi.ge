@@ -1,6 +1,7 @@
 import os
 import stripe
-from flask import url_for
+import time
+from flask import url_for, current_app
 from datetime import datetime
 from bson import ObjectId
 
@@ -127,50 +128,69 @@ class StripePayment:
             return False
 
     def handle_webhook(self, payload, sig_header):
-        """
-        Обрабатывает вебхуки от Stripe
-        
-        :param payload: Тело запроса вебхука
-        :param sig_header: Заголовок подписи Stripe
-        :return: Результат обработки события
-        """
+        """Обрабатывает вебхуки от Stripe с улучшенной диагностикой"""
         try:
-            # Верификация вебхука
+            # Диагностическое логирование
+            current_app.logger.info("Processing Stripe webhook...")
+            current_app.logger.info(f"Payload length: {len(payload)} bytes")
+            current_app.logger.info(f"Signature header: {sig_header or 'MISSING'}")
+            
+            if not sig_header:
+                current_app.logger.error("Missing Stripe-Signature header")
+                raise ValueError("Missing signature header")
+            
+            # Проверка временной метки
+            current_app.logger.info(f"Server time: {int(time.time())}")
+            
+            # Обработка вебхука
             event = stripe.Webhook.construct_event(
-                payload, sig_header, self.webhook_secret
+                payload,
+                sig_header,
+                self.webhook_secret,
+                tolerance=300  # 5 минут допуск
             )
+            
+            current_app.logger.info(f"Webhook verified: {event['type']}")
+            
+            # Обработка события
+            if event['type'] == 'checkout.session.completed':
+                session = event['data']['object']
+                metadata = session.get('metadata', {})
+                
+                # Пополнение баланса
+                if metadata.get('type') == 'balance_topup':
+                    user_id = metadata.get('user_id')
+                    amount = session['amount_total'] / 100
+                    
+                    current_app.logger.info(f"Balance topup: user={user_id}, amount={amount}")
+                    
+                    # Обновление баланса
+                    self.users_collection.update_one(
+                        {'_id': ObjectId(user_id)},
+                        {'$inc': {'balance': amount}}
+                    )
+                    
+                    # Запись о платеже
+                    self.payments_collection.insert_one({
+                        'user_id': ObjectId(user_id),
+                        'amount': amount,
+                        'currency': session['currency'],
+                        'stripe_session_id': session['id'],
+                        'timestamp': datetime.utcnow(),
+                        'type': 'topup'
+                    })
+            
+            return event
+        
         except ValueError as e:
-            print(f"Webhook value error: {str(e)}")
+            current_app.logger.error(f"Webhook value error: {str(e)}")
             raise e
         except stripe.error.SignatureVerificationError as e:
-            print(f"Webhook signature error: {str(e)}")
+            current_app.logger.error(f"Webhook signature error: {str(e)}")
+            # Дополнительная диагностика
+            current_app.logger.error(f"Expected secret: {self.webhook_secret[:6]}...")
+            current_app.logger.error(f"Payload start: {str(payload)[:100]}...")
             raise e
-
-        # Обработка события "сессия оплаты завершена"
-        if event['type'] == 'checkout.session.completed':
-            session = event['data']['object']
-            metadata = session.get('metadata', {})
-            
-            # Пополнение баланса
-            if metadata.get('type') == 'balance_topup':
-                user_id = metadata.get('user_id')
-                amount = session['amount_total'] / 100  # Конвертация в доллары
-                
-                # Обновление баланса пользователя
-                self.users_collection.update_one(
-                    {'_id': ObjectId(user_id)},
-                    {'$inc': {'balance': amount}}
-                )
-                
-                # Запись о платеже
-                self.payments_collection.insert_one({
-                    'user_id': ObjectId(user_id),
-                    'amount': amount,
-                    'currency': session['currency'],
-                    'stripe_session_id': session['id'],
-                    'timestamp': datetime.utcnow(),
-                    'type': 'topup'
-                })
-                print(f"Balance topup successful for user {user_id}: ${amount}")
-        
-        return event
+        except Exception as e:
+            current_app.logger.error(f"Webhook processing error: {str(e)}")
+            raise e
