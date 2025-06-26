@@ -338,8 +338,9 @@
                 <div class="floating-avatar" id="mobileAvatar" onclick="goToLogin()">
                     <div class="avatar-placeholder">KODI.GE</div>
                 </div>
-                <div class="floating-avatar-info" id="mobileUserName" onclick="goToLogin()">
-                    ლოგინი/რეგისტრაცია
+                <div class="user-info-container">
+                    <div id="mobileLoginLink" onclick="goToLogin()">ლოგინი</div>
+                    <div id="mobileRegisterLink" onclick="goToRegister()">რეგისტრაცია</div>
                 </div>
             {% endif %}
         </div>
@@ -410,8 +411,9 @@
                 <div class="floating-avatar" id="mobileAvatar" onclick="goToLogin()">
                     <div class="avatar-placeholder">KODI.GE</div>
                 </div>
-                <div class="floating-avatar-info" id="mobileUserName" onclick="goToLogin()">
-                    ლოგინი/რეგისტრაცია
+                <div class="user-info-container">
+                    <div id="mobileLoginLink" onclick="goToLogin()">ლოგინი</div>
+                    <div id="mobileRegisterLink" onclick="goToRegister()">რეგისტრაცია</div>
                 </div>
             {% endif %}
         </div>
@@ -485,8 +487,9 @@
                 <div class="floating-avatar" id="mobileAvatar" onclick="goToLogin()">
                     <div class="avatar-placeholder">KODI.GE</div>
                 </div>
-                <div class="floating-avatar-info" id="mobileUserName" onclick="goToLogin()">
-                    ლოგინი/რეგისტრაცია
+                <div class="user-info-container">
+                    <div id="mobileLoginLink" onclick="goToLogin()">ლოგინი</div>
+                    <div id="mobileRegisterLink" onclick="goToRegister()">რეგისტრაცია</div>
                 </div>
             {% endif %}
         </div>
@@ -628,6 +631,12 @@
             window.location.href = "{{ url_for('auth.login') }}";
         }
         
+        // New function for registration
+        function goToRegister() {
+            closeAllMobileMenus();
+            window.location.href = "{{ url_for('auth.register') }}";
+        }
+        
         // Redirect to dashboard
         function goToDashboard() {
             closeAllMobileMenus();
@@ -698,4 +707,4 @@
         }, 5000);
     </script>
 </body>
-</html>
+                                </html>
