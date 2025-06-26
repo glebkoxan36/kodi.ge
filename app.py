@@ -364,7 +364,7 @@ def apple_check():
     
     # Создаем словарь цен для каждого типа услуги
     service_prices = {
-        'free': 'Бесплатно',
+        'free': 'უფასო',
         'fmi': f"{paid_price_gel:.2f}₾",
         'blacklist': f"{paid_price_gel:.2f}₾",
         'sim_lock': f"{premium_price_gel:.2f}₾",
@@ -391,51 +391,51 @@ def apple_check():
     services_data = [
         { 
             'id': 'free', 
-            'title': 'Базовая проверка', 
+            'title': 'ძირითადი შემოწმება', 
             'icon': 'fa-mobile-screen', 
-            'description': 'Проверка статуса активации и модели устройства', 
+            'description': 'მოწყობილობის აქტივაციის სტატუსისა და მოდელის შემოწმება', 
             'price': service_prices['free'] 
         },
         { 
             'id': 'fmi', 
-            'title': 'Статус FMI', 
+            'title': 'FMI სტატუსი', 
             'icon': 'fa-lock', 
-            'description': 'Проверка статуса "Найти iPhone" (Find My iPhone)', 
+            'description': 'მოწყობილობის "მოძებნე" სტატუსის შემოწმება', 
             'price': service_prices['fmi'] 
         },
         { 
             'id': 'blacklist', 
-            'title': 'Черный список', 
+            'title': 'შავი სია', 
             'icon': 'fa-ban', 
-            'description': 'Проверка нахождения устройства в черном списке', 
+            'description': 'მოწყობილობის შავ სიაში მოხვედრის შემოწმება', 
             'price': service_prices['blacklist'] 
         },
         { 
             'id': 'sim_lock', 
-            'title': 'SIM-лок', 
+            'title': 'SIM-ლოკი', 
             'icon': 'fa-sim-card', 
-            'description': 'Проверка блокировки по оператору связи', 
+            'description': 'ოპერატორის მიერ დაბლოკვის შემოწმება', 
             'price': service_prices['sim_lock'] 
         },
         { 
             'id': 'activation', 
-            'title': 'Статус активации', 
+            'title': 'აქტივაციის სტატუსი', 
             'icon': 'fa-bolt', 
-            'description': 'Проверка статуса активации устройства', 
+            'description': 'მოწყობილობის აქტივაციის სტატუსის შემოწმება', 
             'price': service_prices['activation'] 
         },
         { 
             'id': 'carrier', 
-            'title': 'Оператор связи', 
+            'title': 'ოპერატორი', 
             'icon': 'fa-tower-cell', 
-            'description': 'Определение оператора, к которому привязано устройство', 
+            'description': 'ოპერატორის დადასტურება, რომელსაც მოწყობილობა უკავშირდება', 
             'price': service_prices['carrier'] 
         },
         { 
             'id': 'mdm', 
-            'title': 'MDM блокировка', 
+            'title': 'MDM ბლოკირება', 
             'icon': 'fa-building-shield', 
-            'description': 'Проверка корпоративной блокировки MDM', 
+            'description': 'კორპორატიული ბლოკირების შემოწმება', 
             'price': service_prices['mdm'] 
         }
     ]
@@ -457,7 +457,7 @@ def create_checkout_session():
         use_balance = data.get('use_balance', False)
         
         if not validate_imei(imei):
-            return jsonify({'error': 'Invalid IMEI'}), 400
+            return jsonify({'error': 'არასწორი IMEI'}), 400
         
         # Маппинг типов услуг на цены
         price_mapping = {
@@ -470,7 +470,7 @@ def create_checkout_session():
         }
         
         if service_type not in price_mapping:
-            return jsonify({'error': 'Invalid service type'}), 400
+            return jsonify({'error': 'არასწორი სერვისის ტიპი'}), 400
         
         prices = get_current_prices()
         price_key = price_mapping[service_type]
@@ -478,7 +478,7 @@ def create_checkout_session():
         
         # Для бесплатной проверки не создаем сессию
         if service_type == 'free':
-            return jsonify({'error': 'Free check does not require payment'}), 400
+            return jsonify({'error': 'უფასო შემოწმება არ საჭიროებს გადახდას'}), 400
         
         # Если пользователь авторизован и выбрал оплату с баланса
         if use_balance and 'user_id' in session:
@@ -511,7 +511,7 @@ def create_checkout_session():
                         'payment_method': 'balance'
                     })
                 else:
-                    return jsonify({'error': 'Failed to deduct balance'}), 500
+                    return jsonify({'error': 'ბალანსიდან გადახდა ვერ მოხერხდა'}), 500
             else:
                 # Недостаточно средств, переходим к оплате картой
                 use_balance = False
@@ -546,12 +546,12 @@ def perform_balance_check():
         session_id = data.get('session_id')
         
         if not validate_imei(imei):
-            return jsonify({'error': 'Invalid IMEI'}), 400
+            return jsonify({'error': 'არასწორი IMEI'}), 400
         
         result = perform_api_check(imei, service_type)
         
         if not result or 'error' in result:
-            error_msg = result.get('error', 'No data available for this IMEI')
+            error_msg = result.get('error', 'ამ IMEI-სთვის მონაცემები ხელმიუწვდომელია')
             return jsonify({'error': error_msg}), 400
         
         # Обновляем запись в базе
@@ -573,7 +573,7 @@ def payment_success():
     service_type = request.args.get('service_type')
     
     if not session_id or not imei or not service_type:
-        return render_template('error.html', error="Missing parameters"), 400
+        return render_template('error.html', error="არასაკმარისი პარამეტრები"), 400
     
     try:
         # Для Stripe получаем сессию
@@ -582,7 +582,7 @@ def payment_success():
         result = perform_api_check(imei, service_type)
         
         if not result or 'error' in result:
-            error_msg = result.get('error', 'No data available for this IMEI')
+            error_msg = result.get('error', 'ამ IMEI-სთვის მონაცემები ხელმიუწვდომელია')
             return render_template('error.html', error=error_msg)
         
         # Для сервисов, возвращающих HTML
@@ -591,7 +591,7 @@ def payment_success():
             if parsed_data:
                 result = parsed_data
             else:
-                result = {'error': 'Failed to parse HTML response'}
+                result = {'error': 'HTML პასუხის დამუშავება ვერ მოხერხდა'}
         
         record = {
             'stripe_session_id': session_id,
@@ -619,7 +619,7 @@ def payment_success():
 def get_check_result():
     session_id = request.args.get('session_id')
     if not session_id:
-        return jsonify({'error': 'Missing session_id'}), 400
+        return jsonify({'error': 'სესიის ID არ არის მითითებული'}), 400
     
     # Ищем как по session_id (баланс), так и по stripe_session_id (Stripe)
     record = checks_collection.find_one({
@@ -629,30 +629,99 @@ def get_check_result():
         ]
     })
     if not record:
-        return jsonify({'error': 'Result not found'}), 404
+        return jsonify({'error': 'შედეგი ვერ მოიძებნა'}), 404
     
     return jsonify({
         'imei': record['imei'],
         'result': record['result']
     })
 
+def parse_free_html(html_content):
+    try:
+        soup = BeautifulSoup(html_content, 'html.parser')
+        result = {}
+        
+        # 1. Парсинг табличных данных
+        for table in soup.find_all('table'):
+            for row in table.find_all('tr'):
+                cols = row.find_all('td')
+                if len(cols) == 2:
+                    key = cols[0].get_text(strip=True).replace(':', '').replace(' ', '_').lower()
+                    value = cols[1].get_text(strip=True)
+                    result[key] = value
+
+        # 2. Парсинг всех возможных пар ключ-значение
+        pattern = re.compile(
+            r'(Device|Model|Serial|IMEI|ICCID|FMI|Activation Status|'
+            r'Blacklist Status|Sim Lock|MDM Status|Google Account Status|'
+            r'Carrier|Purchase Date|Warranty Status|Activation Policy|'
+            r'Network Lock|Coverage|Find My iPhone|iCloud Status|'
+            r'Activation Lock|Last Restore|Factory Unlocked|Refurbished|'
+            r'Replaced|Loaner|AppleCare|Blocked Status|Restore Status|'
+            r'Activation Date|Purchase Country|Next Tether Policy|Sim Lock Policy)'
+            r'[\s:]*', 
+            re.IGNORECASE
+        )
+        
+        for element in soup.find_all(string=pattern):
+            match = pattern.search(element)
+            if match:
+                label = match.group(1).strip()
+                key = label.replace(' ', '_').lower()
+                
+                # Поиск значения в структуре документа
+                value = ""
+                parent = element.parent
+                
+                # Случай 1: Значение в том же элементе после двоеточия
+                if ':' in element:
+                    value = element.split(':', 1)[1].strip()
+                
+                # Случай 2: Значение в соседнем элементе
+                elif parent and parent.find_next_sibling():
+                    value = parent.find_next_sibling().get_text(strip=True)
+                
+                # Случай 3: Значение в следующем текстовом узле
+                elif element.next_sibling:
+                    value = element.next_sibling.strip()
+                
+                if value:
+                    result[key] = value
+
+        # 3. Дополнительный сбор данных из заголовков и значений
+        for header in soup.find_all(['h3', 'h4', 'strong', 'b']):
+            text = header.get_text(strip=True)
+            if ':' in text:
+                key, value = text.split(':', 1)
+                key = key.strip().replace(' ', '_').lower()
+                result[key] = value.strip()
+            elif header.next_sibling:
+                key = text.replace(':', '').replace(' ', '_').lower()
+                result[key] = header.next_sibling.strip()
+
+        return result
+    
+    except Exception as e:
+        current_app.logger.error(f"Advanced HTML parsing error: {str(e)}")
+        return None
+
 @app.route('/perform_check', methods=['POST'])
 def perform_check():
-    data = request.get_json()
-    imei = data.get('imei')
-    service_type = data.get('service_type')
-    
-    if not imei or not service_type:
-        return jsonify({'error': 'Missing parameters'}), 400
-    
-    if not validate_imei(imei):
-        return jsonify({'error': 'Invalid IMEI format'}), 400
-    
     try:
+        data = request.get_json()
+        imei = data.get('imei')
+        service_type = data.get('service_type')
+        
+        if not imei or not service_type:
+            return jsonify({'error': 'არასაკმარისი პარამეტრები'}), 400
+        
+        if not validate_imei(imei):
+            return jsonify({'error': 'IMEI-ის არასწორი ფორმატი'}), 400
+        
         result = perform_api_check(imei, service_type)
         
         if not result:
-            return jsonify({'error': 'Empty response from API'}), 500
+            return jsonify({'error': 'API-დან ცარიელი პასუხი'}), 500
         
         if 'error' in result:
             return jsonify(result), 400
@@ -660,10 +729,15 @@ def perform_check():
         # Для сервисов, возвращающих HTML
         if 'html_content' in result:
             parsed_data = parse_free_html(result['html_content'])
+            
             if parsed_data:
+                # Сохраняем оригинальный HTML как резерв
+                parsed_data['original_html'] = result['html_content'][:500] + '...' 
                 result = parsed_data
             else:
-                result = {'error': 'Failed to parse HTML response'}
+                # Fallback: возвращаем очищенный текст
+                soup = BeautifulSoup(result['html_content'], 'html.parser')
+                result = {'server_response': soup.get_text(separator='\n', strip=True)}
         
         if service_type == 'free':
             record = {
@@ -689,57 +763,27 @@ def perform_check():
     
     except Exception as e:
         app.logger.error(f'Check error: {str(e)}')
-        return jsonify({'error': 'Internal server error'}), 500
+        return jsonify({'error': 'სერვერული შეცდომა'}), 500
 
-def parse_free_html(html_content):
-    try:
-        soup = BeautifulSoup(html_content, 'html.parser')
-        result = {}
-        
-        # Парсинг табличных данных
-        tables = soup.find_all('table')
-        for table in tables:
-            rows = table.find_all('tr')
-            for row in rows:
-                cols = row.find_all('td')
-                if len(cols) == 2:
-                    key = cols[0].get_text(strip=True).replace(':', '').replace(' ', '_').lower()
-                    value = cols[1].get_text(strip=True)
-                    result[key] = value
-        
-        # Дополнительные поля для новых сервисов
-        labels = [
-            "Device", "Model", "Serial", "IMEI", "ICCID", 
-            "FMI", "Activation Status", "Blacklist Status",
-            "Sim Lock", "MDM Status", "Google Account Status",
-            "Carrier", "Purchase Date", "Warranty Status"
-        ]
-        
-        for label in labels:
-            # Используем более надежный поиск
-            element = soup.find(string=re.compile(rf'{label}.*', re.IGNORECASE))
-            if not element:
-                continue
-                
-            # Ищем следующего соседа с данными
-            value = ""
-            if element.parent and element.parent.find_next_sibling('td'):
-                value = element.parent.find_next_sibling('td').get_text(strip=True)
-            elif element.parent and element.parent.find_next_sibling('div'):
-                value = element.parent.find_next_sibling('div').get_text(strip=True)
-            elif element.parent and element.parent.find_next_sibling('span'):
-                value = element.parent.find_next_sibling('span').get_text(strip=True)
-            elif ":" in element:
-                value = element.split(":", 1)[-1].strip()
-            
-            if value:
-                result[label.replace(" ", "_").lower()] = value
-        
-        return result
+@app.route('/reparse_imei')
+def reparse_imei():
+    imei = request.args.get('imei')
+    record = checks_collection.find_one({'imei': imei, 'service_type': 'free'})
     
-    except Exception as e:
-        app.logger.error(f"HTML parsing error: {str(e)}")
-        return None
+    if not record or 'result' not in record or 'html_content' not in record['result']:
+        return jsonify({'error': 'მონაცემები ვერ მოიძებნა'}), 404
+    
+    html_content = record['result']['html_content']
+    parsed_data = parse_free_html(html_content)
+    
+    if parsed_data:
+        parsed_data['reparsed'] = True  # Флаг повторного парсинга
+        return jsonify(parsed_data)
+    
+    return jsonify({
+        'error': 'დამუშავება ვერ მოხერხდა',
+        'server_response': BeautifulSoup(html_content, 'html.parser').get_text()
+    })
 
 @app.route('/stripe_webhook', methods=['POST'])
 def stripe_webhook():
@@ -752,12 +796,12 @@ def stripe_webhook():
         return jsonify({'status': 'success'})
     
     except ValueError as e:
-        return jsonify({'error': 'Invalid payload'}), 400
+        return jsonify({'error': 'არასწორი მონაცემები'}), 400
     except stripe.error.SignatureVerificationError as e:
-        return jsonify({'error': 'Invalid signature'}), 400
+        return jsonify({'error': 'არასწორი ხელმოწერა'}), 400
     except Exception as e:
         app.logger.error(f"Webhook processing error: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
+        return jsonify({'error': 'სერვერული შეცდომა'}), 500
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -886,11 +930,11 @@ def create_carousel_folder():
 def upload_carousel_image():
     """Загружает изображение для карусели"""
     if 'carouselImage' not in request.files:
-        return jsonify({'success': False, 'error': 'No file part'}), 400
+        return jsonify({'success': False, 'error': 'ფაილი არ არის ატვირთული'}), 400
     
     file = request.files['carouselImage']
     if file.filename == '':
-        return jsonify({'success': False, 'error': 'No selected file'}), 400
+        return jsonify({'success': False, 'error': 'ფაილი არ არის არჩეული'}), 400
     
     try:
         # Сохраняем в папку carousel
@@ -916,7 +960,7 @@ def upload_carousel_image():
 def api_search():
     query = request.args.get('query', '').strip()
     if not query:
-        return jsonify({'error': 'Query parameter is required'}), 400
+        return jsonify({'error': 'საძიებო მოთხოვნა აუცილებელია'}), 400
     
     results = search_phones(query)
     return jsonify(results)
@@ -925,7 +969,7 @@ def api_search():
 def api_phone_details(phone_id):
     phone = get_phone_details(phone_id)
     if not phone:
-        return jsonify({'error': 'Phone not found'}), 404
+        return jsonify({'error': 'ტელეფონი ვერ მოიძებნა'}), 404
     return jsonify(phone)
 
 @app.route('/api/ai-analysis', methods=['POST'])
@@ -935,7 +979,7 @@ def api_ai_analysis():
     phone2 = data.get('phone2')
     
     if not phone1 or not phone2:
-        return jsonify({'error': 'Both phones are required'}), 400
+        return jsonify({'error': 'ორივე ტელეფონი აუცილებელია'}), 400
     
     analysis = perform_ai_comparison(phone1, phone2)
     return jsonify({'analysis': analysis})
@@ -958,7 +1002,7 @@ def dashboard():
     user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
     
     if not user:
-        flash('User not found', 'danger')
+        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
     
     # Получение баланса
@@ -1002,7 +1046,7 @@ def topup_balance():
     if request.method == 'POST':
         amount = float(request.form.get('amount'))
         if amount < 1:
-            flash('Minimum topup amount is $1', 'danger')
+            flash('მინიმალური თანხა $1', 'danger')
             return redirect(url_for('user.topup_balance'))
         
         # Используем StripePayment для создания сессии пополнения
@@ -1018,7 +1062,7 @@ def topup_balance():
             )
             return redirect(stripe_session.url)
         except Exception as e:
-            flash(f'Error creating payment session: {str(e)}', 'danger')
+            flash(f'გადახდის სესიის შექმნის შეცდომა: {str(e)}', 'danger')
             return redirect(url_for('user.topup_balance'))
     
     return render_template('user/topup.html', stripe_public_key=STRIPE_PUBLIC_KEY)
@@ -1027,7 +1071,7 @@ def topup_balance():
 @login_required
 def topup_success():
     """Успешное пополнение баланса"""
-    flash('Payment successful! Your balance will be updated shortly.', 'success')
+    flash('გადახდა წარმატებით დასრულდა! თქვენი ბალანსი მალე განახლდება.', 'success')
     return redirect(url_for('user.dashboard'))
 
 @user_bp.route('/payment-methods')
@@ -1044,7 +1088,7 @@ def history_checks():
     user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
     
     if not user:
-        flash('User not found', 'danger')
+        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
     
     balance = user.get('balance', 0)
@@ -1080,7 +1124,7 @@ def history_comparisons():
     user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
     
     if not user:
-        flash('User not found', 'danger')
+        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
     
     balance = user.get('balance', 0)
@@ -1140,32 +1184,32 @@ def register():
     errors = []
     
     if not GEORGIAN_LETTERS_REGEX.match(first_name):
-        errors.append("Имя должно содержать только грузинские буквы")
+        errors.append("სახელი უნდა შეიცავდეს მხოლოდ ქართულ ასოებს")
     
     if not GEORGIAN_LETTERS_REGEX.match(last_name):
-        errors.append("Фамилия должна содержать только грузинские буквы")
+        errors.append("გვარი უნდა შეიცავდეს მხოლოდ ქართულ ასოებს")
     
     try:
         birth_date = datetime(int(birth_year), int(birth_month), int(birth_day))
         if birth_date > datetime.utcnow():
-            errors.append("Дата рождения не может быть в будущем")
+            errors.append("დაბადების თარიღი არ შეიძლება იყოს მომავალში")
     except (ValueError, TypeError):
-        errors.append("Некорректная дата рождения")
+        errors.append("არასწორი დაბადების თარიღი")
     
     if not PHONE_REGEX.match(phone):
-        errors.append("Некорректный формат телефона. Используйте +995XXXXXXXXX")
+        errors.append("არასწორი ტელეფონის ნომრის ფორმატი. გამოიყენეთ +995XXXXXXXXX")
     
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-        errors.append("Некорректный email адрес")
+        errors.append("არასწორი ელ.ფოსტის მისამართი")
     
     if not PASSWORD_REGEX.match(password):
-        errors.append("Пароль должен содержать минимум 12 символов, одну заглавную букву, одну строчную, одну цифру и один спецсимвол")
+        errors.append("პაროლი უნდა შედგებოდეს მინიმუმ 12 სიმბოლოსგან, ერთი დიდი ასო, ერთი პატარა ასო, ერთი ციფრი და ერთი სპეციალური სიმბოლო")
     
     if password != confirm_password:
-        errors.append("Пароли не совпадают")
+        errors.append("პაროლები არ ემთხვევა")
     
     if regular_users_collection.find_one({'$or': [{'username': username}, {'email': email}, {'phone': phone}]}):
-        errors.append("Пользователь с такими данными уже существует")
+        errors.append("მომხმარებელი ასეთი მონაცემებით უკვე არსებობს")
     
     if errors:
         return jsonify({"success": False, "errors": errors}), 400
@@ -1193,7 +1237,7 @@ def register():
     session['username'] = username
     session['role'] = 'user'
     
-    return jsonify({"success": True, "message": "Регистрация успешна!"}), 201
+    return jsonify({"success": True, "message": "რეგისტრაცია წარმატებით დასრულდა!"}), 201
 
 @auth_bp.route('/login', methods=['GET'])
 def show_login_form():
@@ -1213,7 +1257,7 @@ def login():
         remaining = int((failed_login['blocked_until'] - datetime.utcnow()).total_seconds() / 60)
         return jsonify({
             "success": False,
-            "error": f"Аккаунт временно заблокирован. Попробуйте через {remaining} минут"
+            "error": f"ანგარიში დროებით დაბლოკილია. სცადეთ {remaining} წუთის შემდეგ"
         }), 429
     
     user = None
@@ -1295,16 +1339,16 @@ def login():
         app.logger.warning(f"IP blocked: {ip_address} for 10 minutes")
         return jsonify({
             "success": False,
-            "error": "Слишком много попыток. Аккаунт заблокирован на 10 минут"
+            "error": "ძალიან ბევრი მცდელობა. ანგარიში დროებით დაბლოკილია 10 წუთით"
         }), 429
     
     app.logger.warning(f"Failed login attempt for: {identifier} from IP: {ip_address}")
-    return jsonify({"success": False, "error": "Неверный логин или пароль"}), 401
+    return jsonify({"success": False, "error": "არასწორი მომხმარებლის სახელი ან პაროლი"}), 401
 
 @auth_bp.route('/logout')
 def logout():
     session.clear()
-    flash('You have been logged out', 'success')
+    flash('თქვენ გამოხვედით სისტემიდან', 'success')
     return redirect(url_for('index'))
 
 # ======================================
