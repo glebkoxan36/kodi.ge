@@ -330,6 +330,7 @@ def index():
 def contacts_page():
     """Страница контактов"""
     user_data = None
+    if 'user极
     if 'user_id' in session:
         user_id = session['user_id']
         user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
@@ -352,6 +353,7 @@ def knowledge_base():
         user_id = session['user_id']
         user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
         if user:
+            avatar极
             avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
             user_data = {
                 'first_name': user.get('first_name', ''),
@@ -440,10 +442,29 @@ def perform_apple_check():
     if service_type == 'free':
         try:
             result = perform_api_check(imei, service_type)
+            
+            # Если получили HTML-контент вместо структурированных данных
+            if 'html_content' in result:
+                parsed_data = parse_free_html(result['html_content'])
+                if parsed_data:
+                    result = parsed_data
+                else:
+                    result = {'error': 'Failed to parse device information'}
+            
+            # Проверяем, есть ли полезные данные в результате
+            if not result or (isinstance(result, dict) and not result.get('device') and not result.get('model')):
+                return jsonify({
+                    'error': 'No information available for this device. '
+                             'It may be too new or not in our database.'
+                })
+            
             return jsonify(result)
         except Exception as e:
             current_app.logger.error(f'Free check error: {str(e)}')
-            return jsonify({'error': 'Internal server error'}), 500
+            return jsonify({
+                'error': 'Technical error during device check. '
+                         'Please try again later or contact support.'
+            }), 500
     
     # Для платных проверок
     prices = get_current_prices()
@@ -514,6 +535,7 @@ def perform_apple_check():
             imei=imei,
             service_type=service_type,
             amount=prices[service_type],
+            success_url=url_for('payment_success', _external极
             success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=url_for('apple_check1', _external=True)
         )
@@ -1032,6 +1054,7 @@ def upload_carousel_image():
     
     file = request.files['carouselImage']
     if file.filename == '':
+        return jsonify({'success': False, '极
         return jsonify({'success': False, 'error': 'No selected file'}), 400
     
     try:
@@ -1220,6 +1243,7 @@ def history_comparisons():
     
     comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).skip((page - 1) * per_page).limit(per_page))
     
+    total = comparisons_collection.count_documents({'user极
     total = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
     
     for comp in comparisons:
