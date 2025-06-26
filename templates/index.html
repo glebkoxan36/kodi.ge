@@ -10,6 +10,15 @@
     <link rel="stylesheet" href="static/mobilemenu.css">
     <!-- Подключение нового CSS для карусели -->
     <link rel="stylesheet" href="static/carousel.css">
+    <style>
+        .menu-icon-img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto 5px;
+        }
+    </style>
 </head>
 <body>
     <!-- Gradient background elements -->
@@ -411,31 +420,38 @@
             <div class="modal-body">
                 <div class="menu-grid">
                     <a class="menu-item" href="/applecheck?type=free" onclick="closeAllMobileMenus();">
-                        <i class="fas fa-certificate"></i>
+                        <img src="static/ico/8f1197c9-19f4-4923-8030-4f7b88c9d697_20250627_012614_0000.png" 
+                             class="menu-icon-img">
                         <span>უფასო შემოწმება</span>
                     </a>
                     <a class="menu-item" href="/applecheck?type=fmi" onclick="closeAllMobileMenus();">
-                        <i class="fas fa-cloud"></i>
+                        <img src="static/ico/f9a07c0e-e427-4a1a-aab9-948ba60f1b6a_20250627_012716_0000.png" 
+                             class="menu-icon-img">
                         <span>FMI iCloud</span>
                     </a>
                     <a class="menu-item" href="/applecheck?type=sim_lock" onclick="closeAllMobileMenus();">
-                        <i class="fas fa-sim-card"></i>
+                        <img src="static/ico/957afe67-7a27-48cb-9622-6c557b220b71_20250627_012808_0000.png" 
+                             class="menu-icon-img">
                         <span>SIM ლოკი</span>
                     </a>
                     <a class="menu-item" href="/applecheck?type=blacklist" onclick="closeAllMobileMenus();">
-                        <i class="fas fa-ban"></i>
+                        <img src="static/ico/4e28c4f2-541b-4a1b-8163-c79e6db5481c_20250627_012852_0000.png" 
+                             class="menu-icon-img">
                         <span>შავი სია</span>
                     </a>
                     <a class="menu-item" href="/applecheck?type=mdm" onclick="closeAllMobileMenus();">
-                        <i class="fas fa-lock"></i>
+                        <img src="static/ico/275e6a62-c55e-48b9-8781-5b323ebcdce0_20250627_012946_0000.png" 
+                             class="menu-icon-img">
                         <span>MDM ბლოკი</span>
                     </a>
                     <a class="menu-item" href="/applecheck?type=premium" onclick="closeAllMobileMenus();">
-                        <i class="fas fa-crown"></i>
+                        <img src="static/ico/84df4824-0564-447c-b5c4-e749442bdc19_20250627_013110_0000.png" 
+                             class="menu-icon-img">
                         <span>პრემიუმ შემოწმება</span>
                     </a>
                     <a class="menu-item" href="#" onclick="alert('სერვისი მომზადების პროცესშია'); closeAllMobileMenus();">
-                        <i class="fas fa-laptop"></i>
+                        <img src="static/ico/874fae5b-c0f5-42d8-9c37-679aa86360e6_20250627_013030_0000.png" 
+                             class="menu-icon-img">
                         <span>MacBook</span>
                     </a>
                     <div class="menu-item" onclick="closeAppleSubmenu()">
@@ -682,4 +698,4 @@
         }, 5000);
     </script>
 </body>
-    </html>
+</html>
