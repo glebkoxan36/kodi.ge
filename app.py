@@ -401,28 +401,100 @@ def create_checkout_session():
         data = request.json
         imei = data.get('imei')
         service_type = data.get('service_type')
+        use_balance = data.get('use_balance', False)
         
         if not validate_imei(imei):
             return jsonify({'error': 'Invalid IMEI'}), 400
         
         prices = get_current_prices()
+        amount = prices[service_type] / 100  # Конвертируем в доллары
         
-        # Используем StripePayment для создания сессии
-        success_url = url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}'
-        cancel_url = url_for('index', _external=True)
+        # Для бесплатной проверки не создаем сессию
+        if service_type == 'free':
+            return jsonify({'error': 'Free check does not require payment'}), 400
         
-        stripe_session = stripe_payment.create_checkout_session(
-            imei=imei,
-            service_type=service_type,
-            amount=prices[service_type],
-            success_url=success_url,
-            cancel_url=cancel_url
-        )
+        # Если пользователь авторизован и выбрал оплату с баланса
+        if use_balance and 'user_id' in session:
+            user_id = session['user_id']
+            # Проверяем достаточно ли средств
+            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            if user and user.get('balance', 0) >= amount:
+                # Списание средств с баланса
+                if stripe_payment.deduct_balance(user_id, amount):
+                    # Создаем запись о проверке
+                    session_id = f"balance_{ObjectId()}"
+                    record = {
+                        'session_id': session_id,
+                        'imei': imei,
+                        'service_type': service_type,
+                        'paid': True,
+                        'payment_status': 'succeeded',
+                        'payment_method': 'balance',
+                        'amount': amount,
+                        'currency': 'usd',
+                        'timestamp': datetime.utcnow(),
+                        'user_id': ObjectId(user_id)
+                    }
+                    checks_collection.insert_one(record)
+                    
+                    return jsonify({
+                        'id': session_id,
+                        'payment_method': 'balance'
+                    })
+                else:
+                    return jsonify({'error': 'Failed to deduct balance'}), 500
+            else:
+                # Недостаточно средств, переходим к оплате картой
+                use_balance = False
         
-        return jsonify({'id': stripe_session.id})
+        # Если не используем баланс (неавторизован или недостаточно средств)
+        if not use_balance:
+            # Используем StripePayment для создания сессии
+            success_url = url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}'
+            cancel_url = url_for('index', _external=True)
+            
+            stripe_session = stripe_payment.create_checkout_session(
+                imei=imei,
+                service_type=service_type,
+                amount=prices[service_type],  # в центах
+                success_url=success_url,
+                cancel_url=cancel_url
+            )
+            
+            return jsonify({'id': stripe_session.id, 'payment_method': 'stripe'})
     
     except Exception as e:
         app.logger.error(f"Error creating checkout session: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/perform_balance_check', methods=['POST'])
+def perform_balance_check():
+    """Выполнение проверки при оплате балансом"""
+    try:
+        data = request.json
+        imei = data.get('imei')
+        service_type = data.get('service_type')
+        session_id = data.get('session_id')
+        
+        if not validate_imei(imei):
+            return jsonify({'error': 'Invalid IMEI'}), 400
+        
+        result = perform_api_check(imei, service_type)
+        
+        if not result or 'error' in result:
+            error_msg = result.get('error', 'No data available for this IMEI')
+            return jsonify({'error': error_msg}), 400
+        
+        # Обновляем запись в базе
+        checks_collection.update_one(
+            {'session_id': session_id},
+            {'$set': {'result': result}}
+        )
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        app.logger.error(f"Balance check error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/success')
@@ -432,6 +504,12 @@ def payment_success():
         return render_template('error.html', error="Session ID missing"), 400
     
     try:
+        # Проверяем, это балансовая оплата или Stripe
+        if session_id.startswith('balance_'):
+            # Для баланса сразу показываем результат
+            return redirect(url_for('get_check_result', session_id=session_id))
+        
+        # Для Stripe получаем сессию
         stripe_session = stripe.checkout.Session.retrieve(session_id)
         imei = stripe_session.metadata.get('imei')
         service_type = stripe_session.metadata.get('service_type')
@@ -468,7 +546,7 @@ def payment_success():
             record['user_id'] = ObjectId(session['user_id'])
         checks_collection.insert_one(record)
         
-        return redirect(url_for('index', session_id=session_id))
+        return redirect(url_for('get_check_result', session_id=session_id))
     
     except Exception as e:
         app.logger.error(f"Payment success error: {str(e)}")
@@ -480,7 +558,13 @@ def get_check_result():
     if not session_id:
         return jsonify({'error': 'Missing session_id'}), 400
     
-    record = checks_collection.find_one({'stripe_session_id': session_id})
+    # Ищем как по session_id (баланс), так и по stripe_session_id (Stripe)
+    record = checks_collection.find_one({
+        '$or': [
+            {'session_id': session_id},
+            {'stripe_session_id': session_id}
+        ]
+    })
     if not record:
         return jsonify({'error': 'Result not found'}), 404
     
