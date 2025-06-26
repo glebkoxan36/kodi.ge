@@ -6,9 +6,10 @@
     <title>Apple IMEI Checker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="static/styles.css">
     <script src="https://js.stripe.com/v3/"></script>
     <style>
+        /* Temporary styles */
         .btn-check:active {
             transform: translateY(1px) !important;
             box-shadow: 0 2px 5px rgba(0, 198, 255, 0.2) !important;
@@ -17,6 +18,50 @@
         .is-invalid {
             border-color: var(--danger-color) !important;
             box-shadow: 0 0 0 3px rgba(255, 61, 113, 0.2) !important;
+        }
+        
+        /* Spinner text */
+        .spinner-text {
+            margin-top: 15px;
+            color: white;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        /* Responsive fixes */
+        @media (max-width: 768px) {
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+            .modal-content {
+                width: 95%;
+                margin: 10px auto;
+            }
+            .service-card {
+                min-height: 220px;
+            }
+            .back-btn {
+                top: 15px;
+                left: 15px;
+            }
+        }
+        
+        .service-description {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 60px;
+        }
+        
+        .payment-option.selected {
+            border: 2px solid #0d6efd !important;
+            background-color: rgba(13, 110, 253, 0.1);
+        }
+        
+        .btn-check:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -41,7 +86,7 @@
         </div>
         
         <!-- Back button -->
-        <a href="/" class="back-btn">
+        <a href="#" id="backButton" class="back-btn">
             <i class="fas fa-arrow-left"></i> უკან დაბრუნება
         </a>
         
@@ -163,7 +208,7 @@
                     </div>
                 </div>
                 
-                <button class="btn-check btn-primary" id="checkButton">
+                <button class="btn-check btn-primary" id="checkButton" disabled>
                     <span id="buttonText">უფასო შემოწმება</span>
                     <i class="fas fa-arrow-right"></i>
                 </button>
@@ -174,6 +219,7 @@
     <!-- Spinner -->
     <div class="spinner-container" id="spinner">
         <div class="spinner"></div>
+        <div class="spinner-text">შემოწმება მიმდინარეობს...</div>
     </div>
     
     <!-- Result Modal -->
@@ -230,8 +276,8 @@
         // Global variables
         let currentService = null;
         let currentPaymentMethod = null;
-        const isAuthenticated = {{ 'true' if user else 'false' }};
-        let userBalance = {{ user_balance | default(0) | round(2) if user else 0 }};
+        const isAuthenticated = {% if user %}true{% else %}false{% endif %};
+        let userBalance = {% if user %}{{ user_balance|default(0)|round(2) }}{% else %}0{% endif %};
         const SERVICE_MAP = {
             'originality': 'free',
             'fmi': 'fmi',
@@ -241,6 +287,8 @@
             'premium': 'premium',
             'macbook': 'macbook'
         };
+        let isChecking = false;
+        let currentRequest = null;
 
         // Initialize Stripe with public key
         const stripe = Stripe('{{ stripe_public_key }}');
@@ -308,8 +356,27 @@
             paymentChoiceModal: document.getElementById('paymentChoiceModal'),
             alertContainer: document.getElementById('alertContainer'),
             errorMessage: document.getElementById('errorMessage'),
-            imeiInput: document.getElementById('imeiInput')
+            imeiInput: document.getElementById('imeiInput'),
+            backButton: document.getElementById('backButton')
         };
+        
+        // XSS protection function
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        
+        // Update balance displays
+        function updateBalanceDisplays() {
+            const elements = document.querySelectorAll('.user-balance');
+            elements.forEach(el => {
+                el.textContent = `${userBalance.toFixed(2)} ₾`;
+            });
+        }
         
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
@@ -326,7 +393,11 @@
             document.body.addEventListener('click', function(e) {
                 const option = e.target.closest('.payment-option');
                 if (option) {
-                    selectPaymentMethod(option.dataset.payment);
+                    document.querySelectorAll('.payment-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    option.classList.add('selected');
+                    currentPaymentMethod = option.dataset.payment;
                 }
             });
             
@@ -346,22 +417,44 @@
                 domElements.paymentChoiceModal.style.display = 'none';
             });
             
+            // Back button handler
+            domElements.backButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                domElements.servicesGrid.style.display = 'grid';
+                domElements.selectedServiceContainer.style.display = 'none';
+                history.pushState(null, null, '/applecheck');
+            });
+            
+            // Handle browser history
+            window.addEventListener('popstate', function() {
+                const pathParts = window.location.pathname.split('/');
+                if (pathParts.length < 3) {
+                    domElements.servicesGrid.style.display = 'grid';
+                    domElements.selectedServiceContainer.style.display = 'none';
+                } else {
+                    selectService(pathParts[2]);
+                }
+            });
+            
             // Confirm payment choice
             document.getElementById('confirmPaymentChoice').addEventListener('click', async function() {
-                const selectedOption = document.querySelector('#paymentChoiceModal .payment-option.selected');
-                if (!selectedOption) {
+                if (!currentPaymentMethod) {
                     showError('გთხოვთ აირჩიოთ გადახდის მეთოდი');
                     return;
                 }
+                
+                if (currentPaymentMethod === 'balance' && servicePrices[currentService] > userBalance) {
+                    showError(`Недостаточно средств на балансе. Требуется: ${servicePrices[currentService].toFixed(2)} ₾`);
+                    return;
+                }
 
-                const method = selectedOption.dataset.payment;
                 domElements.paymentChoiceModal.style.display = 'none';
                 domElements.spinner.style.display = 'flex';
 
                 try {
-                    if (method === 'balance') {
+                    if (currentPaymentMethod === 'balance') {
                         await handleBalancePayment();
-                    } else if (method === 'stripe') {
+                    } else if (currentPaymentMethod === 'stripe') {
                         await handleStripePayment();
                     }
                 } catch (error) {
@@ -370,23 +463,25 @@
                 }
             });
 
-            // Payment option selection in modal
-            document.querySelectorAll('#paymentChoiceModal .payment-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    document.querySelectorAll('#paymentChoiceModal .payment-option').forEach(opt => {
-                        opt.classList.remove('selected');
-                    });
-                    this.classList.add('selected');
-                });
-            });
-            
             // Real-time IMEI validation
             domElements.imeiInput.addEventListener('input', function() {
                 const imei = this.value.trim();
-                if (imei.length > 0 && currentService && !validateImei(imei, currentService)) {
+                const valid = validateImei(imei, currentService);
+                
+                if (imei.length > 0 && !valid) {
                     this.classList.add('is-invalid');
                 } else {
                     this.classList.remove('is-invalid');
+                }
+                
+                // Enable/disable check button
+                domElements.checkButton.disabled = !valid || isChecking;
+            });
+            
+            // Handle Enter key in IMEI input
+            domElements.imeiInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !domElements.checkButton.disabled) {
+                    startCheck();
                 }
             });
             
@@ -417,10 +512,13 @@
             // Validate service
             if (!servicePrices.hasOwnProperty(service)) {
                 showError('არასწორი სერვისის ტიპი');
+                domElements.servicesGrid.style.display = 'grid';
+                domElements.selectedServiceContainer.style.display = 'none';
                 return;
             }
             
             currentService = service;
+            currentPaymentMethod = null;
             
             // Remove selected class from all cards
             domElements.servicesGrid.querySelectorAll('.service-card').forEach(card => {
@@ -461,8 +559,7 @@
                 domElements.buttonText.textContent = `შემოწმების დაწყება: ${servicePrices[service].toFixed(2)} ₾`;
                 
                 // Update balance display
-                domElements.balanceAmount.textContent = `${userBalance.toFixed(2)} ₾`;
-                domElements.modalBalanceAmount.textContent = `${userBalance.toFixed(2)} ₾`;
+                updateBalanceDisplays();
                 
                 // For non-authenticated users, hide balance option
                 if (!isAuthenticated) {
@@ -470,33 +567,48 @@
                 } else {
                     document.querySelector('.payment-option[data-payment="balance"]').style.display = 'block';
                 }
+                
+                // Reset payment selection
+                document.querySelectorAll('.payment-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                currentPaymentMethod = null;
             } else {
                 domElements.paymentSection.style.display = 'none';
                 domElements.buttonText.textContent = 'უფასო შემოწმება';
             }
+            
+            // Reset IMEI input
+            domElements.imeiInput.value = '';
+            domElements.imeiInput.classList.remove('is-invalid');
+            domElements.checkButton.disabled = true;
         }
         
-        // Select payment method
-        function selectPaymentMethod(method) {
-            currentPaymentMethod = method;
+        // Validate IMEI
+        function validateImei(imei, serviceType) {
+            if (!imei) return false;
             
-            // Remove selected class from all options
-            document.querySelectorAll('.payment-option').forEach(option => {
-                option.classList.remove('selected');
-            });
+            // Clean input from non-alphanumeric characters
+            const cleaned = imei.replace(/[^a-zA-Z0-9]/g, '');
             
-            // Add selected class to clicked option
-            const optionElement = document.querySelector(`.payment-option[data-payment="${method}"]`);
-            if (optionElement) {
-                optionElement.classList.add('selected');
+            // For MacBook: 10-18 alphanumeric characters
+            if (serviceType === 'macbook') {
+                return /^[a-zA-Z0-9]{10,18}$/.test(cleaned);
             }
+            // For others: 15 digits
+            return /^\d{15}$/.test(cleaned);
         }
         
         // Start the check process
         function startCheck() {
+            // Prevent multiple clicks
+            if (isChecking) return;
+            isChecking = true;
+            
             // Check if service is selected
             if (!currentService) {
                 showError('გთხოვთ აირჩიოთ შემოწმების ტიპი');
+                isChecking = false;
                 return;
             }
             
@@ -505,16 +617,18 @@
             // Validate IMEI
             if (!imei) {
                 showError('გთხოვთ შეიყვანოთ IMEI ან სერიული ნომერი');
+                isChecking = false;
                 return;
             }
             
             // Validate IMEI format
             if (!validateImei(imei, currentService)) {
                 if (currentService === 'macbook') {
-                    showError('არასწორი სერიული ნომერი. შეიყვანეთ 12-18 სიმბოლო');
+                    showError('არასწორი სერიული ნომერი. შეიყვანეთ 10-18 სიმბოლო');
                 } else {
                     showError('არასწორი IMEI. IMEI უნდა შედგებოდეს 15 ციფრისგან');
                 }
+                isChecking = false;
                 return;
             }
             
@@ -532,19 +646,20 @@
                 // Redirect to Stripe for unauthenticated users
                 handleStripePayment();
             } else {
-                // Show payment choice modal for authenticated users
-                domElements.paymentChoiceModal.style.display = 'flex';
+                // Check if payment method is already selected
+                if (currentPaymentMethod) {
+                    domElements.spinner.style.display = 'flex';
+                    
+                    if (currentPaymentMethod === 'balance') {
+                        handleBalancePayment();
+                    } else if (currentPaymentMethod === 'stripe') {
+                        handleStripePayment();
+                    }
+                } else {
+                    // Show payment choice modal
+                    domElements.paymentChoiceModal.style.display = 'flex';
+                }
             }
-        }
-        
-        // Validate IMEI
-        function validateImei(imei, serviceType) {
-            // For MacBook: 12-18 alphanumeric characters
-            if (serviceType === 'macbook') {
-                return /^[A-Z0-9]{12,18}$/.test(imei);
-            }
-            // For others: 15 digits
-            return /^\d{15}$/.test(imei);
         }
         
         // Handle Stripe payment
@@ -554,7 +669,12 @@
             const amount = servicePrices[currentService] * 100; // Convert to cents
             
             try {
-                domElements.spinner.style.display = 'flex';
+                // Save pending check in session storage
+                sessionStorage.setItem('pending_check', JSON.stringify({
+                    imei: imei,
+                    serviceType: serviceType,
+                    timestamp: new Date().getTime()
+                }));
                 
                 // Create checkout session via server
                 const response = await fetch('/create-checkout-session', {
@@ -588,6 +708,7 @@
             } catch (error) {
                 domElements.spinner.style.display = 'none';
                 showError('Payment error: ' + error.message);
+                isChecking = false;
             }
         }
         
@@ -596,9 +717,15 @@
             const imei = domElements.imeiInput.value.trim();
             const serviceType = SERVICE_MAP[currentService];
             
+            // Check balance
+            if (servicePrices[currentService] > userBalance) {
+                showError(`Недостаточно средств на балансе. Требуется: ${servicePrices[currentService].toFixed(2)} ₾`);
+                domElements.spinner.style.display = 'none';
+                isChecking = false;
+                return;
+            }
+            
             try {
-                domElements.spinner.style.display = 'flex';
-                
                 // Deduct from balance via server
                 const response = await fetch('/check_with_balance', {
                     method: 'POST',
@@ -619,14 +746,14 @@
                 
                 // Update user balance
                 userBalance = data.new_balance;
-                domElements.balanceAmount.textContent = `${userBalance.toFixed(2)} ₾`;
-                domElements.modalBalanceAmount.textContent = `${userBalance.toFixed(2)} ₾`;
+                updateBalanceDisplays();
                 
                 // Perform the check
                 await performCheck();
             } catch (error) {
                 domElements.spinner.style.display = 'none';
                 showError('Balance payment error: ' + error.message);
+                isChecking = false;
             }
         }
         
@@ -636,7 +763,8 @@
             const serviceType = SERVICE_MAP[currentService];
             
             try {
-                domElements.spinner.style.display = 'flex';
+                // Create abort controller
+                currentRequest = new AbortController();
                 
                 // Call server to perform check
                 const response = await fetch('/perform_check', {
@@ -644,6 +772,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    signal: currentRequest.signal,
                     body: JSON.stringify({
                         imei: imei,
                         service_type: serviceType
@@ -660,8 +789,13 @@
                 domElements.spinner.style.display = 'none';
                 showResults(data);
             } catch (error) {
-                domElements.spinner.style.display = 'none';
-                showError('Check error: ' + error.message);
+                if (error.name !== 'AbortError') {
+                    domElements.spinner.style.display = 'none';
+                    showError('Check error: ' + error.message);
+                }
+            } finally {
+                isChecking = false;
+                currentRequest = null;
             }
         }
         
@@ -718,7 +852,7 @@
                 resultsHTML += `
                     <div class="result-item">
                         <div class="result-label">${label}</div>
-                        <div class="result-value">${value}</div>
+                        <div class="result-value">${escapeHtml(value)}</div>
                     </div>
                 `;
             }
@@ -736,6 +870,13 @@
                 domElements.alertContainer.style.display = 'none';
             }, 5000);
         }
+        
+        // Handle page unload
+        window.addEventListener('beforeunload', function() {
+            if (currentRequest) {
+                currentRequest.abort();
+            }
+        });
     </script>
 </body>
-    </html>
+</html>
