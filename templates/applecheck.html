@@ -8,6 +8,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
     <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        /* Temporary styles */
+        .btn-check:active {
+            transform: translateY(1px) !important;
+            box-shadow: 0 2px 5px rgba(0, 198, 255, 0.2) !important;
+        }
+        
+        .is-invalid {
+            border-color: var(--danger-color) !important;
+            box-shadow: 0 0 0 3px rgba(255, 61, 113, 0.2) !important;
+        }
+    </style>
 </head>
 <body>
     <!-- Gradient background elements -->
@@ -111,7 +123,7 @@
         </div>
         
         <!-- Selected Service Container -->
-        <div class="selected-service-container card" id="selectedServiceContainer">
+        <div class="selected-service-container card" id="selectedServiceContainer" style="display: none;">
             <div class="selected-service-header">
                 <div class="selected-service-icon service-icon text-info" id="selectedServiceIcon">
                     <i class="fas fa-mobile-alt"></i>
@@ -302,20 +314,21 @@
         
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            // Service card selection
-            domElements.servicesGrid.querySelectorAll('.service-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    selectService(this.dataset.service);
-                    // Update URL without reloading
-                    history.pushState(null, null, `/applecheck/${this.dataset.service}`);
-                });
+            // Service card selection using event delegation
+            domElements.servicesGrid.addEventListener('click', function(e) {
+                const card = e.target.closest('.service-card');
+                if (card) {
+                    selectService(card.dataset.service);
+                    history.pushState(null, null, `/applecheck/${card.dataset.service}`);
+                }
             });
             
-            // Payment option selection
-            document.querySelectorAll('.payment-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    selectPaymentMethod(this.dataset.payment);
-                });
+            // Payment option selection using event delegation
+            document.body.addEventListener('click', function(e) {
+                const option = e.target.closest('.payment-option');
+                if (option) {
+                    selectPaymentMethod(option.dataset.payment);
+                }
             });
             
             // Check button click
@@ -366,6 +379,16 @@
                     });
                     this.classList.add('selected');
                 });
+            });
+            
+            // Real-time IMEI validation
+            domElements.imeiInput.addEventListener('input', function() {
+                const imei = this.value.trim();
+                if (imei.length > 0 && currentService && !validateImei(imei, currentService)) {
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-invalid');
+                }
             });
             
             // Get service from URL parameters
@@ -472,7 +495,7 @@
         
         // Start the check process
         function startCheck() {
-            // Проверка что сервис выбран
+            // Check if service is selected
             if (!currentService) {
                 showError('გთხოვთ აირჩიოთ შემოწმების ტიპი');
                 return;
@@ -495,6 +518,9 @@
                 }
                 return;
             }
+            
+            // Remove invalid class if present
+            domElements.imeiInput.classList.remove('is-invalid');
             
             // For free service
             if (servicePrices[currentService] === 0) {
@@ -713,4 +739,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
