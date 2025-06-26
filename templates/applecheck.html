@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>iFree - Проверка IMEI Apple</title>
-    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -68,49 +68,49 @@
                 title: 'Базовая проверка', 
                 icon: 'fa-mobile-screen', 
                 description: 'Проверка статуса активации и модели устройства', 
-                price: 'Бесплатно' 
+                price: '{{ service_prices.free }}' 
             },
             { 
                 id: 'fmi', 
                 title: 'Статус FMI', 
                 icon: 'fa-lock', 
                 description: 'Проверка статуса "Найти iPhone" (Find My iPhone)', 
-                price: '0.99$' 
+                price: '{{ service_prices.fmi }}' 
             },
             { 
                 id: 'blacklist', 
                 title: 'Черный список', 
                 icon: 'fa-ban', 
                 description: 'Проверка нахождения устройства в черном списке', 
-                price: '1.49$' 
+                price: '{{ service_prices.blacklist }}' 
             },
             { 
                 id: 'sim_lock', 
                 title: 'SIM-лок', 
                 icon: 'fa-sim-card', 
                 description: 'Проверка блокировки по оператору связи', 
-                price: '1.99$' 
+                price: '{{ service_prices.sim_lock }}' 
             },
             { 
                 id: 'activation', 
                 title: 'Статус активации', 
                 icon: 'fa-bolt', 
                 description: 'Проверка статуса активации устройства', 
-                price: '0.99$' 
+                price: '{{ service_prices.activation }}' 
             },
             { 
                 id: 'carrier', 
                 title: 'Оператор связи', 
                 icon: 'fa-tower-cell', 
                 description: 'Определение оператора, к которому привязано устройство', 
-                price: '1.49$' 
+                price: '{{ service_prices.carrier }}' 
             },
             { 
                 id: 'mdm', 
                 title: 'MDM блокировка', 
                 icon: 'fa-building-shield', 
                 description: 'Проверка корпоративной блокировки MDM', 
-                price: '2.49$' 
+                price: '{{ service_prices.mdm }}' 
             }
         ];
         
@@ -137,6 +137,13 @@
             
             // Обработчики событий
             setupEventListeners();
+            
+            // Автовыбор услуги из URL параметра
+            const urlParams = new URLSearchParams(window.location.search);
+            const serviceParam = urlParams.get('type');
+            if (serviceParam && services.some(s => s.id === serviceParam)) {
+                selectService(serviceParam);
+            }
         });
         
         function setupEventListeners() {
@@ -145,6 +152,11 @@
                 card.addEventListener('click', function() {
                     const serviceId = this.getAttribute('data-service');
                     selectService(serviceId);
+                    
+                    // Обновляем URL
+                    const url = new URL(window.location);
+                    url.searchParams.set('type', serviceId);
+                    window.history.replaceState({}, '', url);
                 });
             });
             
@@ -168,17 +180,19 @@
             
             // Выделяем выбранную карточку
             const selectedCard = document.querySelector(`.service-card[data-service="${serviceId}"]`);
-            selectedCard.classList.add('selected');
-            selectedCard.style.opacity = '1';
-            selectedCard.style.transform = 'scale(1)';
-            
-            // Находим название сервиса
-            const service = services.find(s => s.id === serviceId);
-            document.getElementById('selected-service-title').textContent = service.title;
-            
-            // Показываем форму ввода
-            document.getElementById('imei-form-container').style.display = 'block';
-            document.getElementById('imei-input').focus();
+            if (selectedCard) {
+                selectedCard.classList.add('selected');
+                selectedCard.style.opacity = '1';
+                selectedCard.style.transform = 'scale(1)';
+                
+                // Находим название сервиса
+                const service = services.find(s => s.id === serviceId);
+                document.getElementById('selected-service-title').textContent = service.title;
+                
+                // Показываем форму ввода
+                document.getElementById('imei-form-container').style.display = 'block';
+                document.getElementById('imei-input').focus();
+            }
         }
         
         // Запуск проверки
@@ -210,17 +224,23 @@
             document.getElementById('spinner').style.display = 'flex';
             
             // Отправляем запрос на сервер
-            fetch('/check', {
+            fetch('/perform_check', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({
                     imei: imei,
                     service_type: serviceType
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка сети');
+                }
+                return response.json();
+            })
             .then(data => {
                 // Скрываем спиннер
                 document.getElementById('spinner').style.display = 'none';
@@ -238,6 +258,7 @@
                 document.getElementById('spinner').style.display = 'none';
                 errorElement.textContent = 'Ошибка сети. Пожалуйста, попробуйте позже.';
                 errorElement.style.display = 'block';
+                console.error('Ошибка проверки:', error);
             });
         }
         
@@ -251,6 +272,7 @@
                     <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
                     <h3 class="mt-3">Проверка завершена</h3>
                     <p>IMEI: ${imei}</p>
+                    <p>Тип проверки: ${services.find(s => s.id === serviceType).title}</p>
                 </div>
             `;
             
@@ -271,17 +293,19 @@
                     
                     // Определяем класс для статуса
                     let statusClass = '';
-                    if (typeof value === 'string') {
-                        if (value.toLowerCase().includes('выключен') || 
-                            value.toLowerCase().includes('не в списке') || 
-                            value.toLowerCase().includes('чистый') || 
-                            value.toLowerCase().includes('отсутствует')) {
-                            statusClass = 'status-clean';
-                        } else if (value.toLowerCase().includes('включен') || 
-                                   value.toLowerCase().includes('заблокирован') || 
-                                   value.toLowerCase().includes('в списке')) {
-                            statusClass = 'status-warning';
-                        }
+                    const valStr = String(value).toLowerCase();
+                    
+                    if (valStr.includes('выключен') || 
+                        valStr.includes('не в списке') || 
+                        valStr.includes('чистый') || 
+                        valStr.includes('отсутствует') ||
+                        valStr.includes('unlocked')) {
+                        statusClass = 'status-clean';
+                    } else if (valStr.includes('включен') || 
+                               valStr.includes('заблокирован') || 
+                               valStr.includes('в списке') ||
+                               valStr.includes('locked')) {
+                        statusClass = 'status-warning';
                     }
                     
                     resultsHTML += `
@@ -294,7 +318,7 @@
                 
                 resultsHTML += `</table>`;
             } else {
-                resultsHTML += `<p>Данные не получены</p>`;
+                resultsHTML += `<p class="text-center">Данные не получены</p>`;
             }
             
             resultContent.innerHTML = resultsHTML;
@@ -363,6 +387,27 @@
         .status-warning {
             color: #ffc107;
             font-weight: bold;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .history-table th, .history-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .history-table th {
+            background-color: #f5f5f5;
+            font-weight: 600;
+        }
+        
+        .history-table tr:hover {
+            background-color: #f9f9f9;
         }
     </style>
 </body>
