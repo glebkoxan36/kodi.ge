@@ -209,21 +209,43 @@
             // Показываем спиннер
             document.getElementById('spinner').style.display = 'flex';
             
-            // Имитация запроса к API
-            setTimeout(() => {
+            // Отправляем запрос на сервер
+            fetch('/check', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    imei: imei,
+                    service_type: serviceType
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
                 // Скрываем спиннер
                 document.getElementById('spinner').style.display = 'none';
                 
-                // Показываем результаты
-                showResults(imei, serviceType);
-            }, 1500);
+                if (data.error) {
+                    // Показываем ошибку
+                    errorElement.textContent = data.error;
+                    errorElement.style.display = 'block';
+                } else {
+                    // Показываем результаты
+                    displayResults(imei, serviceType, data);
+                }
+            })
+            .catch(error => {
+                document.getElementById('spinner').style.display = 'none';
+                errorElement.textContent = 'Ошибка сети. Пожалуйста, попробуйте позже.';
+                errorElement.style.display = 'block';
+            });
         }
         
         // Показать результаты
-        function showResults(imei, serviceType) {
+        function displayResults(imei, serviceType, data) {
             const resultContent = document.getElementById('result-content');
             
-            // Генерируем фиктивные результаты на основе типа проверки
+            // Базовая часть результатов
             let resultsHTML = `
                 <div class="text-center mb-4">
                     <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
@@ -232,159 +254,47 @@
                 </div>
             `;
             
-            // Добавляем специфичные результаты в зависимости от типа проверки
-            switch(serviceType) {
-                case 'free':
-                    resultsHTML += `
-                        <table class="history-table">
-                            <tr>
-                                <th>Параметр</th>
-                                <th>Значение</th>
-                            </tr>
-                            <tr>
-                                <td>Модель устройства</td>
-                                <td>iPhone 13 Pro Max</td>
-                            </tr>
-                            <tr>
-                                <td>Статус активации</td>
-                                <td class="status-clean">Активировано</td>
-                            </tr>
-                            <tr>
-                                <td>Дата производства</td>
-                                <td>Октябрь 2022</td>
-                            </tr>
-                        </table>
-                    `;
-                    break;
+            // Формируем таблицу результатов
+            if (data && Object.keys(data).length > 0) {
+                resultsHTML += `
+                    <table class="history-table">
+                        <tr>
+                            <th>Параметр</th>
+                            <th>Значение</th>
+                        </tr>
+                `;
+                
+                // Добавляем строки с результатами
+                for (const [key, value] of Object.entries(data)) {
+                    // Пропускаем технические поля
+                    if (key === 'error' || key === 'html') continue;
                     
-                case 'fmi':
-                    resultsHTML += `
-                        <table class="history-table">
-                            <tr>
-                                <th>Параметр</th>
-                                <th>Значение</th>
-                            </tr>
-                            <tr>
-                                <td>Статус FMI</td>
-                                <td class="status-clean">Выключен</td>
-                            </tr>
-                            <tr>
-                                <td>Дата последней активации</td>
-                                <td>15 мая 2023</td>
-                            </tr>
-                        </table>
-                        <div class="mt-4 p-3 bg-dark rounded text-center">
-                            <p><i class="fas fa-check-circle text-success me-2"></i> Устройство не привязано к iCloud</p>
-                        </div>
-                    `;
-                    break;
+                    // Определяем класс для статуса
+                    let statusClass = '';
+                    if (typeof value === 'string') {
+                        if (value.toLowerCase().includes('выключен') || 
+                            value.toLowerCase().includes('не в списке') || 
+                            value.toLowerCase().includes('чистый') || 
+                            value.toLowerCase().includes('отсутствует')) {
+                            statusClass = 'status-clean';
+                        } else if (value.toLowerCase().includes('включен') || 
+                                   value.toLowerCase().includes('заблокирован') || 
+                                   value.toLowerCase().includes('в списке')) {
+                            statusClass = 'status-warning';
+                        }
+                    }
                     
-                case 'blacklist':
                     resultsHTML += `
-                        <table class="history-table">
-                            <tr>
-                                <th>Параметр</th>
-                                <th>Значение</th>
-                            </tr>
-                            <tr>
-                                <td>Статус в черных списках</td>
-                                <td class="status-clean">Не в списке</td>
-                            </tr>
-                            <tr>
-                                <td>Проверка GSMA</td>
-                                <td class="status-clean">Чистый</td>
-                            </tr>
-                        </table>
+                        <tr>
+                            <td>${key}</td>
+                            <td class="${statusClass}">${value}</td>
+                        </tr>
                     `;
-                    break;
-                    
-                case 'sim_lock':
-                    resultsHTML += `
-                        <table class="history-table">
-                            <tr>
-                                <th>Параметр</th>
-                                <th>Значение</th>
-                            </tr>
-                            <tr>
-                                <td>SIM-лок</td>
-                                <td class="status-warning">Заблокирован</td>
-                            </tr>
-                            <tr>
-                                <td>Оператор блокировки</td>
-                                <td>AT&T (США)</td>
-                            </tr>
-                            <tr>
-                                <td>Возможность разблокировки</td>
-                                <td class="status-clean">Доступна</td>
-                            </tr>
-                        </table>
-                    `;
-                    break;
-                    
-                case 'activation':
-                    resultsHTML += `
-                        <table class="history-table">
-                            <tr>
-                                <th>Параметр</th>
-                                <th>Значение</th>
-                            </tr>
-                            <tr>
-                                <td>Статус активации</td>
-                                <td class="status-clean">Активировано</td>
-                            </tr>
-                            <tr>
-                                <td>Дата активации</td>
-                                <td>12 ноября 2022</td>
-                            </tr>
-                            <tr>
-                                <td>Статус iCloud</td>
-                                <td class="status-clean">Не активирован</td>
-                            </tr>
-                        </table>
-                    `;
-                    break;
-                    
-                case 'carrier':
-                    resultsHTML += `
-                        <table class="history-table">
-                            <tr>
-                                <th>Параметр</th>
-                                <th>Значение</th>
-                            </tr>
-                            <tr>
-                                <td>Оператор</td>
-                                <td>Verizon (США)</td>
-                            </tr>
-                            <tr>
-                                <td>Страна</td>
-                                <td>Соединенные Штаты</td>
-                            </tr>
-                            <tr>
-                                <td>Статус контракта</td>
-                                <td class="status-warning">Активен до 2024</td>
-                            </tr>
-                        </table>
-                    `;
-                    break;
-                    
-                case 'mdm':
-                    resultsHTML += `
-                        <table class="history-table">
-                            <tr>
-                                <th>Параметр</th>
-                                <th>Значение</th>
-                            </tr>
-                            <tr>
-                                <td>MDM блокировка</td>
-                                <td class="status-clean">Отсутствует</td>
-                            </tr>
-                            <tr>
-                                <td>Корпоративный профиль</td>
-                                <td class="status-clean">Не обнаружен</td>
-                            </tr>
-                        </table>
-                    `;
-                    break;
+                }
+                
+                resultsHTML += `</table>`;
+            } else {
+                resultsHTML += `<p>Данные не получены</p>`;
             }
             
             resultContent.innerHTML = resultsHTML;
@@ -444,6 +354,16 @@
         .bg-dark { background: rgba(0, 0, 0, 0.2); }
         .rounded { border-radius: 8px; }
         .me-2 { margin-right: 0.5rem; }
+        
+        .status-clean {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .status-warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
     </style>
 </body>
 </html>
