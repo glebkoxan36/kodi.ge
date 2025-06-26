@@ -27,51 +27,11 @@ SERVICE_TYPES = {
 }
 
 def validate_imei(imei: str) -> bool:
+    """Проверяет корректность формата IMEI"""
     return len(imei) == 15 and imei.isdigit()
 
-def parse_html_response(html_content: str) -> dict:
-    result = {}
-    try:
-        soup = BeautifulSoup(html_content, 'html.parser')
-        
-        tables = soup.find_all('table')
-        for table in tables:
-            for row in table.find_all('tr'):
-                cols = row.find_all('td')
-                if len(cols) == 2:
-                    key = cols[0].get_text(strip=True).replace(':', '').lower().replace(' ', '_')
-                    value = cols[1].get_text(strip=True)
-                    result[key] = value
-        
-        fields = {
-            'device': ['მოწყობილობა', 'device', 'მოდელი'],
-            'model': ['მოდელი', 'model'],
-            'serial': ['სერიული ნომერი', 'serial'],
-            'imei': ['imei'],
-            'fmi_status': ['fmi სტატუსი', 'fmi status'],
-            'sim_lock': ['sim ლოკი', 'sim lock'],
-            'blacklist': ['შავ სიაშია', 'blacklist'],
-            'activation': ['აქტივაციის სტატუსი', 'activation status'],
-            'carrier': ['ოპერატორი', 'carrier'],
-            'warranty': ['გარანტია', 'warranty'],
-            'purchase_date': ['შეძენის თარიღი', 'purchase date']
-        }
-        
-        for field, labels in fields.items():
-            for label in labels:
-                element = soup.find(string=re.compile(label, re.IGNORECASE))
-                if element:
-                    value_element = element.find_next()
-                    if value_element:
-                        result[field] = value_element.get_text(strip=True)
-        
-        return result
-    
-    except Exception as e:
-        logging.error(f"HTML parsing error: {str(e)}")
-        return {'error': 'Ошибка обработки ответа сервера'}
-
 def perform_api_check(imei: str, service_type: str) -> dict:
+    """Выполняет проверку IMEI через внешний API"""
     if service_type not in SERVICE_TYPES:
         return {'error': f'Неизвестный тип проверки: {service_type}'}
     
@@ -94,10 +54,12 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 'details': response.text[:200] + '...' if len(response.text) > 200 else response.text
             }
         
+        # Для бесплатной проверки возвращаем HTML-контент
         if service_type == 'free':
-            return parse_html_response(response.text)
+            return {'html_content': response.text}
         
         try:
+            # Пытаемся обработать ответ как JSON
             json_data = response.json()
             
             if not json_data.get('success'):
@@ -107,7 +69,8 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             return json_data.get('data', {})
             
         except ValueError:
-            return parse_html_response(response.text)
+            # Если ответ не JSON, возвращаем как HTML
+            return {'html_content': response.text}
     
     except requests.exceptions.RequestException as e:
         return {'error': f'Ошибка сети: {str(e)}'}
