@@ -244,6 +244,34 @@
             text-align: right;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
+
+        /* Стили для таблицы результатов */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .history-table th, .history-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .history-table th {
+            background-color: rgba(0, 0, 0, 0.2);
+            font-weight: 600;
+        }
+
+        .status-clean {
+            color: #4CAF50;
+            font-weight: 500;
+        }
+
+        .status-warning {
+            color: #FF9800;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -294,10 +322,11 @@
         <div class="modal-content">
             <div class="card-header">
                 <h2>Результаты проверки</h2>
+                <button class="close-modal" id="close-modal">&times;</button>
             </div>
             <div class="card-body" id="result-content"></div>
             <div class="card-footer" style="text-align: center; padding: 20px;">
-                <button class="btn-primary" id="close-modal">Закрыть</button>
+                <button class="btn-primary" onclick="window.location.href = '{{ url_for('apple_check') }}'">Сделать новую проверку</button>
             </div>
         </div>
     </div>
@@ -389,8 +418,20 @@
             
             const urlParams = new URLSearchParams(window.location.search);
             const serviceParam = urlParams.get('type');
+            const imeiParam = urlParams.get('imei');
+            const sessionParam = urlParams.get('session_id');
+            
+            // Автоматический выбор услуги из URL
             if (serviceParam && services.some(s => s.id === serviceParam)) {
                 selectService(serviceParam);
+            }
+            
+            // Если есть IMEI и сессия, показываем результат
+            if (imeiParam && sessionParam) {
+                currentImei = imeiParam;
+                currentServiceType = serviceParam;
+                document.getElementById('spinner').style.display = 'flex';
+                fetchResultForSession(sessionParam);
             }
         });
         
@@ -449,7 +490,6 @@
         }
         
         function startCheck() {
-            console.log("Start check called");
             const imei = document.getElementById('imei-input').value.trim();
             const errorElement = document.getElementById('imei-error');
             
@@ -487,7 +527,6 @@
             // Для авторизованных пользователей показываем выбор оплаты
             if ({{ 'true' if user else 'false' }}) {
                 fetchUserBalance().then(balance => {
-                    console.log("Balance fetched:", balance);
                     const service = services.find(s => s.id === serviceType);
                     const priceText = service.price;
                     const price = parseFloat(priceText.replace('₾', '').trim());
@@ -502,12 +541,6 @@
                             `<span class="balance-insufficient">Недостаточно средств</span>`;
                     }
                     
-                    // Показать модальное окно
-                    console.log("Showing payment modal");
-                    document.getElementById('payment-method-modal').style.display = 'flex';
-                }).catch(error => {
-                    console.error("Balance fetch error:", error);
-                    // Все равно показать модалку
                     document.getElementById('payment-method-modal').style.display = 'flex';
                 });
             } else {
@@ -518,16 +551,12 @@
         
         function fetchUserBalance() {
             return fetch('/user/dashboard/data')
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => data.balance)
                 .catch(() => 0.0);
         }
         
         function processPayment(useBalance) {
-            console.log("Processing payment with balance:", useBalance);
             document.getElementById('payment-method-modal').style.display = 'none';
             document.getElementById('spinner').style.display = 'flex';
             
@@ -550,7 +579,6 @@
                 return response.json();
             })
             .then(data => {
-                console.log("Payment response:", data);
                 document.getElementById('spinner').style.display = 'none';
                 
                 if (data.error) {
@@ -561,11 +589,9 @@
                     if (data.payment_method === 'balance') {
                         fetchResultForSession(data.id);
                     } else if (data.payment_method === 'stripe') {
-                        console.log("Redirecting to Stripe checkout");
                         stripe.redirectToCheckout({ sessionId: data.id })
                             .then(result => {
                                 if (result.error) {
-                                    console.error("Stripe redirect error:", result.error.message);
                                     const errorElement = document.getElementById('imei-error');
                                     errorElement.textContent = `Stripe error: ${result.error.message}`;
                                     errorElement.style.display = 'block';
@@ -575,11 +601,11 @@
                 }
             })
             .catch(error => {
-                console.error("Payment processing error:", error);
                 document.getElementById('spinner').style.display = 'none';
                 const errorElement = document.getElementById('imei-error');
                 errorElement.textContent = 'Ошибка оплаты. Пожалуйста, попробуйте позже.';
                 errorElement.style.display = 'block';
+                console.error('Ошибка оплаты:', error);
             });
         }
         
@@ -603,11 +629,11 @@
                     }
                 })
                 .catch(error => {
-                    console.error("Fetch result error:", error);
                     document.getElementById('spinner').style.display = 'none';
                     const errorElement = document.getElementById('imei-error');
                     errorElement.textContent = 'Ошибка получения результата';
                     errorElement.style.display = 'block';
+                    console.error('Ошибка получения результата:', error);
                 });
         }
         
@@ -644,11 +670,11 @@
                 }
             })
             .catch(error => {
-                console.error("Perform check error:", error);
                 document.getElementById('spinner').style.display = 'none';
                 const errorElement = document.getElementById('imei-error');
                 errorElement.textContent = 'Ошибка сети. Пожалуйста, попробуйте позже.';
                 errorElement.style.display = 'block';
+                console.error('Ошибка проверки:', error);
             });
         }
         
@@ -710,4 +736,4 @@
         }
     </script>
 </body>
-                            </html>
+</html>
