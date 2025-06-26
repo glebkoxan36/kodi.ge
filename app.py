@@ -5,9 +5,10 @@ import re
 import hmac
 import secrets
 import hashlib
+import requests
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, Blueprint
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app
 from flask_cors import CORS
 from pymongo import MongoClient
 import stripe
@@ -344,13 +345,22 @@ def knowledge_base():
 def apple_check():
     # Определяем тип услуги из параметра URL
     service_type = request.args.get('type', 'free')
-    if service_type not in ['free', 'paid', 'premium']:
-        service_type = 'free'
-
+    
     # Получаем текущие цены и конвертируем в лари
     prices = get_current_prices()
     paid_price_gel = prices['paid'] / 100.0
     premium_price_gel = prices['premium'] / 100.0
+    
+    # Создаем словарь цен для каждого типа услуги
+    service_prices = {
+        'free': 'Бесплатно',
+        'fmi': f"{paid_price_gel:.2f}₾",
+        'blacklist': f"{paid_price_gel:.2f}₾",
+        'sim_lock': f"{premium_price_gel:.2f}₾",
+        'activation': f"{paid_price_gel:.2f}₾",
+        'carrier': f"{paid_price_gel:.2f}₾",
+        'mdm': f"{premium_price_gel:.2f}₾"
+    }
 
     # Данные пользователя (если авторизован)
     user_data = None
@@ -369,8 +379,7 @@ def apple_check():
     return render_template(
         'applecheck.html',
         service_type=service_type,
-        paid_price=paid_price_gel,
-        premium_price=premium_price_gel,
+        service_prices=service_prices,
         stripe_public_key=STRIPE_PUBLIC_KEY,
         user=user_data
     )
