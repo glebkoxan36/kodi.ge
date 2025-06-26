@@ -6,7 +6,9 @@
     <title>Apple IMEI Check</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://js.stripe.com/v3/"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        /* Основные стили остаются без изменений */
         .service-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -14,46 +16,171 @@
             margin: 30px 0;
         }
         
-        .service-card {
+        /* Новые стили для аккордеона услуг */
+        .service-accordion {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 30px 0;
+        }
+        
+        .service-header {
             background: var(--card-bg);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
+            border-radius: 8px;
+            padding: 15px 20px;
             cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             transition: all 0.3s ease;
         }
         
-        .service-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        .service-header:hover {
             border-color: var(--accent-color);
         }
         
-        .service-card.selected {
+        .service-header.active {
             border: 2px solid var(--accent-color);
             background: rgba(0, 198, 255, 0.1);
         }
         
+        .service-header-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
         .service-icon {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
+            font-size: 1.8rem;
+            width: 40px;
+            text-align: center;
             color: var(--accent-color);
         }
         
         .service-title {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
+            font-size: 1.1rem;
             font-weight: 600;
         }
         
         .service-price {
-            font-size: 1.5rem;
             font-weight: 700;
-            margin: 10px 0;
             color: var(--success-color);
         }
         
+        .service-chevron {
+            transition: transform 0.3s ease;
+        }
+        
+        .service-header.active .service-chevron {
+            transform: rotate(180deg);
+        }
+        
+        .service-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0 0 12px 12px;
+            padding: 20px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .service-card.active {
+            display: block;
+            border-top: none;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+            border-color: var(--accent-color);
+        }
+        
+        .service-description {
+            margin: 10px 0 15px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        /* Стили для модального окна */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #fff;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        
+        .modal-close:hover {
+            opacity: 1;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .payment-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .payment-btn {
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .payment-btn:hover {
+            border-color: var(--accent-color);
+            background: rgba(0, 198, 255, 0.1);
+        }
+        
+        .payment-btn i {
+            font-size: 1.5rem;
+        }
+        
+        /* Остальные стили остаются без изменений */
         .check-form {
             background: var(--card-bg);
             border-radius: 12px;
@@ -81,7 +208,6 @@
         .result-key {
             font-weight: 600;
             color: var(--accent-color);
-            margin-bottom: 5极
             margin-bottom: 5px;
         }
         
@@ -89,7 +215,6 @@
             font-size: 1.1rem;
         }
 
-        /* Spinner styles */
         .spinner-container {
             display: none;
             position: fixed;
@@ -136,62 +261,111 @@
             <p class="lead">Verify your Apple device status with IMEI or serial number</p>
         </div>
         
-        <div class="service-grid">
+        <!-- Аккордеон услуг -->
+        <div class="service-accordion">
             <!-- Free Check -->
-            <div class="service-card" data-service="free">
-                <div class="service-icon">🔍</div>
-                <div class="service-title">Basic Check</div>
+            <div class="service-header active" data-service="free">
+                <div class="service-header-content">
+                    <div class="service-icon">🔍</div>
+                    <div>
+                        <div class="service-title">Basic Check</div>
+                        <div class="service-price">FREE</div>
+                    </div>
+                </div>
+                <div class="service-chevron"><i class="fas fa-chevron-down"></i></div>
+            </div>
+            <div class="service-card active" data-service="free">
                 <div class="service-description">Basic device information and status</div>
-                <div class="service-price">FREE</div>
             </div>
             
             <!-- Paid Check -->
+            <div class="service-header" data-service="paid">
+                <div class="service-header-content">
+                    <div class="service-icon">📱</div>
+                    <div>
+                        <div class="service-title">Full Device Info</div>
+                        <div class="service-price">${{ prices.paid / 100 }}</div>
+                    </div>
+                </div>
+                <div class="service-chevron"><i class="fas fa-chevron-down"></i></div>
+            </div>
             <div class="service-card" data-service="paid">
-                <div class="service-icon">📱</div>
-                <div class="service-title">Full Device Info</div>
                 <div class="service-description">Detailed device specifications</div>
-                <div class="service-price">${{ prices.paid / 100 }}</div>
             </div>
             
             <!-- Premium Check -->
+            <div class="service-header" data-service="premium">
+                <div class="service-header-content">
+                    <div class="service-icon">⭐</div>
+                    <div>
+                        <div class="service-title">Premium Report</div>
+                        <div class="service-price">${{ prices.premium / 100 }}</div>
+                    </div>
+                </div>
+                <div class="service-chevron"><i class="fas fa-chevron-down"></i></div>
+            </div>
             <div class="service-card" data-service="premium">
-                <div class="service-icon">⭐</div>
-                <div class="service-title">Premium Report</div>
                 <div class="service-description">Complete device history</div>
-                <div class="service-price">${{ prices.premium / 100 }}</div>
             </div>
             
             <!-- FMI Check -->
+            <div class="service-header" data-service="fmi">
+                <div class="service-header-content">
+                    <div class="service-icon">🔒</div>
+                    <div>
+                        <div class="service-title">FMI Status</div>
+                        <div class="service-price">${{ prices.fmi / 100 }}</div>
+                    </div>
+                </div>
+                <div class="service-chevron"><i class="fas fa-chevron-down"></i></div>
+            </div>
             <div class="service-card" data-service="fmi">
-                <div class="service-icon">🔒</div>
-                <div class="service-title">FMI Status</div>
                 <div class="service-description">Find My iPhone status</div>
-                <div class="service-price">${{ prices.fmi / 100 }}</div>
             </div>
             
             <!-- SIM Lock Check -->
+            <div class="service-header" data-service="sim_lock">
+                <div class="service-header-content">
+                    <div class="service-icon">📶</div>
+                    <div>
+                        <div class="service-title">SIM Lock Status</div>
+                        <div class="service-price">${{ prices.sim_lock / 100 }}</div>
+                    </div>
+                </div>
+                <div class="service-chevron"><i class="fas fa-chevron-down"></i></div>
+            </div>
             <div class="service-card" data-service="sim_lock">
-                <div class="service-icon">📶</div>
-                <div class="service-title">SIM Lock Status</极
-                <div class="service-title">SIM Lock Status</div>
                 <div class="service-description">Network lock information</div>
-                <div class="service-price">${{ prices.sim_lock / 100 }}</div>
             </div>
             
             <!-- Blacklist Check -->
+            <div class="service-header" data-service="blacklist">
+                <div class="service-header-content">
+                    <div class="service-icon">⚠️</div>
+                    <div>
+                        <div class="service-title">Blacklist Check</div>
+                        <div class="service-price">${{ prices.blacklist / 100 }}</div>
+                    </div>
+                </div>
+                <div class="service-chevron"><i class="fas fa-chevron-down"></i></div>
+            </div>
             <div class="service-card" data-service="blacklist">
-                <div class="service-icon">⚠️</div>
-                <div class="service-title">Blacklist Check</div>
                 <div class="service-description">Stolen or lost device check</div>
-                <div class="service-price">${{ prices.blacklist / 100 }}</div>
             </div>
             
             <!-- MDM Check -->
+            <div class="service-header" data-service="mdm">
+                <div class="service-header-content">
+                    <div class="service-icon">🏢</div>
+                    <div>
+                        <div class="service-title">MDM Status</div>
+                        <div class="service-price">${{ prices.mdm / 100 }}</div>
+                    </div>
+                </div>
+                <div class="service-chevron"><i class="fas fa-chevron-down"></i></div>
+            </div>
             <div class="service-card" data-service="mdm">
-                <div class="service-icon">🏢</div>
-                <div class="service-title">MDM Status</div>
                 <div class="service-description">Enterprise management status</div>
-                <div class="service-price">${{ prices.mdm / 100 }}</div>
             </div>
         </div>
         
@@ -202,14 +376,6 @@
             </div>
             
             <button id="check-btn" class="btn-primary">Check Device Status</button>
-            
-            <div class="mt-4" id="payment-options" style="display: none;">
-                <h4 class="mb-3">Payment Options</h4>
-                <div class="d-flex gap-3">
-                    <button id="stripe-pay" class="btn-primary">Pay with Card</button>
-                    <button id="balance-pay" class="btn-primary">Pay with Balance</button>
-                </div>
-            </div>
         </div>
         
         <div class="result-container">
@@ -218,7 +384,25 @@
         </div>
     </div>
     
-    <!-- Spinner container -->
+    <!-- Модальное окно для оплаты -->
+    <div class="modal-overlay" id="payment-modal">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <h3 class="modal-title">Select Payment Method</h3>
+            <div class="payment-options">
+                <button id="stripe-pay" class="payment-btn">
+                    <i class="fab fa-cc-stripe"></i>
+                    <span>Pay with Credit Card</span>
+                </button>
+                <button id="balance-pay" class="payment-btn">
+                    <i class="fas fa-wallet"></i>
+                    <span>Pay with Account Balance</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Спиннер -->
     <div class="spinner-container">
         <div class="spinner"></div>
     </div>
@@ -229,29 +413,29 @@
         let selectedService = 'free';
         let currentImei = '';
         
-        // Service selection
-        document.querySelectorAll('.service-card').forEach(card => {
-            card.addEventListener('click', () => {
-                document.querySelectorAll('.service-card').forEach(c => {
-                    c.classList.remove('selected');
+        // Обработчики для аккордеона услуг
+        document.querySelectorAll('.service-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const service = header.dataset.service;
+                
+                // Сворачиваем все карточки
+                document.querySelectorAll('.service-header').forEach(h => {
+                    h.classList.remove('active');
                 });
-                card.classList.add('selected');
-                selectedService = card.dataset.service;
-                updatePaymentOptions();
+                document.querySelectorAll('.service-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+                
+                // Разворачиваем выбранную
+                header.classList.add('active');
+                document.querySelector(`.service-card[data-service="${service}"]`).classList.add('active');
+                
+                // Обновляем выбранную услугу
+                selectedService = service;
             });
         });
         
-        // Update payment options based on service selection
-        function updatePaymentOptions() {
-            const paymentOptions = document.getElementById('payment-options');
-            if (selectedService === 'free') {
-                paymentOptions.style.display = 'none';
-            } else {
-                paymentOptions.style.display = 'block';
-            }
-        }
-        
-        // Perform check
+        // Обработчик кнопки проверки
         document.getElementById('check-btn').addEventListener('click', async () => {
             currentImei = document.getElementById('imei').value.trim();
             
@@ -260,31 +444,37 @@
                 return;
             }
             
-            // Show spinner
+            // Показываем спиннер
             document.querySelector('.spinner-container').style.display = 'flex';
             
             try {
-                // Free service doesn't require payment
+                // Бесплатная услуга
                 if (selectedService === 'free') {
                     await performCheck();
                     return;
                 }
                 
-                // For paid services, show payment options
-                document.getElementById('payment-options').style.display = 'block';
+                // Для платных услуг показываем модальное окно оплаты
+                document.getElementById('payment-modal').style.display = 'flex';
             } catch (error) {
                 console.error('Error:', error);
                 showError('An error occurred. Please try again.');
             } finally {
-                // Hide spinner
+                // Скрываем спиннер
                 document.querySelector('.spinner-container').style.display = 'none';
             }
         });
         
-        // Pay with Stripe
+        // Закрытие модального окна
+        document.querySelector('.modal-close').addEventListener('click', () => {
+            document.getElementById('payment-modal').style.display = 'none';
+        });
+        
+        // Оплата через Stripe
         document.getElementById('stripe-pay').addEventListener('click', async () => {
-            // Show spinner
+            // Показываем спиннер
             document.querySelector('.spinner-container').style.display = 'flex';
+            document.getElementById('payment-modal').style.display = 'none';
             
             try {
                 const response = await fetch('/create_apple_session', {
@@ -307,15 +497,15 @@
                 console.error('Stripe payment error:', error);
                 showError(error.message);
             } finally {
-                // Hide spinner
                 document.querySelector('.spinner-container').style.display = 'none';
             }
         });
         
-        // Pay with balance
+        // Оплата балансом
         document.getElementById('balance-pay').addEventListener('click', async () => {
-            // Show spinner
+            // Показываем спиннер
             document.querySelector('.spinner-container').style.display = 'flex';
+            document.getElementById('payment-modal').style.display = 'none';
             
             try {
                 const response = await fetch('/perform_apple_check', {
@@ -340,12 +530,11 @@
                 console.error('Balance payment error:', error);
                 showError(error.message);
             } finally {
-                // Hide spinner
                 document.querySelector('.spinner-container').style.display = 'none';
             }
         });
         
-        // Perform free check
+        // Выполнение бесплатной проверки
         async function performCheck() {
             try {
                 const response = await fetch('/perform_apple_check', {
@@ -370,7 +559,7 @@
             }
         }
         
-        // Display results
+        // Отображение результатов
         function displayResults(data) {
             const resultContainer = document.querySelector('.result-container');
             const resultContent = document.getElementById('result-content');
@@ -399,7 +588,7 @@
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
         
-        // Show error message
+        // Отображение ошибки
         function showError(message) {
             const resultContent = document.getElementById('result-content');
             resultContent.innerHTML = `
@@ -410,7 +599,7 @@
             document.querySelector('.result-container').style.display = 'block';
         }
         
-        // Format keys for display
+        // Форматирование ключей
         function formatKey(key) {
             return key
                 .replace(/_/g, ' ')
