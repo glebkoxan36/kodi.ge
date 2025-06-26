@@ -378,7 +378,6 @@
             });
         }
         
-        // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             // Service card selection using event delegation
             domElements.servicesGrid.addEventListener('click', function(e) {
@@ -484,11 +483,10 @@
                     startCheck();
                 }
             });
-            
+
             // Get service from URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             let serviceParam = urlParams.get('service');
-            
             // If not found in query params, check path
             if (!serviceParam) {
                 const pathParts = window.location.pathname.split('/');
@@ -496,7 +494,6 @@
                     serviceParam = pathParts[2];
                 }
             }
-            
             // Automatically select service if specified in URL
             if (serviceParam && servicePrices.hasOwnProperty(serviceParam)) {
                 selectService(serviceParam);
@@ -506,7 +503,7 @@
                 selectService("{{ selected_service }}");
             }
         });
-        
+
         // Select a service
         function selectService(service) {
             // Validate service
@@ -548,7 +545,7 @@
             
             // Update IMEI hint for MacBook
             if (service === 'macbook') {
-                domElements.imeiHint.textContent = 'სერიული ნომერი შეგიძლიათ იხილოთ MacBook-ის ქვედა ნაწილში ან სისტემის პარამეტრებში';
+                domElements.imeiHint.textContent = 'სერიული ნომერი შეგიძლიათ იხილოთ MacBook-ის ქვედა ნაწილში ან შეფუთვაზე';
             } else {
                 domElements.imeiHint.textContent = 'IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში ან დარეკეთ *#06#';
             }
@@ -877,6 +874,14 @@
                 currentRequest.abort();
             }
         });
+
+        // --- ГАРАНТИРОВАННЫЙ ВЫБОР УСЛУГИ ИЗ URL ---
+        (function() {
+            const pathParts = window.location.pathname.split('/');
+            if (pathParts.length > 2 && servicePrices.hasOwnProperty(pathParts[2])) {
+                selectService(pathParts[2]);
+            }
+        })();
     </script>
 </body>
 </html>
