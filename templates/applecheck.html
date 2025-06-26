@@ -9,26 +9,20 @@
     <link rel="stylesheet" href="static/styles.css">
     <script src="https://js.stripe.com/v3/"></script>
     <style>
-        /* Temporary styles */
         .btn-check:active {
             transform: translateY(1px) !important;
             box-shadow: 0 2px 5px rgba(0, 198, 255, 0.2) !important;
         }
-        
         .is-invalid {
             border-color: var(--danger-color) !important;
             box-shadow: 0 0 0 3px rgba(255, 61, 113, 0.2) !important;
         }
-        
-        /* Spinner text */
         .spinner-text {
             margin-top: 15px;
             color: white;
             font-size: 16px;
             text-align: center;
         }
-        
-        /* Responsive fixes */
         @media (max-width: 768px) {
             .services-grid {
                 grid-template-columns: 1fr;
@@ -45,7 +39,6 @@
                 left: 15px;
             }
         }
-        
         .service-description {
             display: -webkit-box;
             -webkit-line-clamp: 3;
@@ -53,12 +46,10 @@
             overflow: hidden;
             min-height: 60px;
         }
-        
         .payment-option.selected {
             border: 2px solid #0d6efd !important;
             background-color: rgba(13, 110, 253, 0.1);
         }
-        
         .btn-check:disabled {
             opacity: 0.7;
             cursor: not-allowed;
@@ -66,36 +57,24 @@
     </style>
 </head>
 <body>
-    <!-- Gradient background elements -->
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
-    
     <div class="container">
-        <!-- Alert container for errors -->
         <div class="alert-container" id="alertContainer" style="display: none;">
             <div class="alert alert-danger" id="errorAlert">
                 <i class="fas fa-exclamation-circle"></i>
                 <span id="errorMessage"></span>
             </div>
         </div>
-        
-        <!-- Logo and title -->
         <div class="logo">
             <div class="logo-icon">A</div>
             <h1>Apple IMEI Checker</h1>
         </div>
-        
-        <!-- Back button -->
         <a href="#" id="backButton" class="back-btn">
             <i class="fas fa-arrow-left"></i> უკან დაბრუნება
         </a>
-        
-        <!-- Section title -->
         <h2 class="section-title">აირჩიეთ შემოწმების ტიპი</h2>
-        
-        <!-- Services Grid (7 cards) -->
         <div class="services-grid" id="servicesGrid">
-            <!-- Card 1: Originality Check -->
             <div class="service-card free" data-service="originality">
                 <div class="service-icon text-success">
                     <i class="fas fa-certificate"></i>
@@ -104,8 +83,6 @@
                 <p class="service-description">მოწყობილობის ავთენტურობის დადასტურება</p>
                 <div class="service-price text-success">0 ₾</div>
             </div>
-            
-            <!-- Card 2: FMI Check -->
             <div class="service-card fmi" data-service="fmi">
                 <div class="service-icon text-warning">
                     <i class="fas fa-cloud"></i>
@@ -114,8 +91,6 @@
                 <p class="service-description">iCloud აქტივაციის სტატუსის შემოწმება</p>
                 <div class="service-price text-warning">{{ fmi_price|default(1.99) }} ₾</div>
             </div>
-            
-            <!-- Card 3: SIM Operator Status -->
             <div class="service-card sim_lock" data-service="sim_lock">
                 <div class="service-icon text-info">
                     <i class="fas fa-sim-card"></i>
@@ -124,8 +99,6 @@
                 <p class="service-description">SIM ბლოკირებისა და ქსელის სტატუსი</p>
                 <div class="service-price text-info">{{ sim_lock_price|default(2.49) }} ₾</div>
             </div>
-            
-            <!-- Card 4: Blacklist Check -->
             <div class="service-card blacklist" data-service="blacklist">
                 <div class="service-icon text-danger">
                     <i class="fas fa-ban"></i>
@@ -134,8 +107,6 @@
                 <p class="service-description">IMEI ბლოკირების სტატუსის შემოწმება</p>
                 <div class="service-price text-danger">{{ blacklist_price|default(1.79) }} ₾</div>
             </div>
-            
-            <!-- Card 5: MDM -->
             <div class="service-card mdm" data-service="mdm">
                 <div class="service-icon text-info">
                     <i class="fas fa-lock"></i>
@@ -144,8 +115,6 @@
                 <p class="service-description">კორპორატიული ბლოკირების შემოწმება</p>
                 <div class="service-price text-info">{{ mdm_price|default(2.99) }} ₾</div>
             </div>
-            
-            <!-- Card 6: Premium -->
             <div class="service-card premium" data-service="premium">
                 <div class="service-icon text-warning">
                     <i class="fas fa-crown"></i>
@@ -154,8 +123,6 @@
                 <p class="service-description">სრული ისტორიისა და ტექნიკური მონაცემების მიმოხილვა</p>
                 <div class="service-price text-warning">{{ premium_price|default(4.99) }} ₾</div>
             </div>
-            
-            <!-- Card 7: MacBook -->
             <div class="service-card macbook" data-service="macbook">
                 <div class="service-icon text-info">
                     <i class="fas fa-laptop"></i>
@@ -165,8 +132,6 @@
                 <div class="service-price text-info">{{ macbook_price|default(3.49) }} ₾</div>
             </div>
         </div>
-        
-        <!-- Selected Service Container -->
         <div class="selected-service-container card" id="selectedServiceContainer" style="display: none;">
             <div class="selected-service-header">
                 <div class="selected-service-icon service-icon text-info" id="selectedServiceIcon">
@@ -177,7 +142,6 @@
                     <p class="selected-service-description" id="selectedServiceDescription">მოწყობილობის ავთენტურობის დადასტურება</p>
                 </div>
             </div>
-            
             <div class="imei-form">
                 <div class="form-group">
                     <label for="imeiInput" class="form-label">შეიყვანეთ IMEI ან სერიული ნომერი</label>
@@ -186,8 +150,6 @@
                         IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში ან დარეკეთ *#06#
                     </small>
                 </div>
-                
-                <!-- Payment Options (only for paid services) -->
                 <div id="paymentSection" style="display: none;">
                     <h4>გადახდის მეთოდი</h4>
                     <div class="payment-options">
@@ -207,7 +169,6 @@
                         </div>
                     </div>
                 </div>
-                
                 <button class="btn-check btn-primary" id="checkButton" disabled>
                     <span id="buttonText">უფასო შემოწმება</span>
                     <i class="fas fa-arrow-right"></i>
@@ -215,14 +176,10 @@
             </div>
         </div>
     </div>
-    
-    <!-- Spinner -->
     <div class="spinner-container" id="spinner">
         <div class="spinner"></div>
         <div class="spinner-text">შემოწმება მიმდინარეობს...</div>
     </div>
-    
-    <!-- Result Modal -->
     <div class="result-modal" id="resultModal">
         <div class="modal-content card">
             <div class="modal-header card-header">
@@ -231,13 +188,9 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="result-content card-body" id="resultContent">
-                <!-- Results will be inserted here dynamically -->
-            </div>
+            <div class="result-content card-body" id="resultContent"></div>
         </div>
     </div>
-    
-    <!-- Payment Choice Modal -->
     <div class="result-modal" id="paymentChoiceModal">
         <div class="modal-content card">
             <div class="modal-header card-header">
@@ -271,9 +224,7 @@
             </div>
         </div>
     </div>
-    
     <script>
-        // Global variables
         let currentService = null;
         let currentPaymentMethod = null;
         const isAuthenticated = {% if user %}true{% else %}false{% endif %};
@@ -289,11 +240,9 @@
         };
         let isChecking = false;
         let currentRequest = null;
+        let domElements = {};
 
-        // Initialize Stripe with public key
         const stripe = Stripe('{{ stripe_public_key }}');
-        
-        // Service prices from Flask template
         const servicePrices = {
             'originality': 0,
             'fmi': {{ fmi_price|default(1.99) }},
@@ -303,8 +252,6 @@
             'premium': {{ premium_price|default(4.99) }},
             'macbook': {{ macbook_price|default(3.49) }}
         };
-        
-        // Service descriptions
         const serviceDescriptions = {
             'originality': 'მოწყობილობის ავთენტურობის დადასტურება და ორიგინალურობის შემოწმება',
             'fmi': 'iCloud ბლოკირების და Find My iPhone სისტემის სტატუსის გამოვლენა',
@@ -314,8 +261,6 @@
             'premium': 'მოწყობილობის სრული ისტორიისა და ტექნიკური მონაცემების მიმოხილვა',
             'macbook': 'MacBook-ის ორიგინალურობის და iCloud სტატუსის შემოწმება'
         };
-        
-        // Service icons
         const serviceIcons = {
             'originality': 'fas fa-certificate',
             'fmi': 'fas fa-cloud',
@@ -325,8 +270,6 @@
             'premium': 'fas fa-crown',
             'macbook': 'fas fa-laptop'
         };
-        
-        // Service icon colors
         const serviceIconColors = {
             'originality': 'text-success',
             'fmi': 'text-warning',
@@ -336,50 +279,44 @@
             'premium': 'text-warning',
             'macbook': 'text-info'
         };
-        
-        // DOM elements cache
-        const domElements = {
-            servicesGrid: document.getElementById('servicesGrid'),
-            selectedServiceContainer: document.getElementById('selectedServiceContainer'),
-            selectedServiceIcon: document.getElementById('selectedServiceIcon'),
-            selectedServiceTitle: document.getElementById('selectedServiceTitle'),
-            selectedServiceDescription: document.getElementById('selectedServiceDescription'),
-            imeiHint: document.getElementById('imeiHint'),
-            paymentSection: document.getElementById('paymentSection'),
-            buttonText: document.getElementById('buttonText'),
-            balanceAmount: document.getElementById('balanceAmount'),
-            modalBalanceAmount: document.getElementById('modalBalanceAmount'),
-            checkButton: document.getElementById('checkButton'),
-            spinner: document.getElementById('spinner'),
-            resultModal: document.getElementById('resultModal'),
-            resultContent: document.getElementById('resultContent'),
-            paymentChoiceModal: document.getElementById('paymentChoiceModal'),
-            alertContainer: document.getElementById('alertContainer'),
-            errorMessage: document.getElementById('errorMessage'),
-            imeiInput: document.getElementById('imeiInput'),
-            backButton: document.getElementById('backButton')
-        };
-        
-        // XSS protection function
+
         function escapeHtml(unsafe) {
-            return unsafe
-                .replace(/&/g, "&amp;")
+            return unsafe.replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
-        
-        // Update balance displays
         function updateBalanceDisplays() {
             const elements = document.querySelectorAll('.user-balance');
             elements.forEach(el => {
                 el.textContent = `${userBalance.toFixed(2)} ₾`;
             });
         }
-        
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Service card selection using event delegation
+            domElements = {
+                servicesGrid: document.getElementById('servicesGrid'),
+                selectedServiceContainer: document.getElementById('selectedServiceContainer'),
+                selectedServiceIcon: document.getElementById('selectedServiceIcon'),
+                selectedServiceTitle: document.getElementById('selectedServiceTitle'),
+                selectedServiceDescription: document.getElementById('selectedServiceDescription'),
+                imeiHint: document.getElementById('imeiHint'),
+                paymentSection: document.getElementById('paymentSection'),
+                buttonText: document.getElementById('buttonText'),
+                balanceAmount: document.getElementById('balanceAmount'),
+                modalBalanceAmount: document.getElementById('modalBalanceAmount'),
+                checkButton: document.getElementById('checkButton'),
+                spinner: document.getElementById('spinner'),
+                resultModal: document.getElementById('resultModal'),
+                resultContent: document.getElementById('resultContent'),
+                paymentChoiceModal: document.getElementById('paymentChoiceModal'),
+                alertContainer: document.getElementById('alertContainer'),
+                errorMessage: document.getElementById('errorMessage'),
+                imeiInput: document.getElementById('imeiInput'),
+                backButton: document.getElementById('backButton')
+            };
+
             domElements.servicesGrid.addEventListener('click', function(e) {
                 const card = e.target.closest('.service-card');
                 if (card) {
@@ -387,8 +324,6 @@
                     history.pushState(null, null, `/applecheck/${card.dataset.service}`);
                 }
             });
-            
-            // Payment option selection using event delegation
             document.body.addEventListener('click', function(e) {
                 const option = e.target.closest('.payment-option');
                 if (option) {
@@ -399,32 +334,22 @@
                     currentPaymentMethod = option.dataset.payment;
                 }
             });
-            
-            // Check button click
             domElements.checkButton.addEventListener('click', startCheck);
-            
-            // Close modal buttons
             document.getElementById('closeModal').addEventListener('click', function() {
                 domElements.resultModal.style.display = 'none';
             });
-            
             document.getElementById('closePaymentChoice').addEventListener('click', function() {
                 domElements.paymentChoiceModal.style.display = 'none';
             });
-            
             document.getElementById('cancelPaymentChoice').addEventListener('click', function() {
                 domElements.paymentChoiceModal.style.display = 'none';
             });
-            
-            // Back button handler
             domElements.backButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 domElements.servicesGrid.style.display = 'grid';
                 domElements.selectedServiceContainer.style.display = 'none';
                 history.pushState(null, null, '/applecheck');
             });
-            
-            // Handle browser history
             window.addEventListener('popstate', function() {
                 const pathParts = window.location.pathname.split('/');
                 if (pathParts.length < 3) {
@@ -434,22 +359,17 @@
                     selectService(pathParts[2]);
                 }
             });
-            
-            // Confirm payment choice
             document.getElementById('confirmPaymentChoice').addEventListener('click', async function() {
                 if (!currentPaymentMethod) {
                     showError('გთხოვთ აირჩიოთ გადახდის მეთოდი');
                     return;
                 }
-                
                 if (currentPaymentMethod === 'balance' && servicePrices[currentService] > userBalance) {
                     showError(`Недостаточно средств на балансе. Требуется: ${servicePrices[currentService].toFixed(2)} ₾`);
                     return;
                 }
-
                 domElements.paymentChoiceModal.style.display = 'none';
                 domElements.spinner.style.display = 'flex';
-
                 try {
                     if (currentPaymentMethod === 'balance') {
                         await handleBalancePayment();
@@ -461,111 +381,65 @@
                     showError('Payment error: ' + error.message);
                 }
             });
-
-            // Real-time IMEI validation
             domElements.imeiInput.addEventListener('input', function() {
                 const imei = this.value.trim();
                 const valid = validateImei(imei, currentService);
-                
                 if (imei.length > 0 && !valid) {
                     this.classList.add('is-invalid');
                 } else {
                     this.classList.remove('is-invalid');
                 }
-                
-                // Enable/disable check button
                 domElements.checkButton.disabled = !valid || isChecking;
             });
-            
-            // Handle Enter key in IMEI input
             domElements.imeiInput.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter' && !domElements.checkButton.disabled) {
                     startCheck();
                 }
             });
 
-            // Get service from URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            let serviceParam = urlParams.get('service');
-            // If not found in query params, check path
-            if (!serviceParam) {
-                const pathParts = window.location.pathname.split('/');
-                if (pathParts.length > 2) {
-                    serviceParam = pathParts[2];
-                }
-            }
-            // Automatically select service if specified in URL
-            if (serviceParam && servicePrices.hasOwnProperty(serviceParam)) {
-                selectService(serviceParam);
-            }
-            // Or if service is passed as template variable
-            else if ("{{ selected_service }}" && servicePrices.hasOwnProperty("{{ selected_service }}")) {
-                selectService("{{ selected_service }}");
+            // ---- КОРРЕКТНАЯ АВТОИНИЦИАЛИЗАЦИЯ ----
+            const pathParts = window.location.pathname.split('/');
+            if (pathParts.length > 2 && servicePrices.hasOwnProperty(pathParts[2])) {
+                selectService(pathParts[2]);
             }
         });
 
-        // Select a service
         function selectService(service) {
-            // Validate service
             if (!servicePrices.hasOwnProperty(service)) {
                 showError('არასწორი სერვისის ტიპი');
                 domElements.servicesGrid.style.display = 'grid';
                 domElements.selectedServiceContainer.style.display = 'none';
                 return;
             }
-            
             currentService = service;
             currentPaymentMethod = null;
-            
-            // Remove selected class from all cards
             domElements.servicesGrid.querySelectorAll('.service-card').forEach(card => {
                 card.classList.remove('selected');
             });
-            
-            // Add selected class to clicked card
             const serviceCard = domElements.servicesGrid.querySelector(`.service-card[data-service="${service}"]`);
             if (serviceCard) {
                 serviceCard.classList.add('selected');
             }
-            
-            // Hide services grid and show selected service container
             domElements.servicesGrid.style.display = 'none';
             domElements.selectedServiceContainer.style.display = 'block';
-            
-            // Update service title and description
-            domElements.selectedServiceTitle.textContent = 
-                serviceCard ? serviceCard.querySelector('.service-title').textContent : service;
-                
-            domElements.selectedServiceDescription.textContent = 
-                serviceDescriptions[service] || 'Apple-მოწყობილობის შემოწმების სერვისი';
-            
-            // Update service icon
+            domElements.selectedServiceTitle.textContent = serviceCard ? serviceCard.querySelector('.service-title').textContent : service;
+            domElements.selectedServiceDescription.textContent = serviceDescriptions[service] || 'Apple-მოწყობილობის შემოწმების სერვისი';
             domElements.selectedServiceIcon.innerHTML = `<i class="${serviceIcons[service] || 'fas fa-mobile-alt'}"></i>`;
             domElements.selectedServiceIcon.className = `selected-service-icon service-icon ${serviceIconColors[service] || 'text-info'}`;
-            
-            // Update IMEI hint for MacBook
             if (service === 'macbook') {
                 domElements.imeiHint.textContent = 'სერიული ნომერი შეგიძლიათ იხილოთ MacBook-ის ქვედა ნაწილში ან შეფუთვაზე';
             } else {
                 domElements.imeiHint.textContent = 'IMEI ნომერი შეგიძლიათ იხილოთ მოწყობილობის პარამეტრებში ან დარეკეთ *#06#';
             }
-            
-            // Handle payment section
             if (servicePrices[service] > 0) {
                 domElements.paymentSection.style.display = 'block';
                 domElements.buttonText.textContent = `შემოწმების დაწყება: ${servicePrices[service].toFixed(2)} ₾`;
-                
-                // Update balance display
                 updateBalanceDisplays();
-                
-                // For non-authenticated users, hide balance option
                 if (!isAuthenticated) {
                     document.querySelector('.payment-option[data-payment="balance"]').style.display = 'none';
                 } else {
                     document.querySelector('.payment-option[data-payment="balance"]').style.display = 'block';
                 }
-                
-                // Reset payment selection
                 document.querySelectorAll('.payment-option').forEach(opt => {
                     opt.classList.remove('selected');
                 });
@@ -574,51 +448,33 @@
                 domElements.paymentSection.style.display = 'none';
                 domElements.buttonText.textContent = 'უფასო შემოწმება';
             }
-            
-            // Reset IMEI input
             domElements.imeiInput.value = '';
             domElements.imeiInput.classList.remove('is-invalid');
             domElements.checkButton.disabled = true;
         }
-        
-        // Validate IMEI
+
         function validateImei(imei, serviceType) {
             if (!imei) return false;
-            
-            // Clean input from non-alphanumeric characters
             const cleaned = imei.replace(/[^a-zA-Z0-9]/g, '');
-            
-            // For MacBook: 10-18 alphanumeric characters
             if (serviceType === 'macbook') {
                 return /^[a-zA-Z0-9]{10,18}$/.test(cleaned);
             }
-            // For others: 15 digits
             return /^\d{15}$/.test(cleaned);
         }
-        
-        // Start the check process
         function startCheck() {
-            // Prevent multiple clicks
             if (isChecking) return;
             isChecking = true;
-            
-            // Check if service is selected
             if (!currentService) {
                 showError('გთხოვთ აირჩიოთ შემოწმების ტიპი');
                 isChecking = false;
                 return;
             }
-            
             const imei = domElements.imeiInput.value.trim();
-            
-            // Validate IMEI
             if (!imei) {
                 showError('გთხოვთ შეიყვანოთ IMEI ან სერიული ნომერი');
                 isChecking = false;
                 return;
             }
-            
-            // Validate IMEI format
             if (!validateImei(imei, currentService)) {
                 if (currentService === 'macbook') {
                     showError('არასწორი სერიული ნომერი. შეიყვანეთ 10-18 სიმბოლო');
@@ -628,52 +484,36 @@
                 isChecking = false;
                 return;
             }
-            
-            // Remove invalid class if present
             domElements.imeiInput.classList.remove('is-invalid');
-            
-            // For free service
             if (servicePrices[currentService] === 0) {
                 performCheck();
                 return;
             }
-            
-            // For paid services
             if (!isAuthenticated) {
-                // Redirect to Stripe for unauthenticated users
                 handleStripePayment();
             } else {
-                // Check if payment method is already selected
                 if (currentPaymentMethod) {
                     domElements.spinner.style.display = 'flex';
-                    
                     if (currentPaymentMethod === 'balance') {
                         handleBalancePayment();
                     } else if (currentPaymentMethod === 'stripe') {
                         handleStripePayment();
                     }
                 } else {
-                    // Show payment choice modal
                     domElements.paymentChoiceModal.style.display = 'flex';
                 }
             }
         }
-        
-        // Handle Stripe payment
         async function handleStripePayment() {
             const imei = domElements.imeiInput.value.trim();
             const serviceType = SERVICE_MAP[currentService];
-            const amount = servicePrices[currentService] * 100; // Convert to cents
-            
+            const amount = servicePrices[currentService] * 100;
             try {
-                // Save pending check in session storage
                 sessionStorage.setItem('pending_check', JSON.stringify({
                     imei: imei,
                     serviceType: serviceType,
                     timestamp: new Date().getTime()
                 }));
-                
-                // Create checkout session via server
                 const response = await fetch('/create-checkout-session', {
                     method: 'POST',
                     headers: {
@@ -687,18 +527,13 @@
                         cancel_url: window.location.href
                     })
                 });
-                
                 const data = await response.json();
-                
                 if (!response.ok) {
                     throw new Error(data.error || 'Failed to create session');
                 }
-                
-                // Redirect to Stripe checkout
                 const result = await stripe.redirectToCheckout({
                     sessionId: data.id
                 });
-                
                 if (result.error) {
                     throw new Error(result.error.message);
                 }
@@ -708,22 +543,16 @@
                 isChecking = false;
             }
         }
-        
-        // Handle balance payment
         async function handleBalancePayment() {
             const imei = domElements.imeiInput.value.trim();
             const serviceType = SERVICE_MAP[currentService];
-            
-            // Check balance
             if (servicePrices[currentService] > userBalance) {
                 showError(`Недостаточно средств на балансе. Требуется: ${servicePrices[currentService].toFixed(2)} ₾`);
                 domElements.spinner.style.display = 'none';
                 isChecking = false;
                 return;
             }
-            
             try {
-                // Deduct from balance via server
                 const response = await fetch('/check_with_balance', {
                     method: 'POST',
                     headers: {
@@ -734,18 +563,12 @@
                         service_type: serviceType
                     })
                 });
-                
                 const data = await response.json();
-                
                 if (!response.ok) {
                     throw new Error(data.error || 'Payment failed');
                 }
-                
-                // Update user balance
                 userBalance = data.new_balance;
                 updateBalanceDisplays();
-                
-                // Perform the check
                 await performCheck();
             } catch (error) {
                 domElements.spinner.style.display = 'none';
@@ -753,17 +576,11 @@
                 isChecking = false;
             }
         }
-        
-        // Perform the actual check
         async function performCheck() {
             const imei = domElements.imeiInput.value.trim();
             const serviceType = SERVICE_MAP[currentService];
-            
             try {
-                // Create abort controller
                 currentRequest = new AbortController();
-                
-                // Call server to perform check
                 const response = await fetch('/perform_check', {
                     method: 'POST',
                     headers: {
@@ -775,14 +592,10 @@
                         service_type: serviceType
                     })
                 });
-                
                 const data = await response.json();
-                
                 if (!response.ok) {
                     throw new Error(data.error || 'Check failed');
                 }
-                
-                // Hide spinner and show results
                 domElements.spinner.style.display = 'none';
                 showResults(data);
             } catch (error) {
@@ -795,8 +608,6 @@
                 currentRequest = null;
             }
         }
-        
-        // Show results in modal
         function showResults(resultData) {
             let resultsHTML = `
                 <div class="alert alert-success">
@@ -804,8 +615,6 @@
                     <div>შემოწმება წარმატებით დასრულდა!</div>
                 </div>
             `;
-            
-            // Field mapping for different services
             const fieldMapping = {
                 'originality': {
                     'მოწყობილობის მოდელი': 'model',
@@ -841,8 +650,6 @@
                     'FMI სტატუსი': 'fmi_status'
                 }
             };
-            
-            // Generate result items
             const fields = fieldMapping[currentService];
             for (const [label, key] of Object.entries(fields)) {
                 const value = resultData[key] || 'N/A';
@@ -853,35 +660,22 @@
                     </div>
                 `;
             }
-            
             domElements.resultContent.innerHTML = resultsHTML;
             domElements.resultModal.style.display = 'flex';
         }
-        
-        // Show error message
         function showError(message) {
             domElements.errorMessage.textContent = message;
             domElements.alertContainer.style.display = 'block';
-            
             setTimeout(() => {
                 domElements.alertContainer.style.display = 'none';
             }, 5000);
         }
-        
-        // Handle page unload
         window.addEventListener('beforeunload', function() {
             if (currentRequest) {
                 currentRequest.abort();
             }
         });
-
-        // --- ГАРАНТИРОВАННЫЙ ВЫБОР УСЛУГИ ИЗ URL ---
-        (function() {
-            const pathParts = window.location.pathname.split('/');
-            if (pathParts.length > 2 && servicePrices.hasOwnProperty(pathParts[2])) {
-                selectService(pathParts[2]);
-            }
-        })();
     </script>
 </body>
 </html>
+```
