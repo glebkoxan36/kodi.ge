@@ -363,78 +363,167 @@ def knowledge_base():
     return render_template('knowledge-base.html', user=user_data)
 
 # ======================================
-# Роуты для страницы проверки Apple IMEI
+# Роуты для страницы проверки Apple IMEI (новая версия)
 # ======================================
 
-# Отдельные роуты для каждого типа проверки
-@app.route('/applecheck/originality')
-def apple_check_originality():
-    return apple_check('originality')
-
-@app.route('/applecheck/fmi')
-def apple_check_fmi():
-    return apple_check('fmi')
-
-@app.route('/applecheck/sim_lock')
-def apple_check_sim_lock():
-    return apple_check('sim_lock')
-
-@app.route('/applecheck/blacklist')
-def apple_check_blacklist():
-    return apple_check('blacklist')
-
-@app.route('/applecheck/mdm')
-def apple_check_mdm():
-    return apple_check('mdm')
-
-@app.route('/applecheck/premium')
-def apple_check_premium():
-    return apple_check('premium')
-
-@app.route('/applecheck/macbook')
-def apple_check_macbook():
-    return apple_check('macbook')
-
-# Общий роут для Apple проверки
-@app.route('/applecheck')
-@app.route('/applecheck/<service>')
-def apple_check(service=None):
-    service = request.args.get('service', service)
-    
-    # Установка значения по умолчанию, если service не указан
-    if not service:
-        service = 'originality'
-    
-    # Получаем текущие цены и конвертируем в доллары
+@app.route('/applecheck1')
+def apple_check1():
+    """Новая страница проверки Apple IMEI"""
     prices = get_current_prices()
-    user_balance = 0.0
     user_data = None
+    user_balance = 0.0
     
     if 'user_id' in session:
         user_id = session['user_id']
         user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
         if user:
-            user_balance = user.get('balance', 0.0)
             avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
             user_data = {
                 'first_name': user.get('first_name', ''),
                 'last_name': user.get('last_name', ''),
                 'avatar_color': avatar_color
             }
+            user_balance = user.get('balance', 0.0)
 
     return render_template(
-        'applecheck.html',
-        selected_service=service,
-        fmi_price=prices['fmi'] / 100.0,
-        sim_lock_price=prices['sim_lock'] / 100.0,
-        blacklist_price=prices['blacklist'] / 100.0,
-        mdm_price=prices.get('mdm', 199) / 100.0,  # Значение по умолчанию
-        premium_price=prices['premium'] / 100.0,
-        macbook_price=prices.get('macbook', 349) / 100.0,
-        stripe_public_key=STRIPE_PUBLIC_KEY,
+        'applecheck1.html',
+        prices=prices,
         user=user_data,
-        user_balance=user_balance
+        user_balance=user_balance,
+        STRIPE_PUBLIC_KEY=STRIPE_PUBLIC_KEY
     )
+
+@app.route('/create_apple_session', methods=['POST'])
+def create_apple_session():
+    """Создание сессии оплаты для Apple проверки"""
+    try:
+        data = request.json
+        imei = data.get('imei')
+        service_type = data.get('service_type')
+        
+        if not validate_imei(imei):
+            return jsonify({'error': 'Invalid IMEI'}), 400
+        
+        prices = get_current_prices()
+        
+        # Создаем сессию оплаты
+        session = stripe_payment.create_checkout_session(
+            imei=imei,
+            service_type=service_type,
+            amount=prices[service_type],
+            success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=url_for('apple_check1', _external=True)
+        )
+        
+        return jsonify({'id': session.id})
+    
+    except Exception as e:
+        current_app.logger.error(f"Error creating Apple session: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/perform_apple_check', methods=['POST'])
+def perform_apple_check():
+    """Обработка проверки Apple IMEI"""
+    data = request.json
+    imei = data.get('imei', '').strip()
+    service_type = data.get('service_type', 'free')
+    
+    if not imei or not service_type:
+        return jsonify({'error': 'Missing parameters'}), 400
+    
+    # Для MacBook разрешаем 12-18 символов
+    is_macbook = service_type in ['macbook', 'macbook_pro', 'macbook_air']
+    if not validate_imei(imei, allow_macbook=is_macbook):
+        return jsonify({'error': 'Invalid IMEI format'}), 400
+    
+    # Для бесплатных проверок
+    if service_type == 'free':
+        try:
+            result = perform_api_check(imei, service_type)
+            return jsonify(result)
+        except Exception as e:
+            current_app.logger.error(f'Free check error: {str(e)}')
+            return jsonify({'error': 'Internal server error'}), 500
+    
+    # Для платных проверок
+    prices = get_current_prices()
+    service_price = prices.get(service_type, 0) / 100.0
+    
+    # Если пользователь не авторизован - создаем сессию Stripe
+    if 'user_id' not in session:
+        try:
+            session = stripe_payment.create_checkout_session(
+                imei=imei,
+                service_type=service_type,
+                amount=prices[service_type],
+                success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+                cancel_url=url_for('apple_check1', _external=True)
+            )
+            return jsonify({
+                'success': False,
+                'redirect_url': session.url
+            })
+        except Exception as e:
+            current_app.logger.error(f"Stripe session error: {str(e)}")
+            return jsonify({'error': 'Payment processing error'}), 500
+    
+    # Если пользователь авторизован
+    user_id = session['user_id']
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    user_balance = user.get('balance', 0.0)
+    
+    # Если баланса достаточно
+    if user_balance >= service_price:
+        try:
+            result = perform_api_check(imei, service_type)
+            
+            # Обновляем баланс пользователя
+            new_balance = user_balance - service_price
+            regular_users_collection.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': {'balance': new_balance}}
+            )
+            
+            # Сохраняем платеж
+            payments_collection.insert_one({
+                'user_id': ObjectId(user_id),
+                'amount': -service_price,
+                'currency': 'USD',
+                'timestamp': datetime.utcnow(),
+                'type': 'check',
+                'service_type': service_type,
+                'imei': imei
+            })
+            
+            return jsonify({
+                'success': True,
+                'result': result
+            })
+            
+        except Exception as e:
+            current_app.logger.error(f'Paid check error: {str(e)}')
+            return jsonify({'error': 'Internal server error'}), 500
+    
+    # Если баланса недостаточно
+    try:
+        session = stripe_payment.create_checkout_session(
+            imei=imei,
+            service_type=service_type,
+            amount=prices[service_type],
+            success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=url_for('apple_check1', _external=True)
+        )
+        return jsonify({
+            'success': False,
+            'redirect_url': session.url
+        })
+    except Exception as e:
+        current_app.logger.error(f"Stripe session error: {str(e)}")
+        return jsonify({'error': 'Payment processing error'}), 500
 
 # ======================================
 # Роут для страницы проверки Android IMEI
