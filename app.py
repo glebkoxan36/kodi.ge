@@ -387,10 +387,63 @@ def apple_check():
                 'avatar_color': avatar_color
             }
 
+    # Создаем список услуг с данными для передачи в шаблон
+    services_data = [
+        { 
+            'id': 'free', 
+            'title': 'Базовая проверка', 
+            'icon': 'fa-mobile-screen', 
+            'description': 'Проверка статуса активации и модели устройства', 
+            'price': service_prices['free'] 
+        },
+        { 
+            'id': 'fmi', 
+            'title': 'Статус FMI', 
+            'icon': 'fa-lock', 
+            'description': 'Проверка статуса "Найти iPhone" (Find My iPhone)', 
+            'price': service_prices['fmi'] 
+        },
+        { 
+            'id': 'blacklist', 
+            'title': 'Черный список', 
+            'icon': 'fa-ban', 
+            'description': 'Проверка нахождения устройства в черном списке', 
+            'price': service_prices['blacklist'] 
+        },
+        { 
+            'id': 'sim_lock', 
+            'title': 'SIM-лок', 
+            'icon': 'fa-sim-card', 
+            'description': 'Проверка блокировки по оператору связи', 
+            'price': service_prices['sim_lock'] 
+        },
+        { 
+            'id': 'activation', 
+            'title': 'Статус активации', 
+            'icon': 'fa-bolt', 
+            'description': 'Проверка статуса активации устройства', 
+            'price': service_prices['activation'] 
+        },
+        { 
+            'id': 'carrier', 
+            'title': 'Оператор связи', 
+            'icon': 'fa-tower-cell', 
+            'description': 'Определение оператора, к которому привязано устройство', 
+            'price': service_prices['carrier'] 
+        },
+        { 
+            'id': 'mdm', 
+            'title': 'MDM блокировка', 
+            'icon': 'fa-building-shield', 
+            'description': 'Проверка корпоративной блокировки MDM', 
+            'price': service_prices['mdm'] 
+        }
+    ]
+
     return render_template(
         'applecheck.html',
         service_type=service_type,
-        service_prices=service_prices,
+        services_data=services_data,  # Передаем готовый список услуг
         stripe_public_key=STRIPE_PUBLIC_KEY,
         user=user_data
     )
