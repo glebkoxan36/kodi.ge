@@ -6,6 +6,131 @@
     <title>iFree - Проверка IMEI Apple</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Минимальные дополнительные стили для адаптации существующих */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -15px;
+        }
+        
+        .col-md-4 {
+            flex: 0 0 33.333%;
+            max-width: 33.333%;
+            padding: 0 15px;
+        }
+        
+        .service-card {
+            cursor: pointer;
+            transition: all 0.4s ease;
+            height: 100%;
+        }
+        
+        .service-card.selected {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            background: var(--card-hover-bg);
+        }
+        
+        .service-action {
+            cursor: pointer;
+        }
+        
+        @media (max-width: 992px) {
+            .col-md-4 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .col-md-4 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+        }
+        
+        .mt-3 { margin-top: 1rem; }
+        .mt-4 { margin-top: 1.5rem; }
+        .mb-4 { margin-bottom: 1.5rem; }
+        .p-3 { padding: 1rem; }
+        .text-center { text-align: center; }
+        .bg-dark { background: rgba(0, 0, 0, 0.2); }
+        .rounded { border-radius: 8px; }
+        .me-2 { margin-right: 0.5rem; }
+        
+        .status-clean {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .status-warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .history-table th, .history-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .history-table th {
+            background-color: #f5f5f5;
+            font-weight: 600;
+        }
+        
+        .history-table tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        /* Новые стили */
+        .selected-service-container {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .selected-service-card {
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+        }
+        
+        .selected-service-card .service-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .service-description {
+            margin: 15px 0;
+            font-size: 1.1rem;
+            color: var(--text-color);
+        }
+        
+        .btn-back {
+            background: none;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .btn-back i {
+            margin-right: 8px;
+        }
+    </style>
 </head>
 <body>
     <!-- Градиентные фоны -->
@@ -24,18 +149,35 @@
             <!-- Карточки будут сгенерированы с помощью JavaScript -->
         </div>
         
-        <!-- Форма для ввода IMEI -->
-        <div class="card" id="imei-form-container" style="display: none;">
-            <div class="card-header">
-                <h2 id="selected-service-title">Проверка устройства</h2>
-            </div>
-            <div class="card-body">
-                <div class="form-group">
-                    <label class="form-label">Введите IMEI или серийный номер:</label>
-                    <input type="text" class="form-control" id="imei-input" placeholder="15-значный IMEI или серийный номер">
-                    <div class="error-message" id="imei-error"></div>
+        <!-- Контейнер для выбранной услуги -->
+        <div id="selected-service-container" class="selected-service-container">
+            <button id="back-to-services" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Вернуться к выбору услуги
+            </button>
+            
+            <!-- Карточка выбранной услуги -->
+            <div class="selected-service-card">
+                <div class="service-icon">
+                    <i id="selected-service-icon" class="fas"></i>
                 </div>
-                <button class="btn-primary" id="check-btn">Запустить проверку</button>
+                <div class="service-title" id="selected-service-title-full">Название услуги</div>
+                <div class="service-price" id="selected-service-price">Цена услуги</div>
+                <div class="service-description" id="selected-service-description">Описание услуги</div>
+            </div>
+            
+            <!-- Форма для ввода IMEI -->
+            <div class="card" id="imei-form-container">
+                <div class="card-header">
+                    <h2>Проверка устройства</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">Введите IMEI или серийный номер:</label>
+                        <input type="text" class="form-control" id="imei-input" placeholder="15-значный IMEI или серийный номер">
+                        <div class="error-message" id="imei-error"></div>
+                    </div>
+                    <button class="btn-primary" id="check-btn">Запустить проверку</button>
+                </div>
             </div>
         </div>
     </div>
@@ -160,6 +302,29 @@
                 });
             });
             
+            // Кнопка "Назад"
+            document.getElementById('back-to-services').addEventListener('click', function() {
+                // Скрываем контейнер выбранной услуги
+                document.getElementById('selected-service-container').style.display = 'none';
+                
+                // Показываем контейнер с услугами
+                document.getElementById('services-container').style.display = 'flex';
+                
+                // Сбрасываем выделение карточки
+                document.querySelectorAll('.service-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                
+                // Очищаем ввод
+                document.getElementById('imei-input').value = '';
+                document.getElementById('imei-error').style.display = 'none';
+                
+                // Убираем параметр из URL
+                const url = new URL(window.location);
+                url.searchParams.delete('type');
+                window.history.replaceState({}, '', url);
+            });
+            
             // Запуск проверки
             document.getElementById('check-btn').addEventListener('click', startCheck);
             
@@ -171,28 +336,23 @@
         
         // Выбор сервиса
         function selectService(serviceId) {
-            // Сбрасываем все карточки
-            document.querySelectorAll('.service-card').forEach(card => {
-                card.classList.remove('selected');
-                card.style.opacity = '0.7';
-                card.style.transform = 'scale(0.95)';
-            });
+            // Скрываем контейнер с услугами
+            document.getElementById('services-container').style.display = 'none';
             
-            // Выделяем выбранную карточку
-            const selectedCard = document.querySelector(`.service-card[data-service="${serviceId}"]`);
-            if (selectedCard) {
-                selectedCard.classList.add('selected');
-                selectedCard.style.opacity = '1';
-                selectedCard.style.transform = 'scale(1)';
-                
-                // Находим название сервиса
-                const service = services.find(s => s.id === serviceId);
-                document.getElementById('selected-service-title').textContent = service.title;
-                
-                // Показываем форму ввода
-                document.getElementById('imei-form-container').style.display = 'block';
-                document.getElementById('imei-input').focus();
-            }
+            // Находим выбранный сервис
+            const service = services.find(s => s.id === serviceId);
+            
+            // Заполняем данные в контейнере выбранной услуги
+            document.getElementById('selected-service-icon').className = `fas ${service.icon}`;
+            document.getElementById('selected-service-title-full').textContent = service.title;
+            document.getElementById('selected-service-price').textContent = service.price;
+            document.getElementById('selected-service-description').textContent = service.description;
+            
+            // Показываем контейнер выбранной услуги
+            document.getElementById('selected-service-container').style.display = 'block';
+            
+            // Устанавливаем фокус на ввод
+            document.getElementById('imei-input').focus();
         }
         
         // Запуск проверки
@@ -207,18 +367,25 @@
                 return;
             }
             
-            // Сброс ошибки
-            errorElement.style.display = 'none';
-            
-            // Получаем выбранный сервис
-            const selectedCard = document.querySelector('.service-card.selected');
-            if (!selectedCard) {
-                errorElement.textContent = 'Пожалуйста, выберите тип проверки';
+            // Валидация IMEI (15 цифр)
+            if (!/^\d{15}$/.test(imei)) {
+                errorElement.textContent = 'IMEI должен состоять из 15 цифр';
                 errorElement.style.display = 'block';
                 return;
             }
             
-            const serviceType = selectedCard.getAttribute('data-service');
+            // Сброс ошибки
+            errorElement.style.display = 'none';
+            
+            // Получаем выбранный сервис из URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const serviceType = urlParams.get('type');
+            
+            if (!serviceType) {
+                errorElement.textContent = 'Пожалуйста, выберите тип проверки';
+                errorElement.style.display = 'block';
+                return;
+            }
             
             // Показываем спиннер
             document.getElementById('spinner').style.display = 'flex';
@@ -325,90 +492,5 @@
             document.getElementById('result-modal').style.display = 'flex';
         }
     </script>
-    
-    <style>
-        /* Минимальные дополнительные стили для адаптации существующих */
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0 -15px;
-        }
-        
-        .col-md-4 {
-            flex: 0 0 33.333%;
-            max-width: 33.333%;
-            padding: 0 15px;
-        }
-        
-        .service-card {
-            cursor: pointer;
-            transition: all 0.4s ease;
-            height: 100%;
-        }
-        
-        .service-card.selected {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-            background: var(--card-hover-bg);
-        }
-        
-        .service-action {
-            cursor: pointer;
-        }
-        
-        @media (max-width: 992px) {
-            .col-md-4 {
-                flex: 0 0 50%;
-                max-width: 50%;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .col-md-4 {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
-        }
-        
-        .mt-3 { margin-top: 1rem; }
-        .mt-4 { margin-top: 1.5rem; }
-        .mb-4 { margin-bottom: 1.5rem; }
-        .p-3 { padding: 1rem; }
-        .text-center { text-align: center; }
-        .bg-dark { background: rgba(0, 0, 0, 0.2); }
-        .rounded { border-radius: 8px; }
-        .me-2 { margin-right: 0.5rem; }
-        
-        .status-clean {
-            color: #28a745;
-            font-weight: bold;
-        }
-        
-        .status-warning {
-            color: #ffc107;
-            font-weight: bold;
-        }
-        
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        
-        .history-table th, .history-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .history-table th {
-            background-color: #f5f5f5;
-            font-weight: 600;
-        }
-        
-        .history-table tr:hover {
-            background-color: #f9f9f9;
-        }
-    </style>
 </body>
 </html>
