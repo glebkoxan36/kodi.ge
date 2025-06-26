@@ -109,6 +109,7 @@ DEFAULT_PRICES = {
     'carrier': 199,
     'full': 999,
     'macbook': 349,
+    'mdm': 199,  # Добавлена цена для MDM
     # Android-specific prices
     'android_paid': 399,
     'android_premium': 799,
@@ -406,34 +407,29 @@ def apple_check(service=None):
     
     # Получаем текущие цены и конвертируем в доллары
     prices = get_current_prices()
-    
-    # Данные пользователя (если авторизован)
-    user_data = None
     user_balance = 0.0
+    user_data = None
+    
     if 'user_id' in session:
         user_id = session['user_id']
         user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
         if user:
+            user_balance = user.get('balance', 0.0)
             avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
             user_data = {
                 'first_name': user.get('first_name', ''),
                 'last_name': user.get('last_name', ''),
-                'balance': user.get('balance', 0.0),
                 'avatar_color': avatar_color
             }
-            user_balance = user.get('balance', 0.0)
 
     return render_template(
         'applecheck.html',
-        selected_service=service,  # Исправлено: передаем service вместо service_name
-        paid_price=prices['paid'] / 100.0,
-        premium_price=prices['premium'] / 100.0,
+        selected_service=service,
         fmi_price=prices['fmi'] / 100.0,
         sim_lock_price=prices['sim_lock'] / 100.0,
         blacklist_price=prices['blacklist'] / 100.0,
-        activation_price=prices['activation'] / 100.0,
-        carrier_price=prices['carrier'] / 100.0,
-        full_price=prices['full'] / 100.0,
+        mdm_price=prices.get('mdm', 199) / 100.0,  # Значение по умолчанию
+        premium_price=prices['premium'] / 100.0,
         macbook_price=prices.get('macbook', 349) / 100.0,
         stripe_public_key=STRIPE_PUBLIC_KEY,
         user=user_data,
