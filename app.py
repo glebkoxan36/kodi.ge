@@ -20,6 +20,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # Импорт функций из нового модуля API
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
 
+# Импорт StripePayment
+from stripepay import StripePayment  # Новый импорт
+
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
@@ -81,6 +84,14 @@ api_keys_collection = db['api_keys']
 webhooks_collection = db['webhooks']
 payments_collection = db['payments']
 failed_logins_collection = db['failed_logins']
+
+# Инициализация StripePayment
+stripe_payment = StripePayment(
+    stripe_api_key=stripe.api_key,
+    webhook_secret=STRIPE_WEBHOOK_SECRET,
+    users_collection=regular_users_collection,
+    payments_collection=payments_collection
+)
 
 # Создаем индекс для поля Name
 if 'name_index' not in phones_collection.index_information():
@@ -396,25 +407,16 @@ def create_checkout_session():
         
         prices = get_current_prices()
         
-        stripe_session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': f'iPhone Check ({service_type.capitalize()})',
-                    },
-                    'unit_amount': prices[service_type],
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            metadata={
-                'imei': imei,
-                'service_type': service_type
-            },
-            success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=url_for('index', _external=True),
+        # Используем StripePayment для создания сессии
+        success_url = url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}'
+        cancel_url = url_for('index', _external=True)
+        
+        stripe_session = stripe_payment.create_checkout_session(
+            imei=imei,
+            service_type=service_type,
+            amount=prices[service_type],
+            success_url=success_url,
+            cancel_url=cancel_url
         )
         
         return jsonify({'id': stripe_session.id})
@@ -599,40 +601,19 @@ def parse_free_html(html_content):
 def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
-    event = None
 
     try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, STRIPE_WEBHOOK_SECRET
-        )
+        # Обработка вебхука через StripePayment
+        stripe_payment.handle_webhook(payload, sig_header)
+        return jsonify({'status': 'success'})
+    
     except ValueError as e:
         return jsonify({'error': 'Invalid payload'}), 400
     except stripe.error.SignatureVerificationError as e:
         return jsonify({'error': 'Invalid signature'}), 400
-
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        metadata = session.get('metadata', {})
-        
-        if metadata.get('type') == 'balance_topup':
-            user_id = metadata.get('user_id')
-            amount = session['amount_total'] / 100
-            
-            regular_users_collection.update_one(
-                {'_id': ObjectId(user_id)},
-                {'$inc': {'balance': amount}}
-            )
-            
-            payments_collection.insert_one({
-                'user_id': ObjectId(user_id),
-                'amount': amount,
-                'currency': session['currency'],
-                'stripe_session_id': session['id'],
-                'timestamp': datetime.utcnow(),
-                'type': 'topup'
-            })
-    
-    return jsonify({'status': 'success'})
+    except Exception as e:
+        app.logger.error(f"Webhook processing error: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -880,27 +861,16 @@ def topup_balance():
             flash('Minimum topup amount is $1', 'danger')
             return redirect(url_for('user.topup_balance'))
         
-        # Создаем платежную сессию Stripe
+        # Используем StripePayment для создания сессии пополнения
         try:
-            stripe_session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=[{
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {
-                            'name': 'Balance Topup',
-                        },
-                        'unit_amount': int(amount * 100),
-                    },
-                    'quantity': 1,
-                }],
-                mode='payment',
-                metadata={
-                    'user_id': session['user_id'],
-                    'type': 'balance_topup'
-                },
-                success_url=url_for('user.topup_success', _external=True),
-                cancel_url=url_for('user.topup_balance', _external=True),
+            success_url = url_for('user.topup_success', _external=True)
+            cancel_url = url_for('user.topup_balance', _external=True)
+            
+            stripe_session = stripe_payment.create_topup_session(
+                user_id=str(session['user_id']),
+                amount=amount,
+                success_url=success_url,
+                cancel_url=cancel_url
             )
             return redirect(stripe_session.url)
         except Exception as e:
