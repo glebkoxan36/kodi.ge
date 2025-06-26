@@ -310,6 +310,99 @@
             border-radius: 12px;
             border: 1px solid #F44336;
         }
+        
+        /* Стили для результатов бесплатной проверки */
+        .free-check-results {
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: rgba(30, 30, 40, 0.7);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-title {
+            margin-top: 0;
+            color: var(--accent-color);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .result-row {
+            display: flex;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .result-label {
+            font-weight: 600;
+            width: 200px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .result-value {
+            flex-grow: 1;
+            color: var(--text-color);
+        }
+
+        .result-value.status-clean {
+            color: #4CAF50;
+        }
+
+        .result-value.status-warning {
+            color: #FF9800;
+        }
+
+        .btn-toggle-details {
+            background: rgba(0, 198, 255, 0.1);
+            border: 1px solid rgba(0, 198, 255, 0.2);
+            color: var(--accent-color);
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            width: 100%;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .btn-toggle-details:hover {
+            background: rgba(0, 198, 255, 0.2);
+        }
+
+        .full-details {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            display: none;
+        }
+
+        /* Адаптивность для мобильных устройств */
+        @media (max-width: 768px) {
+            .result-row {
+                flex-direction: column;
+            }
+            
+            .result-label {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+            .result-value {
+                width: 100%;
+            }
+            
+            .free-check-results {
+                margin-top: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -756,42 +849,150 @@
             } 
             // Отобразить таблицу результатов
             else if (data && Object.keys(data).length > 0) {
-                resultsHTML += `
-                    <table class="history-table">
-                        <tr>
-                            <th>პარამეტრი</th>
-                            <th>მნიშვნელობა</th>
-                        </tr>
-                `;
-                
-                for (const [key, value] of Object.entries(data)) {
-                    if (key === 'error' || key === 'html' || key === 'details' || key === 'original_html') continue;
+                // Для бесплатной проверки - специальный формат
+                if (serviceType === 'free') {
+                    // Определяем ключевые параметры для красивого отображения
+                    const keyFields = {
+                        'brand': 'მწარმოებელი',
+                        'model': 'მოდელი',
+                        'imei': 'IMEI',
+                        'activation_status': 'აქტივაციის სტატუსი',
+                        'fmi_status': 'FMI სტატუსი',
+                        'sim_lock': 'SIM ლოკი',
+                        'blacklist_status': 'შავი სია',
+                        'carrier': 'ოპერატორი',
+                        'warranty_status': 'გარანტია'
+                    };
                     
-                    let statusClass = '';
-                    const valStr = String(value).toLowerCase();
+                    // Создаем карточку для основных параметров
+                    resultsHTML += `
+                        <div class="free-check-results">
+                            <div class="result-card">
+                                <h3 class="card-title">ძირითადი მონაცემები</h3>
+                                <div class="card-body">
+                    `;
                     
-                    if (valStr.includes('выключен') || 
-                        valStr.includes('не в списке') || 
-                        valStr.includes('чистый') || 
-                        valStr.includes('отсутствует') ||
-                        valStr.includes('unlocked')) {
-                        statusClass = 'status-clean';
-                    } else if (valStr.includes('включен') || 
-                               valStr.includes('заблокирован') || 
-                               valStr.includes('в списке') ||
-                               valStr.includes('locked')) {
-                        statusClass = 'status-warning';
+                    // Добавляем ключевые параметры
+                    for (const [field, label] of Object.entries(keyFields)) {
+                        if (data[field]) {
+                            let statusClass = '';
+                            const valStr = String(data[field]).toLowerCase();
+                            
+                            if (valStr.includes('выключен') || 
+                                valStr.includes('не в списке') || 
+                                valStr.includes('чистый') || 
+                                valStr.includes('отсутствует') ||
+                                valStr.includes('unlocked')) {
+                                statusClass = 'status-clean';
+                            } else if (valStr.includes('включен') || 
+                                       valStr.includes('заблокирован') || 
+                                       valStr.includes('в списке') ||
+                                       valStr.includes('locked')) {
+                                statusClass = 'status-warning';
+                            }
+                            
+                            resultsHTML += `
+                                <div class="result-row">
+                                    <span class="result-label">${label}:</span>
+                                    <span class="result-value ${statusClass}">${data[field]}</span>
+                                </div>
+                            `;
+                        }
                     }
                     
                     resultsHTML += `
-                        <tr>
-                            <td>${key}</td>
-                            <td class="${statusClass}">${value}</td>
-                        </tr>
+                                </div>
+                            </div>
                     `;
+                    
+                    // Добавляем кнопку для просмотра всех параметров
+                    resultsHTML += `
+                        <div class="more-results">
+                            <button class="btn-toggle-details" onclick="toggleDetails(this)">
+                                <i class="fas fa-chevron-down"></i> სრული ინფორმაციის ნახვა
+                            </button>
+                            <div class="full-details">
+                                <h4>სრული შედეგები</h4>
+                                <table class="history-table">
+                                    <tr>
+                                        <th>პარამეტრი</th>
+                                        <th>მნიშვნელობა</th>
+                                    </tr>
+                    `;
+                    
+                    // Добавляем все параметры в таблицу
+                    for (const [key, value] of Object.entries(data)) {
+                        if (key === 'error' || key === 'html' || key === 'details' || key === 'original_html') continue;
+                        
+                        let statusClass = '';
+                        const valStr = String(value).toLowerCase();
+                        
+                        if (valStr.includes('выключен') || 
+                            valStr.includes('не в списке') || 
+                            valStr.includes('чистый') || 
+                            valStr.includes('отсутствует') ||
+                            valStr.includes('unlocked')) {
+                            statusClass = 'status-clean';
+                        } else if (valStr.includes('включен') || 
+                                   valStr.includes('заблокирован') || 
+                                   valStr.includes('в списке') ||
+                                   valStr.includes('locked')) {
+                            statusClass = 'status-warning';
+                        }
+                        
+                        resultsHTML += `
+                            <tr>
+                                <td>${key}</td>
+                                <td class="${statusClass}">${value}</td>
+                            </tr>
+                        `;
+                    }
+                    
+                    resultsHTML += `
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                } else {
+                    // Для платных проверок - обычная таблица
+                    resultsHTML += `
+                        <table class="history-table">
+                            <tr>
+                                <th>პარამეტრი</th>
+                                <th>მნიშვნელობა</th>
+                            </tr>
+                    `;
+                    
+                    for (const [key, value] of Object.entries(data)) {
+                        if (key === 'error' || key === 'html' || key === 'details' || key === 'original_html') continue;
+                        
+                        let statusClass = '';
+                        const valStr = String(value).toLowerCase();
+                        
+                        if (valStr.includes('выключен') || 
+                            valStr.includes('не в списке') || 
+                            valStr.includes('чистый') || 
+                            valStr.includes('отсутствует') ||
+                            valStr.includes('unlocked')) {
+                            statusClass = 'status-clean';
+                        } else if (valStr.includes('включен') || 
+                                   valStr.includes('заблокирован') || 
+                                   valStr.includes('в списке') ||
+                                   valStr.includes('locked')) {
+                            statusClass = 'status-warning';
+                        }
+                        
+                        resultsHTML += `
+                            <tr>
+                                <td>${key}</td>
+                                <td class="${statusClass}">${value}</td>
+                            </tr>
+                        `;
+                    }
+                    
+                    resultsHTML += `</table>`;
                 }
-                
-                resultsHTML += `</table>`;
             } else {
                 resultsHTML += `
                     <div class="error-card">
@@ -821,6 +1022,20 @@
                     errorElement.textContent = 'ხელახლა დამუშავების შეცდომა';
                     errorElement.style.display = 'block';
                 });
+        }
+        
+        // Функция для показа/скрытия дополнительных деталей
+        function toggleDetails(button) {
+            const detailsContainer = button.parentElement.querySelector('.full-details');
+            const icon = button.querySelector('i');
+            
+            if (detailsContainer.style.display === 'none') {
+                detailsContainer.style.display = 'block';
+                button.innerHTML = '<i class="fas fa-chevron-up"></i> დეტალების დამალვა';
+            } else {
+                detailsContainer.style.display = 'none';
+                button.innerHTML = '<i class="fas fa-chevron-down"></i> სრული ინფორმაციის ნახვა';
+            }
         }
     </script>
 </body>
