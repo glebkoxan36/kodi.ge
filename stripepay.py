@@ -33,26 +33,32 @@ class StripePayment:
         :param cancel_url: URL для перенаправления при отмене оплаты
         :return: Объект сессии Stripe
         """
-        return stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': f'Device Check ({service_type.capitalize()})',
+        try:
+            print(f"Creating checkout session for: {imei}, service: {service_type}, amount: {amount}")
+            return stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': f'Device Check ({service_type.capitalize()})',
+                            'description': f'IMEI: {imei}',
+                        },
+                        'unit_amount': amount,
                     },
-                    'unit_amount': amount,
+                    'quantity': 1,
+                }],
+                mode='payment',
+                metadata={
+                    'imei': imei,
+                    'service_type': service_type
                 },
-                'quantity': 1,
-            }],
-            mode='payment',
-            metadata={
-                'imei': imei,
-                'service_type': service_type
-            },
-            success_url=success_url,
-            cancel_url=cancel_url,
-        )
+                success_url=success_url,
+                cancel_url=cancel_url,
+            )
+        except Exception as e:
+            print(f"Error creating Stripe session: {str(e)}")
+            raise
 
     def create_topup_session(self, user_id, amount, success_url, cancel_url):
         """
@@ -64,26 +70,31 @@ class StripePayment:
         :param cancel_url: URL для перенаправления при отмене оплаты
         :return: Объект сессии Stripe
         """
-        return stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': 'Balance Topup',
+        try:
+            return stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': 'Balance Topup',
+                            'description': f'User ID: {user_id}',
+                        },
+                        'unit_amount': int(amount * 100),
                     },
-                    'unit_amount': int(amount * 100),
+                    'quantity': 1,
+                }],
+                mode='payment',
+                metadata={
+                    'user_id': user_id,
+                    'type': 'balance_topup'
                 },
-                'quantity': 1,
-            }],
-            mode='payment',
-            metadata={
-                'user_id': user_id,
-                'type': 'balance_topup'
-            },
-            success_url=success_url,
-            cancel_url=cancel_url,
-        )
+                success_url=success_url,
+                cancel_url=cancel_url,
+            )
+        except Exception as e:
+            print(f"Error creating topup session: {str(e)}")
+            raise
 
     def deduct_balance(self, user_id, amount):
         """
@@ -93,23 +104,27 @@ class StripePayment:
         :param amount: Сумма списания в долларах
         :return: True если списание успешно, False если недостаточно средств
         """
-        result = self.users_collection.update_one(
-            {'_id': ObjectId(user_id), 'balance': {'$gte': amount}},
-            {'$inc': {'balance': -amount}}
-        )
-        
-        if result.modified_count > 0:
-            # Запись о платеже
-            self.payments_collection.insert_one({
-                'user_id': ObjectId(user_id),
-                'amount': -amount,
-                'currency': 'usd',
-                'type': 'imei_check',
-                'timestamp': datetime.utcnow(),
-                'description': f'Оплата проверки IMEI'
-            })
-            return True
-        return False
+        try:
+            result = self.users_collection.update_one(
+                {'_id': ObjectId(user_id), 'balance': {'$gte': amount}},
+                {'$inc': {'balance': -amount}}
+            )
+            
+            if result.modified_count > 0:
+                # Запись о платеже
+                self.payments_collection.insert_one({
+                    'user_id': ObjectId(user_id),
+                    'amount': -amount,
+                    'currency': 'usd',
+                    'type': 'imei_check',
+                    'timestamp': datetime.utcnow(),
+                    'description': f'Оплата проверки IMEI'
+                })
+                return True
+            return False
+        except Exception as e:
+            print(f"Error deducting balance: {str(e)}")
+            return False
 
     def handle_webhook(self, payload, sig_header):
         """
@@ -125,8 +140,10 @@ class StripePayment:
                 payload, sig_header, self.webhook_secret
             )
         except ValueError as e:
+            print(f"Webhook value error: {str(e)}")
             raise e
         except stripe.error.SignatureVerificationError as e:
+            print(f"Webhook signature error: {str(e)}")
             raise e
 
         # Обработка события "сессия оплаты завершена"
@@ -154,5 +171,6 @@ class StripePayment:
                     'timestamp': datetime.utcnow(),
                     'type': 'topup'
                 })
+                print(f"Balance topup successful for user {user_id}: ${amount}")
         
         return event
