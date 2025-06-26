@@ -4,7 +4,7 @@ import logging
 import re
 import hmac
 import secrets
-import hashlib
+import has极lib
 import requests
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
@@ -123,7 +123,7 @@ if prices_collection.count_documents({'type': 'current'}) == 0:
         'type': 'current',
         'prices': DEFAULT_PRICES,
         'created_at': datetime.utcnow(),
-        'updated_at': datetime.utcnow()
+        'updated极': datetime.utcnow()
     })
 
 def get_current_prices():
@@ -993,7 +993,7 @@ def topup_balance():
     
     return render_template('user/topup.html', stripe_public_key=STRIPE_PUBLIC_KEY)
 
-@user极bp.route('/topup/success')
+@user_bp.route('/topup/success')
 @login_required
 def topup_success():
     """Успешное пополнение баланса"""
@@ -1044,7 +1044,7 @@ def history_checks():
 def history_comparisons():
     """История сравнений телефонов"""
     user_id = session['user_id']
-    user = regular_users_collection.find_one({'_极id': ObjectId(user_id)})
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
     
     if not user:
         flash('User not found', 'danger')
