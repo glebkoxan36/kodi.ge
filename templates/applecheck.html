@@ -159,6 +159,91 @@
             font-weight: 500;
             display: none;
         }
+
+        /* Стили для модалки оплаты */
+        .payment-method-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .payment-method-content {
+            background: var(--card-bg);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            overflow: hidden;
+        }
+
+        .payment-method-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .payment-method-options {
+            padding: 20px;
+        }
+
+        .payment-option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .payment-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent-color);
+        }
+
+        .payment-option i {
+            font-size: 2rem;
+            margin-right: 15px;
+            width: 40px;
+            text-align: center;
+        }
+
+        .balance i { color: #4CAF50; }
+        .card i { color: #2196F3; }
+
+        .option-details {
+            flex-grow: 1;
+        }
+
+        .option-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .balance-info {
+            font-size: 0.9rem;
+        }
+
+        .balance-sufficient {
+            color: #4CAF50;
+        }
+
+        .balance-insufficient {
+            color: #F44336;
+        }
+
+        .payment-method-footer {
+            padding: 15px 20px;
+            text-align: right;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -252,6 +337,9 @@
     
     <script src="https://js.stripe.com/v3/"></script>
     <script>
+        // Инициализация Stripe с публичным ключом
+        const stripe = Stripe('{{ stripe_public_key }}');
+        
         // Удаляем возможные остатки от share-modal.js
         if (typeof window.ShareModal !== 'undefined') {
             delete window.ShareModal;
@@ -361,6 +449,7 @@
         }
         
         function startCheck() {
+            console.log("Start check called");
             const imei = document.getElementById('imei-input').value.trim();
             const errorElement = document.getElementById('imei-error');
             
@@ -398,6 +487,7 @@
             // Для авторизованных пользователей показываем выбор оплаты
             if ({{ 'true' if user else 'false' }}) {
                 fetchUserBalance().then(balance => {
+                    console.log("Balance fetched:", balance);
                     const service = services.find(s => s.id === serviceType);
                     const priceText = service.price;
                     const price = parseFloat(priceText.replace('₾', '').trim());
@@ -412,6 +502,12 @@
                             `<span class="balance-insufficient">Недостаточно средств</span>`;
                     }
                     
+                    // Показать модальное окно
+                    console.log("Showing payment modal");
+                    document.getElementById('payment-method-modal').style.display = 'flex';
+                }).catch(error => {
+                    console.error("Balance fetch error:", error);
+                    // Все равно показать модалку
                     document.getElementById('payment-method-modal').style.display = 'flex';
                 });
             } else {
@@ -422,12 +518,16 @@
         
         function fetchUserBalance() {
             return fetch('/user/dashboard/data')
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
                 .then(data => data.balance)
                 .catch(() => 0.0);
         }
         
         function processPayment(useBalance) {
+            console.log("Processing payment with balance:", useBalance);
             document.getElementById('payment-method-modal').style.display = 'none';
             document.getElementById('spinner').style.display = 'flex';
             
@@ -444,10 +544,13 @@
                 })
             })
             .then(response => {
-                if (!response.ok) throw new Error('Ошибка сети');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 return response.json();
             })
             .then(data => {
+                console.log("Payment response:", data);
                 document.getElementById('spinner').style.display = 'none';
                 
                 if (data.error) {
@@ -456,20 +559,27 @@
                     errorElement.style.display = 'block';
                 } else {
                     if (data.payment_method === 'balance') {
-                        // Для баланса сразу показываем результат
                         fetchResultForSession(data.id);
-                    } else {
-                        // Для Stripe перенаправляем на страницу оплаты
-                        stripe.redirectToCheckout({ sessionId: data.id });
+                    } else if (data.payment_method === 'stripe') {
+                        console.log("Redirecting to Stripe checkout");
+                        stripe.redirectToCheckout({ sessionId: data.id })
+                            .then(result => {
+                                if (result.error) {
+                                    console.error("Stripe redirect error:", result.error.message);
+                                    const errorElement = document.getElementById('imei-error');
+                                    errorElement.textContent = `Stripe error: ${result.error.message}`;
+                                    errorElement.style.display = 'block';
+                                }
+                            });
                     }
                 }
             })
             .catch(error => {
+                console.error("Payment processing error:", error);
                 document.getElementById('spinner').style.display = 'none';
                 const errorElement = document.getElementById('imei-error');
                 errorElement.textContent = 'Ошибка оплаты. Пожалуйста, попробуйте позже.';
                 errorElement.style.display = 'block';
-                console.error('Ошибка оплаты:', error);
             });
         }
         
@@ -477,7 +587,10 @@
             document.getElementById('spinner').style.display = 'flex';
             
             fetch('/get_check_result?session_id=' + sessionId)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
                 .then(data => {
                     document.getElementById('spinner').style.display = 'none';
                     
@@ -490,6 +603,7 @@
                     }
                 })
                 .catch(error => {
+                    console.error("Fetch result error:", error);
                     document.getElementById('spinner').style.display = 'none';
                     const errorElement = document.getElementById('imei-error');
                     errorElement.textContent = 'Ошибка получения результата';
@@ -530,11 +644,11 @@
                 }
             })
             .catch(error => {
+                console.error("Perform check error:", error);
                 document.getElementById('spinner').style.display = 'none';
                 const errorElement = document.getElementById('imei-error');
                 errorElement.textContent = 'Ошибка сети. Пожалуйста, попробуйте позже.';
                 errorElement.style.display = 'block';
-                console.error('Ошибка проверки:', error);
             });
         }
         
@@ -596,4 +710,4 @@
         }
     </script>
 </body>
-</html>
+                            </html>
