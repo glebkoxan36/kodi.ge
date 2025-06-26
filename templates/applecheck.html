@@ -6,10 +6,9 @@
     <title>Apple IMEI Checker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://js.stripe.com/v3/"></script>
     <style>
-        /* Temporary styles */
         .btn-check:active {
             transform: translateY(1px) !important;
             box-shadow: 0 2px 5px rgba(0, 198, 255, 0.2) !important;
@@ -231,8 +230,8 @@
         // Global variables
         let currentService = null;
         let currentPaymentMethod = null;
-        const isAuthenticated = {% if user %}true{% else %}false{% endif %};
-        let userBalance = {% if user %}{{ user_balance|default(0)|round(2) }}{% else %}0{% endif %};
+        const isAuthenticated = {{ 'true' if user else 'false' }};
+        let userBalance = {{ user_balance | default(0) | round(2) if user else 0 }};
         const SERVICE_MAP = {
             'originality': 'free',
             'fmi': 'fmi',
