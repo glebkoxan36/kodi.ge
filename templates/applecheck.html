@@ -272,6 +272,44 @@
             color: #FF9800;
             font-weight: 500;
         }
+
+        /* Новые стили для отображения результатов */
+        .warning-banner {
+            background: rgba(255, 152, 0, 0.2);
+            border: 1px solid #FF9800;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .warning-banner i {
+            margin-right: 10px;
+            color: #FF9800;
+        }
+
+        .raw-results {
+            background: rgba(30, 30, 40, 0.7);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow: auto;
+        }
+
+        .raw-results pre {
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+
+        .error-card {
+            text-align: center;
+            padding: 30px;
+            background: rgba(244, 67, 54, 0.1);
+            border-radius: 12px;
+            border: 1px solid #F44336;
+        }
     </style>
 </head>
 <body>
@@ -699,7 +737,25 @@
                 </div>
             `;
             
-            if (data && Object.keys(data).length > 0) {
+            // Показать предупреждение, если данные были перепарсены
+            if (data.original_html) {
+                resultsHTML += `
+                    <div class="warning-banner">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        ზოგიერთი მონაცემი შეიძლება არ იყოს ამოღებული
+                    </div>`;
+            }
+
+            // Отобразить необработанные данные сервера
+            if (data.server_response) {
+                resultsHTML += `
+                    <div class="raw-results">
+                        <h4>სერვერის სრული პასუხი:</h4>
+                        <pre>${data.server_response}</pre>
+                    </div>`;
+            } 
+            // Отобразить таблицу результатов
+            else if (data && Object.keys(data).length > 0) {
                 resultsHTML += `
                     <table class="history-table">
                         <tr>
@@ -709,7 +765,7 @@
                 `;
                 
                 for (const [key, value] of Object.entries(data)) {
-                    if (key === 'error' || key === 'html' || key === 'details') continue;
+                    if (key === 'error' || key === 'html' || key === 'details' || key === 'original_html') continue;
                     
                     let statusClass = '';
                     const valStr = String(value).toLowerCase();
@@ -737,11 +793,34 @@
                 
                 resultsHTML += `</table>`;
             } else {
-                resultsHTML += `<p class="text-center">მონაცემები ვერ მოიძებნა</p>`;
+                resultsHTML += `
+                    <div class="error-card">
+                        <h4>მონაცემების დამუშავება ვერ მოხერხდა</h4>
+                        <button class="btn-secondary" onclick="retryParse('${imei}')">
+                            ხელახლა ცდა
+                        </button>
+                    </div>`;
             }
             
             resultContent.innerHTML = resultsHTML;
             document.getElementById('result-modal').style.display = 'flex';
+        }
+        
+        // Функция повторного парсинга
+        function retryParse(imei) {
+            document.getElementById('spinner').style.display = 'flex';
+            fetch(`/reparse_imei?imei=${imei}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('spinner').style.display = 'none';
+                    displayResults(imei, currentServiceType, data);
+                })
+                .catch(error => {
+                    document.getElementById('spinner').style.display = 'none';
+                    const errorElement = document.getElementById('imei-error');
+                    errorElement.textContent = 'ხელახლა დამუშავების შეცდომა';
+                    errorElement.style.display = 'block';
+                });
         }
     </script>
 </body>
