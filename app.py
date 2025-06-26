@@ -4,7 +4,7 @@ import logging
 import re
 import hmac
 import secrets
-import has极lib
+import hashlib
 import requests
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
@@ -123,7 +123,7 @@ if prices_collection.count_documents({'type': 'current'}) == 0:
         'type': 'current',
         'prices': DEFAULT_PRICES,
         'created_at': datetime.utcnow(),
-        'updated极': datetime.utcnow()
+        'updated_at': datetime.utcnow()
     })
 
 def get_current_prices():
@@ -361,6 +361,80 @@ def knowledge_base():
             }
     
     return render_template('knowledge-base.html', user=user_data)
+
+# ======================================
+# Роуты для страницы проверки Apple IMEI (переименованы в applecheck1)
+# ======================================
+
+# Отдельные роуты для каждого типа проверки
+@app.route('/applecheck1/originality')
+def apple_check_originality():
+    return apple_check('originality')
+
+@app.route('/applecheck1/fmi')
+def apple_check_fmi():
+    return apple_check('fmi')
+
+@app.route('/applecheck1/sim_lock')
+def apple_check_sim_lock():
+    return apple_check('sim_lock')
+
+@app.route('/applecheck1/blacklist')
+def apple_check_blacklist():
+    return apple_check('blacklist')
+
+@app.route('/applecheck1/mdm')
+def apple_check_mdm():
+    return apple_check('mdm')
+
+@app.route('/applecheck1/premium')
+def apple_check_premium():
+    return apple_check('premium')
+
+@app.route('/applecheck1/macbook')
+def apple_check_macbook():
+    return apple_check('macbook')
+
+# Общий роут для Apple проверки
+@app.route('/applecheck1')
+@app.route('/applecheck1/<service>')
+def apple_check(service=None):
+    service = request.args.get('service', service)
+    
+    # Установка значения по умолчанию, если service не указан
+    if not service:
+        service = 'originality'
+    
+    # Получаем текущие цены и конвертируем в доллары
+    prices = get_current_prices()
+    user_balance = 0.0
+    user_data = None
+    
+    if 'user_id' in session:
+        user_id = session['user_id']
+        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+        if user:
+            user_balance = user.get('balance', 0.0)
+            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+            user_data = {
+                'first_name': user.get('first_name', ''),
+                'last_name': user.get('last_name', ''),
+                'avatar_color': avatar_color
+            }
+
+    return render_template(
+        'applecheck.html',
+        selected_service=service,
+        fmi_price=prices['fmi'] / 100.0,
+        sim_lock_price=prices['sim_lock'] / 100.0,
+        blacklist_price=prices['blacklist'] / 100.0,
+        mdm_price=prices.get('mdm', 199) / 100.0,  # Значение по умолчанию
+        premium_price=prices['premium'] / 100.0,
+        macbook_price=prices.get('macbook', 349) / 100.0,
+        stripe_public_key=STRIPE_PUBLIC_KEY,
+        user=user_data,
+        user_balance=user_balance
+    )
 
 # ======================================
 # Роут для страницы проверки Android IMEI
