@@ -8,7 +8,7 @@ import hashlib
 import requests
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, Blueprint
 from flask_cors import CORS
 from pymongo import MongoClient
 import stripe
@@ -396,7 +396,7 @@ def create_checkout_session():
         
         prices = get_current_prices()
         
-        session = stripe.checkout.Session.create(
+        stripe_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
                 'price_data': {
@@ -417,7 +417,7 @@ def create_checkout_session():
             cancel_url=url_for('index', _external=True),
         )
         
-        return jsonify({'id': session.id})
+        return jsonify({'id': stripe_session.id})
     
     except Exception as e:
         app.logger.error(f"Error creating checkout session: {str(e)}")
@@ -430,9 +430,9 @@ def payment_success():
         return render_template('error.html', error="Session ID missing"), 400
     
     try:
-        session = stripe.checkout.Session.retrieve(session_id)
-        imei = session.metadata.get('imei')
-        service_type = session.metadata.get('service_type')
+        stripe_session = stripe.checkout.Session.retrieve(session_id)
+        imei = stripe_session.metadata.get('imei')
+        service_type = stripe_session.metadata.get('service_type')
         
         if not imei or not service_type:
             return render_template('error.html', error="Invalid session data"), 400
@@ -456,9 +456,9 @@ def payment_success():
             'imei': imei,
             'service_type': service_type,
             'paid': True,
-            'payment_status': session.payment_status,
-            'amount': session.amount_total / 100,
-            'currency': session.currency,
+            'payment_status': stripe_session.payment_status,
+            'amount': stripe_session.amount_total / 100,
+            'currency': stripe_session.currency,
             'timestamp': datetime.utcnow(),
             'result': result
         }
@@ -882,7 +882,7 @@ def topup_balance():
         
         # Создаем платежную сессию Stripe
         try:
-            session = stripe.checkout.Session.create(
+            stripe_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[{
                     'price_data': {
@@ -902,7 +902,7 @@ def topup_balance():
                 success_url=url_for('user.topup_success', _external=True),
                 cancel_url=url_for('user.topup_balance', _external=True),
             )
-            return redirect(session.url)
+            return redirect(stripe_session.url)
         except Exception as e:
             flash(f'Error creating payment session: {str(e)}', 'danger')
             return redirect(url_for('user.topup_balance'))
