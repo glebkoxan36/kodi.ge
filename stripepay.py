@@ -85,6 +85,32 @@ class StripePayment:
             cancel_url=cancel_url,
         )
 
+    def deduct_balance(self, user_id, amount):
+        """
+        Списание средств с баланса пользователя
+        
+        :param user_id: ID пользователя
+        :param amount: Сумма списания в долларах
+        :return: True если списание успешно, False если недостаточно средств
+        """
+        result = self.users_collection.update_one(
+            {'_id': ObjectId(user_id), 'balance': {'$gte': amount}},
+            {'$inc': {'balance': -amount}}
+        )
+        
+        if result.modified_count > 0:
+            # Запись о платеже
+            self.payments_collection.insert_one({
+                'user_id': ObjectId(user_id),
+                'amount': -amount,
+                'currency': 'usd',
+                'type': 'imei_check',
+                'timestamp': datetime.utcnow(),
+                'description': f'Оплата проверки IMEI'
+            })
+            return True
+        return False
+
     def handle_webhook(self, payload, sig_header):
         """
         Обрабатывает вебхуки от Stripe
