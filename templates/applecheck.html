@@ -257,66 +257,30 @@
             delete window.ShareModal;
         }
         
-        const stripe = Stripe('{{ STRIPE_PUBLIC_KEY }}');
-        const services = [
-            { 
-                id: 'free', 
-                title: 'Базовая проверка', 
-                icon: 'fa-mobile-screen', 
-                description: 'Проверка статуса активации и модели устройства', 
-                price: '{{ service_prices.free }}' 
-            },
-            { 
-                id: 'fmi', 
-                title: 'Статус FMI', 
-                icon: 'fa-lock', 
-                description: 'Проверка статуса "Найти iPhone" (Find My iPhone)', 
-                price: '{{ service_prices.fmi }}' 
-            },
-            { 
-                id: 'blacklist', 
-                title: 'Черный список', 
-                icon: 'fa-ban', 
-                description: 'Проверка нахождения устройства в черном списке', 
-                price: '{{ service_prices.blacklist }}' 
-            },
-            { 
-                id: 'sim_lock', 
-                title: 'SIM-лок', 
-                icon: 'fa-sim-card', 
-                description: 'Проверка блокировки по оператору связи', 
-                price: '{{ service_prices.sim_lock }}' 
-            },
-            { 
-                id: 'activation', 
-                title: 'Статус активации', 
-                icon: 'fa-bolt', 
-                description: 'Проверка статуса активации устройства', 
-                price: '{{ service_prices.activation }}' 
-            },
-            { 
-                id: 'carrier', 
-                title: 'Оператор связи', 
-                icon: 'fa-tower-cell', 
-                description: 'Определение оператора, к которому привязано устройство', 
-                price: '{{ service_prices.carrier }}' 
-            },
-            { 
-                id: 'mdm', 
-                title: 'MDM блокировка', 
-                icon: 'fa-building-shield', 
-                description: 'Проверка корпоративной блокировки MDM', 
-                price: '{{ service_prices.mdm }}' 
-            }
-        ];
+        // Используем данные из сервера вместо статичного объявления
+        const services = {{ services_data | tojson | safe }};
         
         let currentImei = '';
         let currentServiceType = '';
         
         document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('services-container');
+            
+            // Проверяем существование контейнера
+            if (!container) {
+                console.error('Services container not found');
+                return;
+            }
+            
             container.innerHTML = ''; // Очищаем контейнер
             
+            // Если нет услуг, показываем сообщение
+            if (!services || services.length === 0) {
+                container.innerHTML = '<p>Услуги временно недоступны</p>';
+                return;
+            }
+            
+            // Создаем карточки услуг
             services.forEach(service => {
                 const card = document.createElement('div');
                 card.className = 'service-card';
@@ -435,7 +399,8 @@
             if ({{ 'true' if user else 'false' }}) {
                 fetchUserBalance().then(balance => {
                     const service = services.find(s => s.id === serviceType);
-                    const price = parseFloat(service.price.replace('₾', '').trim());
+                    const priceText = service.price;
+                    const price = parseFloat(priceText.replace('₾', '').trim());
                     
                     document.getElementById('user-balance').textContent = balance.toFixed(2);
                     
