@@ -330,7 +330,6 @@ def index():
 def contacts_page():
     """Страница контактов"""
     user_data = None
-    if 'user极
     if 'user_id' in session:
         user_id = session['user_id']
         user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
@@ -353,7 +352,6 @@ def knowledge_base():
         user_id = session['user_id']
         user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
         if user:
-            avatar极
             avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
             user_data = {
                 'first_name': user.get('first_name', ''),
@@ -363,189 +361,6 @@ def knowledge_base():
             }
     
     return render_template('knowledge-base.html', user=user_data)
-
-# ======================================
-# Роуты для страницы проверки Apple IMEI (новая версия)
-# ======================================
-
-@app.route('/applecheck1')
-def apple_check1():
-    """Новая страница проверки Apple IMEI"""
-    prices = get_current_prices()
-    user_data = None
-    user_balance = 0.0
-    
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-        if user:
-            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
-            user_data = {
-                'first_name': user.get('first_name', ''),
-                'last_name': user.get('last_name', ''),
-                'avatar_color': avatar_color
-            }
-            user_balance = user.get('balance', 0.0)
-
-    return render_template(
-        'applecheck1.html',
-        prices=prices,
-        user=user_data,
-        user_balance=user_balance,
-        STRIPE_PUBLIC_KEY=STRIPE_PUBLIC_KEY
-    )
-
-@app.route('/create_apple_session', methods=['POST'])
-def create_apple_session():
-    """Создание сессии оплаты для Apple проверки"""
-    try:
-        data = request.json
-        imei = data.get('imei')
-        service_type = data.get('service_type')
-        
-        if not validate_imei(imei):
-            return jsonify({'error': 'Invalid IMEI'}), 400
-        
-        prices = get_current_prices()
-        
-        # Создаем сессию оплаты
-        session = stripe_payment.create_checkout_session(
-            imei=imei,
-            service_type=service_type,
-            amount=prices[service_type],
-            success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=url_for('apple_check1', _external=True)
-        )
-        
-        return jsonify({'id': session.id})
-    
-    except Exception as e:
-        current_app.logger.error(f"Error creating Apple session: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/perform_apple_check', methods=['POST'])
-def perform_apple_check():
-    """Обработка проверки Apple IMEI"""
-    data = request.json
-    imei = data.get('imei', '').strip()
-    service_type = data.get('service_type', 'free')
-    
-    if not imei or not service_type:
-        return jsonify({'error': 'Missing parameters'}), 400
-    
-    # Для MacBook разрешаем 12-18 символов
-    is_macbook = service_type in ['macbook', 'macbook_pro', 'macbook_air']
-    if not validate_imei(imei, allow_macbook=is_macbook):
-        return jsonify({'error': 'Invalid IMEI format'}), 400
-    
-    # Для бесплатных проверок
-    if service_type == 'free':
-        try:
-            result = perform_api_check(imei, service_type)
-            
-            # Если получили HTML-контент вместо структурированных данных
-            if 'html_content' in result:
-                parsed_data = parse_free_html(result['html_content'])
-                if parsed_data:
-                    result = parsed_data
-                else:
-                    result = {'error': 'Failed to parse device information'}
-            
-            # Проверяем, есть ли полезные данные в результате
-            if not result or (isinstance(result, dict) and not result.get('device') and not result.get('model')):
-                return jsonify({
-                    'error': 'No information available for this device. '
-                             'It may be too new or not in our database.'
-                })
-            
-            return jsonify(result)
-        except Exception as e:
-            current_app.logger.error(f'Free check error: {str(e)}')
-            return jsonify({
-                'error': 'Technical error during device check. '
-                         'Please try again later or contact support.'
-            }), 500
-    
-    # Для платных проверок
-    prices = get_current_prices()
-    service_price = prices.get(service_type, 0) / 100.0
-    
-    # Если пользователь не авторизован - создаем сессию Stripe
-    if 'user_id' not in session:
-        try:
-            session = stripe_payment.create_checkout_session(
-                imei=imei,
-                service_type=service_type,
-                amount=prices[service_type],
-                success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
-                cancel_url=url_for('apple_check1', _external=True)
-            )
-            return jsonify({
-                'success': False,
-                'redirect_url': session.url
-            })
-        except Exception as e:
-            current_app.logger.error(f"Stripe session error: {str(e)}")
-            return jsonify({'error': 'Payment processing error'}), 500
-    
-    # Если пользователь авторизован
-    user_id = session['user_id']
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-    
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-    
-    user_balance = user.get('balance', 0.0)
-    
-    # Если баланса достаточно
-    if user_balance >= service_price:
-        try:
-            result = perform_api_check(imei, service_type)
-            
-            # Обновляем баланс пользователя
-            new_balance = user_balance - service_price
-            regular_users_collection.update_one(
-                {'_id': ObjectId(user_id)},
-                {'$set': {'balance': new_balance}}
-            )
-            
-            # Сохраняем платеж
-            payments_collection.insert_one({
-                'user_id': ObjectId(user_id),
-                'amount': -service_price,
-                'currency': 'USD',
-                'timestamp': datetime.utcnow(),
-                'type': 'check',
-                'service_type': service_type,
-                'imei': imei
-            })
-            
-            return jsonify({
-                'success': True,
-                'result': result
-            })
-            
-        except Exception as e:
-            current_app.logger.error(f'Paid check error: {str(e)}')
-            return jsonify({'error': 'Internal server error'}), 500
-    
-    # Если баланса недостаточно
-    try:
-        session = stripe_payment.create_checkout_session(
-            imei=imei,
-            service_type=service_type,
-            amount=prices[service_type],
-            success_url=url_for('payment_success', _external极
-            success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=url_for('apple_check1', _external=True)
-        )
-        return jsonify({
-            'success': False,
-            'redirect_url': session.url
-        })
-    except Exception as e:
-        current_app.logger.error(f"Stripe session error: {str(e)}")
-        return jsonify({'error': 'Payment processing error'}), 500
 
 # ======================================
 # Роут для страницы проверки Android IMEI
@@ -1054,7 +869,6 @@ def upload_carousel_image():
     
     file = request.files['carouselImage']
     if file.filename == '':
-        return jsonify({'success': False, '极
         return jsonify({'success': False, 'error': 'No selected file'}), 400
     
     try:
@@ -1179,7 +993,7 @@ def topup_balance():
     
     return render_template('user/topup.html', stripe_public_key=STRIPE_PUBLIC_KEY)
 
-@user_bp.route('/topup/success')
+@user极bp.route('/topup/success')
 @login_required
 def topup_success():
     """Успешное пополнение баланса"""
@@ -1230,7 +1044,7 @@ def history_checks():
 def history_comparisons():
     """История сравнений телефонов"""
     user_id = session['user_id']
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    user = regular_users_collection.find_one({'_极id': ObjectId(user_id)})
     
     if not user:
         flash('User not found', 'danger')
@@ -1243,7 +1057,6 @@ def history_comparisons():
     
     comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).skip((page - 1) * per_page).limit(per_page))
     
-    total = comparisons_collection.count_documents({'user极
     total = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
     
     for comp in comparisons:
