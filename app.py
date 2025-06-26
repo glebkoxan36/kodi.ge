@@ -519,7 +519,7 @@ def create_checkout_session():
         # Если не используем баланс (неавторизован или недостаточно средств)
         if not use_balance:
             # Используем StripePayment для создания сессии
-            success_url = url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}'
+            success_url = url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}&imei=' + imei + '&service_type=' + service_type
             cancel_url = url_for('apple_check', _external=True) + f'?type={service_type}'
             
             stripe_session = stripe_payment.create_checkout_session(
@@ -569,22 +569,15 @@ def perform_balance_check():
 @app.route('/success')
 def payment_success():
     session_id = request.args.get('session_id')
-    if not session_id:
-        return render_template('error.html', error="Session ID missing"), 400
+    imei = request.args.get('imei')
+    service_type = request.args.get('service_type')
+    
+    if not session_id or not imei or not service_type:
+        return render_template('error.html', error="Missing parameters"), 400
     
     try:
-        # Проверяем, это балансовая оплата или Stripe
-        if session_id.startswith('balance_'):
-            # Для баланса сразу показываем результат
-            return redirect(url_for('get_check_result', session_id=session_id))
-        
         # Для Stripe получаем сессию
         stripe_session = stripe.checkout.Session.retrieve(session_id)
-        imei = stripe_session.metadata.get('imei')
-        service_type = stripe_session.metadata.get('service_type')
-        
-        if not imei or not service_type:
-            return render_template('error.html', error="Invalid session data"), 400
         
         result = perform_api_check(imei, service_type)
         
@@ -615,7 +608,8 @@ def payment_success():
             record['user_id'] = ObjectId(session['user_id'])
         checks_collection.insert_one(record)
         
-        return redirect(url_for('get_check_result', session_id=session_id))
+        # Перенаправляем на страницу сервиса с параметрами для отображения результата
+        return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
     
     except Exception as e:
         app.logger.error(f"Payment success error: {str(e)}")
