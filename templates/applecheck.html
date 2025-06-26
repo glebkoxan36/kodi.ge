@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Минимальные дополнительные стили для адаптации существующих */
         .row {
             display: flex;
             flex-wrap: wrap;
@@ -32,10 +31,6 @@
             background: var(--card-hover-bg);
         }
         
-        .service-action {
-            cursor: pointer;
-        }
-        
         @media (max-width: 992px) {
             .col-md-4 {
                 flex: 0 0 50%;
@@ -49,15 +44,6 @@
                 max-width: 100%;
             }
         }
-        
-        .mt-3 { margin-top: 1rem; }
-        .mt-4 { margin-top: 1.5rem; }
-        .mb-4 { margin-bottom: 1.5rem; }
-        .p-3 { padding: 1rem; }
-        .text-center { text-align: center; }
-        .bg-dark { background: rgba(0, 0, 0, 0.2); }
-        .rounded { border-radius: 8px; }
-        .me-2 { margin-right: 0.5rem; }
         
         .status-clean {
             color: #28a745;
@@ -86,11 +72,6 @@
             font-weight: 600;
         }
         
-        .history-table tr:hover {
-            background-color: #f9f9f9;
-        }
-        
-        /* Новые стили */
         .selected-service-container {
             display: none;
             margin-top: 20px;
@@ -133,29 +114,22 @@
     </style>
 </head>
 <body>
-    <!-- Градиентные фоны -->
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
     
-    <!-- Главный контент -->
     <div class="main-content">
         <div class="section-title">
             <h1>Проверка IMEI Apple</h1>
             <p>Выберите тип проверки и введите IMEI или серийный номер устройства</p>
         </div>
         
-        <!-- Карточки с типами проверок -->
-        <div class="row" id="services-container">
-            <!-- Карточки будут сгенерированы с помощью JavaScript -->
-        </div>
+        <div class="row" id="services-container"></div>
         
-        <!-- Контейнер для выбранной услуги -->
         <div id="selected-service-container" class="selected-service-container">
             <button id="back-to-services" class="btn-back">
                 <i class="fas fa-arrow-left"></i> Вернуться к выбору услуги
             </button>
             
-            <!-- Карточка выбранной услуги -->
             <div class="selected-service-card">
                 <div class="service-icon">
                     <i id="selected-service-icon" class="fas"></i>
@@ -165,7 +139,6 @@
                 <div class="service-description" id="selected-service-description">Описание услуги</div>
             </div>
             
-            <!-- Форма для ввода IMEI -->
             <div class="card" id="imei-form-container">
                 <div class="card-header">
                     <h2>Проверка устройства</h2>
@@ -182,28 +155,23 @@
         </div>
     </div>
     
-    <!-- Модальное окно результатов -->
     <div class="result-modal" id="result-modal">
         <div class="modal-content">
             <div class="card-header">
                 <h2>Результаты проверки</h2>
             </div>
-            <div class="card-body" id="result-content">
-                <!-- Результаты будут отображены здесь -->
-            </div>
+            <div class="card-body" id="result-content"></div>
             <div class="card-footer" style="text-align: center; padding: 20px;">
                 <button class="btn-primary" id="close-modal">Закрыть</button>
             </div>
         </div>
     </div>
     
-    <!-- Спиннер загрузки -->
     <div class="spinner-container" id="spinner">
         <div class="spinner"></div>
     </div>
     
     <script>
-        // Данные для карточек сервисов
         const services = [
             { 
                 id: 'free', 
@@ -256,9 +224,7 @@
             }
         ];
         
-        // Инициализация страницы
         document.addEventListener('DOMContentLoaded', function() {
-            // Генерация карточек сервисов
             const container = document.getElementById('services-container');
             services.forEach(service => {
                 const card = document.createElement('div');
@@ -277,10 +243,8 @@
                 container.appendChild(card);
             });
             
-            // Обработчики событий
             setupEventListeners();
             
-            // Автовыбор услуги из URL параметра
             const urlParams = new URLSearchParams(window.location.search);
             const serviceParam = urlParams.get('type');
             if (serviceParam && services.some(s => s.id === serviceParam)) {
@@ -289,95 +253,63 @@
         });
         
         function setupEventListeners() {
-            // Выбор сервиса
             document.querySelectorAll('.service-card').forEach(card => {
                 card.addEventListener('click', function() {
                     const serviceId = this.getAttribute('data-service');
                     selectService(serviceId);
-                    
-                    // Обновляем URL
                     const url = new URL(window.location);
                     url.searchParams.set('type', serviceId);
                     window.history.replaceState({}, '', url);
                 });
             });
             
-            // Кнопка "Назад"
             document.getElementById('back-to-services').addEventListener('click', function() {
-                // Скрываем контейнер выбранной услуги
                 document.getElementById('selected-service-container').style.display = 'none';
-                
-                // Показываем контейнер с услугами
                 document.getElementById('services-container').style.display = 'flex';
-                
-                // Сбрасываем выделение карточки
                 document.querySelectorAll('.service-card').forEach(card => {
                     card.classList.remove('selected');
                 });
-                
-                // Очищаем ввод
                 document.getElementById('imei-input').value = '';
                 document.getElementById('imei-error').style.display = 'none';
-                
-                // Убираем параметр из URL
                 const url = new URL(window.location);
                 url.searchParams.delete('type');
                 window.history.replaceState({}, '', url);
             });
             
-            // Запуск проверки
             document.getElementById('check-btn').addEventListener('click', startCheck);
-            
-            // Закрытие модального окна
             document.getElementById('close-modal').addEventListener('click', function() {
                 document.getElementById('result-modal').style.display = 'none';
             });
         }
         
-        // Выбор сервиса
         function selectService(serviceId) {
-            // Скрываем контейнер с услугами
             document.getElementById('services-container').style.display = 'none';
-            
-            // Находим выбранный сервис
             const service = services.find(s => s.id === serviceId);
-            
-            // Заполняем данные в контейнере выбранной услуги
             document.getElementById('selected-service-icon').className = `fas ${service.icon}`;
             document.getElementById('selected-service-title-full').textContent = service.title;
             document.getElementById('selected-service-price').textContent = service.price;
             document.getElementById('selected-service-description').textContent = service.description;
-            
-            // Показываем контейнер выбранной услуги
             document.getElementById('selected-service-container').style.display = 'block';
-            
-            // Устанавливаем фокус на ввод
             document.getElementById('imei-input').focus();
         }
         
-        // Запуск проверки
         function startCheck() {
             const imei = document.getElementById('imei-input').value.trim();
             const errorElement = document.getElementById('imei-error');
             
-            // Проверка ввода
             if (!imei) {
                 errorElement.textContent = 'Пожалуйста, введите IMEI или серийный номер';
                 errorElement.style.display = 'block';
                 return;
             }
             
-            // Валидация IMEI (15 цифр)
             if (!/^\d{15}$/.test(imei)) {
                 errorElement.textContent = 'IMEI должен состоять из 15 цифр';
                 errorElement.style.display = 'block';
                 return;
             }
             
-            // Сброс ошибки
             errorElement.style.display = 'none';
-            
-            // Получаем выбранный сервис из URL
             const urlParams = new URLSearchParams(window.location.search);
             const serviceType = urlParams.get('type');
             
@@ -387,10 +319,8 @@
                 return;
             }
             
-            // Показываем спиннер
             document.getElementById('spinner').style.display = 'flex';
             
-            // Отправляем запрос на сервер
             fetch('/perform_check', {
                 method: 'POST',
                 headers: {
@@ -403,21 +333,19 @@
                 })
             })
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Ошибка сети');
-                }
+                if (!response.ok) throw new Error('Ошибка сети');
                 return response.json();
             })
             .then(data => {
-                // Скрываем спиннер
                 document.getElementById('spinner').style.display = 'none';
                 
                 if (data.error) {
-                    // Показываем ошибку
                     errorElement.textContent = data.error;
+                    if (data.details) {
+                        errorElement.innerHTML += `<br><small>${data.details}</small>`;
+                    }
                     errorElement.style.display = 'block';
                 } else {
-                    // Показываем результаты
                     displayResults(imei, serviceType, data);
                 }
             })
@@ -429,11 +357,9 @@
             });
         }
         
-        // Показать результаты
         function displayResults(imei, serviceType, data) {
             const resultContent = document.getElementById('result-content');
             
-            // Базовая часть результатов
             let resultsHTML = `
                 <div class="text-center mb-4">
                     <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
@@ -443,7 +369,6 @@
                 </div>
             `;
             
-            // Формируем таблицу результатов
             if (data && Object.keys(data).length > 0) {
                 resultsHTML += `
                     <table class="history-table">
@@ -453,12 +378,9 @@
                         </tr>
                 `;
                 
-                // Добавляем строки с результатами
                 for (const [key, value] of Object.entries(data)) {
-                    // Пропускаем технические поля
-                    if (key === 'error' || key === 'html') continue;
+                    if (key === 'error' || key === 'html' || key === 'details') continue;
                     
-                    // Определяем класс для статуса
                     let statusClass = '';
                     const valStr = String(value).toLowerCase();
                     
