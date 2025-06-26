@@ -459,8 +459,22 @@ def create_checkout_session():
         if not validate_imei(imei):
             return jsonify({'error': 'Invalid IMEI'}), 400
         
+        # Маппинг типов услуг на цены
+        price_mapping = {
+            'fmi': 'paid',
+            'blacklist': 'paid',
+            'sim_lock': 'premium',
+            'activation': 'paid',
+            'carrier': 'paid',
+            'mdm': 'premium'
+        }
+        
+        if service_type not in price_mapping:
+            return jsonify({'error': 'Invalid service type'}), 400
+        
         prices = get_current_prices()
-        amount = prices[service_type] / 100  # Конвертируем в доллары
+        price_key = price_mapping[service_type]
+        amount = prices[price_key]  # в центах
         
         # Для бесплатной проверки не создаем сессию
         if service_type == 'free':
@@ -471,9 +485,11 @@ def create_checkout_session():
             user_id = session['user_id']
             # Проверяем достаточно ли средств
             user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-            if user and user.get('balance', 0) >= amount:
+            amount_usd = amount / 100  # Конвертация в доллары
+            
+            if user and user.get('balance', 0) >= amount_usd:
                 # Списание средств с баланса
-                if stripe_payment.deduct_balance(user_id, amount):
+                if stripe_payment.deduct_balance(user_id, amount_usd):
                     # Создаем запись о проверке
                     session_id = f"balance_{ObjectId()}"
                     record = {
@@ -483,7 +499,7 @@ def create_checkout_session():
                         'paid': True,
                         'payment_status': 'succeeded',
                         'payment_method': 'balance',
-                        'amount': amount,
+                        'amount': amount_usd,
                         'currency': 'usd',
                         'timestamp': datetime.utcnow(),
                         'user_id': ObjectId(user_id)
@@ -504,12 +520,12 @@ def create_checkout_session():
         if not use_balance:
             # Используем StripePayment для создания сессии
             success_url = url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}'
-            cancel_url = url_for('index', _external=True)
+            cancel_url = url_for('apple_check', _external=True) + f'?type={service_type}'
             
             stripe_session = stripe_payment.create_checkout_session(
                 imei=imei,
                 service_type=service_type,
-                amount=prices[service_type],  # в центах
+                amount=amount,  # в центах
                 success_url=success_url,
                 cancel_url=cancel_url
             )
@@ -706,32 +722,29 @@ def parse_free_html(html_content):
         ]
         
         for label in labels:
+            # Используем более надежный поиск
             element = soup.find(string=re.compile(rf'{label}.*', re.IGNORECASE))
             if not element:
                 continue
                 
-            value_element = None
-            if element.parent and element.parent.find_next_sibling():
-                value_element = element.parent.find_next_sibling()
-            if not value_element and element.parent and element.parent.find('br'):
-                value_element = element.parent
-            if not value_element and ':' in element:
-                value_element = element.split(':', 1)[-1].strip()
+            # Ищем следующего соседа с данными
+            value = ""
+            if element.parent and element.parent.find_next_sibling('td'):
+                value = element.parent.find_next_sibling('td').get_text(strip=True)
+            elif element.parent and element.parent.find_next_sibling('div'):
+                value = element.parent.find_next_sibling('div').get_text(strip=True)
+            elif element.parent and element.parent.find_next_sibling('span'):
+                value = element.parent.find_next_sibling('span').get_text(strip=True)
+            elif ":" in element:
+                value = element.split(":", 1)[-1].strip()
             
-            if value_element:
-                if isinstance(value_element, str):
-                    value = value_element
-                else:
-                    value = value_element.get_text(strip=True)
-                value = re.sub(r'[^a-zA-Z0-9\s]', '', value).strip()
-                if value:
-                    result[label.replace(" ", "_").lower()] = value
+            if value:
+                result[label.replace(" ", "_").lower()] = value
         
         return result
     
     except Exception as e:
         app.logger.error(f"HTML parsing error: {str(e)}")
-        app.logger.error(f"HTML content: {html_content[:500]}")
         return None
 
 @app.route('/stripe_webhook', methods=['POST'])
