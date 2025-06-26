@@ -445,7 +445,7 @@
 /* Новые стили для элементов авторизации */
 #mobileLoginRegister {
     display: block;
-    margin-top: 15px; /* Опускаем текст ниже */
+    margin-top: 10px; /* Опускаем текст ниже */
     cursor: pointer;
     transition: all 0.3s ease;
 }
