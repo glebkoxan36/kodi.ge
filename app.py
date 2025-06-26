@@ -5,10 +5,9 @@ import re
 import hmac
 import secrets
 import hashlib
-import requests
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, Blueprint
 from flask_cors import CORS
 from pymongo import MongoClient
 import stripe
@@ -16,11 +15,9 @@ from functools import wraps
 from bs4 import BeautifulSoup
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import Blueprint
 
 # Импорт функций из нового модуля API
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
-from stripepay import StripePayment  # Импорт класса для работы со Stripe
 
 app = Flask(__name__)
 CORS(app)
@@ -101,21 +98,7 @@ if not admin_users_collection.find_one({'username': 'admin'}):
 
 DEFAULT_PRICES = {
     'paid': 499,
-    'premium': 999,
-    'fmi': 299,
-    'sim_lock': 199,
-    'blacklist': 199,
-    'activation': 199,
-    'carrier': 199,
-    'full': 999,
-    'macbook': 349,
-    'mdm': 199,  # Добавлена цена для MDM
-    # Android-specific prices
-    'android_paid': 399,
-    'android_premium': 799,
-    'google_account': 299,
-    'frp_lock': 199,
-    'android_full': 799
+    'premium': 999
 }
 
 if prices_collection.count_documents({'type': 'current'}) == 0:
@@ -129,17 +112,8 @@ if prices_collection.count_documents({'type': 'current'}) == 0:
 def get_current_prices():
     price_doc = prices_collection.find_one({'type': 'current'})
     if price_doc:
-        # Объединяем с DEFAULT_PRICES для поддержки новых сервисов
-        return {**DEFAULT_PRICES, **price_doc['prices']}
+        return price_doc['prices']
     return DEFAULT_PRICES
-
-# Инициализация StripePayment
-stripe_payment = StripePayment(
-    stripe_api_key=stripe.api_key,
-    webhook_secret=STRIPE_WEBHOOK_SECRET,
-    users_collection=regular_users_collection,
-    payments_collection=payments_collection
-)
 
 # ======================================
 # Оптимизированные функции поиска телефонов
@@ -363,104 +337,23 @@ def knowledge_base():
     return render_template('knowledge-base.html', user=user_data)
 
 # ======================================
-# Роуты для страницы проверки Apple IMEI (переименованы в applecheck1)
+# Роут для страницы проверки Apple IMEI
 # ======================================
 
-# Отдельные роуты для каждого типа проверки
-@app.route('/applecheck1/originality')
-def apple_check_originality():
-    return apple_check('originality')
-
-@app.route('/applecheck1/fmi')
-def apple_check_fmi():
-    return apple_check('fmi')
-
-@app.route('/applecheck1/sim_lock')
-def apple_check_sim_lock():
-    return apple_check('sim_lock')
-
-@app.route('/applecheck1/blacklist')
-def apple_check_blacklist():
-    return apple_check('blacklist')
-
-@app.route('/applecheck1/mdm')
-def apple_check_mdm():
-    return apple_check('mdm')
-
-@app.route('/applecheck1/premium')
-def apple_check_premium():
-    return apple_check('premium')
-
-@app.route('/applecheck1/macbook')
-def apple_check_macbook():
-    return apple_check('macbook')
-
-# Общий роут для Apple проверки
-@app.route('/applecheck1')
-@app.route('/applecheck1/<service>')
-def apple_check(service=None):
-    service = request.args.get('service', service)
-    
-    # Установка значения по умолчанию, если service не указан
-    if not service:
-        service = 'originality'
-    
-    # Получаем текущие цены и конвертируем в доллары
-    prices = get_current_prices()
-    user_balance = 0.0
-    user_data = None
-    
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-        if user:
-            user_balance = user.get('balance', 0.0)
-            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
-            user_data = {
-                'first_name': user.get('first_name', ''),
-                'last_name': user.get('last_name', ''),
-                'avatar_color': avatar_color
-            }
-
-    return render_template(
-        'applecheck.html',
-        selected_service=service,
-        fmi_price=prices['fmi'] / 100.0,
-        sim_lock_price=prices['sim_lock'] / 100.0,
-        blacklist_price=prices['blacklist'] / 100.0,
-        mdm_price=prices.get('mdm', 199) / 100.0,  # Значение по умолчанию
-        premium_price=prices['premium'] / 100.0,
-        macbook_price=prices.get('macbook', 349) / 100.0,
-        stripe_public_key=STRIPE_PUBLIC_KEY,
-        user=user_data,
-        user_balance=user_balance
-    )
-
-# ======================================
-# Роут для страницы проверки Android IMEI
-# ======================================
-
-@app.route('/androidcheck')
-def android_check():
-    """Страница проверки Android-устройств"""
+@app.route('/applecheck')
+def apple_check():
     # Определяем тип услуги из параметра URL
     service_type = request.args.get('type', 'free')
     if service_type not in ['free', 'paid', 'premium']:
         service_type = 'free'
 
-    # Получаем текущие цены для Android-услуг
+    # Получаем текущие цены и конвертируем в лари
     prices = get_current_prices()
-    paid_price = prices.get('android_paid', 399) / 100.0
-    premium_price = prices.get('android_premium', 799) / 100.0
-    google_account_price = prices.get('google_account', 299) / 100.0
-    frp_lock_price = prices.get('frp_lock', 199) / 100.0
-    blacklist_price = prices.get('blacklist', 199) / 100.0
-    carrier_price = prices.get('carrier', 199) / 100.0
-    full_price = prices.get('android_full', 799) / 100.0
+    paid_price_gel = prices['paid'] / 100.0
+    premium_price_gel = prices['premium'] / 100.0
 
     # Данные пользователя (если авторизован)
     user_data = None
-    user_balance = 0.0
     if 'user_id' in session:
         user_id = session['user_id']
         user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
@@ -472,21 +365,14 @@ def android_check():
                 'balance': user.get('balance', 0.0),
                 'avatar_color': avatar_color
             }
-            user_balance = user.get('balance', 0.0)
 
     return render_template(
-        'androidcheck.html',
+        'applecheck.html',
         service_type=service_type,
-        paid_price=paid_price,
-        premium_price=premium_price,
-        google_account_price=google_account_price,
-        frp_lock_price=frp_lock_price,
-        blacklist_price=blacklist_price,
-        carrier_price=carrier_price,
-        full_price=full_price,
+        paid_price=paid_price_gel,
+        premium_price=premium_price_gel,
         stripe_public_key=STRIPE_PUBLIC_KEY,
-        user=user_data,
-        user_balance=user_balance
+        user=user_data
     )
 
 @app.route('/create-checkout-session', methods=['POST'])
@@ -501,13 +387,25 @@ def create_checkout_session():
         
         prices = get_current_prices()
         
-        # Создаем сессию оплаты через StripePayment
-        session = stripe_payment.create_checkout_session(
-            imei=imei,
-            service_type=service_type,
-            amount=prices[service_type],
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': f'iPhone Check ({service_type.capitalize()})',
+                    },
+                    'unit_amount': prices[service_type],
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            metadata={
+                'imei': imei,
+                'service_type': service_type
+            },
             success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=url_for('index', _external=True)
+            cancel_url=url_for('index', _external=True),
         )
         
         return jsonify({'id': session.id})
@@ -580,10 +478,8 @@ def get_check_result():
         'result': record['result']
     })
 
-@app.route('/check_with_balance', methods=['POST'])
-@login_required
-def check_with_balance():
-    """Выполнение проверки с использованием баланса пользователя"""
+@app.route('/perform_check', methods=['POST'])
+def perform_check():
     data = request.get_json()
     imei = data.get('imei')
     service_type = data.get('service_type')
@@ -591,114 +487,7 @@ def check_with_balance():
     if not imei or not service_type:
         return jsonify({'error': 'Missing parameters'}), 400
     
-    # Получаем текущие цены
-    prices = get_current_prices()
-    
-    # Проверяем, есть ли цена для данного типа услуги
-    if service_type not in prices:
-        return jsonify({'error': f'Invalid service type: {service_type}'}), 400
-    
-    # Получаем цену услуги в долларах
-    service_price = prices[service_type] / 100.0
-    
-    # Получаем данные пользователя
-    user_id = session['user_id']
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-    
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-    
-    # Проверяем баланс пользователя
-    user_balance = user.get('balance', 0.0)
-    if user_balance < service_price:
-        return jsonify({'error': 'Insufficient balance'}), 402
-    
-    try:
-        # Выполняем проверку
-        result = perform_api_check(imei, service_type)
-        
-        if not result:
-            return jsonify({'error': 'Empty response from API'}), 500
-        
-        if 'error' in result:
-            return jsonify(result), 400
-        
-        # Для сервисов, возвращающих HTML
-        if 'html_content' in result:
-            parsed_data = parse_free_html(result['html_content'])
-            if parsed_data:
-                result = parsed_data
-            else:
-                result = {'error': 'Failed to parse HTML response'}
-        
-        # Создаем запись о проверке
-        record = {
-            'imei': imei,
-            'service_type': service_type,
-            'paid': True,
-            'payment_type': 'balance',
-            'amount': service_price,
-            'currency': 'USD',
-            'timestamp': datetime.utcnow(),
-            'result': result,
-            'user_id': ObjectId(user_id)
-        }
-        checks_collection.insert_one(record)
-        
-        # Списание средств с баланса
-        new_balance = user_balance - service_price
-        regular_users_collection.update_one(
-            {'_id': ObjectId(user_id)},
-            {'$set': {'balance': new_balance}}
-        )
-        
-        # Запись о платеже
-        payments_collection.insert_one({
-            'user_id': ObjectId(user_id),
-            'amount': -service_price,
-            'currency': 'USD',
-            'timestamp': datetime.utcnow(),
-            'type': 'check',
-            'service_type': service_type,
-            'imei': imei
-        })
-        
-        return jsonify({
-            'success': True,
-            'result': result,
-            'new_balance': new_balance
-        })
-    
-    except Exception as e:
-        app.logger.error(f'Check with balance error: {str(e)}')
-        return jsonify({'error': 'Internal server error'}), 500
-
-@app.route('/get_user_balance', methods=['GET'])
-@login_required
-def get_user_balance():
-    """Получение баланса пользователя"""
-    user_id = session['user_id']
-    user = regular_users_collection.find_one(
-        {'_id': ObjectId(user_id)},
-        {'balance': 1}
-    )
-    
-    if user:
-        return jsonify({'balance': user.get('balance', 0.0)})
-    return jsonify({'balance': 0.0})
-
-@app.route('/perform_check', methods=['POST'])
-def perform_check():
-    data = request.get_json()
-    imei = data.get('imei', '').strip()
-    service_type = data.get('service_type', 'free')
-    
-    if not imei or not service_type:
-        return jsonify({'error': 'Missing parameters'}), 400
-    
-    # Для MacBook разрешаем 12-18 символов
-    is_macbook = service_type in ['macbook', 'macbook_pro', 'macbook_air']
-    if not validate_imei(imei, allow_macbook=is_macbook):
+    if not validate_imei(imei):
         return jsonify({'error': 'Invalid IMEI format'}), 400
     
     try:
@@ -799,18 +588,42 @@ def parse_free_html(html_content):
 
 @app.route('/stripe_webhook', methods=['POST'])
 def stripe_webhook():
-    """Обработка вебхуков от Stripe"""
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
-    
+    event = None
+
     try:
-        # Обработка вебхука через StripePayment
-        stripe_payment.handle_webhook(payload, sig_header)
-        return jsonify({'status': 'success'})
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_WEBHOOK_SECRET
+        )
     except ValueError as e:
         return jsonify({'error': 'Invalid payload'}), 400
     except stripe.error.SignatureVerificationError as e:
         return jsonify({'error': 'Invalid signature'}), 400
+
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        metadata = session.get('metadata', {})
+        
+        if metadata.get('type') == 'balance_topup':
+            user_id = metadata.get('user_id')
+            amount = session['amount_total'] / 100
+            
+            regular_users_collection.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$inc': {'balance': amount}}
+            )
+            
+            payments_collection.insert_one({
+                'user_id': ObjectId(user_id),
+                'amount': amount,
+                'currency': session['currency'],
+                'stripe_session_id': session['id'],
+                'timestamp': datetime.utcnow(),
+                'type': 'topup'
+            })
+    
+    return jsonify({'status': 'success'})
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -1018,13 +831,19 @@ def dashboard():
     balance = user.get('balance', 0)
     
     # Последние 5 проверок
-    checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
+    checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
+        .sort('timestamp', -1)
+        .limit(5))
     
     # Последние 5 сравнений
-    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
+    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
+        .sort('timestamp', -1)
+        .limit(5))
     
     # Последние 5 платежей
-    payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
+    payments = list(payments_collection.find({'user_id': ObjectId(user_id)})
+        .sort('timestamp', -1)
+        .limit(5))
     
     # Общее количество операций
     total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
@@ -1054,11 +873,25 @@ def topup_balance():
         
         # Создаем платежную сессию Stripe
         try:
-            session = stripe_payment.create_topup_session(
-                user_id=session['user_id'],
-                amount=amount,
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': 'Balance Topup',
+                        },
+                        'unit_amount': int(amount * 100),
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                metadata={
+                    'user_id': session['user_id'],
+                    'type': 'balance_topup'
+                },
                 success_url=url_for('user.topup_success', _external=True),
-                cancel_url=url_for('user.topup_balance', _external=True)
+                cancel_url=url_for('user.topup_balance', _external=True),
             )
             return redirect(session.url)
         except Exception as e:
@@ -1096,7 +929,10 @@ def history_checks():
     page = int(request.args.get('page', 1))
     per_page = 20
     
-    checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).skip((page - 1) * per_page).limit(per_page))
+    checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
+        .sort('timestamp', -1)
+        .skip((page - 1) * per_page)
+        .limit(per_page))
     
     total = checks_collection.count_documents({'user_id': ObjectId(user_id)})
     
@@ -1129,7 +965,10 @@ def history_comparisons():
     page = int(request.args.get('page', 1))
     per_page = 20
     
-    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).skip((page - 1) * per_page).limit(per_page))
+    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
+        .sort('timestamp', -1)
+        .skip((page - 1) * per_page)
+        .limit(per_page))
     
     total = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
     
