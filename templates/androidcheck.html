@@ -447,7 +447,6 @@
         </div>
         
         <div id="services-container" class="services-grid">
-            <!-- Исправленный блок: рендеринг сервисов через Jinja2 -->
             {% for service in services_data %}
             <div class="service-card" 
                  data-service="{{ service.id }}"
@@ -563,14 +562,27 @@
         let selectedVersions = null;
         
         document.addEventListener('DOMContentLoaded', function() {
+            // Добавляем обработчики событий при загрузке страницы
             setupEventListeners();
             handleUrlParams();
+            
+            // Добавляем hover-эффект для карточек
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.classList.add('service-card-hover');
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.classList.remove('service-card-hover');
+                });
+            });
         });
         
         function setupEventListeners() {
+            // Обработчики для карточек сервисов
             document.querySelectorAll('.service-card').forEach(card => {
                 card.addEventListener('click', function() {
                     const serviceId = this.dataset.service;
+                    console.log("Selected service:", serviceId); // Отладочное сообщение
                     selectService(serviceId);
                     const url = new URL(window.location);
                     url.searchParams.set('type', serviceId);
@@ -616,6 +628,8 @@
         
         function selectService(serviceId) {
             const service = services.find(s => s.id === serviceId);
+            if (!service) return;
+            
             document.getElementById('selected-service-icon').className = `fas ${service.icon}`;
             document.getElementById('selected-service-title-full').textContent = service.title;
             document.getElementById('selected-service-description').textContent = service.description;
