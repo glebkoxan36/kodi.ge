@@ -8,6 +8,7 @@ API_URL = os.getenv('API_URL', "https://api.ifreeicloud.co.uk")
 API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
 
 SERVICE_TYPES = {
+    # Apple сервисы
     'free': 0,
     'fmi': 4,
     'blacklist': 9,
@@ -19,11 +20,20 @@ SERVICE_TYPES = {
     'premium': 242,
     'full': 999,
     'macbook': 349,
-    'android_paid': 399,
-    'android_premium': 799,
-    'google_account': 299,
-    'frp_lock': 199,
-    'android_full': 799
+    
+    # Новые Android сервисы из Ifreeandroidservice.pdf
+    'xiaomi': 196,
+    'samsung_v1': 11,
+    'samsung_v2': 190,
+    'samsung_knox': 302,
+    'oppo': 317,
+    'operius': 233,
+    'motorola': 246,
+    'ig': 160,
+    'itel_tecno_infinix': 307,
+    'huawei_v1': 158,
+    'huawei_v2': 283,
+    'google_pixel': 209
 }
 
 def validate_imei(imei: str) -> bool:
