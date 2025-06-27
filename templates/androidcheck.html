@@ -722,14 +722,23 @@
             // For authorized users
             if ({{ 'true' if user else 'false' }}) {
                 fetchUserBalance().then(balance => {
+                    // ИСПРАВЛЕННЫЙ УЧАСТОК КОДА
                     const service = services.find(s => 
                         (s.id === currentServiceType) || 
                         (s.versions && s.versions.some(v => v.id === currentServiceType))
+                    ); // Закрывающая скобка и точка с запятой добавлены
+                    
+                    if (!service) {
+                        console.error('Service not found');
+                        return;
+                    }
                     
                     let priceText = service.price;
                     if (service.versions) {
                         const version = service.versions.find(v => v.id === currentServiceType);
-                        priceText = version.price;
+                        if (version) {
+                            priceText = version.price;
+                        }
                     }
                     
                     const price = parseFloat(priceText.replace('₾', '').trim());
