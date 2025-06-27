@@ -67,6 +67,19 @@
             color: var(--success-color);
             margin: 10px 0;
         }
+        
+        .versions-info {
+            margin: 10px 0;
+            font-size: 0.9rem;
+            color: rgba(0, 198, 255, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .versions-info i {
+            margin-right: 5px;
+        }
 
         .service-action {
             display: inline-block;
@@ -434,7 +447,28 @@
         </div>
         
         <div id="services-container" class="services-grid">
-            <!-- JavaScript will generate service cards -->
+            <!-- Исправленный блок: рендеринг сервисов через Jinja2 -->
+            {% for service in services_data %}
+            <div class="service-card" 
+                 data-service="{{ service.id }}"
+                 {% if service.versions %}data-has-versions="true"{% else %}data-service-type="{{ service.id }}"{% endif %}>
+                <div class="service-icon">
+                    <i class="fas {{ service.icon }}"></i>
+                </div>
+                <div class="service-title">{{ service.title }}</div>
+                <div class="service-description">{{ service.description }}</div>
+                
+                {% if service.versions %}
+                    <div class="versions-info" title="აირჩიეთ შემოწმების ტიპი ველში">
+                        <i class="fas fa-layer-group"></i> {{ service.versions|length }} ვერსია
+                    </div>
+                {% else %}
+                    <div class="service-price">{{ service.price }}</div>
+                {% endif %}
+                
+                <div class="service-action">არჩევა</div>
+            </div>
+            {% endfor %}
         </div>
         
         <div id="selected-service-container" class="selected-service-container">
@@ -529,38 +563,9 @@
         let selectedVersions = null;
         
         document.addEventListener('DOMContentLoaded', function() {
-            initServiceCards();
             setupEventListeners();
             handleUrlParams();
         });
-        
-        function initServiceCards() {
-            const container = document.getElementById('services-container');
-            container.innerHTML = '';
-            
-            services.forEach(service => {
-                const card = document.createElement('div');
-                card.className = 'service-card';
-                card.dataset.service = service.id;
-                
-                if (service.versions) {
-                    card.dataset.hasVersions = 'true';
-                } else {
-                    card.dataset.serviceType = service.id;
-                }
-                
-                card.innerHTML = `
-                    <div class="service-icon">
-                        <i class="fas ${service.icon}"></i>
-                    </div>
-                    <div class="service-title">${service.title}</div>
-                    <div class="service-description">${service.description}</div>
-                    ${service.price ? `<div class="service-price">${service.price}</div>` : ''}
-                    <div class="service-action">არჩევა</div>
-                `;
-                container.appendChild(card);
-            });
-        }
         
         function setupEventListeners() {
             document.querySelectorAll('.service-card').forEach(card => {
