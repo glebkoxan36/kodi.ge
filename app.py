@@ -17,11 +17,11 @@ from bs4 import BeautifulSoup
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Импорт функций из нового модуля API
+# Импорт функций из модуля API
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
 
 # Импорт StripePayment
-from stripepay import StripePayment  # Новый импорт
+from stripepay import StripePayment
 
 app = Flask(__name__)
 CORS(app)
@@ -75,7 +75,7 @@ db = client['imei_checker']
 checks_collection = db['results']
 prices_collection = db['prices']
 comparisons_collection = db['comparisons']
-phones_collection = db['phones']  # ИЗМЕНЕНО: phones1 -> phones
+phones_collection = db['phones']
 parser_logs_collection = db['parser_logs']
 admin_users_collection = db['admin_users']
 regular_users_collection = db['users']
@@ -448,6 +448,120 @@ def apple_check():
         user=user_data
     )
 
+# ======================================
+# Роут для страницы проверки Android IMEI
+# ======================================
+
+@app.route('/androidcheck')
+def android_check():
+    """Страница проверки Android устройств"""
+    service_type = request.args.get('type', '')
+    prices = get_current_prices()
+    paid_price_gel = prices['paid'] / 100.0
+    premium_price_gel = prices['premium'] / 100.0
+
+    service_prices = {
+        'samsung_v1': f"{paid_price_gel:.2f}₾",
+        'samsung_v2': f"{paid_price_gel:.2f}₾",
+        'samsung_knox': f"{premium_price_gel:.2f}₾",
+        'xiaomi': f"{paid_price_gel:.2f}₾",
+        'google_pixel': f"{paid_price_gel:.2f}₾",
+        'huawei_v1': f"{paid_price_gel:.2f}₾",
+        'huawei_v2': f"{paid_price_gel:.2f}₾",
+        'motorola': f"{paid_price_gel:.2f}₾",
+        'oppo': f"{paid_price_gel:.2f}₾",
+        'frp': f"{paid_price_gel:.2f}₾",
+        'sim_lock_android': f"{paid_price_gel:.2f}₾",
+    }
+
+    # Данные сервисов
+    services_data = [
+        { 
+            'id': 'samsung', 
+            'title': 'Samsung', 
+            'icon': 'fa-mobile', 
+            'description': 'Samsung მოწყობილობების შემოწმება',
+            'versions': [
+                {'id': 'samsung_v1', 'name': 'სერვისი V1', 'price': service_prices['samsung_v1']},
+                {'id': 'samsung_v2', 'name': 'სერვისი V2', 'price': service_prices['samsung_v2']},
+                {'id': 'samsung_knox', 'name': 'Knox სტატუსი', 'price': service_prices['samsung_knox']}
+            ]
+        },
+        { 
+            'id': 'xiaomi', 
+            'title': 'Xiaomi', 
+            'icon': 'fa-mobile', 
+            'description': 'Xiaomi მოწყობილობების შემოწმება', 
+            'price': service_prices['xiaomi'] 
+        },
+        { 
+            'id': 'google_pixel', 
+            'title': 'Google Pixel', 
+            'icon': 'fa-mobile', 
+            'description': 'Google Pixel მოწყობილობების შემოწმება', 
+            'price': service_prices['google_pixel'] 
+        },
+        { 
+            'id': 'huawei', 
+            'title': 'Huawei', 
+            'icon': 'fa-mobile', 
+            'description': 'Huawei მოწყობილობების შემოწმება',
+            'versions': [
+                {'id': 'huawei_v1', 'name': 'სერვისი V1', 'price': service_prices['huawei_v1']},
+                {'id': 'huawei_v2', 'name': 'სერვისი V2', 'price': service_prices['huawei_v2']}
+            ]
+        },
+        { 
+            'id': 'motorola', 
+            'title': 'Motorola', 
+            'icon': 'fa-mobile', 
+            'description': 'Motorola მოწყობილობების შემოწმება', 
+            'price': service_prices['motorola'] 
+        },
+        { 
+            'id': 'oppo', 
+            'title': 'Oppo', 
+            'icon': 'fa-mobile', 
+            'description': 'Oppo მოწყობილობების შემოწმება', 
+            'price': service_prices['oppo'] 
+        },
+        { 
+            'id': 'frp', 
+            'title': 'FRP Lock', 
+            'icon': 'fa-google', 
+            'description': 'Google ანგარიშის ბლოკირების შემოწმება', 
+            'price': service_prices['frp'] 
+        },
+        { 
+            'id': 'sim_lock_android', 
+            'title': 'SIM Lock Status', 
+            'icon': 'fa-sim-card', 
+            'description': 'ოპერატორის მიერ დაბლოკვის შემოწმება', 
+            'price': service_prices['sim_lock_android'] 
+        }
+    ]
+
+    user_data = None
+    if 'user_id' in session:
+        user_id = session['user_id']
+        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+        if user:
+            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+            user_data = {
+                'first_name': user.get('first_name', ''),
+                'last_name': user.get('last_name', ''),
+                'balance': user.get('balance', 0.0),
+                'avatar_color': avatar_color
+            }
+
+    return render_template(
+        'androidcheck.html',
+        service_type=service_type,
+        services_data=services_data,
+        stripe_public_key=STRIPE_PUBLIC_KEY,
+        user=user_data
+    )
+
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
     try:
@@ -466,7 +580,18 @@ def create_checkout_session():
             'sim_lock': 'premium',
             'activation': 'paid',
             'carrier': 'paid',
-            'mdm': 'premium'
+            'mdm': 'premium',
+            'samsung_v1': 'paid',
+            'samsung_v2': 'paid',
+            'samsung_knox': 'premium',
+            'xiaomi': 'paid',
+            'google_pixel': 'paid',
+            'huawei_v1': 'paid',
+            'huawei_v2': 'paid',
+            'motorola': 'paid',
+            'oppo': 'paid',
+            'frp': 'paid',
+            'sim_lock_android': 'paid'
         }
         
         if service_type not in price_mapping:
@@ -520,7 +645,7 @@ def create_checkout_session():
         if not use_balance:
             # Используем StripePayment для создания сессии
             success_url = url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}&imei=' + imei + '&service_type=' + service_type
-            cancel_url = url_for('apple_check', _external=True) + f'?type={service_type}'
+            cancel_url = url_for('android_check', _external=True) + f'?type={service_type}'
             
             stripe_session = stripe_payment.create_checkout_session(
                 imei=imei,
@@ -609,7 +734,7 @@ def payment_success():
         checks_collection.insert_one(record)
         
         # Перенаправляем на страницу сервиса с параметрами для отображения результата
-        return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
+        return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
     
     except Exception as e:
         app.logger.error(f"Payment success error: {str(e)}")
