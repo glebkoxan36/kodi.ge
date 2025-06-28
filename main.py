@@ -24,6 +24,8 @@ from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
 from stripepay import StripePayment
 
 app = Flask(__name__)
+print(">>> Импорт завершён, создаём Flask")
+print(">>> Flask создан")
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 
@@ -59,6 +61,8 @@ app.logger.addHandler(log_handler)
 
 # Конфигурация
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+print(">>> Настройка Stripe...")
+print(">>> Stripe API-ключи установлены")
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 MONGODB_URI = os.getenv('MONGODB_URI')
@@ -71,6 +75,8 @@ PLACEHOLDER = '/static/placeholder.jpg'
 
 # MongoDB
 client = MongoClient(MONGODB_URI)
+print(">>> Подключение к MongoDB...")
+print(">>> MongoDB подключена")
 db = client['imei_checker']
 checks_collection = db['results']
 prices_collection = db['prices']
@@ -87,6 +93,8 @@ failed_logins_collection = db['failed_logins']
 
 # Инициализация StripePayment
 stripe_payment = StripePayment(
+print(">>> Инициализация StripePayment...")
+print(">>> StripePayment готов")
     stripe_api_key=stripe.api_key,
     webhook_secret=STRIPE_WEBHOOK_SECRET,
     users_collection=regular_users_collection,
@@ -100,6 +108,8 @@ if 'name_index' not in phones_collection.index_information():
 
 # Создаем администратора по умолчанию
 if not admin_users_collection.find_one({'username': 'admin'}):
+print(">>> Проверка администратора...")
+    print(">>> Админ создан")
     admin_password = os.getenv('ADMIN_PASSWORD', 'securepassword')
     admin_users_collection.insert_one({
         'username': 'admin',
@@ -114,6 +124,8 @@ DEFAULT_PRICES = {
 }
 
 if prices_collection.count_documents({'type': 'current'}) == 0:
+print(">>> Проверка наличия цен...")
+    print(">>> Цены добавлены")
     prices_collection.insert_one({
         'type': 'current',
         'prices': DEFAULT_PRICES,
@@ -624,6 +636,10 @@ def create_checkout_session():
                         'paid': True,
                         'payment_status': 'succeeded',
                         'payment_method': 'balance',
+    print(">>> Цены уже есть")
+    print(">>> Админ уже существует")
+    print(">>> Цены уже есть")
+    print(">>> Админ уже существует")
                         'amount': amount_usd,
                         'currency': 'usd',
                         'timestamp': datetime.utcnow(),
@@ -700,6 +716,8 @@ def payment_success():
     if not session_id or not imei or not service_type:
         return render_template('error.html', error="არასაკმარისი პარამეტრები"), 400
     
+    print(">>> Цены уже есть")
+    print(">>> Админ уже существует")
     try:
         # Для Stripe получаем сессию
         stripe_session = stripe.checkout.Session.retrieve(session_id)
@@ -842,6 +860,8 @@ def perform_check():
         
         if not validate_imei(imei):
             return jsonify({'error': 'IMEI-ის არასწორი ფორმატი'}), 400
+    print(">>> Цены уже есть")
+    print(">>> Админ уже существует")
         
         result = perform_api_check(imei, service_type)
         
@@ -1372,6 +1392,8 @@ def login():
     app.logger.info(f"Login attempt for: {identifier}")
     
     ip_address = request.remote_addr
+    print(">>> Цены уже есть")
+    print(">>> Админ уже существует")
     failed_login = failed_logins_collection.find_one({'ip': ip_address})
     
     if failed_login and failed_login.get('blocked_until') and datetime.utcnow() < failed_login['blocked_until']:
@@ -1380,6 +1402,8 @@ def login():
             "success": False,
             "error": f"ანგარიში დროებით დაბლოკილია. სცადეთ {remaining} წუთის შემდეგ"
         }), 429
+    print(">>> Цены уже есть")
+    print(">>> Админ уже существует")
     
     user = None
     is_admin = False
@@ -1401,6 +1425,8 @@ def login():
             user = admin_users_collection.find_one({'phone': identifier})
         elif identifier.isdigit() and len(identifier) == 9:
             user = admin_users_collection.find_one({'phone': f"+995{identifier}"})
+    print(">>> Цены уже есть")
+    print(">>> Админ уже существует")
         else:
             user = admin_users_collection.find_one({'username': identifier})
         is_admin = True if user else False
@@ -1418,6 +1444,8 @@ def login():
         session['user_id'] = str(user['_id'])
         session['username'] = user['username']
         session['role'] = user['role']
+    print(">>> Цены уже есть")
+    print(">>> Админ уже существует")
         app.logger.info(f"Successful login for: {user['username']} (Role: {user['role']})")
         
         if next_url:
@@ -1461,6 +1489,7 @@ def login():
         return jsonify({
             "success": False,
             "error": "ძალიან ბევრი მცდელობა. ანგარიში დროებით დაბლოკილია 10 წუთით"
+    print(">>> Запускаем Flask напрямую")
         }), 429
     
     app.logger.warning(f"Failed login attempt for: {identifier} from IP: {ip_address}")
