@@ -1,9 +1,5 @@
-name = "my-python-worker"
+# wrangler.toml
+name = "your-project-name"
+main = "app.py"  # ваш главный файл
 compatibility_date = "2025-06-28"
-main = "app.py"  # Путь к вашему главному Python-файлу
-
-[build]
-command = "pip install -r requirements.txt"  # Опционально, если нужно установить зависимости
-
-[build.upload]
-format = "python"  # Важно указать формат!
+compatibility_flags = [ "python_workers" ]  # ключевое исправление!
