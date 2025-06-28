@@ -1,0 +1,9 @@
+name = "my-python-worker"
+compatibility_date = "2025-06-28"
+main = "app.py"  # Путь к вашему главному Python-файлу
+
+[build]
+command = "pip install -r requirements.txt"  # Опционально, если нужно установить зависимости
+
+[build.upload]
+format = "python"  # Важно указать формат!
