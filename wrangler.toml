@@ -1,5 +1,0 @@
-# wrangler.toml
-name = "your-project-name"
-main = "app.py"  # ваш главный файл
-compatibility_date = "2025-06-28"
-compatibility_flags = [ "python_workers" ]  # ключевое исправление!
