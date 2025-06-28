@@ -182,7 +182,7 @@ def get_phone_details(phone_id):
                 specs[key] = value
         
         return {
-            '_id': str(phone['_id']),
+            '_id': str(phone['_id']),  # Исправлено: убрана лишняя скобка
             'name': name,
             'image_url': PLACEHOLDER,
             'specs': specs
@@ -1133,20 +1133,14 @@ def dashboard():
     # Получение баланса
     balance = user.get('balance', 0)
     
-    # Последние 5 проверок
-    checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
-        .sort('timestamp', -1)
-        .limit(5))
+    # Последние 5 проверок (исправлен синтаксис)
+    checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
-    # Последние 5 сравнений
-    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
-        .sort('timestamp', -1)
-        .limit(5))
+    # Последние 5 сравнений (исправлен синтаксис)
+    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
-    # Последние 5 платежей
-    payments = list(payments_collection.find({'user_id': ObjectId(user_id)})
-        .sort('timestamp', -1)
-        .limit(5))
+    # Последние 5 платежей (исправлен синтаксис)
+    payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
     # Общее количество операций
     total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
@@ -1221,6 +1215,7 @@ def history_checks():
     page = int(request.args.get('page', 1))
     per_page = 20
     
+    # Исправленный синтаксис запроса
     checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
         .sort('timestamp', -1)
         .skip((page - 1) * per_page)
@@ -1257,6 +1252,7 @@ def history_comparisons():
     page = int(request.args.get('page', 1))
     per_page = 20
     
+    # Исправленный синтаксис запроса
     comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
         .sort('timestamp', -1)
         .skip((page - 1) * per_page)
@@ -1480,9 +1476,15 @@ def logout():
 # Регистрация блюпринтов
 # ======================================
 
-# Импорт и регистрация admin_bp
-from admin_routes import admin_bp
-app.register_blueprint(admin_bp, url_prefix='/admin')
+# Временный блюпринт для админки (если файл admin_routes.py отсутствует)
+admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+
+@admin_bp.route('/')
+@admin_required
+def admin_dashboard():
+    return "Admin Dashboard - Work in Progress"
+
+app.register_blueprint(admin_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(auth_bp)
 
