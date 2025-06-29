@@ -7,7 +7,6 @@ import secrets
 from datetime import datetime
 from bson import ObjectId
 from image_search import search_phone_image
-from app import app  # Для доступа к логгеру и конфигурации
 import cohere
 
 # Глобальная ссылка на коллекцию
@@ -28,7 +27,7 @@ try:
     cohere_client = cohere.Client(os.getenv('COHERE_API_KEY'))
     COHERE_AVAILABLE = True
 except Exception as e:
-    app.logger.warning(f"Cohere initialization failed: {str(e)}")
+    logger.warning(f"Cohere initialization failed: {str(e)}")
     COHERE_AVAILABLE = False
 
 def init_techspecs_collection(collection):
