@@ -6,6 +6,7 @@ from pymongo import MongoClient
 from flask import jsonify
 from datetime import datetime
 import google.generativeai as genai
+from googleimgsearch import search_phone_image  # Добавленный импорт
 
 # Настройка логгера
 logger = logging.getLogger(__name__)
@@ -74,11 +75,14 @@ def search_phones(query):
             name = phone.get('Name', '')
             if not name:
                 name = f"{phone.get('brand', '')} {phone.get('model', '')}".strip()
+            
+            # Получаем URL изображения
+            image_url = search_phone_image(name)
                 
             normalized.append({
                 '_id': str(phone['_id']),
                 'name': name or 'Unknown Phone',
-                'image_url': PLACEHOLDER
+                'image_url': image_url
             })
         
         return normalized
@@ -98,6 +102,9 @@ def get_phone_details(phone_id):
         if not name:
             name = f"{phone.get('brand', '')} {phone.get('model', '')}".strip()
         
+        # Получаем URL изображения
+        image_url = search_phone_image(name)
+        
         specs = {}
         for key, value in phone.items():
             if key not in ['_id', 'Name', 'brand', 'model']:
@@ -113,7 +120,7 @@ def get_phone_details(phone_id):
         return {
             '_id': str(phone['_id']),
             'name': name or 'Unknown Phone',
-            'image_url': PLACEHOLDER,
+            'image_url': image_url,
             'specs': specs
         }
     
