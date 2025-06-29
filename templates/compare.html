@@ -7,45 +7,18 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
-    <style>
-        /* Исправление для кнопок выбора телефонов */
-        .phone-selector {
-            cursor: pointer;
-            position: relative;
-        }
-        
-        .phone-selector-inner {
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-        }
-        
-        .phone-selector:hover .phone-selector-inner {
-            transform: rotateY(15deg);
-        }
-        
-        .phone-selector.selected .phone-selector-inner {
-            transform: rotateY(180deg);
-        }
-        
-        .phone-selector.selected:hover .phone-selector-inner {
-            transform: rotateY(165deg);
-        }
-        
-        /* Исправление z-index для модальных окон */
-        .phone-modal {
-            z-index: 10000 !important;
-        }
-        
-        /* Исправление для поля поиска */
-        .modal-search-input {
-            color: #333 !important;
-            background-color: rgba(255, 255, 255, 0.9) !important;
-        }
-    </style>
+    <link rel="stylesheet" href="static/mobilemenu.css">
 </head>
 <body>
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
+    
+    <!-- Bottom mobile menu button -->
+    <div class="mobile-menu-bottom" id="mobileMenuBottom">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
     
     <!-- Sidebar -->
     <div class="sidebar">
@@ -105,7 +78,7 @@
                 <p class="lead">შეადარეთ ნებისმიერი ორი მოწყობილობა და გაიგეთ რომელია თქვენთვის საუკეთესო</p>
             </div>
             
-            <!-- Phone Selection - New Design -->
+            <!-- Phone Selection -->
             <div class="phone-selector-container">
                 <div class="phone-selector" id="phone1Selector">
                     <div class="phone-selector-inner">
@@ -141,13 +114,13 @@
             </div>
             
             <!-- Compare Button -->
-            <div class="compare-button-container">
+            <div class="compare-button-container text-center">
                 <button id="compareButton" class="compare-btn" disabled>
                     <i class="fas fa-play"></i>შედარების დაწყება
                 </button>
             </div>
             
-            <!-- Comparison Grid - New Design -->
+            <!-- Comparison Grid -->
             <div class="specs-container" id="comparisonGrid" style="display: none;">
                 <div class="specs-header">
                     <div class="specs-phone">
@@ -225,7 +198,7 @@
                 </div>
             </div>
             
-            <!-- AI Analysis - New Design -->
+            <!-- AI Analysis -->
             <div class="ai-analysis-container" id="aiAnalysis" style="display: none;">
                 <div class="ai-background">
                     <i class="fas fa-robot"></i>
@@ -235,6 +208,12 @@
                     <h2 class="ai-title">Kodi.ge AI შედარება</h2>
                 </div>
                 <div class="ai-content" id="aiContent"></div>
+                
+                <!-- Price Comparison Section -->
+                <div class="price-comparison-section mt-4">
+                    <h3><i class="fas fa-shopping-cart me-2"></i>ფასების შედარება</h3>
+                    <div class="price-comparison-container" id="priceComparison"></div>
+                </div>
             </div>
             
             <!-- Footer -->
@@ -297,6 +276,12 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize mobile menu
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            if (mobileMenuBtn) {
+                mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+            }
+            
             // Initialize modal
             const modalElement = document.getElementById('phoneModal');
             if (modalElement) {
@@ -335,6 +320,13 @@
                 });
             });
         });
+        
+        // Toggle mobile menu
+        function toggleMobileMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.style.transform = sidebar.style.transform === 'translateX(-100%)' ? 
+                'translateX(0)' : 'translateX(-100%)';
+        }
         
         // Open phone selection modal
         function openPhoneModal(target) {
@@ -523,6 +515,9 @@
                 // Perform AI analysis
                 await performAiAnalysis(phone1Details, phone2Details);
                 
+                // Get price comparison
+                await getPriceComparison(phone1Details, phone2Details);
+                
             } catch (error) {
                 console.error('Error comparing phones:', error);
                 document.getElementById('aiContent').innerHTML = '<div class="alert alert-danger">დაფიქსირდა შეცდომა ტელეფონების შედარებისას: ' + error.message + '</div>';
@@ -605,41 +600,27 @@
                     const comparison = compareSpecValues(specKey, value1, value2);
                     
                     // Create spec items
-                    const specItem1 = createSpecItem(specKey, displayValue1, comparison.phone1);
-                    const specItem2 = createSpecItem(specKey, displayValue2, comparison.phone2);
+                    const specItem = document.createElement('div');
+                    specItem.className = 'spec-item';
+                    specItem.innerHTML = `
+                        <div class="spec-name">
+                            ${specKey.replace('_', ' ')}
+                        </div>
+                        <div class="spec-values-container">
+                            <div class="spec-phone-value ${comparison.phone1}">
+                                <div class="spec-phone-label">${phone1.name}</div>
+                                <div class="spec-phone-detail">${displayValue1}</div>
+                            </div>
+                            <div class="spec-phone-value ${comparison.phone2}">
+                                <div class="spec-phone-label">${phone2.name}</div>
+                                <div class="spec-phone-detail">${displayValue2}</div>
+                            </div>
+                        </div>
+                    `;
                     
-                    // Append to container
-                    container.appendChild(specItem1);
-                    container.appendChild(specItem2);
+                    container.appendChild(specItem);
                 });
             }
-        }
-        
-        // Create a spec item element
-        function createSpecItem(specName, value, comparison) {
-            const item = document.createElement('div');
-            item.className = 'spec-item';
-            
-            // Spec name
-            const nameElem = document.createElement('div');
-            nameElem.className = 'spec-name';
-            nameElem.textContent = specName;
-            item.appendChild(nameElem);
-            
-            // Spec value
-            const valueElem = document.createElement('div');
-            valueElem.className = 'spec-value';
-            valueElem.innerHTML = value;
-            
-            // Apply comparison styling
-            if (comparison === 'better') {
-                valueElem.classList.add('better');
-            } else if (comparison === 'worse') {
-                valueElem.classList.add('worse');
-            }
-            
-            item.appendChild(valueElem);
-            return item;
         }
         
         // Format specification value for display
@@ -649,11 +630,6 @@
             // Handle arrays
             if (Array.isArray(value)) {
                 return value.join(', ');
-            }
-            
-            // Handle objects
-            if (typeof value === 'object') {
-                return JSON.stringify(value);
             }
             
             // Handle numbers with units
@@ -669,19 +645,12 @@
                 return value;
             }
             
-            // Add units for string values
-            if (typeof value === 'string') {
-                if (specKey === 'Display_Resolution' && !value.includes('ppi')) {
-                    return value + ' ppi';
-                }
-            }
-            
             return value;
         }
         
         // Compare two spec values
         function compareSpecValues(specKey, value1, value2) {
-            const result = { phone1: 'equal', phone2: 'equal' };
+            const result = { phone1: '', phone2: '' };
             
             // Handle missing values
             if (value1 === 'N/A' || value2 === 'N/A' || 
@@ -698,11 +667,6 @@
                 'MainCamera_Cameraspecs': 'higher',
                 'SelfieCamera_Cameraspecs': 'higher',
                 'Body_Weight': 'lower'
-            };
-            
-            // Text comparison rules
-            const textComparisonRules = {
-                'Platform_OS': 'newer'
             };
             
             // Numeric comparison
@@ -733,25 +697,6 @@
                     }
                 }
             }
-            // Text comparison
-            else if (textComparisonRules[specKey]) {
-                if (textComparisonRules[specKey] === 'newer') {
-                    // Simple version comparison
-                    const v1 = parseFloat(value1);
-                    const v2 = parseFloat(value2);
-                    
-                    if (!isNaN(v1) && !isNaN(v2)) {
-                        if (v1 > v2) {
-                            result.phone1 = 'better';
-                            result.phone2 = 'worse';
-                        }
-                        else if (v2 > v1) {
-                            result.phone2 = 'better';
-                            result.phone1 = 'worse';
-                        }
-                    }
-                }
-            }
             
             return result;
         }
@@ -770,8 +715,8 @@
             const aiContent = document.getElementById('aiContent');
             
             aiContent.innerHTML = `
-                <div class="compare-ai-loader">
-                    <i class="fas fa-spinner fa-spin"></i>
+                <div class="compare-ai-loader text-center">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
                     <p>Kodi.ge AI ხდის დეტალურ შედარებას...</p>
                 </div>
             `;
@@ -803,6 +748,60 @@
             } catch (error) {
                 console.error('Error performing AI analysis:', error);
                 aiContent.innerHTML = '<div class="alert alert-danger">დაფიქსირდა შეცდომა AI ანალიზის დროს. გთხოვთ სცადოთ ხელახლა.</div>';
+            }
+        }
+        
+        // Get price comparison from popular stores
+        async function getPriceComparison(phone1, phone2) {
+            const priceContainer = document.getElementById('priceComparison');
+            priceContainer.innerHTML = `
+                <div class="text-center py-3">
+                    <i class="fas fa-spinner fa-spin"></i> მიმდინარეობს ფასების შემოწმება...
+                </div>
+            `;
+            
+            try {
+                // This would be replaced with actual API calls to store APIs
+                const stores = [
+                    { name: 'MyMarket.ge', url: 'https://mymarket.ge' },
+                    { name: 'Zoomer.ge', url: 'https://zoomer.ge' },
+                    { name: 'EE.ge', url: 'https://ee.ge' }
+                ];
+                
+                // Simulate fetching prices
+                setTimeout(() => {
+                    priceContainer.innerHTML = `
+                        <div class="price-table">
+                            <div class="price-row header">
+                                <div class="price-cell store">მაღაზია</div>
+                                <div class="price-cell">${phone1.name}</div>
+                                <div class="price-cell">${phone2.name}</div>
+                                <div class="price-cell best">საუკეთესო შეთავაზება</div>
+                            </div>
+                            ${stores.map(store => `
+                                <div class="price-row">
+                                    <div class="price-cell store">
+                                        <a href="${store.url}" target="_blank">${store.name}</a>
+                                    </div>
+                                    <div class="price-cell">${Math.floor(500 + Math.random() * 500)} ₾</div>
+                                    <div class="price-cell">${Math.floor(500 + Math.random() * 500)} ₾</div>
+                                    <div class="price-cell best">
+                                        ${store.name === 'Zoomer.ge' ? phone1.name : phone2.name}
+                                        <br><small>(${Math.floor(400 + Math.random() * 200)} ₾)</small>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error fetching prices:', error);
+                priceContainer.innerHTML = `
+                    <div class="alert alert-warning">
+                        ვერ მოხერხდა ფასების მოძიება. გთხოვთ სცადოთ ხელახლა.
+                    </div>
+                `;
             }
         }
     </script>
