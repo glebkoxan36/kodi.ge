@@ -19,6 +19,7 @@ from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from urllib.parse import quote_plus
+import google.generativeai as genai
 
 app = Flask(__name__)
 CORS(app)
@@ -63,113 +64,16 @@ stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 MONGODB_URI = os.getenv('MONGODB_URI')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 # Данные для PHP API
 API_URL = "https://api.ifreeicloud.co.uk"
 API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 PLACEHOLDER = '/static/placeholder.jpg'
 
-# ======================================
-# Stripe Payment Class Implementation
-# ======================================
-
-class StripePayment:
-    def __init__(self, stripe_api_key, webhook_secret, users_collection, payments_collection):
-        self.stripe_api_key = stripe_api_key
-        self.webhook_secret = webhook_secret
-        self.users_collection = users_collection
-        self.payments_collection = payments_collection
-        stripe.api_key = stripe_api_key
-
-    def create_checkout_session(self, imei, service_type, amount, success_url, cancel_url):
-        """Создает сессию оплаты в Stripe"""
-        try:
-            session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=[{
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {
-                            'name': f'IMEI Check: {service_type}',
-                            'description': f'IMEI: {imei}',
-                        },
-                        'unit_amount': amount,
-                    },
-                    'quantity': 1,
-                }],
-                mode='payment',
-                success_url=success_url,
-                cancel_url=cancel_url,
-            )
-            return session
-        except Exception as e:
-            app.logger.error(f"Error creating Stripe session: {str(e)}")
-            raise
-
-    def handle_webhook(self, payload, sig_header):
-        """Обрабатывает вебхуки от Stripe"""
-        try:
-            event = stripe.Webhook.construct_event(
-                payload, 
-                sig_header, 
-                self.webhook_secret
-            )
-        except ValueError as e:
-            raise ValueError("Invalid payload") from e
-        except stripe.error.SignatureVerificationError as e:
-            raise ValueError("Invalid signature") from e
-        
-        # Обработка события
-        if event['type'] == 'checkout.session.completed':
-            session = event['data']['object']
-            self.payments_collection.insert_one({
-                'stripe_session_id': session.id,
-                'amount_total': session.amount_total / 100,
-                'currency': session.currency,
-                'payment_status': session.payment_status,
-                'timestamp': datetime.utcnow(),
-                'data': session.to_dict()
-            })
-        
-        return jsonify({'status': 'success'})
-
-    def deduct_balance(self, user_id, amount):
-        """Списывает средства с баланса пользователя"""
-        try:
-            result = self.users_collection.update_one(
-                {'_id': ObjectId(user_id)},
-                {'$inc': {'balance': -amount}}
-            )
-            return result.modified_count == 1
-        except Exception as e:
-            app.logger.error(f"Balance deduction error: {str(e)}")
-            return False
-
-    def create_topup_session(self, user_id, amount, success_url, cancel_url):
-        """Создает сессию пополнения баланса"""
-        try:
-            session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=[{
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {
-                            'name': 'Balance Top-Up',
-                        },
-                        'unit_amount': int(amount * 100),
-                    },
-                    'quantity': 1,
-                }],
-                mode='payment',
-                success_url=success_url,
-                cancel_url=cancel_url,
-                metadata={'user_id': user_id}
-            )
-            return session
-        except Exception as e:
-            app.logger.error(f"Top-up session error: {str(e)}")
-            raise
+# Настройка Gemini
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 # MongoDB - безопасная инициализация
 def init_mongodb():
@@ -199,7 +103,21 @@ def init_mongodb():
 client = init_mongodb()
 if client is None:
     app.logger.critical("Fatal error: MongoDB connection failed")
-    # Можно добавить дополнительные действия, например, завершение приложения
+    # Fallback на in-memory данные
+    db = None
+    checks_collection = None
+    prices_collection = None
+    comparisons_collection = None
+    phones_collection = None
+    techspecs_collection = None
+    parser_logs_collection = None
+    admin_users_collection = None
+    regular_users_collection = None
+    audit_logs_collection = None
+    api_keys_collection = None
+    webhooks_collection = None
+    payments_collection = None
+    failed_logins_collection = None
 else:
     db = client['imei_checker']
     checks_collection = db['results']
@@ -216,10 +134,9 @@ else:
     payments_collection = db['payments']
     failed_logins_collection = db['failed_logins']
 
-    # Отложенная инициализация индексов и данных
+    # Создаем индексы для коллекции спецификаций
     try:
-        # Создаем индексы для коллекции спецификаций
-        techspecs_collection.create_index([("brand", 1)])
+        techspecs_collection.create_index([("type", 1)])
         techspecs_collection.create_index([("slug", 1)], unique=True)
         techspecs_collection.create_index([("last_updated", 1)])
         app.logger.info("Created indexes for techspecs collection")
@@ -232,29 +149,296 @@ else:
 
 def validate_imei(imei):
     """Проверяет валидность IMEI"""
-    if not imei:
+    if len(imei) != 15 or not imei.isdigit():
         return False
-    # Базовая проверка: только цифры, длина 15-16 символов
-    return imei.isdigit() and len(imei) in (15, 16)
+    
+    # Алгоритм Луна для проверки контрольной суммы
+    total = 0
+    for i, digit in enumerate(imei):
+        d = int(digit)
+        if i % 2 == 1:  # Четные позиции (считая с 1)
+            d *= 2
+            if d > 9:
+                d = d // 10 + d % 10
+        total += d
+    
+    return total % 10 == 0
 
 def perform_api_check(imei, service_type):
-    """Заглушка для выполнения проверки IMEI через API"""
-    # В реальном приложении здесь будет интеграция с внешним API
-    return {
-        "status": "success",
-        "service": service_type,
-        "imei": imei,
-        "result": {
-            "model": "iPhone 13 Pro Max",
-            "activation_status": "Activated",
-            "fmi_status": "Off",
-            "blacklist_status": "Clean"
+    """Выполняет проверку IMEI через внешний API"""
+    try:
+        # Для бесплатных проверок используем HTML API
+        if service_type == 'free':
+            response = requests.get(
+                f"{API_URL}/check.php",
+                params={"key": API_KEY, "imei": imei}
+            )
+            response.raise_for_status()
+            return {'html_content': response.text}
+        
+        # Для платных проверок используем JSON API
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {API_KEY}"
         }
-    }
+        payload = {
+            "imei": imei,
+            "service": service_type
+        }
+        
+        response = requests.post(
+            f"{API_URL}/v2/check",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+        response.raise_for_status()
+        
+        return response.json()
+    
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"API request failed: {str(e)}")
+        return {"error": "API service unavailable"}
+    except Exception as e:
+        app.logger.error(f"Unexpected error in API check: {str(e)}")
+        return {"error": "Internal server error"}
+
+def parse_free_html(html_content):
+    """Парсит HTML ответ для бесплатной проверки"""
+    try:
+        soup = BeautifulSoup(html_content, 'html.parser')
+        result = {}
+        
+        # Парсинг табличных данных
+        for table in soup.find_all('table'):
+            for row in table.find_all('tr'):
+                cols = row.find_all('td')
+                if len(cols) == 2:
+                    key = cols[0].get_text(strip=True).replace(':', '').replace(' ', '_').lower()
+                    value = cols[1].get_text(strip=True)
+                    result[key] = value
+
+        # Парсинг всех возможных пар ключ-значение
+        pattern = re.compile(
+            r'(Device|Model|Serial|IMEI|ICCID|FMI|Activation Status|'
+            r'Blacklist Status|Sim Lock|MDM Status|Google Account Status|'
+            r'Carrier|Purchase Date|Warranty Status|Activation Policy|'
+            r'Network Lock|Coverage|Find My iPhone|iCloud Status|'
+            r'Activation Lock|Last Restore|Factory Unlocked|Refurbished|'
+            r'Replaced|Loaner|AppleCare|Blocked Status|Restore Status|'
+            r'Activation Date|Purchase Country|Next Tether Policy|Sim Lock Policy)'
+            r'[\s:]*', 
+            re.IGNORECASE
+        )
+        
+        for element in soup.find_all(string=pattern):
+            match = pattern.search(element)
+            if match:
+                label = match.group(1).strip()
+                key = label.replace(' ', '_').lower()
+                value = ""
+                parent = element.parent
+                
+                if ':' in element:
+                    value = element.split(':', 1)[1].strip()
+                elif parent and parent.find_next_sibling():
+                    value = parent.find_next_sibling().get_text(strip=True)
+                elif element.next_sibling:
+                    value = element.next_sibling.strip()
+                
+                if value:
+                    result[key] = value
+
+        # Дополнительный сбор данных из заголовков и значений
+        for header in soup.find_all(['h3', 'h4', 'strong', 'b']):
+            text = header.get_text(strip=True)
+            if ':' in text:
+                key, value = text.split(':', 1)
+                key = key.strip().replace(' ', '_').lower()
+                result[key] = value.strip()
+            elif header.next_sibling:
+                key = text.replace(':', '').replace(' ', '_').lower()
+                result[key] = header.next_sibling.strip()
+
+        return result
+    
+    except Exception as e:
+        current_app.logger.error(f"Advanced HTML parsing error: {str(e)}")
+        return None
 
 def send_webhook_event(event_type, payload):
-    """Заглушка для отправки вебхуков"""
-    app.logger.info(f"Webhook event: {event_type} - {json.dumps(payload)}")
+    """Отправляет вебхук событие"""
+    if not client:
+        return
+        
+    try:
+        active_webhooks = webhooks_collection.find({
+            'active': True,
+            'events': event_type
+        })
+        
+        for webhook in active_webhooks:
+            headers = {'Content-Type': 'application/json'}
+            if webhook.get('secret'):
+                signature = hmac.new(
+                    webhook['secret'].encode(),
+                    json.dumps(payload).encode(),
+                    'sha256'
+                ).hexdigest()
+                headers['X-Webhook-Signature'] = signature
+            
+            response = requests.post(
+                webhook['url'],
+                json=payload,
+                headers=headers,
+                timeout=5
+            )
+            
+            webhooks_collection.update_one(
+                {'_id': webhook['_id']},
+                {'$set': {
+                    'last_delivery': datetime.utcnow(),
+                    'last_status': response.status_code
+                }}
+            )
+    except Exception as e:
+        app.logger.error(f"Webhook error: {str(e)}")
+
+class StripePayment:
+    """Класс для управления платежами через Stripe"""
+    def __init__(self, stripe_api_key, webhook_secret, users_collection, payments_collection):
+        self.stripe_api_key = stripe_api_key
+        self.webhook_secret = webhook_secret
+        self.users_collection = users_collection
+        self.payments_collection = payments_collection
+        stripe.api_key = stripe_api_key
+    
+    def create_checkout_session(self, imei, service_type, amount, success_url, cancel_url):
+        """Создает сессию оплаты Stripe"""
+        try:
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': f'IMEI Check - {service_type}',
+                        },
+                        'unit_amount': amount,
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                metadata={
+                    'imei': imei,
+                    'service_type': service_type
+                },
+                success_url=success_url,
+                cancel_url=cancel_url,
+            )
+            return session
+        except stripe.error.StripeError as e:
+            app.logger.error(f"Stripe error: {str(e)}")
+            raise
+    
+    def create_topup_session(self, user_id, amount, success_url, cancel_url):
+        """Создает сессию пополнения баланса"""
+        try:
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': 'Account Balance Top-Up',
+                        },
+                        'unit_amount': int(amount * 100),
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                metadata={
+                    'user_id': user_id,
+                    'type': 'balance_topup'
+                },
+                success_url=success_url,
+                cancel_url=cancel_url,
+            )
+            return session
+        except stripe.error.StripeError as e:
+            app.logger.error(f"Stripe topup error: {str(e)}")
+            raise
+    
+    def handle_webhook(self, payload, sig_header):
+        """Обрабатывает вебхук от Stripe"""
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, self.webhook_secret
+            )
+        except ValueError as e:
+            raise ValueError("Invalid payload")
+        except stripe.error.SignatureVerificationError as e:
+            raise ValueError("Invalid signature")
+        
+        # Обработка события
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            self.handle_payment_success(session)
+        
+        return True
+    
+    def handle_payment_success(self, session):
+        """Обрабатывает успешный платеж"""
+        metadata = session.get('metadata', {})
+        payment_type = metadata.get('type')
+        user_id = metadata.get('user_id')
+        amount = session.get('amount_total', 0) / 100
+        
+        if payment_type == 'balance_topup' and user_id:
+            # Пополнение баланса пользователя
+            result = self.users_collection.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$inc': {'balance': amount}}
+            )
+            if result.modified_count:
+                app.logger.info(f"Added ${amount} to user {user_id} balance")
+            else:
+                app.logger.error(f"Failed to update balance for user {user_id}")
+        
+        # Сохранение информации о платеже
+        payment_record = {
+            'stripe_session_id': session['id'],
+            'amount': amount,
+            'currency': session.get('currency', 'usd'),
+            'payment_status': session.get('payment_status'),
+            'metadata': metadata,
+            'timestamp': datetime.utcnow()
+        }
+        
+        if user_id:
+            payment_record['user_id'] = ObjectId(user_id)
+        
+        self.payments_collection.insert_one(payment_record)
+    
+    def deduct_balance(self, user_id, amount):
+        """Списывает средства с баланса пользователя"""
+        try:
+            result = self.users_collection.update_one(
+                {'_id': ObjectId(user_id), 'balance': {'$gte': amount}},
+                {'$inc': {'balance': -amount}}
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            app.logger.error(f"Balance deduction error: {str(e)}")
+            return False
+
+# Инициализация StripePayment
+stripe_payment = StripePayment(
+    stripe_api_key=stripe.api_key,
+    webhook_secret=STRIPE_WEBHOOK_SECRET,
+    users_collection=regular_users_collection,
+    payments_collection=payments_collection
+) if client else None
 
 # ======================================
 # Функции для работы с данными телефонов
@@ -263,6 +447,9 @@ def send_webhook_event(event_type, payload):
 def get_cached_brands():
     """Получает список брендов из кэша или API"""
     try:
+        if not client:
+            return []
+            
         # Проверяем наличие актуальных данных в кэше
         cache_entry = techspecs_collection.find_one({"type": "brands"})
         
@@ -299,6 +486,9 @@ def get_cached_phone_details(brand_slug, phone_slug):
     cache_key = f"{brand_slug}_{phone_slug}"
     
     try:
+        if not client:
+            return {}
+            
         # Проверяем кэш
         cache_entry = techspecs_collection.find_one({"type": "phone", "slug": cache_key})
         
@@ -335,16 +525,16 @@ def get_cached_phone_details(brand_slug, phone_slug):
 def search_phones(query):
     """Поиск телефонов по Name с использованием внешнего API и кэширования"""
     try:
-        if not query or not client:
+        if not query:
             return []
         
-        app.logger.info(f"Searching phones for: {query}")
-        
         # Сначала пробуем поискать в локальной базе
-        regex = re.compile(re.escape(query), re.IGNORECASE)
-        local_results = list(phones_collection.find({
-            'Name': regex
-        }).limit(5))
+        local_results = []
+        if client:
+            regex = re.compile(re.escape(query), re.IGNORECASE)
+            local_results = list(phones_collection.find({
+                'Name': regex
+            }).limit(5))
         
         # Если нашли достаточно результатов, возвращаем их
         if local_results and len(local_results) >= 3:
@@ -376,21 +566,22 @@ def search_phones(query):
             image_url = phone.get('thumbnail', PLACEHOLDER)
             
             # Сохраняем в локальную базу для будущих запросов
-            try:
-                phones_collection.update_one(
-                    {'external_id': phone_id},
-                    {'$set': {
-                        'Name': phone_name,
-                        'brand': phone.get('brand', ''),
-                        'model': phone.get('phone_name', ''),
-                        'image_url': image_url,
-                        'external_id': phone_id,
-                        'last_updated': datetime.utcnow()
-                    }},
-                    upsert=True
-                )
-            except Exception as e:
-                app.logger.error(f"Error saving phone to DB: {str(e)}")
+            if client:
+                try:
+                    phones_collection.update_one(
+                        {'external_id': phone_id},
+                        {'$set': {
+                            'Name': phone_name,
+                            'brand': phone.get('brand', ''),
+                            'model': phone.get('phone_name', ''),
+                            'image_url': image_url,
+                            'external_id': phone_id,
+                            'last_updated': datetime.utcnow()
+                        }},
+                        upsert=True
+                    )
+                except Exception as e:
+                    app.logger.error(f"Error saving phone to DB: {str(e)}")
             
             normalized.append({
                 '_id': phone_id,
@@ -408,19 +599,17 @@ def search_phones(query):
 def get_phone_details(phone_id):
     """Получение детальной информации о телефоне с кэшированием"""
     try:
-        if not client:
-            return None
-        
         # Сначала пробуем получить из локальной базы
-        if ObjectId.is_valid(phone_id):
-            phone = phones_collection.find_one({'_id': ObjectId(phone_id)})
+        if client:
+            if ObjectId.is_valid(phone_id):
+                phone = phones_collection.find_one({'_id': ObjectId(phone_id)})
+                if phone:
+                    return format_phone_details(phone)
+            
+            # Если не нашли по ObjectId, пробуем по external_id
+            phone = phones_collection.find_one({'external_id': phone_id})
             if phone:
                 return format_phone_details(phone)
-        
-        # Если не нашли по ObjectId, пробуем по external_id
-        phone = phones_collection.find_one({'external_id': phone_id})
-        if phone:
-            return format_phone_details(phone)
         
         # Если не нашли в локальной базе, используем внешний API
         if '_' in phone_id:
@@ -442,8 +631,9 @@ def get_phone_details(phone_id):
                     'last_updated': datetime.utcnow()
                 }
                 
-                result = phones_collection.insert_one(phone_doc)
-                phone_doc['_id'] = result.inserted_id
+                if client:
+                    result = phones_collection.insert_one(phone_doc)
+                    phone_doc['_id'] = result.inserted_id
                 
                 return format_phone_details(phone_doc)
         
@@ -509,84 +699,16 @@ def compare_phones(phone1_id, phone2_id):
             })
     
     # Сохраняем сравнение в базу
-    if client:
+    if client and comparisons_collection:
         comparisons_collection.insert_one(comparison)
     
     return comparison
 
-# ======================================
-# Остальной код приложения (роуты, логика)
-# ======================================
-
-# Инициализация StripePayment
-stripe_payment = StripePayment(
-    stripe_api_key=stripe.api_key,
-    webhook_secret=STRIPE_WEBHOOK_SECRET,
-    users_collection=regular_users_collection,
-    payments_collection=payments_collection
-)
-
-# Создаем администратора по умолчанию
-def init_admin_user():
-    try:
-        if client and not admin_users_collection.find_one({'username': 'admin'}):
-            admin_password = os.getenv('ADMIN_PASSWORD', 'securepassword')
-            admin_users_collection.insert_one({
-                'username': 'admin',
-                'password': generate_password_hash(admin_password),
-                'role': 'superadmin',
-                'created_at': datetime.utcnow()
-            })
-            app.logger.info("Default admin user created")
-    except Exception as e:
-        app.logger.error(f"Error creating admin user: {str(e)}")
-
-# Инициализация цен
-DEFAULT_PRICES = {
-    'paid': 499,
-    'premium': 999
-}
-
-def init_prices():
-    try:
-        if client and prices_collection.count_documents({'type': 'current'}) == 0:
-            prices_collection.insert_one({
-                'type': 'current',
-                'prices': DEFAULT_PRICES,
-                'created_at': datetime.utcnow(),
-                'updated_at': datetime.utcnow()
-            })
-            app.logger.info("Default prices initialized")
-    except Exception as e:
-        app.logger.error(f"Error initializing prices: {str(e)}")
-
-# Вызов функций инициализации
-if client:
-    init_admin_user()
-    init_prices()
-
-def get_current_prices():
-    if not client:
-        return DEFAULT_PRICES
-        
-    try:
-        price_doc = prices_collection.find_one({'type': 'current'})
-        if price_doc:
-            return price_doc['prices']
-        return DEFAULT_PRICES
-    except Exception as e:
-        app.logger.error(f"Error getting prices: {str(e)}")
-        return DEFAULT_PRICES
-
-# ======================================
-# Оптимизированные функции поиска телефонов
-# ======================================
-
 def perform_ai_comparison(phone1, phone2):
     """Выполнение AI-сравнения двух телефонов с использованием Google Gemini"""
     try:
-        import google.generativeai as genai
-        genai.configure(api_key=GEMINI_API_KEY)
+        if not GEMINI_API_KEY:
+            return "AI service unavailable"
         
         # Инициализация модели Gemini
         model = genai.GenerativeModel('gemini-1.5-flash')
@@ -621,7 +743,7 @@ def perform_ai_comparison(phone1, phone2):
         content = response.text
         
         # Сохраняем результат сравнения
-        if client and comparisons_collection is not None:
+        if client and comparisons_collection:
             try:
                 comparisons_collection.insert_one({
                     'phone1': phone1_name,
@@ -639,26 +761,59 @@ def perform_ai_comparison(phone1, phone2):
         return "AI service unavailable"
 
 # ======================================
-# Аудит и логирование
+# Инициализация данных
 # ======================================
 
-def log_audit_event(action, details, user_id=None, username=None):
-    """Логирование действий администратора"""
-    if not client:
-        return
-        
-    event = {
-        'action': action,
-        'details': details,
-        'user_id': user_id,
-        'username': username,
-        'timestamp': datetime.utcnow(),
-        'ip_address': request.remote_addr
-    }
+def init_admin_user():
     try:
-        audit_logs_collection.insert_one(event)
+        if client and admin_users_collection and not admin_users_collection.find_one({'username': 'admin'}):
+            admin_password = os.getenv('ADMIN_PASSWORD', 'securepassword')
+            admin_users_collection.insert_one({
+                'username': 'admin',
+                'password': generate_password_hash(admin_password),
+                'role': 'superadmin',
+                'created_at': datetime.utcnow()
+            })
+            app.logger.info("Default admin user created")
     except Exception as e:
-        app.logger.error(f"Audit log error: {str(e)}")
+        app.logger.error(f"Error creating admin user: {str(e)}")
+
+# Инициализация цен
+DEFAULT_PRICES = {
+    'paid': 499,
+    'premium': 999
+}
+
+def init_prices():
+    try:
+        if client and prices_collection and prices_collection.count_documents({'type': 'current'}) == 0:
+            prices_collection.insert_one({
+                'type': 'current',
+                'prices': DEFAULT_PRICES,
+                'created_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow()
+            })
+            app.logger.info("Default prices initialized")
+    except Exception as e:
+        app.logger.error(f"Error initializing prices: {str(e)}")
+
+# Вызов функций инициализации
+if client:
+    init_admin_user()
+    init_prices()
+
+def get_current_prices():
+    if not client or not prices_collection:
+        return DEFAULT_PRICES
+        
+    try:
+        price_doc = prices_collection.find_one({'type': 'current'})
+        if price_doc:
+            return price_doc['prices']
+        return DEFAULT_PRICES
+    except Exception as e:
+        app.logger.error(f"Error getting prices: {str(e)}")
+        return DEFAULT_PRICES
 
 # ======================================
 # Декораторы
@@ -681,7 +836,7 @@ def login_required(f):
     return decorated
 
 # ======================================
-# Основные маршруты приложения
+# Основные роуты приложения
 # ======================================
 
 @app.route('/')
@@ -691,7 +846,7 @@ def index():
     
     if 'user_id' in session:
         user_id = session['user_id']
-        if client:
+        if client and regular_users_collection:
             user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
             if user:
                 avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
@@ -708,14 +863,13 @@ def index():
                          premium_price=prices['premium'] / 100,
                          user=user_data)
 
-# Новые маршруты для страниц контактов и базы знаний
 @app.route('/contacts')
 def contacts_page():
     """Страница контактов"""
     user_data = None
     if 'user_id' in session:
         user_id = session['user_id']
-        if client:
+        if client and regular_users_collection:
             user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
             if user:
                 avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
@@ -734,7 +888,7 @@ def knowledge_base():
     user_data = None
     if 'user_id' in session:
         user_id = session['user_id']
-        if client:
+        if client and regular_users_collection:
             user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
             if user:
                 avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
@@ -746,10 +900,6 @@ def knowledge_base():
                 }
     
     return render_template('knowledge-base.html', user=user_data)
-
-# ======================================
-# Роут для страницы проверки Apple IMEI
-# ======================================
 
 @app.route('/applecheck')
 def apple_check():
@@ -776,7 +926,7 @@ def apple_check():
     user_data = None
     if 'user_id' in session:
         user_id = session['user_id']
-        if client:
+        if client and regular_users_collection:
             user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
             if user:
                 avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
@@ -847,10 +997,6 @@ def apple_check():
         stripe_public_key=STRIPE_PUBLIC_KEY,
         user=user_data
     )
-
-# ======================================
-# Роут для страницы проверки Android IMEI
-# ======================================
 
 @app.route('/androidcheck')
 def android_check():
@@ -944,7 +1090,7 @@ def android_check():
     user_data = None
     if 'user_id' in session:
         user_id = session['user_id']
-        if client:
+        if client and regular_users_collection:
             user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
             if user:
                 avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
@@ -962,6 +1108,10 @@ def android_check():
         stripe_public_key=STRIPE_PUBLIC_KEY,
         user=user_data
     )
+
+# ======================================
+# Роуты для работы с платежами и проверками
+# ======================================
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
@@ -1010,7 +1160,7 @@ def create_checkout_session():
         if use_balance and 'user_id' in session:
             user_id = session['user_id']
             # Проверяем достаточно ли средств
-            if client:
+            if client and regular_users_collection and stripe_payment:
                 user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
                 amount_usd = amount / 100  # Конвертация в доллары
                 
@@ -1031,7 +1181,7 @@ def create_checkout_session():
                             'timestamp': datetime.utcnow(),
                             'user_id': ObjectId(user_id)
                         }
-                        if client:
+                        if client and checks_collection:
                             checks_collection.insert_one(record)
                         
                         return jsonify({
@@ -1045,7 +1195,7 @@ def create_checkout_session():
                     use_balance = False
         
         # Если не используем баланс (неавторизован или недостаточно средств)
-        if not use_balance:
+        if not use_balance and stripe_payment:
             # Используем StripePayment для создания сессии
             success_url = url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}&imei=' + imei + '&service_type=' + service_type
             cancel_url = url_for('android_check', _external=True) + f'?type={service_type}'
@@ -1059,6 +1209,8 @@ def create_checkout_session():
             )
             
             return jsonify({'id': stripe_session.id, 'payment_method': 'stripe'})
+        
+        return jsonify({'error': 'Payment service unavailable'}), 500
     
     except Exception as e:
         app.logger.error(f"Error creating checkout session: {str(e)}")
@@ -1083,7 +1235,7 @@ def perform_balance_check():
             return jsonify({'error': error_msg}), 400
         
         # Обновляем запись в базе
-        if client:
+        if client and checks_collection:
             checks_collection.update_one(
                 {'session_id': session_id},
                 {'$set': {'result': result}}
@@ -1135,7 +1287,7 @@ def payment_success():
         }
         if 'user_id' in session:
             record['user_id'] = ObjectId(session['user_id'])
-        if client:
+        if client and checks_collection:
             checks_collection.insert_one(record)
         
         # Перенаправляем на страницу сервиса с параметрами для отображения результата
@@ -1151,7 +1303,7 @@ def get_check_result():
     if not session_id:
         return jsonify({'error': 'სესიის ID არის მითითებული'}), 400
     
-    if not client:
+    if not client or not checks_collection:
         return jsonify({'error': 'Database unavailable'}), 500
     
     # Ищем как по session_id (баланс), так и по stripe_session_id (Stripe)
@@ -1166,77 +1318,8 @@ def get_check_result():
     
     return jsonify({
         'imei': record['imei'],
-        'result': record['result']
+        'result': record.get('result', {})
     })
-
-def parse_free_html(html_content):
-    try:
-        soup = BeautifulSoup(html_content, 'html.parser')
-        result = {}
-        
-        # 1. Парсинг табличных данных
-        for table in soup.find_all('table'):
-            for row in table.find_all('tr'):
-                cols = row.find_all('td')
-                if len(cols) == 2:
-                    key = cols[0].get_text(strip=True).replace(':', '').replace(' ', '_').lower()
-                    value = cols[1].get_text(strip=True)
-                    result[key] = value
-
-        # 2. Парсинг всех возможных пар ключ-значение
-        pattern = re.compile(
-            r'(Device|Model|Serial|IMEI|ICCID|FMI|Activation Status|'
-            r'Blacklist Status|Sim Lock|MDM Status|Google Account Status|'
-            r'Carrier|Purchase Date|Warranty Status|Activation Policy|'
-            r'Network Lock|Coverage|Find My iPhone|iCloud Status|'
-            r'Activation Lock|Last Restore|Factory Unlocked|Refurbished|'
-            r'Replaced|Loaner|AppleCare|Blocked Status|Restore Status|'
-            r'Activation Date|Purchase Country|Next Tether Policy|Sim Lock Policy)'
-            r'[\s:]*', 
-            re.IGNORECASE
-        )
-        
-        for element in soup.find_all(string=pattern):
-            match = pattern.search(element)
-            if match:
-                label = match.group(1).strip()
-                key = label.replace(' ', '_').lower()
-                
-                # Поиск значения в структуре документа
-                value = ""
-                parent = element.parent
-                
-                # Случай 1: Значение в том же элементе после двоеточия
-                if ':' in element:
-                    value = element.split(':', 1)[1].strip()
-                
-                # Случай 2: Значение в соседнем элементе
-                elif parent and parent.find_next_sibling():
-                    value = parent.find_next_sibling().get_text(strip=True)
-                
-                # Случай 3: Значение в следующем текстовом узле
-                elif element.next_sibling:
-                    value = element.next_sibling.strip()
-                
-                if value:
-                    result[key] = value
-
-        # 3. Дополнительный сбор данных из заголовков и значений
-        for header in soup.find_all(['h3', 'h4', 'strong', 'b']):
-            text = header.get_text(strip=True)
-            if ':' in text:
-                key, value = text.split(':', 1)
-                key = key.strip().replace(' ', '_').lower()
-                result[key] = value.strip()
-            elif header.next_sibling:
-                key = text.replace(':', '').replace(' ', '_').lower()
-                result[key] = header.next_sibling.strip()
-
-        return result
-    
-    except Exception as e:
-        current_app.logger.error(f"Advanced HTML parsing error: {str(e)}")
-        return None
 
 @app.route('/perform_check', methods=['POST'])
 def perform_check():
@@ -1272,7 +1355,7 @@ def perform_check():
                 soup = BeautifulSoup(result['html_content'], 'html.parser')
                 result = {'server_response': soup.get_text(separator='\n', strip=True)}
         
-        if service_type == 'free' and client:
+        if service_type == 'free' and client and checks_collection:
             record = {
                 'imei': imei,
                 'service_type': service_type,
@@ -1301,7 +1384,7 @@ def perform_check():
 @app.route('/reparse_imei')
 def reparse_imei():
     imei = request.args.get('imei')
-    if not client:
+    if not client or not checks_collection:
         return jsonify({'error': 'Database unavailable'}), 500
         
     record = checks_collection.find_one({'imei': imei, 'service_type': 'free'})
@@ -1328,8 +1411,10 @@ def stripe_webhook():
 
     try:
         # Обработка вебхука через StripePayment
-        stripe_payment.handle_webhook(payload, sig_header)
-        return jsonify({'status': 'success'})
+        if stripe_payment:
+            stripe_payment.handle_webhook(payload, sig_header)
+            return jsonify({'status': 'success'})
+        return jsonify({'error': 'Payment service not initialized'}), 500
     
     except ValueError as e:
         return jsonify({'error': 'არასწორი მონაცემები'}), 400
@@ -1338,6 +1423,61 @@ def stripe_webhook():
     except Exception as e:
         app.logger.error(f"Webhook processing error: {str(e)}")
         return jsonify({'error': 'სერვერული შეცდომა'}), 500
+
+# ======================================
+# Роуты для сравнения телефонов
+# ======================================
+
+@app.route('/api/search', methods=['GET'])
+def api_search():
+    query = request.args.get('query', '').strip()
+    if not query:
+        return jsonify({'error': 'საძიებო მოთხოვნა აუცილებელია'}), 400
+    
+    results = search_phones(query)
+    return jsonify(results)
+
+@app.route('/api/phone_details/<phone_id>', methods=['GET'])
+def api_phone_details(phone_id):
+    phone = get_phone_details(phone_id)
+    if not phone:
+        return jsonify({'error': 'ტელეფონი ვერ მოიძებნა'}), 404
+    return jsonify(phone)
+
+@app.route('/api/compare', methods=['POST'])
+def api_compare_phones():
+    data = request.json
+    phone1_id = data.get('phone1_id')
+    phone2_id = data.get('phone2_id')
+    
+    if not phone1_id or not phone2_id:
+        return jsonify({'error': 'ორივე ტელეფონი აუცილებელია'}), 400
+    
+    comparison = compare_phones(phone1_id, phone2_id)
+    if not comparison:
+        return jsonify({'error': 'შედარება ვერ მოხერხდა'}), 500
+    
+    return jsonify(comparison)
+
+@app.route('/api/ai-analysis', methods=['POST'])
+def api_ai_analysis():
+    data = request.json
+    phone1 = data.get('phone1')
+    phone2 = data.get('phone2')
+    
+    if not phone1 or not phone2:
+        return jsonify({'error': 'ორივე ტელეფონი აუცილებელია'}), 400
+    
+    analysis = perform_ai_comparison(phone1, phone2)
+    return jsonify({'analysis': analysis})
+
+@app.route('/compare')
+def compare_phones_page():
+    return render_template('compare.html')
+
+# ======================================
+# Обработчики ошибок
+# ======================================
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -1370,7 +1510,7 @@ def health_check():
     # Проверка MongoDB
     if client:
         try:
-            db.command('ping')
+            client.admin.command('ismaster')
             status['services']['mongodb'] = 'OK'
         except Exception as e:
             status['services']['mongodb'] = f'ERROR: {str(e)}'
@@ -1396,158 +1536,20 @@ def health_check():
         status['status'] = 'ERROR'
     
     # Проверка Gemini API
-    try:
-        import google.generativeai as genai
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content("Ping", generation_config=genai.types.GenerationConfig(max_output_tokens=1))
-        status['services']['gemini_api'] = 'OK'
-    except Exception as e:
-        status['services']['gemini_api'] = f'ERROR: {str(e)}'
-        status['status'] = 'ERROR'
+    if GEMINI_API_KEY:
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=GEMINI_API_KEY)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            response = model.generate_content("Ping", generation_config=genai.types.GenerationConfig(max_output_tokens=1))
+            status['services']['gemini_api'] = 'OK'
+        except Exception as e:
+            status['services']['gemini_api'] = f'ERROR: {str(e)}'
+            status['status'] = 'ERROR'
+    else:
+        status['services']['gemini_api'] = 'DISABLED'
     
     return jsonify(status), 200 if status['status'] == 'OK' else 500
-
-# ======================================
-# Webhook Manager
-# ======================================
-
-def send_webhook_event(event_type, payload):
-    if not client:
-        return
-        
-    active_webhooks = webhooks_collection.find({
-        'active': True,
-        'events': event_type
-    })
-    
-    for webhook in active_webhooks:
-        try:
-            headers = {'Content-Type': 'application/json'}
-            if webhook.get('secret'):
-                signature = hmac.new(
-                    webhook['secret'].encode(),
-                    json.dumps(payload).encode(),
-                    'sha256'
-                ).hexdigest()
-                headers['X-Webhook-Signature'] = signature
-            
-            response = requests.post(
-                webhook['url'],
-                json=payload,
-                headers=headers,
-                timeout=5
-            )
-            
-            webhooks_collection.update_one(
-                {'_id': webhook['_id']},
-                {'$set': {
-                    'last_delivery': datetime.utcnow(),
-                    'last_status': response.status_code
-                }}
-            )
-        except Exception as e:
-            app.logger.error(f"Webhook error for {webhook['url']}: {str(e)}")
-            webhooks_collection.update_one(
-                {'_id': webhook['_id']},
-                {'$set': {
-                    'last_delivery': datetime.utcnow(),
-                    'last_status': 'Error'
-                }}
-            )
-
-# ======================================
-# Carousel Image Upload Endpoints
-# ======================================
-
-@app.route('/create-carousel-folder', methods=['POST'])
-def create_carousel_folder():
-    """Создает папку для изображений карусели"""
-    data = request.json
-    path = data.get('path', 'static/img/carousel')
-    
-    try:
-        os.makedirs(path, exist_ok=True)
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/upload-carousel-image', methods=['POST'])
-def upload_carousel_image():
-    """Загружает изображение для карусели"""
-    if 'carouselImage' not in request.files:
-        return jsonify({'success': False, 'error': 'ფაილი არ არის ატვირთული'}), 400
-    
-    file = request.files['carouselImage']
-    if file.filename == '':
-        return jsonify({'success': False, 'error': 'ფაილი არ არის არჩეული'}), 400
-    
-    try:
-        # Сохраняем в папку carousel
-        upload_folder = 'static/img/carousel'
-        os.makedirs(upload_folder, exist_ok=True)
-        
-        filename = f"carousel_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
-        file_path = os.path.join(upload_folder, filename)
-        file.save(file_path)
-        
-        return jsonify({
-            'success': True, 
-            'filePath': f'/{file_path}'
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# ======================================
-# Сравнение телефонов (маршруты)
-# ======================================
-
-@app.route('/api/search', methods=['GET'])
-def api_search():
-    query = request.args.get('query', '').strip()
-    if not query:
-        return jsonify({'error': 'საძიებო მოთხოვნა აუცილებელია'}), 400
-    
-    results = search_phones(query)
-    return jsonify(results)
-
-@app.route('/api/phone_details/<phone_id>', methods=['GET'])
-def api_phone_details(phone_id):
-    phone = get_phone_details(phone_id)
-    if not phone:
-        return jsonify({'error': 'ტელეფონი ვერ მოიძებნა'}), 404
-    return jsonify(phone)
-
-@app.route('/api/ai-analysis', methods=['POST'])
-def api_ai_analysis():
-    data = request.json
-    phone1 = data.get('phone1')
-    phone2 = data.get('phone2')
-    
-    if not phone1 or not phone2:
-        return jsonify({'error': 'ორივე ტელეფონი აუცილებელია'}), 400
-    
-    analysis = perform_ai_comparison(phone1, phone2)
-    return jsonify({'analysis': analysis})
-
-@app.route('/api/compare', methods=['POST'])
-def api_compare_phones():
-    data = request.json
-    phone1_id = data.get('phone1_id')
-    phone2_id = data.get('phone2_id')
-    
-    if not phone1_id or not phone2_id:
-        return jsonify({'error': 'ორივე ტელეფონი აუცილებელია'}), 400
-    
-    comparison = compare_phones(phone1_id, phone2_id)
-    if not comparison:
-        return jsonify({'error': 'შედარება ვერ მოხერხდა'}), 500
-    
-    return jsonify(comparison)
-
-@app.route('/compare')
-def compare_phones_page():
-    return render_template('compare.html')
 
 # ======================================
 # User Blueprint (Личный кабинет пользователя)
@@ -1560,7 +1562,7 @@ user_bp = Blueprint('user', __name__, url_prefix='/user')
 def dashboard():
     """Личный кабинет пользователя"""
     user_id = session['user_id']
-    if not client:
+    if not client or not regular_users_collection:
         flash('Database unavailable', 'danger')
         return redirect(url_for('auth.login'))
     
@@ -1574,17 +1576,23 @@ def dashboard():
     balance = user.get('balance', 0)
     
     # Последние 5 проверок
-    checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
+    checks = []
+    if checks_collection:
+        checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
     # Последние 5 сравнений
-    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
+    comparisons = []
+    if comparisons_collection:
+        comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
     # Последние 5 платежей
-    payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
+    payments = []
+    if payments_collection:
+        payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
     # Общее количество операций
-    total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
-    total_comparisons = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
+    total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)}) if checks_collection else 0
+    total_comparisons = comparisons_collection.count_documents({'user_id': ObjectId(user_id)}) if comparisons_collection else 0
     
     return render_template(
         'user/dashboard.html',
@@ -1613,13 +1621,16 @@ def topup_balance():
             success_url = url_for('user.topup_success', _external=True)
             cancel_url = url_for('user.topup_balance', _external=True)
             
-            stripe_session = stripe_payment.create_topup_session(
-                user_id=str(session['user_id']),
-                amount=amount,
-                success_url=success_url,
-                cancel_url=cancel_url
-            )
-            return redirect(stripe_session.url)
+            if stripe_payment:
+                stripe_session = stripe_payment.create_topup_session(
+                    user_id=str(session['user_id']),
+                    amount=amount,
+                    success_url=success_url,
+                    cancel_url=cancel_url
+                )
+                return redirect(stripe_session.url)
+            else:
+                flash('Payment service unavailable', 'danger')
         except Exception as e:
             flash(f'გადახდის სესიის შექმნის შეცდომა: {str(e)}', 'danger')
             return redirect(url_for('user.topup_balance'))
@@ -1644,7 +1655,7 @@ def payment_methods():
 def history_checks():
     """История проверок IMEI"""
     user_id = session['user_id']
-    if not client:
+    if not client or not regular_users_collection or not checks_collection:
         flash('Database unavailable', 'danger')
         return redirect(url_for('auth.login'))
     
@@ -1684,7 +1695,7 @@ def history_checks():
 def history_comparisons():
     """История сравнений телефонов"""
     user_id = session['user_id']
-    if not client:
+    if not client or not regular_users_collection or not comparisons_collection:
         flash('Database unavailable', 'danger')
         return redirect(url_for('auth.login'))
     
@@ -1775,7 +1786,7 @@ def register():
     if password != confirm_password:
         errors.append("პაროლები არ ემთხვევა")
     
-    if client and regular_users_collection.find_one({'$or': [{'username': username}, {'email': email}, {'phone': phone}]}):
+    if client and regular_users_collection and regular_users_collection.find_one({'$or': [{'username': username}, {'email': email}, {'phone': phone}]}):
         errors.append("მომხმარებელი ასეთი მონაცემებით უკვე არსებობს")
     
     if errors:
@@ -1797,7 +1808,7 @@ def register():
         'last_failed_attempt': None
     }
     
-    if not client:
+    if not client or not regular_users_collection:
         return jsonify({"success": False, "errors": ["Database unavailable"]}), 500
     
     result = regular_users_collection.insert_one(user_data)
@@ -1821,7 +1832,7 @@ def login():
     app.logger.info(f"Login attempt for: {identifier}")
     
     ip_address = request.remote_addr
-    if client:
+    if client and failed_logins_collection:
         failed_login = failed_logins_collection.find_one({'ip': ip_address})
     else:
         failed_login = None
@@ -1839,37 +1850,42 @@ def login():
     identifier_lower = identifier.lower()
     if client:
         if '@' in identifier_lower:
-            user = regular_users_collection.find_one({'email': identifier_lower})
-        elif identifier.startswith('+995'):
-            user = regular_users_collection.find_one({'phone': identifier})
-        elif identifier.isdigit() and len(identifier) == 9:
-            user = regular_users_collection.find_one({'phone': f"+995{identifier}"})
-        else:
-            user = regular_users_collection.find_one({'username': identifier})
-        
-        if not user:
-            if '@' in identifier_lower:
+            if regular_users_collection:
+                user = regular_users_collection.find_one({'email': identifier_lower})
+            if not user and admin_users_collection:
                 user = admin_users_collection.find_one({'email': identifier_lower})
-            elif identifier.startswith('+995'):
+                is_admin = True
+        elif identifier.startswith('+995'):
+            if regular_users_collection:
+                user = regular_users_collection.find_one({'phone': identifier})
+            if not user and admin_users_collection:
                 user = admin_users_collection.find_one({'phone': identifier})
-            elif identifier.isdigit() and len(identifier) == 9:
-                user = admin_users_collection.find_one({'phone': f"+995{identifier}"})
-            else:
+                is_admin = True
+        elif identifier.isdigit() and len(identifier) == 9:
+            phone = f"+995{identifier}"
+            if regular_users_collection:
+                user = regular_users_collection.find_one({'phone': phone})
+            if not user and admin_users_collection:
+                user = admin_users_collection.find_one({'phone': phone})
+                is_admin = True
+        else:
+            if regular_users_collection:
+                user = regular_users_collection.find_one({'username': identifier})
+            if not user and admin_users_collection:
                 user = admin_users_collection.find_one({'username': identifier})
-            is_admin = True if user else False
-    else:
-        return jsonify({"success": False, "error": "Database unavailable"}), 500
-
+                is_admin = True
+    
     if user and check_password_hash(user['password'], password):
-        if client and failed_login:
+        if client and failed_logins_collection:
             failed_logins_collection.delete_one({'ip': ip_address})
         
         if client:
             collection = admin_users_collection if is_admin else regular_users_collection
-            collection.update_one(
-                {'_id': user['_id']},
-                {'$set': {'last_login': datetime.utcnow()}}
-            )
+            if collection:
+                collection.update_one(
+                    {'_id': user['_id']},
+                    {'$set': {'last_login': datetime.utcnow()}}
+                )
         
         session['user_id'] = str(user['_id'])
         session['username'] = user['username']
@@ -1889,7 +1905,7 @@ def login():
         }), 200
     
     attempts = 1
-    if client:
+    if client and failed_logins_collection:
         if failed_login:
             attempts = failed_login['attempts'] + 1
             update_data = {
@@ -1910,7 +1926,7 @@ def login():
     
     if attempts >= 5:
         blocked_until = datetime.utcnow() + timedelta(minutes=10)
-        if client:
+        if client and failed_logins_collection:
             failed_logins_collection.update_one(
                 {'ip': ip_address},
                 {'$set': {'blocked_until': blocked_until}}
@@ -1934,10 +1950,13 @@ def logout():
 # Регистрация блюпринтов
 # ======================================
 
-# Закомментировано из-за отсутствия модуля admin_routes
-# from admin_routes import admin_bp
+# Импорт админ-панели из отдельного модуля
+try:
+    from admin_routes import admin_bp
+    app.register_blueprint(admin_bp)
+except ImportError:
+    app.logger.warning("Admin routes module not found")
 
-# app.register_blueprint(admin_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(auth_bp)
 
