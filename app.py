@@ -6,6 +6,7 @@ import hmac
 import secrets
 import hashlib
 import requests
+import time
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, Blueprint
@@ -16,6 +17,7 @@ from functools import wraps
 from bs4 import BeautifulSoup
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
+from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 # Импорт функций из модуля API
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
@@ -69,21 +71,58 @@ API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 PLACEHOLDER = '/static/placeholder.jpg'
 
-# MongoDB
-client = MongoClient(MONGODB_URI)
-db = client['imei_checker']
-checks_collection = db['results']
-prices_collection = db['prices']
-comparisons_collection = db['comparisons']
-phones_collection = db['phones']
-parser_logs_collection = db['parser_logs']
-admin_users_collection = db['admin_users']
-regular_users_collection = db['users']
-audit_logs_collection = db['audit_logs']
-api_keys_collection = db['api_keys']
-webhooks_collection = db['webhooks']
-payments_collection = db['payments']
-failed_logins_collection = db['failed_logins']
+# MongoDB - безопасная инициализация
+def init_mongodb():
+    max_retries = 5
+    retry_delay = 3  # seconds
+    
+    for attempt in range(max_retries):
+        try:
+            client = MongoClient(
+                MONGODB_URI, 
+                serverSelectionTimeoutMS=5000,
+                connectTimeoutMS=10000,
+                socketTimeoutMS=15000
+            )
+            # Проверка подключения
+            client.admin.command('ismaster')
+            app.logger.info("Successfully connected to MongoDB")
+            return client
+        except (ConnectionFailure, ServerSelectionTimeoutError) as e:
+            app.logger.warning(f"MongoDB connection attempt {attempt+1}/{max_retries} failed: {str(e)}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+    
+    app.logger.error("Could not connect to MongoDB after multiple attempts")
+    return None
+
+client = init_mongodb()
+if client is None:
+    app.logger.critical("Fatal error: MongoDB connection failed")
+    # Можно добавить дополнительные действия, например, завершение приложения
+else:
+    db = client['imei_checker']
+    checks_collection = db['results']
+    prices_collection = db['prices']
+    comparisons_collection = db['comparisons']
+    phones_collection = db['phones']
+    parser_logs_collection = db['parser_logs']
+    admin_users_collection = db['admin_users']
+    regular_users_collection = db['users']
+    audit_logs_collection = db['audit_logs']
+    api_keys_collection = db['api_keys']
+    webhooks_collection = db['webhooks']
+    payments_collection = db['payments']
+    failed_logins_collection = db['failed_logins']
+
+    # Отложенная инициализация индексов и данных
+    try:
+        # Создаем индекс для поля Name
+        if 'name_index' not in phones_collection.index_information():
+            phones_collection.create_index('Name', name='name_index')
+            app.logger.info("Created index on Name field")
+    except Exception as e:
+        app.logger.error(f"Error creating index: {str(e)}")
 
 # Инициализация StripePayment
 stripe_payment = StripePayment(
@@ -93,39 +132,57 @@ stripe_payment = StripePayment(
     payments_collection=payments_collection
 )
 
-# Создаем индекс для поля Name
-if 'name_index' not in phones_collection.index_information():
-    phones_collection.create_index('Name', name='name_index')
-    app.logger.info("Created index on Name field")
-
 # Создаем администратора по умолчанию
-if not admin_users_collection.find_one({'username': 'admin'}):
-    admin_password = os.getenv('ADMIN_PASSWORD', 'securepassword')
-    admin_users_collection.insert_one({
-        'username': 'admin',
-        'password': generate_password_hash(admin_password),
-        'role': 'superadmin',
-        'created_at': datetime.utcnow()
-    })
+def init_admin_user():
+    try:
+        if client and not admin_users_collection.find_one({'username': 'admin'}):
+            admin_password = os.getenv('ADMIN_PASSWORD', 'securepassword')
+            admin_users_collection.insert_one({
+                'username': 'admin',
+                'password': generate_password_hash(admin_password),
+                'role': 'superadmin',
+                'created_at': datetime.utcnow()
+            })
+            app.logger.info("Default admin user created")
+    except Exception as e:
+        app.logger.error(f"Error creating admin user: {str(e)}")
 
+# Инициализация цен
 DEFAULT_PRICES = {
     'paid': 499,
     'premium': 999
 }
 
-if prices_collection.count_documents({'type': 'current'}) == 0:
-    prices_collection.insert_one({
-        'type': 'current',
-        'prices': DEFAULT_PRICES,
-        'created_at': datetime.utcnow(),
-        'updated_at': datetime.utcnow()
-    })
+def init_prices():
+    try:
+        if client and prices_collection.count_documents({'type': 'current'}) == 0:
+            prices_collection.insert_one({
+                'type': 'current',
+                'prices': DEFAULT_PRICES,
+                'created_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow()
+            })
+            app.logger.info("Default prices initialized")
+    except Exception as e:
+        app.logger.error(f"Error initializing prices: {str(e)}")
+
+# Вызов функций инициализации
+if client:
+    init_admin_user()
+    init_prices()
 
 def get_current_prices():
-    price_doc = prices_collection.find_one({'type': 'current'})
-    if price_doc:
-        return price_doc['prices']
-    return DEFAULT_PRICES
+    if not client:
+        return DEFAULT_PRICES
+        
+    try:
+        price_doc = prices_collection.find_one({'type': 'current'})
+        if price_doc:
+            return price_doc['prices']
+        return DEFAULT_PRICES
+    except Exception as e:
+        app.logger.error(f"Error getting prices: {str(e)}")
+        return DEFAULT_PRICES
 
 # ======================================
 # Оптимизированные функции поиска телефонов
@@ -134,7 +191,7 @@ def get_current_prices():
 def search_phones(query):
     """Поиск телефонов по Name с использованием индекса"""
     try:
-        if not query:
+        if not query or not client:
             return []
         
         app.logger.info(f"Searching phones for: {query}")
@@ -163,6 +220,9 @@ def search_phones(query):
 def get_phone_details(phone_id):
     """Получение детальной информации о телефоне"""
     try:
+        if not client:
+            return None
+            
         phone = phones_collection.find_one({'_id': ObjectId(phone_id)})
         if not phone:
             return None
@@ -231,7 +291,7 @@ def perform_ai_comparison(phone1, phone2):
         content = response.text
         
         # Сохраняем результат сравнения
-        if comparisons_collection is not None:
+        if client and comparisons_collection is not None:
             try:
                 comparisons_collection.insert_one({
                     'phone1': phone1_name,
@@ -254,6 +314,9 @@ def perform_ai_comparison(phone1, phone2):
 
 def log_audit_event(action, details, user_id=None, username=None):
     """Логирование действий администратора"""
+    if not client:
+        return
+        
     event = {
         'action': action,
         'details': details,
@@ -262,7 +325,10 @@ def log_audit_event(action, details, user_id=None, username=None):
         'timestamp': datetime.utcnow(),
         'ip_address': request.remote_addr
     }
-    audit_logs_collection.insert_one(event)
+    try:
+        audit_logs_collection.insert_one(event)
+    except Exception as e:
+        app.logger.error(f"Audit log error: {str(e)}")
 
 # ======================================
 # Декораторы
@@ -295,15 +361,16 @@ def index():
     
     if 'user_id' in session:
         user_id = session['user_id']
-        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-        if user:
-            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
-            user_data = {
-                'first_name': user.get('first_name', ''),
-                'last_name': user.get('last_name', ''),
-                'balance': user.get('balance', 0.0),
-                'avatar_color': avatar_color
-            }
+        if client:
+            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            if user:
+                avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+                user_data = {
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'balance': user.get('balance', 0.0),
+                    'avatar_color': avatar_color
+                }
 
     return render_template('index.html', 
                          stripe_public_key=STRIPE_PUBLIC_KEY,
@@ -318,15 +385,16 @@ def contacts_page():
     user_data = None
     if 'user_id' in session:
         user_id = session['user_id']
-        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-        if user:
-            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
-            user_data = {
-                'first_name': user.get('first_name', ''),
-                'last_name': user.get('last_name', ''),
-                'balance': user.get('balance', 0.0),
-                'avatar_color': avatar_color
-            }
+        if client:
+            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            if user:
+                avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+                user_data = {
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'balance': user.get('balance', 0.0),
+                    'avatar_color': avatar_color
+                }
     
     return render_template('contacts.html', user=user_data)
 
@@ -336,15 +404,16 @@ def knowledge_base():
     user_data = None
     if 'user_id' in session:
         user_id = session['user_id']
-        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-        if user:
-            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
-            user_data = {
-                'first_name': user.get('first_name', ''),
-                'last_name': user.get('last_name', ''),
-                'balance': user.get('balance', 0.0),
-                'avatar_color': avatar_color
-            }
+        if client:
+            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            if user:
+                avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+                user_data = {
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'balance': user.get('balance', 0.0),
+                    'avatar_color': avatar_color
+                }
     
     return render_template('knowledge-base.html', user=user_data)
 
@@ -377,15 +446,16 @@ def apple_check():
     user_data = None
     if 'user_id' in session:
         user_id = session['user_id']
-        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-        if user:
-            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
-            user_data = {
-                'first_name': user.get('first_name', ''),
-                'last_name': user.get('last_name', ''),
-                'balance': user.get('balance', 0.0),
-                'avatar_color': avatar_color
-            }
+        if client:
+            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            if user:
+                avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+                user_data = {
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'balance': user.get('balance', 0.0),
+                    'avatar_color': avatar_color
+                }
 
     # Создаем список услуг с данными для передачи в шаблон
     services_data = [
@@ -544,15 +614,16 @@ def android_check():
     user_data = None
     if 'user_id' in session:
         user_id = session['user_id']
-        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-        if user:
-            avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
-            user_data = {
-                'first_name': user.get('first_name', ''),
-                'last_name': user.get('last_name', ''),
-                'balance': user.get('balance', 0.0),
-                'avatar_color': avatar_color
-            }
+        if client:
+            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            if user:
+                avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+                user_data = {
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'balance': user.get('balance', 0.0),
+                    'avatar_color': avatar_color
+                }
 
     return render_template(
         'androidcheck.html',
@@ -609,37 +680,39 @@ def create_checkout_session():
         if use_balance and 'user_id' in session:
             user_id = session['user_id']
             # Проверяем достаточно ли средств
-            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-            amount_usd = amount / 100  # Конвертация в доллары
-            
-            if user and user.get('balance', 0) >= amount_usd:
-                # Списание средств с баланса
-                if stripe_payment.deduct_balance(user_id, amount_usd):
-                    # Создаем запись о проверке
-                    session_id = f"balance_{ObjectId()}"
-                    record = {
-                        'session_id': session_id,
-                        'imei': imei,
-                        'service_type': service_type,
-                        'paid': True,
-                        'payment_status': 'succeeded',
-                        'payment_method': 'balance',
-                        'amount': amount_usd,
-                        'currency': 'usd',
-                        'timestamp': datetime.utcnow(),
-                        'user_id': ObjectId(user_id)
-                    }
-                    checks_collection.insert_one(record)
-                    
-                    return jsonify({
-                        'id': session_id,
-                        'payment_method': 'balance'
-                    })
+            if client:
+                user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+                amount_usd = amount / 100  # Конвертация в доллары
+                
+                if user and user.get('balance', 0) >= amount_usd:
+                    # Списание средств с баланса
+                    if stripe_payment.deduct_balance(user_id, amount_usd):
+                        # Создаем запись о проверке
+                        session_id = f"balance_{ObjectId()}"
+                        record = {
+                            'session_id': session_id,
+                            'imei': imei,
+                            'service_type': service_type,
+                            'paid': True,
+                            'payment_status': 'succeeded',
+                            'payment_method': 'balance',
+                            'amount': amount_usd,
+                            'currency': 'usd',
+                            'timestamp': datetime.utcnow(),
+                            'user_id': ObjectId(user_id)
+                        }
+                        if client:
+                            checks_collection.insert_one(record)
+                        
+                        return jsonify({
+                            'id': session_id,
+                            'payment_method': 'balance'
+                        })
+                    else:
+                        return jsonify({'error': 'ბალანსიდან გადახდა ვერ მოხერხდა'}), 500
                 else:
-                    return jsonify({'error': 'ბალანსიდან გადახდა ვერ მოხერხდა'}), 500
-            else:
-                # Недостаточно средств, переходим к оплате картой
-                use_balance = False
+                    # Недостаточно средств, переходим к оплате картой
+                    use_balance = False
         
         # Если не используем баланс (неавторизован или недостаточно средств)
         if not use_balance:
@@ -680,10 +753,11 @@ def perform_balance_check():
             return jsonify({'error': error_msg}), 400
         
         # Обновляем запись в базе
-        checks_collection.update_one(
-            {'session_id': session_id},
-            {'$set': {'result': result}}
-        )
+        if client:
+            checks_collection.update_one(
+                {'session_id': session_id},
+                {'$set': {'result': result}}
+            )
         
         return jsonify(result)
     
@@ -731,7 +805,8 @@ def payment_success():
         }
         if 'user_id' in session:
             record['user_id'] = ObjectId(session['user_id'])
-        checks_collection.insert_one(record)
+        if client:
+            checks_collection.insert_one(record)
         
         # Перенаправляем на страницу сервиса с параметрами для отображения результата
         return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
@@ -745,6 +820,9 @@ def get_check_result():
     session_id = request.args.get('session_id')
     if not session_id:
         return jsonify({'error': 'სესიის ID არის მითითებული'}), 400
+    
+    if not client:
+        return jsonify({'error': 'Database unavailable'}), 500
     
     # Ищем как по session_id (баланс), так и по stripe_session_id (Stripe)
     record = checks_collection.find_one({
@@ -864,7 +942,7 @@ def perform_check():
                 soup = BeautifulSoup(result['html_content'], 'html.parser')
                 result = {'server_response': soup.get_text(separator='\n', strip=True)}
         
-        if service_type == 'free':
+        if service_type == 'free' and client:
             record = {
                 'imei': imei,
                 'service_type': service_type,
@@ -876,7 +954,7 @@ def perform_check():
                 record['user_id'] = ObjectId(session['user_id'])
             checks_collection.insert_one(record)
         
-        if result and 'error' not in result:
+        if result and 'error' not in result and client:
             send_webhook_event('imei_check_completed', {
                 'imei': imei,
                 'service_type': service_type,
@@ -893,6 +971,9 @@ def perform_check():
 @app.route('/reparse_imei')
 def reparse_imei():
     imei = request.args.get('imei')
+    if not client:
+        return jsonify({'error': 'Database unavailable'}), 500
+        
     record = checks_collection.find_one({'imei': imei, 'service_type': 'free'})
     
     if not record or 'result' not in record or 'html_content' not in record['result']:
@@ -956,13 +1037,19 @@ def health_check():
         'services': {}
     }
     
-    try:
-        db.command('ping')
-        status['services']['mongodb'] = 'OK'
-    except Exception as e:
-        status['services']['mongodb'] = f'ERROR: {str(e)}'
-        status['status'] = 'ERROR'
+    # Проверка MongoDB
+    if client:
+        try:
+            db.command('ping')
+            status['services']['mongodb'] = 'OK'
+        except Exception as e:
+            status['services']['mongodb'] = f'ERROR: {str(e)}'
+            status['status'] = 'ERROR'
+    else:
+        status['services']['mongodb'] = 'DISABLED'
+        status['status'] = 'DEGRADED'
     
+    # Проверка Stripe
     try:
         stripe.Balance.retrieve()
         status['services']['stripe'] = 'OK'
@@ -970,6 +1057,7 @@ def health_check():
         status['services']['stripe'] = f'ERROR: {str(e)}'
         status['status'] = 'ERROR'
     
+    # Проверка внешнего API
     try:
         response = requests.get(API_URL, timeout=5)
         status['services']['external_api'] = 'OK' if response.status_code == 200 else f'HTTP {response.status_code}'
@@ -977,8 +1065,8 @@ def health_check():
         status['services']['external_api'] = f'ERROR: {str(e)}'
         status['status'] = 'ERROR'
     
+    # Проверка Gemini API
     try:
-        # Проверка Gemini API
         import google.generativeai as genai
         genai.configure(api_key=GEMINI_API_KEY)
         model = genai.GenerativeModel('gemini-1.5-flash')
@@ -995,6 +1083,9 @@ def health_check():
 # ======================================
 
 def send_webhook_event(event_type, payload):
+    if not client:
+        return
+        
     active_webhooks = webhooks_collection.find({
         'active': True,
         'events': event_type
@@ -1124,6 +1215,10 @@ user_bp = Blueprint('user', __name__, url_prefix='/user')
 def dashboard():
     """Личный кабинет пользователя"""
     user_id = session['user_id']
+    if not client:
+        flash('Database unavailable', 'danger')
+        return redirect(url_for('auth.login'))
+    
     user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
     
     if not user:
@@ -1204,6 +1299,10 @@ def payment_methods():
 def history_checks():
     """История проверок IMEI"""
     user_id = session['user_id']
+    if not client:
+        flash('Database unavailable', 'danger')
+        return redirect(url_for('auth.login'))
+    
     user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
     
     if not user:
@@ -1240,6 +1339,10 @@ def history_checks():
 def history_comparisons():
     """История сравнений телефонов"""
     user_id = session['user_id']
+    if not client:
+        flash('Database unavailable', 'danger')
+        return redirect(url_for('auth.login'))
+    
     user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
     
     if not user:
@@ -1327,7 +1430,7 @@ def register():
     if password != confirm_password:
         errors.append("პაროლები არ ემთხვევა")
     
-    if regular_users_collection.find_one({'$or': [{'username': username}, {'email': email}, {'phone': phone}]}):
+    if client and regular_users_collection.find_one({'$or': [{'username': username}, {'email': email}, {'phone': phone}]}):
         errors.append("მომხმარებელი ასეთი მონაცემებით უკვე არსებობს")
     
     if errors:
@@ -1348,6 +1451,9 @@ def register():
         'failed_attempts': 0,
         'last_failed_attempt': None
     }
+    
+    if not client:
+        return jsonify({"success": False, "errors": ["Database unavailable"]}), 500
     
     result = regular_users_collection.insert_one(user_data)
     app.logger.info(f"Registered new user: {username}")
@@ -1370,7 +1476,10 @@ def login():
     app.logger.info(f"Login attempt for: {identifier}")
     
     ip_address = request.remote_addr
-    failed_login = failed_logins_collection.find_one({'ip': ip_address})
+    if client:
+        failed_login = failed_logins_collection.find_one({'ip': ip_address})
+    else:
+        failed_login = None
     
     if failed_login and failed_login.get('blocked_until') and datetime.utcnow() < failed_login['blocked_until']:
         remaining = int((failed_login['blocked_until'] - datetime.utcnow()).total_seconds() / 60)
@@ -1383,35 +1492,39 @@ def login():
     is_admin = False
     
     identifier_lower = identifier.lower()
-    if '@' in identifier_lower:
-        user = regular_users_collection.find_one({'email': identifier_lower})
-    elif identifier.startswith('+995'):
-        user = regular_users_collection.find_one({'phone': identifier})
-    elif identifier.isdigit() and len(identifier) == 9:
-        user = regular_users_collection.find_one({'phone': f"+995{identifier}"})
-    else:
-        user = regular_users_collection.find_one({'username': identifier})
-    
-    if not user:
+    if client:
         if '@' in identifier_lower:
-            user = admin_users_collection.find_one({'email': identifier_lower})
+            user = regular_users_collection.find_one({'email': identifier_lower})
         elif identifier.startswith('+995'):
-            user = admin_users_collection.find_one({'phone': identifier})
+            user = regular_users_collection.find_one({'phone': identifier})
         elif identifier.isdigit() and len(identifier) == 9:
-            user = admin_users_collection.find_one({'phone': f"+995{identifier}"})
+            user = regular_users_collection.find_one({'phone': f"+995{identifier}"})
         else:
-            user = admin_users_collection.find_one({'username': identifier})
-        is_admin = True if user else False
+            user = regular_users_collection.find_one({'username': identifier})
+        
+        if not user:
+            if '@' in identifier_lower:
+                user = admin_users_collection.find_one({'email': identifier_lower})
+            elif identifier.startswith('+995'):
+                user = admin_users_collection.find_one({'phone': identifier})
+            elif identifier.isdigit() and len(identifier) == 9:
+                user = admin_users_collection.find_one({'phone': f"+995{identifier}"})
+            else:
+                user = admin_users_collection.find_one({'username': identifier})
+            is_admin = True if user else False
+    else:
+        return jsonify({"success": False, "error": "Database unavailable"}), 500
 
     if user and check_password_hash(user['password'], password):
-        if failed_login:
+        if client and failed_login:
             failed_logins_collection.delete_one({'ip': ip_address})
         
-        collection = admin_users_collection if is_admin else regular_users_collection
-        collection.update_one(
-            {'_id': user['_id']},
-            {'$set': {'last_login': datetime.utcnow()}}
-        )
+        if client:
+            collection = admin_users_collection if is_admin else regular_users_collection
+            collection.update_one(
+                {'_id': user['_id']},
+                {'$set': {'last_login': datetime.utcnow()}}
+            )
         
         session['user_id'] = str(user['_id'])
         session['username'] = user['username']
@@ -1431,30 +1544,32 @@ def login():
         }), 200
     
     attempts = 1
-    if failed_login:
-        attempts = failed_login['attempts'] + 1
-        update_data = {
-            'attempts': attempts,
-            'last_attempt': datetime.utcnow()
-        }
-        failed_logins_collection.update_one(
-            {'ip': ip_address},
-            {'$set': update_data}
-        )
-    else:
-        failed_logins_collection.insert_one({
-            'ip': ip_address,
-            'attempts': attempts,
-            'last_attempt': datetime.utcnow(),
-            'blocked_until': None
-        })
+    if client:
+        if failed_login:
+            attempts = failed_login['attempts'] + 1
+            update_data = {
+                'attempts': attempts,
+                'last_attempt': datetime.utcnow()
+            }
+            failed_logins_collection.update_one(
+                {'ip': ip_address},
+                {'$set': update_data}
+            )
+        else:
+            failed_logins_collection.insert_one({
+                'ip': ip_address,
+                'attempts': attempts,
+                'last_attempt': datetime.utcnow(),
+                'blocked_until': None
+            })
     
     if attempts >= 5:
         blocked_until = datetime.utcnow() + timedelta(minutes=10)
-        failed_logins_collection.update_one(
-            {'ip': ip_address},
-            {'$set': {'blocked_until': blocked_until}}
-        )
+        if client:
+            failed_logins_collection.update_one(
+                {'ip': ip_address},
+                {'$set': {'blocked_until': blocked_until}}
+            )
         app.logger.warning(f"IP blocked: {ip_address} for 10 minutes")
         return jsonify({
             "success": False,
