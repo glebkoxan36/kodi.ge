@@ -7,6 +7,41 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
+    <style>
+        /* Исправление для кнопок выбора телефонов */
+        .phone-selector {
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .phone-selector-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        
+        .phone-selector:hover .phone-selector-inner {
+            transform: rotateY(15deg);
+        }
+        
+        .phone-selector.selected .phone-selector-inner {
+            transform: rotateY(180deg);
+        }
+        
+        .phone-selector.selected:hover .phone-selector-inner {
+            transform: rotateY(165deg);
+        }
+        
+        /* Исправление z-index для модальных окон */
+        .phone-modal {
+            z-index: 10000 !important;
+        }
+        
+        /* Исправление для поля поиска */
+        .modal-search-input {
+            color: #333 !important;
+            background-color: rgba(255, 255, 255, 0.9) !important;
+        }
+    </style>
 </head>
 <body>
     <div class="gradient-bg gradient-1"></div>
