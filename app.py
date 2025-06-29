@@ -183,7 +183,7 @@ def get_current_prices():
         return DEFAULT_PRICES
 
 # ======================================
-# AI Phone Comparison System
+# AI Phone Comparison System (Fixed)
 # ======================================
 
 def ai_search_phones(query):
@@ -197,7 +197,7 @@ def ai_search_phones(query):
         model = genai.GenerativeModel('gemini-1.5-flash')
         
         prompt = f"""
-        შექმენით JSON სია 10 ყველაზე პოპულარული სმარტფონის შესახებ, რომლებიც შეესაბამება შემდეგ მოთხოვნას: {query}.
+        შექმენით JSON სია 10 ყველაზე პოპულარული სმარტფონის შესახებ, რომლებიც შეესაბამება შემდეგ მოთხოვნას: '{query}'.
         თითოეული ტელეფონისთვის მიუთითეთ შემდეგი ველები:
         - brand: ბრენდი (მაგ: Apple, Samsung, Xiaomi)
         - model: მოდელის სახელი (მაგ: iPhone 15 Pro, Galaxy S24 Ultra)
@@ -211,12 +211,23 @@ def ai_search_phones(query):
         - os: ოპერაციული სისტემა (მაგ: Android 14)
         
         გამოიტანეთ მხოლოდ JSON მასივი, სადაც თითოეული ობიექტი აღწერს ერთ ტელეფონს.
+        JSON პასუხი უნდა იყოს სწორად ფორმატირებული და არ შეიცავდეს დამატებით ტექსტს ან კომენტარებს.
         """
 
         response = model.generate_content(prompt)
+        response_text = response.text.strip()
+        
+        # Удаляем возможные markdown коды
+        if response_text.startswith('```json'):
+            response_text = response_text[7:-3].strip()
+        elif response_text.startswith('```'):
+            response_text = response_text[3:-3].strip()
+        
+        # Логируем для отладки
+        app.logger.info(f"Gemini response: {response_text[:500]}...")
         
         # Парсим JSON из ответа
-        phones = json.loads(response.text)
+        phones = json.loads(response_text)
         
         # Ищем изображения для каждого телефона
         for phone in phones:
@@ -224,7 +235,7 @@ def ai_search_phones(query):
             phone['image_url'] = image_url if image_url else PLACEHOLDER
             
             # Сохраняем в базу
-            phone_id = f"{phone['brand']}_{phone['model']}".replace(' ', '_').lower()
+            phone_id = f"{phone['brand']}_{phone['model']}".replace(' ', '_').replace('/', '_').lower()
             phone['_id'] = phone_id
             phone['search_text'] = f"{phone['brand']} {phone['model']}"
             phone['last_updated'] = datetime.utcnow()
@@ -237,6 +248,10 @@ def ai_search_phones(query):
         
         return phones
     
+    except json.JSONDecodeError as e:
+        app.logger.error(f"JSON decode error: {str(e)}")
+        app.logger.error(f"Raw response: {response.text[:500]}")
+        return []
     except Exception as e:
         app.logger.error(f"AI search error: {str(e)}")
         return []
@@ -260,7 +275,9 @@ def ai_compare_phones(phone1_id, phone2_id):
         
         # Формируем промпт для сравнения
         prompt = f"""
-        შეადარეთ ორი სმარტფონი: {phone1['brand']} {phone1['model']} და {phone2['brand']} {phone2['model']}.
+        შეადარეთ ორი სმარტფონი: 
+        Phone 1: {phone1['brand']} {phone1['model']} 
+        Phone 2: {phone2['brand']} {phone2['model']}
         
         გთხოვთ მოგვაწოდოთ დეტალური შედარება შემდეგი კატეგორიების მიხედვით:
         1. დიზაინი და აგებულება
@@ -273,7 +290,8 @@ def ai_compare_phones(phone1_id, phone2_id):
         8. ფასი და ღირებულება
         
         დასასრულს მიუთითეთ რომელი ტელეფონი უკეთესია თითოეულ კატეგორიაში და საერთო ჯამში.
-        გთხოვთ გამოიტანოთ პასუხი JSON ფორმატში შემდეგი სტრუქტურით:
+        
+        გთხოვთ გამოიტანოთ პასუხი STRICTLY JSON ფორმატში შემდეგი სტრუქტურით:
         {{
             "comparison": [
                 {{
@@ -287,10 +305,22 @@ def ai_compare_phones(phone1_id, phone2_id):
             "overall_winner": "phone1" ან "phone2",
             "summary": "მოკლე დასკვნა"
         }}
-        """
         
+        მნიშვნელოვანია: გამოიტანეთ მხოლოდ JSON ობიექტი, ყოველგვარი დამატებითი ტექსტის გარეშე.
+        """
+
         response = model.generate_content(prompt)
-        comparison = json.loads(response.text)
+        response_text = response.text.strip()
+        
+        # Очистка ответа от markdown
+        if response_text.startswith('```json'):
+            response_text = response_text[7:-3].strip()
+        elif response_text.startswith('```'):
+            response_text = response_text[3:-3].strip()
+        
+        app.logger.info(f"Gemini comparison response: {response_text[:500]}...")
+        
+        comparison = json.loads(response_text)
         
         # Сохраняем результат сравнения
         comparisons_collection.insert_one({
@@ -305,6 +335,10 @@ def ai_compare_phones(phone1_id, phone2_id):
         
         return comparison
     
+    except json.JSONDecodeError as e:
+        app.logger.error(f"JSON decode error in comparison: {str(e)}")
+        app.logger.error(f"Raw response: {response_text}")
+        return {"error": "Invalid JSON response from AI"}
     except Exception as e:
         app.logger.error(f"Gemini comparison error: {str(e)}")
         return {"error": "AI service unavailable"}
