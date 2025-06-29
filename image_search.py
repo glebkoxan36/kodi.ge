@@ -1,6 +1,7 @@
 import os
 import requests
 from flask import current_app
+from bs4 import BeautifulSoup  # Добавлен импорт BeautifulSoup
 
 PLACEHOLDER = '/static/placeholder.jpg'
 
@@ -31,7 +32,8 @@ def search_wikimedia_image(phone_name):
     """Поиск изображения через Wikimedia Commons API"""
     try:
         query = f"{phone_name} smartphone"
-        url = f"https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch={query}&srlimit=1&format=json"
+        # Добавлен параметр srnamespace=6 для поиска только в файлах
+        url = f"https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch={query}&srlimit=1&srnamespace=6&format=json"
         
         response = requests.get(url, timeout=10)
         data = response.json()
