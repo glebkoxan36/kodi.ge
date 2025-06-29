@@ -117,6 +117,14 @@ else:
 
     # Отложенная инициализация индексов
     try:
+        # Удаление проблемного индекса
+        techspecs_collection.drop_index('slug_1')
+        app.logger.info("Dropped problematic slug index")
+    except Exception as e:
+        app.logger.warning(f"Error dropping slug index: {str(e)}")
+
+    try:
+        # Создание текстового индекса
         techspecs_collection.create_index([('search_text', 'text')], name='search_text_index')
         app.logger.info("Created text index for techspecs collection")
     except Exception as e:
@@ -153,7 +161,7 @@ DEFAULT_PRICES = {
 
 def init_prices():
     try:
-        if client and prices_collection.count_documents({'type': 'current'}) == 0:
+        if client and prices_collection.count_documents({}) == 0:
             prices_collection.insert_one({
                 'type': 'current',
                 'prices': DEFAULT_PRICES,
@@ -231,12 +239,29 @@ def ai_search_phones(query):
         
         # Ищем изображения для каждого телефона
         for phone in phones:
+            # Убедимся, что все обязательные поля присутствуют
+            required_fields = ['brand', 'model', 'release_year', 'display', 
+                              'processor', 'ram', 'storage', 'camera', 
+                              'battery', 'os']
+            for field in required_fields:
+                if field not in phone:
+                    phone[field] = "N/A"  # Значение по умолчанию
+            
+            # Поиск изображения
             image_url = search_phone_image(f"{phone['brand']} {phone['model']}")
             phone['image_url'] = image_url if image_url else PLACEHOLDER
             
+            # Генерация уникального ID
+            phone_id = f"{phone['brand']}_{phone['model']}" \
+                .replace(' ', '_') \
+                .replace('/', '_') \
+                .replace('.', '') \
+                .replace("'", "") \
+                .lower()
+            
             # Сохраняем в базу
-            phone_id = f"{phone['brand']}_{phone['model']}".replace(' ', '_').replace('/', '_').lower()
             phone['_id'] = phone_id
+            phone['slug'] = phone_id  # Добавляем поле slug
             phone['search_text'] = f"{phone['brand']} {phone['model']}"
             phone['last_updated'] = datetime.utcnow()
             
@@ -250,7 +275,7 @@ def ai_search_phones(query):
     
     except json.JSONDecodeError as e:
         app.logger.error(f"JSON decode error: {str(e)}")
-        app.logger.error(f"Raw response: {response.text[:500]}")
+        app.logger.error(f"Raw response: {response.text[:500] if 'response' in locals() else 'No response'}")
         return []
     except Exception as e:
         app.logger.error(f"AI search error: {str(e)}")
