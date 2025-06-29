@@ -70,6 +70,107 @@ API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 PLACEHOLDER = '/static/placeholder.jpg'
 
+# ======================================
+# Stripe Payment Class Implementation
+# ======================================
+
+class StripePayment:
+    def __init__(self, stripe_api_key, webhook_secret, users_collection, payments_collection):
+        self.stripe_api_key = stripe_api_key
+        self.webhook_secret = webhook_secret
+        self.users_collection = users_collection
+        self.payments_collection = payments_collection
+        stripe.api_key = stripe_api_key
+
+    def create_checkout_session(self, imei, service_type, amount, success_url, cancel_url):
+        """Создает сессию оплаты в Stripe"""
+        try:
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': f'IMEI Check: {service_type}',
+                            'description': f'IMEI: {imei}',
+                        },
+                        'unit_amount': amount,
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url=success_url,
+                cancel_url=cancel_url,
+            )
+            return session
+        except Exception as e:
+            app.logger.error(f"Error creating Stripe session: {str(e)}")
+            raise
+
+    def handle_webhook(self, payload, sig_header):
+        """Обрабатывает вебхуки от Stripe"""
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, 
+                sig_header, 
+                self.webhook_secret
+            )
+        except ValueError as e:
+            raise ValueError("Invalid payload") from e
+        except stripe.error.SignatureVerificationError as e:
+            raise ValueError("Invalid signature") from e
+        
+        # Обработка события
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            self.payments_collection.insert_one({
+                'stripe_session_id': session.id,
+                'amount_total': session.amount_total / 100,
+                'currency': session.currency,
+                'payment_status': session.payment_status,
+                'timestamp': datetime.utcnow(),
+                'data': session.to_dict()
+            })
+        
+        return jsonify({'status': 'success'})
+
+    def deduct_balance(self, user_id, amount):
+        """Списывает средства с баланса пользователя"""
+        try:
+            result = self.users_collection.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$inc': {'balance': -amount}}
+            )
+            return result.modified_count == 1
+        except Exception as e:
+            app.logger.error(f"Balance deduction error: {str(e)}")
+            return False
+
+    def create_topup_session(self, user_id, amount, success_url, cancel_url):
+        """Создает сессию пополнения баланса"""
+        try:
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': 'Balance Top-Up',
+                        },
+                        'unit_amount': int(amount * 100),
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url=success_url,
+                cancel_url=cancel_url,
+                metadata={'user_id': user_id}
+            )
+            return session
+        except Exception as e:
+            app.logger.error(f"Top-up session error: {str(e)}")
+            raise
+
 # MongoDB - безопасная инициализация
 def init_mongodb():
     max_retries = 5
@@ -124,6 +225,36 @@ else:
         app.logger.info("Created indexes for techspecs collection")
     except Exception as e:
         app.logger.error(f"Error creating indexes: {str(e)}")
+
+# ======================================
+# Вспомогательные функции
+# ======================================
+
+def validate_imei(imei):
+    """Проверяет валидность IMEI"""
+    if not imei:
+        return False
+    # Базовая проверка: только цифры, длина 15-16 символов
+    return imei.isdigit() and len(imei) in (15, 16)
+
+def perform_api_check(imei, service_type):
+    """Заглушка для выполнения проверки IMEI через API"""
+    # В реальном приложении здесь будет интеграция с внешним API
+    return {
+        "status": "success",
+        "service": service_type,
+        "imei": imei,
+        "result": {
+            "model": "iPhone 13 Pro Max",
+            "activation_status": "Activated",
+            "fmi_status": "Off",
+            "blacklist_status": "Clean"
+        }
+    }
+
+def send_webhook_event(event_type, payload):
+    """Заглушка для отправки вебхуков"""
+    app.logger.info(f"Webhook event: {event_type} - {json.dumps(payload)}")
 
 # ======================================
 # Функции для работы с данными телефонов
@@ -1803,10 +1934,10 @@ def logout():
 # Регистрация блюпринтов
 # ======================================
 
-# Импорт админ-панели из отдельного модуля
-from admin_routes import admin_bp
+# Закомментировано из-за отсутствия модуля admin_routes
+# from admin_routes import admin_bp
 
-app.register_blueprint(admin_bp)
+# app.register_blueprint(admin_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(auth_bp)
 
