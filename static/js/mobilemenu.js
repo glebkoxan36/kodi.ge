@@ -8,22 +8,22 @@ function createMobileMenuStructure() {
     mobileMenuContainer.innerHTML = `
         <!-- Mobile Menu Modal -->
         <div class="mobile-menu-modal" id="mobileMenuModal">
-            <div class="modal-content">
-                <button class="close-modal" onclick="closeMobileMenu()">
-                    <i class="fas fa-times"></i>
-                </button>
-                
-                <div class="floating-avatar-container">
-                    <div class="floating-avatar" onclick="goToLogin()">
-                        <div class="avatar-placeholder">KODI.GE</div>
-                    </div>
-                    <div class="user-info-container">
-                        <div onclick="goToLogin()">
-                            ლოგინი|რეგისტრაცია
-                        </div>
+            <button class="close-modal" onclick="closeMobileMenu()">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="floating-avatar-container">
+                <div class="floating-avatar" onclick="goToLogin()">
+                    <div class="avatar-placeholder">KODI.GE</div>
+                </div>
+                <div class="user-info-container">
+                    <div onclick="goToLogin()">
+                        ლოგინი|რეგისტრაცია
                     </div>
                 </div>
-                
+            </div>
+            
+            <div class="modal-content">
                 <div class="modal-body">
                     <div class="menu-grid">
                         <a class="menu-item" href="/" onclick="closeAllMobileMenus();">
@@ -69,22 +69,22 @@ function createMobileMenuStructure() {
 
         <!-- Apple Submenu Modal -->
         <div class="mobile-menu-modal" id="appleSubmenuModal">
-            <div class="modal-content">
-                <button class="close-modal" onclick="closeAppleSubmenu()">
-                    <i class="fas fa-times"></i>
-                </button>
+            <button class="close-modal" onclick="closeAppleSubmenu()">
+                <i class="fas fa-times"></i>
+            </button>
 
-                <div class="floating-avatar-container">
-                    <div class="floating-avatar" onclick="goToLogin()">
-                        <div class="avatar-placeholder">KODI.GE</div>
-                    </div>
-                    <div class="user-info-container">
-                        <div onclick="goToLogin()">
-                            ლოგინი/რეგისტრაცია
-                        </div>
+            <div class="floating-avatar-container">
+                <div class="floating-avatar" onclick="goToLogin()">
+                    <div class="avatar-placeholder">KODI.GE</div>
+                </div>
+                <div class="user-info-container">
+                    <div onclick="goToLogin()">
+                        ლოგინი/რეგისტრაცია
                     </div>
                 </div>
-                
+            </div>
+            
+            <div class="modal-content">
                 <div class="modal-body">
                     <div class="menu-grid">
                         <a class="menu-item" href="/applecheck?type=free" onclick="closeAllMobileMenus();">
@@ -133,22 +133,22 @@ function createMobileMenuStructure() {
 
         <!-- Android Submenu Modal -->
         <div class="mobile-menu-modal" id="androidSubmenuModal">
-            <div class="modal-content">
-                <button class="close-modal" onclick="closeAndroidSubmenu()">
-                    <i class="fas fa-times"></i>
-                </button>
+            <button class="close-modal" onclick="closeAndroidSubmenu()">
+                <i class="fas fa-times"></i>
+            </button>
 
-                <div class="floating-avatar-container">
-                    <div class="floating-avatar" onclick="goToLogin()">
-                        <div class="avatar-placeholder">KODI.GE</div>
-                    </div>
-                    <div class="user-info-container">
-                        <div onclick="goToLogin()">
-                            ლოგინი/რეგისტრაცია
-                        </div>
+            <div class="floating-avatar-container">
+                <div class="floating-avatar" onclick="goToLogin()">
+                    <div class="avatar-placeholder">KODI.GE</div>
+                </div>
+                <div class="user-info-container">
+                    <div onclick="goToLogin()">
+                        ლოგინი/რეგისტრაცია
                     </div>
                 </div>
-                
+            </div>
+            
+            <div class="modal-content">
                 <div class="modal-body">
                     <div class="menu-grid">
                         <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
@@ -190,30 +190,15 @@ function createMobileMenuStructure() {
     `;
 }
 
-// Функции для блокировки прокрутки фона
-function lockBodyScroll() {
-  const scrollY = window.scrollY;
-  document.body.style.top = `-${scrollY}px`;
-  document.body.classList.add('fixed-body');
-}
-
-function unlockBodyScroll() {
-  const scrollY = -parseInt(document.body.style.top || '0', 10);
-  document.body.classList.remove('fixed-body');
-  document.body.style.top = '';
-  window.scrollTo(0, scrollY);
-}
-
 // Mobile menu functions
 function openMobileMenu() {
     try {
         const modal = document.getElementById('mobileMenuModal');
         if (modal) {
-            modal.style.display = 'block';
+            modal.style.display = 'flex';
             setTimeout(() => {
                 modal.classList.add('open');
             }, 10);
-            lockBodyScroll();
         }
     } catch(e) {
         console.error('Error opening mobile menu:', e);
@@ -227,8 +212,7 @@ function closeMobileMenu() {
             modal.classList.remove('open');
             setTimeout(() => {
                 modal.style.display = 'none';
-            }, 300);
-            unlockBodyScroll();
+            }, 400);
         }
     } catch(e) {
         console.error('Error closing mobile menu:', e);
@@ -240,11 +224,10 @@ function openAppleSubmenu() {
         closeMobileMenu();
         const appleModal = document.getElementById('appleSubmenuModal');
         if (appleModal) {
-            appleModal.style.display = 'block';
+            appleModal.style.display = 'flex';
             setTimeout(() => {
                 appleModal.classList.add('open');
             }, 10);
-            lockBodyScroll();
         }
     } catch(e) {
         console.error('Error opening Apple submenu:', e);
@@ -259,8 +242,7 @@ function closeAppleSubmenu() {
             setTimeout(() => {
                 appleModal.style.display = 'none';
                 openMobileMenu();
-            }, 300);
-            unlockBodyScroll();
+            }, 400);
         }
     } catch(e) {
         console.error('Error closing Apple submenu:', e);
@@ -272,11 +254,10 @@ function openAndroidSubmenu() {
         closeMobileMenu();
         const androidModal = document.getElementById('androidSubmenuModal');
         if (androidModal) {
-            androidModal.style.display = 'block';
+            androidModal.style.display = 'flex';
             setTimeout(() => {
                 androidModal.classList.add('open');
             }, 10);
-            lockBodyScroll();
         }
     } catch(e) {
         console.error('Error opening Android submenu:', e);
@@ -291,8 +272,7 @@ function closeAndroidSubmenu() {
             setTimeout(() => {
                 androidModal.style.display = 'none';
                 openMobileMenu();
-            }, 300);
-            unlockBodyScroll();
+            }, 400);
         }
     } catch(e) {
         console.error('Error closing Android submenu:', e);
@@ -303,7 +283,6 @@ function closeAllMobileMenus() {
     closeMobileMenu();
     closeAppleSubmenu();
     closeAndroidSubmenu();
-    unlockBodyScroll();
 }
 
 // Redirect to login
@@ -312,154 +291,17 @@ function goToLogin() {
     window.location.href = "/login";
 }
 
+// Redirect to dashboard
+function goToDashboard() {
+    closeAllMobileMenus();
+    window.location.href = "/dashboard";
+}
+
 // Initialize mobile menu when the page loads
 document.addEventListener('DOMContentLoaded', () => {
     // Создаем HTML структуру меню
     createMobileMenuStructure();
     
-    // Добавляем CSS для фиксации фона и анимации снизу
-    const style = document.createElement('style');
-    style.textContent = `
-        .fixed-body {
-            position: fixed;
-            width: 100%;
-            overflow: hidden;
-        }
-        
-        .mobile-menu-modal {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: auto;
-            max-height: 85vh;
-            background: white;
-            display: none;
-            z-index: 1000;
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
-            transform: translateY(100%);
-            transition: transform 0.3s ease-out;
-        }
-        
-        .mobile-menu-modal.open {
-            transform: translateY(0);
-        }
-        
-        .modal-content {
-            padding: 20px;
-            position: relative;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-        
-        .close-modal {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            z-index: 1010;
-            color: #666;
-        }
-        
-        .floating-avatar-container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .floating-avatar {
-            width: 50px;
-            height: 50px;
-            background: #f5f5f5;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 12px;
-        }
-        
-        .user-info-container {
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-        }
-        
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-        }
-        
-        .menu-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            padding: 10px;
-            border-radius: 10px;
-            background: #f9f9f9;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            min-height: 90px;
-            justify-content: center;
-        }
-        
-        .menu-item:hover {
-            background: #f0f0f0;
-        }
-        
-        .menu-item i {
-            font-size: 24px;
-            margin-bottom: 8px;
-            color: #555;
-        }
-        
-        .menu-item span {
-            font-size: 12px;
-            line-height: 1.3;
-        }
-        
-        .menu-icon-img {
-            width: 24px;
-            height: 24px;
-            margin-bottom: 8px;
-            object-fit: contain;
-        }
-        
-        .disabled {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-        
-        /* Оверлей для фона */
-        .mobile-menu-modal::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: -1;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .mobile-menu-modal.open::before {
-            opacity: 1;
-        }
-    `;
-    document.head.appendChild(style);
-
     // Mobile menu button setup
     try {
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
@@ -478,11 +320,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const mobileMenuModal = document.getElementById('mobileMenuModal');
             const appleSubmenuModal = document.getElementById('appleSubmenuModal');
             const androidSubmenuModal = document.getElementById('androidSubmenuModal');
+            const floatingAvatar = document.querySelector('.floating-avatar-container');
             
             // Close mobile menu if click is outside
             if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
                 !mobileMenuModal.contains(e.target) && 
-                e.target.id !== 'mobileMenuBtn') {
+                e.target.id !== 'mobileMenuBtn' &&
+                !(floatingAvatar && floatingAvatar.contains(e.target))) {
                 closeMobileMenu();
             }
             
@@ -501,13 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch(e) {
             console.error('Click handler error:', e);
-        }
-    });
-    
-    // Close menu when pressing Escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeAllMobileMenus();
         }
     });
 });
