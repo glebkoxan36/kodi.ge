@@ -844,17 +844,9 @@ body {
 }
 
 /* ===== PAYMENT MODAL ===== */
-.payment-method-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
+.payment-method-modal,
+.result-modal {
+  z-index: 10000 !important;
 }
 
 .payment-method-content {
@@ -1374,7 +1366,7 @@ body {
 /* Modal z-index fix */
 .payment-method-modal,
 .result-modal {
-  z-index: 3000 !important;
+  z-index: 10000 !important;
 }
 
 /* ===== RESPONSIVE STYLES ===== */
