@@ -18,6 +18,7 @@ from bs4 import BeautifulSoup
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from urllib.parse import quote_plus
 
 # Импорт функций из модуля API
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
@@ -113,13 +114,14 @@ else:
     webhooks_collection = db['webhooks']
     payments_collection = db['payments']
     failed_logins_collection = db['failed_logins']
+    techspecs_collection = db['techspecs']  # Новая коллекция для спецификаций телефонов
 
     # Отложенная инициализация индексов и данных
     try:
-        # Создаем индекс для поля Name
-        if 'name_index' not in phones_collection.index_information():
-            phones_collection.create_index('Name', name='name_index')
-            app.logger.info("Created index on Name field")
+        # Создаем текстовый индекс для полнотекстового поиска
+        if 'search_text_index' not in techspecs_collection.index_information():
+            techspecs_collection.create_index([('search_text', 'text')], name='search_text_index')
+            app.logger.info("Created text index for techspecs collection")
     except Exception as e:
         app.logger.error(f"Error creating index: {str(e)}")
 
@@ -184,105 +186,192 @@ def get_current_prices():
         return DEFAULT_PRICES
 
 # ======================================
-# Оптимизированные функции поиска телефонов
+# Phone Comparison System with Caching
 # ======================================
 
-def search_phones(query):
-    """Поиск телефонов по Name с использованием индекса"""
+BASE_API_URL = "https://api-mobilespecs.azharimm.dev"
+
+def fetch_brands():
+    """Получение списка брендов с кэшированием"""
+    if not client:
+        return []
+    
+    cache_key = "brands_list"
+    cached = techspecs_collection.find_one({'_id': cache_key})
+    
+    if cached and (datetime.utcnow() - cached['last_updated']) < timedelta(days=7):
+        return cached['data']
+    
     try:
-        if not query or not client:
-            return []
+        response = requests.get(f"{BASE_API_URL}/brands", timeout=10)
+        response.raise_for_status()
+        brands_data = response.json()
+        brands = brands_data.get('data', [])
         
-        app.logger.info(f"Searching phones for: {query}")
+        # Сохраняем в кэш
+        techspecs_collection.update_one(
+            {'_id': cache_key},
+            {'$set': {
+                'data': brands,
+                'last_updated': datetime.utcnow()
+            }},
+            upsert=True
+        )
+        return brands
+    except Exception as e:
+        app.logger.error(f"Brands fetch error: {str(e)}")
+        return cached['data'] if cached else []
+
+def search_phones(query):
+    """Поиск телефонов с кэшированием результатов"""
+    if not client:
+        return []
+    
+    # Сначала проверяем локальную базу
+    regex = re.compile(re.escape(query), re.IGNORECASE)
+    local_results = list(techspecs_collection.find({
+        '$text': {'$search': query}
+    }).limit(10))
+    
+    if local_results:
+        return [format_phone_result(phone) for phone in local_results]
+    
+    # Если в локальной базе нет, ищем через API
+    try:
+        response = requests.get(
+            f"{BASE_API_URL}/search", 
+            params={'query': query},
+            timeout=10
+        )
+        response.raise_for_status()
+        api_data = response.json()
+        api_results = api_data.get('data', {}).get('phones', [])
         
-        # Используем индекс для поиска по Name
-        regex = re.compile(re.escape(query), re.IGNORECASE)
-        results = list(phones_collection.find({
-            'Name': regex
-        }).limit(10))
+        formatted_results = []
+        for phone in api_results:
+            # Получаем полные детали и кэшируем
+            details = get_phone_details(phone['brand_slug'], phone['slug'], from_search=True)
+            if details:
+                formatted_results.append(format_phone_result(details))
         
-        normalized = []
-        for phone in results:
-            phone_name = phone.get('Name', 'Unknown Phone')
-            image_url = search_phone_image(phone_name)
-            
-            normalized.append({
-                '_id': str(phone['_id']),
-                'name': phone_name,
-                'image_url': image_url or PLACEHOLDER,
-            })
-        
-        app.logger.info(f"Found {len(normalized)} results")
-        return normalized
+        return formatted_results
     
     except Exception as e:
         app.logger.error(f"Phone search error: {str(e)}")
         return []
 
-def get_phone_details(phone_id):
-    """Получение детальной информации о телефоне"""
+def get_phone_details(brand_slug, phone_slug, from_search=False):
+    """Получение деталей телефона с кэшированием"""
+    if not client:
+        return None
+    
+    cache_key = f"{brand_slug}_{phone_slug}"
+    
+    # Пытаемся получить из кэша
+    cached = techspecs_collection.find_one({'_id': cache_key})
+    if cached:
+        return cached
+    
+    # Если нет в кэше, запрашиваем у API
     try:
-        if not client:
+        response = requests.get(
+            f"{BASE_API_URL}/brands/{brand_slug}/{phone_slug}",
+            timeout=15
+        )
+        response.raise_for_status()
+        api_data = response.json()
+        phone_data = api_data.get('data', {})
+        
+        if not phone_data:
             return None
-            
-        phone = phones_collection.find_one({'_id': ObjectId(phone_id)})
-        if not phone:
-            return None
         
-        name = phone.get('Name', 'Unknown Phone')
-        image_url = search_phone_image(name)
+        # Добавляем метаданные для сохранения
+        phone_data['_id'] = cache_key
+        phone_data['last_updated'] = datetime.utcnow()
+        phone_data['from_api'] = True
+        phone_data['search_text'] = f"{phone_data.get('brand', '')} {phone_data.get('phone_name', '')}"
         
-        specs = {}
-        for key, value in phone.items():
-            if key not in ['_id', 'Name']:
-                if isinstance(value, ObjectId):
-                    value = str(value)
-                elif isinstance(value, list):
-                    value = ', '.join(map(str, value))
-                elif isinstance(value, float) and value.is_integer():
-                    value = int(value)
-                
-                specs[key] = value
+        # Сохраняем в базу
+        try:
+            techspecs_collection.insert_one(phone_data)
+        except Exception as e:
+            app.logger.warning(f"Cache insert error: {str(e)}")
         
-        return {
-            '_id': str(phone['_id']),
-            'name': name,
-            'image_url': image_url or PLACEHOLDER,
-            'specs': specs
-        }
+        return phone_data
     
     except Exception as e:
-        app.logger.error(f"Details error: {str(e)}")
+        app.logger.error(f"Phone details error: {str(e)}")
         return None
 
-def perform_ai_comparison(phone1, phone2):
-    """Выполнение AI-сравнения двух телефонов с использованием Google Gemini"""
+def format_phone_result(phone_data):
+    """Форматирование результата для ответа API"""
+    return {
+        'id': phone_data['_id'],
+        'name': phone_data.get('phone_name', 'Unknown Phone'),
+        'brand': phone_data.get('brand', 'Unknown Brand'),
+        'thumbnail': phone_data.get('thumbnail', PLACEHOLDER),
+        'release_date': phone_data.get('release_date', 'N/A'),
+        'specs': extract_key_specs(phone_data)
+    }
+
+def extract_key_specs(phone_data):
+    """Извлечение ключевых характеристик"""
+    key_specs = {}
+    specifications = phone_data.get('specifications', [])
+    
+    for category in specifications:
+        title = category.get('title', 'Uncategorized')
+        specs = {}
+        
+        for item in category.get('specs', []):
+            key = item.get('key', '').replace(' ', '_').lower()
+            value = item.get('val', ['N/A'])[0] if isinstance(item.get('val'), list) else item.get('val', 'N/A')
+            specs[key] = value
+        
+        key_specs[title] = specs
+    
+    # Добавляем основные характеристики
+    key_specs['general'] = {
+        'dimensions': phone_data.get('dimension', 'N/A'),
+        'weight': phone_data.get('weight', 'N/A'),
+        'os': phone_data.get('os', 'N/A')
+    }
+    
+    return key_specs
+
+def perform_ai_comparison(phone1_id, phone2_id):
+    """Сравнение двух телефонов с помощью AI"""
+    if not client:
+        return "Database unavailable"
+    
     try:
+        # Получаем данные из кэша
+        phone1 = techspecs_collection.find_one({'_id': phone1_id})
+        phone2 = techspecs_collection.find_one({'_id': phone2_id})
+        
+        if not phone1 or not phone2:
+            return "Phone data not available"
+        
         import google.generativeai as genai
         genai.configure(api_key=GEMINI_API_KEY)
         
-        # Инициализация модели Gemini
         model = genai.GenerativeModel('gemini-1.5-flash')
         
-        phone1_name = phone1.get('name', 'Unknown Phone 1')
-        phone2_name = phone2.get('name', 'Unknown Phone 2')
-        
-        # Формируем промпт для Gemini
+        # Формируем промпт
         prompt = f"""
-            შედარება: {phone1_name} vs {phone2_name}
-            
-            გთხოვთ შეადაროთ შემდეგი კატეგორიები:
-            - პროდუქტიულობა
-            - ეკრანის ხარისხი
-            - კამერა
-            - ბატარეის ხანგრძლივობა
-            - დიზაინი
-            - ფასი და ღირებულება
-            
-            გთხოვთ მოგვაწოდოთ დეტალური ანალიზი ქართულ ენაზე.
+        შედარება: {phone1.get('brand', '')} {phone1.get('phone_name', '')} vs {phone2.get('brand', '')} {phone2.get('phone_name', '')}
+        
+        გთხოვთ შეადაროთ შემდეგი კატეგორიები:
+        - პროდუქტიულობა
+        - ეკრანის ხარისხი
+        - კამერა
+        - ბატარეის ხანგრძლივობა
+        - დიზაინი
+        - ფასი და ღირებულება
+        
+        გთხოვთ მოგვაწოდოთ დეტალური ანალიზი ქართულ ენაზე.
         """
         
-        # Генерация контента
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
@@ -291,24 +380,21 @@ def perform_ai_comparison(phone1, phone2):
             )
         )
         
-        content = response.text
-        
         # Сохраняем результат сравнения
-        if client and comparisons_collection is not None:
-            try:
-                comparisons_collection.insert_one({
-                    'phone1': phone1_name,
-                    'phone2': phone2_name,
-                    'timestamp': datetime.utcnow(),
-                    'ai_response': content
-                })
-            except Exception as e:
-                app.logger.error(f"Failed to save comparison: {str(e)}")
+        comparisons_collection.insert_one({
+            'phone1_id': phone1_id,
+            'phone2_id': phone2_id,
+            'phone1_name': f"{phone1.get('brand', '')} {phone1.get('phone_name', '')}",
+            'phone2_name': f"{phone2.get('brand', '')} {phone2.get('phone_name', '')}",
+            'ai_response': response.text,
+            'timestamp': datetime.utcnow(),
+            'user_id': ObjectId(session.get('user_id')) if 'user_id' in session else None
+        })
         
-        return content
+        return response.text
     
     except Exception as e:
-        app.logger.error(f"Gemini API error: {str(e)}")
+        app.logger.error(f"Gemini comparison error: {str(e)}")
         return "AI service unavailable"
 
 # ======================================
@@ -1172,40 +1258,52 @@ def upload_carousel_image():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ======================================
-# Сравнение телефонов (маршруты)
+# Phone Comparison Endpoints
 # ======================================
 
 @app.route('/api/search', methods=['GET'])
 def api_search():
     query = request.args.get('query', '').strip()
     if not query:
-        return jsonify({'error': 'საძიებო მოთხოვნა აუცილებელია'}), 400
+        return jsonify({'error': 'Search query required'}), 400
     
     results = search_phones(query)
     return jsonify(results)
 
 @app.route('/api/phone_details/<phone_id>', methods=['GET'])
 def api_phone_details(phone_id):
-    phone = get_phone_details(phone_id)
+    phone = get_phone_details(*phone_id.split('_', 1)) if '_' in phone_id else None
     if not phone:
-        return jsonify({'error': 'ტელეფონი ვერ მოიძებნა'}), 404
-    return jsonify(phone)
+        return jsonify({'error': 'Phone not found'}), 404
+    
+    formatted = format_phone_result(phone)
+    return jsonify(formatted)
 
-@app.route('/api/ai-analysis', methods=['POST'])
-def api_ai_analysis():
+@app.route('/api/compare', methods=['POST'])
+def api_compare_phones():
     data = request.json
-    phone1 = data.get('phone1')
-    phone2 = data.get('phone2')
+    phone1_id = data.get('phone1_id')
+    phone2_id = data.get('phone2_id')
     
-    if not phone1 or not phone2:
-        return jsonify({'error': 'ორივე ტელეფონი აუცილებელია'}), 400
+    if not phone1_id or not phone2_id:
+        return jsonify({'error': 'Both phone IDs are required'}), 400
     
-    analysis = perform_ai_comparison(phone1, phone2)
+    analysis = perform_ai_comparison(phone1_id, phone2_id)
     return jsonify({'analysis': analysis})
+
+# ======================================
+# Comparison Page
+# ======================================
 
 @app.route('/compare')
 def compare_phones():
-    return render_template('compare.html')
+    # Получаем популярные бренды для выбора
+    popular_brands = fetch_brands()[:10]  # Первые 10 брендов
+    
+    return render_template(
+        'compare.html',
+        popular_brands=popular_brands
+    )
 
 # ======================================
 # User Blueprint (Личный кабинет пользователя)
