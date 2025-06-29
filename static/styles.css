@@ -88,8 +88,9 @@
   box-sizing: border-box;
 }
 
-body, body * {
-  color: var(--text-color) !important;
+/* Уточненные глобальные стили текста */
+body, h1, h2, h3, h4, h5, h6, p, span, a, div {
+  color: var(--text-color);
 }
 
 body {
@@ -227,7 +228,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
   animation: cardAppear 0.6s ease-out;
   position: relative;
-  z-index: 2;
+  z-index: 10;
   backdrop-filter: blur(10px);
 }
 
@@ -265,7 +266,7 @@ body {
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  color: var(--text-color);
+  color: var(--text-color) !important; /* Исправлено */
   font-size: 1rem;
   transition: all 0.3s ease;
 }
@@ -436,7 +437,7 @@ body {
 
 /* ===== CARD STYLES ===== */
 .card {
-  background: var(--card-bg);
+  background: rgba(18, 26, 43, 0.95) !important; /* Исправлено */
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
@@ -449,6 +450,8 @@ body {
   position: relative;
   transform: translateY(0);
   animation: cardAppear 0.6s ease-out;
+  backdrop-filter: blur(10px);
+  z-index: 10;
 }
 
 .card::before {
@@ -493,22 +496,40 @@ body {
 
 /* ===== SERVICE CARDS ===== */
 .service-card {
+  background: rgba(18, 26, 43, 0.95) !important; /* Исправлено */
+  border-radius: 12px;
+  padding: 25px;
   text-align: center;
-  padding: 30px 20px;
-  position: relative;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  animation: floatCard 6s ease-in-out infinite;
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  position: relative;
 }
 
-@keyframes floatCard {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+.service-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  background: var(--card-hover-bg);
+}
+
+.service-card.selected {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0, 198, 255, 0.3);
+  background: rgba(0, 198, 255, 0.1);
+  border-color: rgba(0, 198, 255, 0.3);
 }
 
 .service-icon {
   font-size: 2.5rem;
   margin-bottom: 20px;
   color: var(--accent-color);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
 .service-title {
@@ -562,7 +583,7 @@ body {
 }
 
 .modal-content {
-  background: var(--card-bg);
+  background: rgba(18, 26, 43, 0.95); /* Исправлено */
   border-radius: 12px;
   margin: 2% auto;
   padding: 25px;
@@ -570,6 +591,7 @@ body {
   max-width: 800px;
   position: relative;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
 }
 
 .card-header {
@@ -639,40 +661,6 @@ body {
   margin: 30px 0;
 }
 
-.service-card {
-  background: var(--card-bg);
-  border-radius: 12px;
-  padding: 25px;
-  text-align: center;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.service-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  background: var(--card-hover-bg);
-}
-
-.service-card.selected {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 35px rgba(0, 198, 255, 0.3);
-  background: rgba(0, 198, 255, 0.1);
-  border-color: rgba(0, 198, 255, 0.3);
-}
-
-.service-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 10px;
-  color: var(--text-color);
-}
-
 .service-description {
   font-size: 0.95rem;
   color: rgba(255, 255, 255, 0.7);
@@ -700,11 +688,12 @@ body {
 }
 
 .imei-form-container {
-  background: var(--card-bg);
+  background: rgba(18, 26, 43, 0.95); /* Исправлено */
   border-radius: 12px;
   padding: 25px;
   margin-top: 20px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .btn-back {
@@ -740,7 +729,7 @@ body {
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  color: var(--text-color);
+  color: var(--text-color) !important; /* Исправлено */
   font-size: 1rem;
 }
 
@@ -869,11 +858,12 @@ body {
 }
 
 .payment-method-content {
-  background: var(--card-bg);
+  background: rgba(18, 26, 43, 0.95); /* Исправлено */
   border-radius: 12px;
   width: 90%;
   max-width: 500px;
   overflow: hidden;
+  backdrop-filter: blur(10px);
 }
 
 .payment-method-header {
