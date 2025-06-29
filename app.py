@@ -21,9 +21,8 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 # Импорт функций из модуля API
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
-
-# Импорт StripePayment
 from stripepay import StripePayment
+from googleimgsearch import search_phone_image  # Добавлен новый импорт
 
 app = Flask(__name__)
 CORS(app)
@@ -204,10 +203,13 @@ def search_phones(query):
         
         normalized = []
         for phone in results:
+            phone_name = phone.get('Name', 'Unknown Phone')
+            image_url = search_phone_image(phone_name)
+            
             normalized.append({
                 '_id': str(phone['_id']),
-                'name': phone.get('Name', 'Unknown Phone'),
-                'image_url': PLACEHOLDER,
+                'name': phone_name,
+                'image_url': image_url or PLACEHOLDER,
             })
         
         app.logger.info(f"Found {len(normalized)} results")
@@ -228,6 +230,7 @@ def get_phone_details(phone_id):
             return None
         
         name = phone.get('Name', 'Unknown Phone')
+        image_url = search_phone_image(name)
         
         specs = {}
         for key, value in phone.items():
@@ -244,7 +247,7 @@ def get_phone_details(phone_id):
         return {
             '_id': str(phone['_id']),
             'name': name,
-            'image_url': PLACEHOLDER,
+            'image_url': image_url or PLACEHOLDER,
             'specs': specs
         }
     
