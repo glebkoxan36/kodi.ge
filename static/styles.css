@@ -123,6 +123,8 @@ body {
   opacity: 0.25;
   z-index: 1;
   animation: gradientFloat 25s infinite alternate ease-in-out;
+  /* FIX: Prevent blocking input fields */
+  pointer-events: none;
 }
 
 .gradient-1 {
@@ -251,6 +253,8 @@ body {
   margin-bottom: 20px;
   animation: fadeIn 0.8s ease-out;
   position: relative;
+  /* FIX: Ensure form elements are above gradients */
+  z-index: 20;
 }
 
 .form-label {
@@ -266,7 +270,7 @@ body {
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  color: var(--text-color) !important; /* Исправлено */
+  color: var(--text-color) !important;
   font-size: 1rem;
   transition: all 0.3s ease;
 }
@@ -412,6 +416,9 @@ body {
 .main-content {
   margin-left: 300px;
   padding: 30px;
+  /* FIX: Ensure content is above gradients */
+  position: relative;
+  z-index: 20;
 }
 
 .section-title {
@@ -437,7 +444,7 @@ body {
 
 /* ===== CARD STYLES ===== */
 .card {
-  background: rgba(18, 26, 43, 0.95) !important; /* Исправлено */
+  background: rgba(18, 26, 43, 0.95) !important;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
@@ -496,7 +503,7 @@ body {
 
 /* ===== SERVICE CARDS ===== */
 .service-card {
-  background: rgba(18, 26, 43, 0.95) !important; /* Исправлено */
+  background: rgba(18, 26, 43, 0.95) !important;
   border-radius: 12px;
   padding: 25px;
   text-align: center;
@@ -583,7 +590,7 @@ body {
 }
 
 .modal-content {
-  background: rgba(18, 26, 43, 0.95); /* Исправлено */
+  background: rgba(18, 26, 43, 0.95);
   border-radius: 12px;
   margin: 2% auto;
   padding: 25px;
@@ -688,12 +695,15 @@ body {
 }
 
 .imei-form-container {
-  background: rgba(18, 26, 43, 0.95); /* Исправлено */
+  background: rgba(18, 26, 43, 0.95);
   border-radius: 12px;
   padding: 25px;
   margin-top: 20px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
+  /* FIX: Ensure form is above gradients */
+  position: relative;
+  z-index: 20;
 }
 
 .btn-back {
@@ -729,7 +739,7 @@ body {
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  color: var(--text-color) !important; /* Исправлено */
+  color: var(--text-color) !important;
   font-size: 1rem;
 }
 
@@ -850,7 +860,7 @@ body {
 }
 
 .payment-method-content {
-  background: rgba(18, 26, 43, 0.95); /* Исправлено */
+  background: rgba(18, 26, 43, 0.95);
   border-radius: 12px;
   width: 90%;
   max-width: 500px;
@@ -1277,6 +1287,9 @@ body {
   border-radius: 8px !important;
   color: var(--text-color) !important;
   padding: 14px 18px !important;
+  /* FIX: Ensure input is above gradients */
+  position: relative;
+  z-index: 20;
 }
 
 /* Service cards */
@@ -1509,6 +1522,19 @@ body {
   .result-value {
     width: 100%;
   }
+  
+  /* Mobile optimization for gradients */
+  .gradient-bg {
+    width: 300px;
+    height: 300px;
+    filter: blur(80px);
+  }
+  
+  /* Mobile input optimization */
+  #imei-input {
+    font-size: 16px !important;
+    padding: 12px 15px !important;
+  }
 }
 
 @media (max-width: 576px) {
@@ -1554,4 +1580,16 @@ body {
   .spec-cell {
     grid-column: 1;
   }
+}
+
+/* ===== CRITICAL FIXES ===== */
+/* Ensure all interactive elements are above gradients */
+.main-content, 
+.auth-container, 
+.payment-method-content, 
+.modal-content, 
+.imei-form-container,
+#imei-input {
+  position: relative;
+  z-index: 20;
   }
