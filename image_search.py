@@ -1,7 +1,9 @@
 import os
 import requests
 from flask import current_app
-from bs4 import BeautifulSoup  # Добавлен импорт BeautifulSoup
+from bs4 import BeautifulSoup
+import urllib.parse
+from requests.exceptions import RequestException, Timeout, ConnectionError, JSONDecodeError
 
 PLACEHOLDER = '/static/placeholder.jpg'
 
@@ -25,40 +27,95 @@ def search_phone_image(phone_name):
             
         return PLACEHOLDER
     except Exception as e:
-        current_app.logger.error(f"Image search error: {str(e)}")
+        current_app.logger.error(f"General image search error: {str(e)}", exc_info=True)
         return PLACEHOLDER
 
 def search_wikimedia_image(phone_name):
     """Поиск изображения через Wikimedia Commons API"""
     try:
         query = f"{phone_name} smartphone"
-        # Добавлен параметр srnamespace=6 для поиска только в файлах
-        url = f"https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch={query}&srlimit=1&srnamespace=6&format=json"
+        base_url = "https://commons.wikimedia.org/w/api.php"
         
-        response = requests.get(url, timeout=10)
-        data = response.json()
+        # Параметры первого запроса (поиск)
+        search_params = {
+            'action': 'query',
+            'list': 'search',
+            'srsearch': query,
+            'srlimit': 1,
+            'srnamespace': 6,
+            'format': 'json'
+        }
         
-        if 'query' in data and 'search' in data['query'] and data['query']['search']:
-            page_id = data['query']['search'][0]['pageid']
+        # Выполняем запрос с кодированными параметрами
+        response = requests.get(
+            base_url,
+            params=search_params,
+            timeout=(3.05, 10),  # Таймаут подключения и чтения
+            headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0'}
+        )
+        
+        # Проверяем статус и наличие контента
+        if response.status_code != 200:
+            current_app.logger.error(f"Wikimedia HTTP error: {response.status_code}")
+            return None
+        
+        # Проверяем валидность JSON
+        try:
+            data = response.json()
+        except JSONDecodeError:
+            current_app.logger.error("Wikimedia returned invalid JSON")
+            return None
+        
+        # Обрабатываем результаты поиска
+        if not data.get('query', {}).get('search'):
+            return None
             
-            # Получаем информацию об изображении
-            image_url = f"https://commons.wikimedia.org/w/api.php?action=query&pageids={page_id}&prop=imageinfo&iiprop=url&format=json"
-            img_response = requests.get(image_url, timeout=10)
+        page_id = data['query']['search'][0]['pageid']
+        
+        # Параметры второго запроса (информация об изображении)
+        image_params = {
+            'action': 'query',
+            'pageids': page_id,
+            'prop': 'imageinfo',
+            'iiprop': 'url',
+            'format': 'json'
+        }
+        
+        img_response = requests.get(
+            base_url,
+            params=image_params,
+            timeout=(3.05, 10),
+            headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0'}
+        )
+        
+        if img_response.status_code != 200:
+            return None
+            
+        try:
             img_data = img_response.json()
+        except JSONDecodeError:
+            return None
             
-            if 'query' in img_data and 'pages' in img_data['query']:
-                page = img_data['query']['pages'][str(page_id)]
-                if 'imageinfo' in page and page['imageinfo']:
-                    return page['imageinfo'][0]['url']
+        # Извлекаем URL изображения
+        pages = img_data.get('query', {}).get('pages', {})
+        if pages and str(page_id) in pages:
+            image_info = pages[str(page_id)].get('imageinfo', [])
+            if image_info:
+                return image_info[0]['url']
+                
+        return None
+        
+    except (Timeout, ConnectionError) as e:
+        current_app.logger.warning(f"Wikimedia network error: {str(e)}")
         return None
     except Exception as e:
-        current_app.logger.error(f"Wikimedia image search error: {str(e)}")
+        current_app.logger.error(f"Wikimedia image search error: {str(e)}", exc_info=True)
         return None
 
 def search_duckduckgo_image(phone_name):
     """Поиск изображения через неофициальный DuckDuckGo API"""
     try:
-        url = "https://duckduckgo.com/"
+        base_url = "https://duckduckgo.com/"
         params = {
             'q': f"{phone_name} smartphone",
             'iax': 'images',
@@ -68,8 +125,17 @@ def search_duckduckgo_image(phone_name):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
         
-        # Получаем перенаправление
-        response = requests.get(url, params=params, headers=headers, timeout=10)
+        response = requests.get(
+            base_url,
+            params=params,
+            headers=headers,
+            timeout=(3.05, 10)
+        )
+        
+        if response.status_code != 200:
+            current_app.logger.warning(f"DuckDuckGo HTTP error: {response.status_code}")
+            return None
+            
         soup = BeautifulSoup(response.text, 'html.parser')
         
         # Ищем изображения в результатах
@@ -78,14 +144,18 @@ def search_duckduckgo_image(phone_name):
             return image_results[0].get('src')
             
         return None
+        
+    except (Timeout, ConnectionError) as e:
+        current_app.logger.warning(f"DuckDuckGo network error: {str(e)}")
+        return None
     except Exception as e:
-        current_app.logger.error(f"DuckDuckGo image search error: {str(e)}")
+        current_app.logger.error(f"DuckDuckGo image search error: {str(e)}", exc_info=True)
         return None
 
 def search_google_direct_image(phone_name):
     """Поиск изображения через прямое обращение к Google Images"""
     try:
-        url = "https://www.google.com/search"
+        base_url = "https://www.google.com/search"
         params = {
             'tbm': 'isch',
             'q': f"{phone_name} smartphone"
@@ -94,7 +164,17 @@ def search_google_direct_image(phone_name):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
         
-        response = requests.get(url, params=params, headers=headers, timeout=10)
+        response = requests.get(
+            base_url,
+            params=params,
+            headers=headers,
+            timeout=(3.05, 10)
+        )
+        
+        if response.status_code != 200:
+            current_app.logger.warning(f"Google HTTP error: {response.status_code}")
+            return None
+            
         soup = BeautifulSoup(response.text, 'html.parser')
         
         # Ищем изображения в результатах
@@ -107,6 +187,10 @@ def search_google_direct_image(phone_name):
                     return src
                     
         return None
+        
+    except (Timeout, ConnectionError) as e:
+        current_app.logger.warning(f"Google network error: {str(e)}")
+        return None
     except Exception as e:
-        current_app.logger.error(f"Google direct image search error: {str(e)}")
+        current_app.logger.error(f"Google direct image search error: {str(e)}", exc_info=True)
         return None
