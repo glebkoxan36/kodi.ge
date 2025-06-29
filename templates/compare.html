@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ka">
 <head>
@@ -129,6 +130,43 @@
             justify-content: space-between;
             padding: 10px 0;
             border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Добавленные стили для спиннера и изображений */
+        .image-loading {
+            position: relative;
+            min-height: 150px;
+        }
+        
+        .image-loading::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00c6ff;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        .suggestion-thumb {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            background: #222;
+        }
+        
+        .phone-thumb {
+            max-width: 140px;
+            max-height: 140px;
+            object-fit: contain;
         }
     </style>
 </head>
@@ -521,22 +559,22 @@
                 return;
             }
             
+            // Показываем спиннер
+            suggestionsContainer.innerHTML = `
+                <div class="modal-suggestion-item text-center">
+                    <div class="image-loading"></div>
+                    <div>მოძებნა...</div>
+                </div>
+            `;
+            suggestionsContainer.style.display = 'block';
+            
             try {
-                // Simulate API call
-                const mockPhones = [
-                    { _id: '1', name: 'iPhone 15 Pro', image_url: '/static/iphone15.jpg' },
-                    { _id: '2', name: 'Samsung Galaxy S23 Ultra', image_url: '/static/s23ultra.jpg' },
-                    { _id: '3', name: 'Xiaomi 13 Pro', image_url: '/static/xiaomi13.jpg' },
-                    { _id: '4', name: 'Google Pixel 8 Pro', image_url: '/static/pixel8.jpg' }
-                ];
+                const response = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
+                const phones = await response.json();
                 
-                const filteredPhones = mockPhones.filter(phone => 
-                    phone.name.toLowerCase().includes(query.toLowerCase())
-                );
-                
-                if (filteredPhones.length > 0) {
+                if (phones.length > 0) {
                     suggestionsContainer.innerHTML = '';
-                    filteredPhones.forEach(phone => {
+                    phones.forEach(phone => {
                         const item = document.createElement('div');
                         item.className = 'modal-suggestion-item';
                         item.dataset.id = phone._id;
@@ -764,4 +802,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
