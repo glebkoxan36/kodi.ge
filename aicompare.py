@@ -9,6 +9,9 @@ from bson import ObjectId
 from image_search import search_phone_image
 import cohere
 
+# Инициализация логгера модуля
+logger = logging.getLogger(__name__)
+
 # Глобальная ссылка на коллекцию
 techspecs_collection = None
 PLACEHOLDER = '/static/placeholder.jpg'
@@ -20,7 +23,7 @@ try:
     gemini_model = genai.GenerativeModel('gemini-1.5-flash')
     GEMINI_AVAILABLE = True
 except Exception as e:
-    app.logger.warning(f"Gemini initialization failed: {str(e)}")
+    logger.warning(f"Gemini initialization failed: {str(e)}")
     GEMINI_AVAILABLE = False
 
 try:
@@ -33,7 +36,7 @@ except Exception as e:
 def init_techspecs_collection(collection):
     global techspecs_collection
     techspecs_collection = collection
-    app.logger.info("Techspecs collection initialized in aicompare")
+    logger.info("Techspecs collection initialized in aicompare")
 
 def generate_avatar_color(name):
     if not name:
@@ -44,7 +47,7 @@ def generate_avatar_color(name):
 def ai_search_phones(query):
     """Поиск телефонов с приоритетом кэша MongoDB"""
     if not techspecs_collection:
-        app.logger.error("Techspecs collection not initialized")
+        logger.error("Techspecs collection not initialized")
         return []
 
     try:
@@ -55,14 +58,14 @@ def ai_search_phones(query):
         ).sort([("score", {"$meta": "textScore"})]).limit(10))
 
         if cached_results:
-            app.logger.info(f"Found {len(cached_results)} cached results for: {query}")
+            logger.info(f"Found {len(cached_results)} cached results for: {query}")
             return format_cached_results(cached_results)
 
         # Если в кеше нет - используем AI
         return search_with_ai(query)
     
     except Exception as e:
-        app.logger.error(f"Search error: {str(e)}")
+        logger.error(f"Search error: {str(e)}")
         return []
 
 def format_cached_results(cached_results):
@@ -97,17 +100,17 @@ def search_with_ai(query):
             return search_with_cohere(query)
         
         # Если оба API недоступны
-        app.logger.error("Both Gemini and Cohere APIs are unavailable")
+        logger.error("Both Gemini and Cohere APIs are unavailable")
         return []
     
     except Exception as e:
-        app.logger.error(f"AI search error: {str(e)}")
+        logger.error(f"AI search error: {str(e)}")
         return []
 
 def search_with_gemini(query):
     """Поиск через Gemini API"""
     try:
-        app.logger.info(f"Searching with Gemini: {query}")
+        logger.info(f"Searching with Gemini: {query}")
         prompt = f"""
         შექმენით JSON სია 10 ყველაზე პოპულარული სმარტფონის შესახებ, რომლებიც შეესაბამება: '{query}'.
         ველები თითოეული ტელეფონისთვის:
@@ -138,14 +141,14 @@ def search_with_gemini(query):
         return cache_and_format_results(phones)
     
     except json.JSONDecodeError as e:
-        app.logger.error(f"Gemini JSON decode error: {str(e)}")
-        app.logger.debug(f"Raw Gemini response: {response_text[:500]}")
+        logger.error(f"Gemini JSON decode error: {str(e)}")
+        logger.debug(f"Raw Gemini response: {response_text[:500]}")
         # Попробуем Cohere если Gemini вернул невалидный JSON
         if COHERE_AVAILABLE:
             return search_with_cohere(query)
         return []
     except Exception as e:
-        app.logger.error(f"Gemini search error: {str(e)}")
+        logger.error(f"Gemini search error: {str(e)}")
         # Fallback to Cohere
         if COHERE_AVAILABLE:
             return search_with_cohere(query)
@@ -154,7 +157,7 @@ def search_with_gemini(query):
 def search_with_cohere(query):
     """Поиск через Cohere API"""
     try:
-        app.logger.info(f"Searching with Cohere: {query}")
+        logger.info(f"Searching with Cohere: {query}")
         prompt = f"""
         შექმენით JSON სია 10 ყველაზე პოპულარული სმარტფონის შესახებ, რომლებიც შეესაბამება: '{query}'.
         ველები თითოეული ტელეფონისთვის:
@@ -196,11 +199,11 @@ def search_with_cohere(query):
         return cache_and_format_results(phones)
         
     except json.JSONDecodeError as e:
-        app.logger.error(f"Cohere JSON decode error: {str(e)}")
-        app.logger.debug(f"Raw Cohere response: {response_text[:500]}")
+        logger.error(f"Cohere JSON decode error: {str(e)}")
+        logger.debug(f"Raw Cohere response: {response_text[:500]}")
         return []
     except Exception as e:
-        app.logger.error(f"Cohere search error: {str(e)}")
+        logger.error(f"Cohere search error: {str(e)}")
         return []
 
 def cache_and_format_results(phones):
@@ -280,7 +283,7 @@ def ai_compare_phones(phone1_id, phone2_id, user_id=None):
         return {"error": "Both AI services are unavailable"}
     
     except Exception as e:
-        app.logger.error(f"Comparison error: {str(e)}")
+        logger.error(f"Comparison error: {str(e)}")
         return {"error": "AI service unavailable"}
 
 def compare_with_gemini(phone1_id, phone2_id, user_id):
@@ -292,7 +295,7 @@ def compare_with_gemini(phone1_id, phone2_id, user_id):
         return {"error": "Phone data not available"}
     
     try:
-        app.logger.info(f"Comparing with Gemini: {phone1_id} vs {phone2_id}")
+        logger.info(f"Comparing with Gemini: {phone1_id} vs {phone2_id}")
         # Формируем промпт для сравнения
         prompt = f"""
         შეადარეთ ორი სმარტფონი: 
@@ -337,14 +340,14 @@ def compare_with_gemini(phone1_id, phone2_id, user_id):
         save_comparison(phone1, phone2, comparison, user_id)
         return comparison
     except json.JSONDecodeError as e:
-        app.logger.error(f"Gemini comparison JSON error: {str(e)}")
-        app.logger.debug(f"Raw Gemini response: {response_text[:500]}")
+        logger.error(f"Gemini comparison JSON error: {str(e)}")
+        logger.debug(f"Raw Gemini response: {response_text[:500]}")
         # Попробуем Cohere если Gemini вернул невалидный JSON
         if COHERE_AVAILABLE:
             return compare_with_cohere(phone1_id, phone2_id, user_id)
         return {"error": "Invalid response format"}
     except Exception as e:
-        app.logger.error(f"Gemini comparison error: {str(e)}")
+        logger.error(f"Gemini comparison error: {str(e)}")
         # Fallback to Cohere
         if COHERE_AVAILABLE:
             return compare_with_cohere(phone1_id, phone2_id, user_id)
@@ -359,7 +362,7 @@ def compare_with_cohere(phone1_id, phone2_id, user_id):
         return {"error": "Phone data not available"}
     
     try:
-        app.logger.info(f"Comparing with Cohere: {phone1_id} vs {phone2_id}")
+        logger.info(f"Comparing with Cohere: {phone1_id} vs {phone2_id}")
         prompt = f"""
         შეადარეთ ორი სმარტფონი: 
         Phone 1: {phone1['brand']} {phone1['model']} 
@@ -415,11 +418,11 @@ def compare_with_cohere(phone1_id, phone2_id, user_id):
         return comparison
         
     except json.JSONDecodeError as e:
-        app.logger.error(f"Cohere comparison JSON error: {str(e)}")
-        app.logger.debug(f"Raw Cohere response: {response_text[:500]}")
+        logger.error(f"Cohere comparison JSON error: {str(e)}")
+        logger.debug(f"Raw Cohere response: {response_text[:500]}")
         return {"error": "Invalid response format"}
     except Exception as e:
-        app.logger.error(f"Cohere comparison error: {str(e)}")
+        logger.error(f"Cohere comparison error: {str(e)}")
         return {"error": "Comparison service failed"}
 
 def save_comparison(phone1, phone2, comparison, user_id):
