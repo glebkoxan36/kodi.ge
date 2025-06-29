@@ -7,17 +7,23 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Исправление цвета текста в полях ввода */
-        #imei-input {
-            color: #333 !important;
-            background-color: rgba(255, 255, 255, 0.9) !important;
+        /* Дополнительные стили для решения проблем */
+        #selected-service-container, 
+        #payment-method-modal, 
+        #version-selector, 
+        #spinner {
+            display: none;
         }
         
-        /* Исправление отображения модальных окон */
-        .payment-method-modal,
-        .result-modal {
-            z-index: 10000 !important;
+        .error-message {
+            color: #ff3860;
+            display: none;
+            margin-top: 5px;
         }
+        
+        .balance-sufficient { color: #28a745; }
+        .balance-insufficient { color: #dc3545; }
+        .balance-error { color: #ffc107; }
     </style>
 </head>
 <body>
@@ -179,7 +185,6 @@
             document.querySelectorAll('.service-card').forEach(card => {
                 card.addEventListener('click', function() {
                     const serviceId = this.dataset.service;
-                    console.log("Selected service:", serviceId); // Отладочное сообщение
                     selectService(serviceId);
                     const url = new URL(window.location);
                     url.searchParams.set('type', serviceId);
@@ -245,7 +250,11 @@
             
             document.getElementById('services-container').style.display = 'none';
             document.getElementById('selected-service-container').style.display = 'block';
-            document.getElementById('imei-input').focus();
+            
+            // Задержка для корректного фокуса
+            setTimeout(() => {
+                document.getElementById('imei-input').focus();
+            }, 100);
         }
         
         function populateVersionSelector(versions) {
@@ -295,8 +304,9 @@
                 return;
             }
             
-            if (!/^\d{15}$/.test(imei)) {
-                errorElement.textContent = 'IMEI უნდა შედგებოდეს 15 ციფრისგან';
+            // Обновленная валидация: разрешаем буквы и цифры, минимум 8 символов
+            if (!/^[a-zA-Z0-9]{8,}$/.test(imei)) {
+                errorElement.textContent = 'შეიყვანეთ სწორი IMEI ან სერიული ნომერი (მინიმუმ 8 სიმბოლო)';
                 errorElement.style.display = 'block';
                 return;
             }
@@ -304,7 +314,15 @@
             errorElement.style.display = 'none';
             currentImei = imei;
             
+            // Проверка выбран ли тип сервиса
             if (!currentServiceType) {
+                errorElement.textContent = 'გთხოვთ აირჩიოთ შემოწმების ტიპი';
+                errorElement.style.display = 'block';
+                return;
+            }
+            
+            // Проверка выбрана ли версия для сервиса с версиями
+            if (selectedVersions && !currentServiceType) {
                 errorElement.textContent = 'გთხოვთ აირჩიოთ შემოწმების ტიპი';
                 errorElement.style.display = 'block';
                 return;
@@ -319,11 +337,11 @@
             // For authorized users
             if ({{ 'true' if user else 'false' }}) {
                 fetchUserBalance().then(balance => {
-                    // ИСПРАВЛЕННЫЙ УЧАСТОК КОДА
+                    // Исправленный код поиска сервиса
                     const service = services.find(s => 
-                        (s.id === currentServiceType) || 
+                        s.id === currentServiceType || 
                         (s.versions && s.versions.some(v => v.id === currentServiceType))
-                    ); // Закрывающая скобка и точка с запятой добавлены
+                    );
                     
                     if (!service) {
                         console.error('Service not found');
@@ -351,6 +369,9 @@
                     }
                     
                     document.getElementById('payment-method-modal').style.display = 'flex';
+                }).catch(() => {
+                    document.getElementById('balance-status').innerHTML = 
+                        `<span class="balance-error">ბალანსის მონაცემები ვერ მოიძებნა</span>`;
                 });
             } else {
                 processPayment(false);
@@ -359,7 +380,10 @@
         
         function fetchUserBalance() {
             return fetch('/user/dashboard/data')
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch balance');
+                    return response.json();
+                })
                 .then(data => data.balance)
                 .catch(() => 0.0);
         }
