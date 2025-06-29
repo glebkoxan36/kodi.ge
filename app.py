@@ -24,6 +24,7 @@ from urllib.parse import quote_plus
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
 from stripepay import StripePayment
 from image_search import search_phone_image  # Обновленный импорт
+from aicompare import init_techspecs_collection, ai_search_phones, ai_compare_phones  # Импорт AI функций
 
 app = Flask(__name__)
 CORS(app)
@@ -129,6 +130,9 @@ else:
         app.logger.info("Created text index for techspecs collection")
     except Exception as e:
         app.logger.error(f"Error creating index: {str(e)}")
+    
+    # Инициализация модуля сравнения телефонов
+    init_techspecs_collection(techspecs_collection)
 
 # Инициализация StripePayment
 stripe_payment = StripePayment(
@@ -189,226 +193,6 @@ def get_current_prices():
     except Exception as e:
         app.logger.error(f"Error getting prices: {str(e)}")
         return DEFAULT_PRICES
-
-# ======================================
-# AI Phone Comparison System (Fixed)
-# ======================================
-
-def ai_search_phones(query):
-    """Использует Gemini для поиска телефонов по запросу"""
-    if not client:
-        return []
-    
-    try:
-        import google.generativeai as genai
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        prompt = f"""
-        შექმენით JSON სია 10 ყველაზე პოპულარული სმარტფონის შესახებ, რომლებიც შეესაბამება შემდეგ მოთხოვნას: '{query}'.
-        თითოეული ტელეფონისთვის მიუთითეთ შემდეგი ველები:
-        - brand: ბრენდი (მაგ: Apple, Samsung, Xiaomi)
-        - model: მოდელის სახელი (მაგ: iPhone 15 Pro, Galaxy S24 Ultra)
-        - release_year: გამოშვების წელი
-        - display: ეკრანის დიაგონალი და ტიპი (მაგ: 6.7-inch OLED)
-        - processor: პროცესორი (მაგ: Snapdragon 8 Gen 3)
-        - ram: ოპერატიული მეხსიერება (მაგ: 8GB)
-        - storage: შიდა მეხსიერება (მაგ: 256GB)
-        - camera: კამერის სპეციფიკაცია (მაგ: 50MP main + 12MP ultra-wide)
-        - battery: ბატარეის ტევადობა (მაგ: 5000mAh)
-        - os: ოპერაციული სისტემა (მაგ: Android 14)
-        
-        გამოიტანეთ მხოლოდ JSON მასივი, სადაც თითოეული ობიექტი აღწერს ერთ ტელეფონს.
-        JSON პასუხი უნდა იყოს სწორად ფორმატირებული და არ შეიცავდეს დამატებით ტექსტს ან კომენტარებს.
-        """
-
-        response = model.generate_content(prompt)
-        response_text = response.text.strip()
-        
-        # Удаляем возможные markdown коды
-        if response_text.startswith('```json'):
-            response_text = response_text[7:-3].strip()
-        elif response_text.startswith('```'):
-            response_text = response_text[3:-3].strip()
-        
-        # Логируем для отладки
-        app.logger.info(f"Gemini response: {response_text[:500]}...")
-        
-        # Парсим JSON из ответа
-        phones = json.loads(response_text)
-        
-        # Ищем изображения для каждого телефона
-        for phone in phones:
-            # Убедимся, что все обязательные поля присутствуют
-            required_fields = ['brand', 'model', 'release_year', 'display', 
-                              'processor', 'ram', 'storage', 'camera', 
-                              'battery', 'os']
-            for field in required_fields:
-                if field not in phone:
-                    phone[field] = "N/A"  # Значение по умолчанию
-            
-            # Поиск изображения
-            image_url = search_phone_image(f"{phone['brand']} {phone['model']}")
-            phone['image_url'] = image_url if image_url else PLACEHOLDER
-            
-            # Генерация уникального ID
-            phone_id = f"{phone['brand']}_{phone['model']}" \
-                .replace(' ', '_') \
-                .replace('/', '_') \
-                .replace('.', '') \
-                .replace("'", "") \
-                .lower()
-            
-            # Сохраняем в базу
-            phone['_id'] = phone_id
-            phone['slug'] = phone_id  # Добавляем поле slug
-            phone['search_text'] = f"{phone['brand']} {phone['model']}"
-            phone['last_updated'] = datetime.utcnow()
-            
-            techspecs_collection.update_one(
-                {'_id': phone_id},
-                {'$set': phone},
-                upsert=True
-            )
-        
-        return phones
-    
-    except json.JSONDecodeError as e:
-        app.logger.error(f"JSON decode error: {str(e)}")
-        app.logger.error(f"Raw response: {response.text[:500] if 'response' in locals() else 'No response'}")
-        return []
-    except Exception as e:
-        app.logger.error(f"AI search error: {str(e)}")
-        return []
-
-def ai_compare_phones(phone1_id, phone2_id):
-    """Сравнивает два телефона с помощью AI"""
-    if not client:
-        return {"error": "Database unavailable"}
-    
-    try:
-        # Получаем данные из базы
-        phone1 = techspecs_collection.find_one({'_id': phone1_id})
-        phone2 = techspecs_collection.find_one({'_id': phone2_id})
-        
-        if not phone1 or not phone2:
-            return {"error": "Phone data not available"}
-        
-        import google.generativeai as genai
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        # Формируем промпт для сравнения
-        prompt = f"""
-        შეადარეთ ორი სმარტფონი: 
-        Phone 1: {phone1['brand']} {phone1['model']} 
-        Phone 2: {phone2['brand']} {phone2['model']}
-        
-        გთხოვთ მოგვაწოდოთ დეტალური შედარება შემდეგი კატეგორიების მიხედვით:
-        1. დიზაინი და აგებულება
-        2. ეკრანის ხარისხი და ზომა
-        3. პროდუქტიულობა (პროცესორი, RAM)
-        4. კამერის შესაძლებლობები
-        5. ბატარეის ხანგრძლივობა
-        6. ოპერაციული სისტემა და განახლებები
-        7. დამატებითი ფუნქციები
-        8. ფასი და ღირებულება
-        
-        დასასრულს მიუთითეთ რომელი ტელეფონი უკეთესია თითოეულ კატეგორიაში და საერთო ჯამში.
-        
-        გთხოვთ გამოიტანოთ პასუხი STRICTLY JSON ფორმატში შემდეგი სტრუქტურით:
-        {{
-            "comparison": [
-                {{
-                    "category": "დიზაინი",
-                    "phone1_advantage": "მოკლე აღწერა რატომ არის ტელეფონი 1 უკეთესი",
-                    "phone2_advantage": "მოკლე აღწერა რატომ არის ტელეფონი 2 უკეთესი",
-                    "winner": "phone1" ან "phone2"
-                }},
-                // ... სხვა კატეგორიები
-            ],
-            "overall_winner": "phone1" ან "phone2",
-            "summary": "მოკლე დასკვნა"
-        }}
-        
-        მნიშვნელოვანია: გამოიტანეთ მხოლოდ JSON ობიექტი, ყოველგვარი დამატებითი ტექსტის გარეშე.
-        """
-
-        response = model.generate_content(prompt)
-        response_text = response.text.strip()
-        
-        # Очистка ответа от markdown
-        if response_text.startswith('```json'):
-            response_text = response_text[7:-3].strip()
-        elif response_text.startswith('```'):
-            response_text = response_text[3:-3].strip()
-        
-        app.logger.info(f"Gemini comparison response: {response_text[:500]}...")
-        
-        comparison = json.loads(response_text)
-        
-        # Сохраняем результат сравнения
-        comparisons_collection.insert_one({
-            'phone1_id': phone1_id,
-            'phone2_id': phone2_id,
-            'phone1_name': f"{phone1['brand']} {phone1['model']}",
-            'phone2_name': f"{phone2['brand']} {phone2['model']}",
-            'comparison': comparison,
-            'timestamp': datetime.utcnow(),
-            'user_id': ObjectId(session.get('user_id')) if 'user_id' in session else None
-        })
-        
-        return comparison
-    
-    except json.JSONDecodeError as e:
-        app.logger.error(f"JSON decode error in comparison: {str(e)}")
-        app.logger.error(f"Raw response: {response_text}")
-        return {"error": "Invalid JSON response from AI"}
-    except Exception as e:
-        app.logger.error(f"Gemini comparison error: {str(e)}")
-        return {"error": "AI service unavailable"}
-
-# ======================================
-# API Endpoints for Phone Comparison
-# ======================================
-
-@app.route('/api/search', methods=['GET'])
-def api_search():
-    query = request.args.get('query', '').strip()
-    if not query:
-        return jsonify({'error': 'Search query required'}), 400
-    
-    results = ai_search_phones(query)
-    return jsonify(results)
-
-@app.route('/api/phone_details/<phone_id>', methods=['GET'])
-def api_phone_details(phone_id):
-    if not client:
-        return jsonify({'error': 'Database unavailable'}), 500
-    
-    phone = techspecs_collection.find_one({'_id': phone_id})
-    if not phone:
-        return jsonify({'error': 'Phone not found'}), 404
-    
-    # Удаляем поля, которые не нужны на клиенте
-    phone.pop('_id', None)
-    phone.pop('search_text', None)
-    phone.pop('last_updated', None)
-    return jsonify(phone)
-
-@app.route('/api/compare', methods=['POST'])
-def api_compare_phones():
-    data = request.json
-    phone1_id = data.get('phone1_id')
-    phone2_id = data.get('phone2_id')
-    
-    if not phone1_id or not phone2_id:
-        return jsonify({'error': 'Both phone IDs are required'}), 400
-    
-    comparison = ai_compare_phones(phone1_id, phone2_id)
-    if 'error' in comparison:
-        return jsonify(comparison), 500
-    return jsonify(comparison)
 
 # ======================================
 # Аудит и логирование
@@ -1125,6 +909,49 @@ def internal_server_error(e):
         code=500,
         message="სერვერზე შეცდომა მოხდა"
     ), 500
+
+# ======================================
+# API Endpoints for Phone Comparison
+# ======================================
+
+@app.route('/api/search', methods=['GET'])
+def api_search():
+    query = request.args.get('query', '').strip()
+    if not query:
+        return jsonify({'error': 'Search query required'}), 400
+    
+    results = ai_search_phones(query)
+    return jsonify(results)
+
+@app.route('/api/phone_details/<phone_id>', methods=['GET'])
+def api_phone_details(phone_id):
+    if not client:
+        return jsonify({'error': 'Database unavailable'}), 500
+    
+    phone = techspecs_collection.find_one({'_id': phone_id})
+    if not phone:
+        return jsonify({'error': 'Phone not found'}), 404
+    
+    # Удаляем поля, которые не нужны на клиенте
+    phone.pop('_id', None)
+    phone.pop('search_text', None)
+    phone.pop('last_updated', None)
+    return jsonify(phone)
+
+@app.route('/api/compare', methods=['POST'])
+def api_compare_phones():
+    data = request.json
+    phone1_id = data.get('phone1_id')
+    phone2_id = data.get('phone2_id')
+    user_id = session.get('user_id')  # Для сохранения в историю
+    
+    if not phone1_id or not phone2_id:
+        return jsonify({'error': 'Both phone IDs are required'}), 400
+    
+    comparison = ai_compare_phones(phone1_id, phone2_id, user_id)
+    if 'error' in comparison:
+        return jsonify(comparison), 500
+    return jsonify(comparison)
 
 # ======================================
 # Health Check
