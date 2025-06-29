@@ -46,7 +46,7 @@ def generate_avatar_color(name):
 
 def ai_search_phones(query):
     """Поиск телефонов с приоритетом кэша MongoDB"""
-    if not techspecs_collection:
+    if techspecs_collection is None:  # Исправлено: явное сравнение с None
         logger.error("Techspecs collection not initialized")
         return []
 
@@ -240,7 +240,7 @@ def cache_and_format_results(phones):
         }
         
         # Сохранение в MongoDB
-        if techspecs_collection:
+        if techspecs_collection is not None:  # Исправлено: явное сравнение
             techspecs_collection.update_one(
                 {'_id': phone_id},
                 {'$set': doc},
@@ -267,7 +267,7 @@ def cache_and_format_results(phones):
 
 def ai_compare_phones(phone1_id, phone2_id, user_id=None):
     """Сравнение двух телефонов с помощью AI"""
-    if not techspecs_collection:
+    if techspecs_collection is None:  # Исправлено: явное сравнение
         return {"error": "Database unavailable"}
     
     try:
@@ -429,7 +429,7 @@ def save_comparison(phone1, phone2, comparison, user_id):
     """Сохранение результатов сравнения в базу"""
     from app import comparisons_collection  # Ленивый импорт
     
-    if not comparisons_collection:
+    if comparisons_collection is None:  # Исправлено: явное сравнение
         return
         
     comparisons_collection.insert_one({
