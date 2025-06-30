@@ -46,47 +46,61 @@ def generate_avatar_color(name):
 
 def ai_search_phones(query):
     """Поиск телефонов с приоритетом кэша MongoDB"""
-    if techspecs_collection is None:  # Исправлено: явное сравнение с None
+    if techspecs_collection is None:
         logger.error("Techspecs collection not initialized")
         return []
 
+    # Очистка и нормализация запроса
+    clean_query = re.sub(r'[^\w\s]', '', query).strip().lower()
+    if not clean_query or len(clean_query) < 3:
+        return []
+
     try:
-        # Поиск в MongoDB (кеше)
-        cached_results = list(techspecs_collection.find(
-            {"$text": {"$search": query}},
+        # Этап 1: Поиск по бренду (точное совпадение)
+        brand_results = list(techspecs_collection.find(
+            {"brand": {"$regex": f"^{clean_query}$", "$options": "i"}},
+            {"_id": 1, "brand": 1, "model": 1, "image_url": 1}
+        ).limit(10))
+
+        if brand_results:
+            logger.info(f"Found {len(brand_results)} brand results for: {clean_query}")
+            return format_cached_results(brand_results)
+
+        # Этап 2: Поиск по модели (частичное совпадение)
+        model_results = list(techspecs_collection.find(
+            {"model": {"$regex": clean_query, "$options": "i"}},
+            {"_id": 1, "brand": 1, "model": 1, "image_url": 1}
+        ).limit(10))
+
+        if model_results:
+            logger.info(f"Found {len(model_results)} model results for: {clean_query}")
+            return format_cached_results(model_results)
+
+        # Этап 3: Текстовый поиск (fallback)
+        text_results = list(techspecs_collection.find(
+            {"$text": {"$search": clean_query}},
             {"score": {"$meta": "textScore"}}
         ).sort([("score", {"$meta": "textScore"})]).limit(10))
 
-        if cached_results:
-            logger.info(f"Found {len(cached_results)} cached results for: {query}")
-            return format_cached_results(cached_results)
+        if text_results:
+            logger.info(f"Found {len(text_results)} text results for: {clean_query}")
+            return format_cached_results(text_results)
 
         # Если в кеше нет - используем AI
-        return search_with_ai(query)
+        return search_with_ai(clean_query)
     
     except Exception as e:
         logger.error(f"Search error: {str(e)}")
         return []
 
 def format_cached_results(cached_results):
-    """Форматирование результатов из MongoDB"""
-    formatted = []
-    for phone in cached_results:
-        formatted.append({
-            'brand': phone.get('brand', 'N/A'),
-            'model': phone.get('model', 'N/A'),
-            'release_year': phone.get('release_year', 'N/A'),
-            'display': phone.get('display', 'N/A'),
-            'processor': phone.get('processor', 'N/A'),
-            'ram': phone.get('ram', 'N/A'),
-            'storage': phone.get('storage', 'N/A'),
-            'camera': phone.get('camera', 'N/A'),
-            'battery': phone.get('battery', 'N/A'),
-            'os': phone.get('os', 'N/A'),
-            'image_url': phone.get('image_url', PLACEHOLDER),
-            '_id': phone['_id']
-        })
-    return formatted
+    """Форматирование результатов из MongoDB (только необходимые поля)"""
+    return [{
+        'brand': phone.get('brand', 'N/A'),
+        'model': phone.get('model', 'N/A'),
+        'image_url': phone.get('image_url', PLACEHOLDER),
+        '_id': phone['_id']
+    } for phone in cached_results]
 
 def search_with_ai(query):
     """Поиск телефонов через API с fallback"""
@@ -218,6 +232,19 @@ def cache_and_format_results(phones):
             .replace("'", "") \
             .lower()
         
+        # Проверяем, есть ли уже такой телефон в базе
+        if techspecs_collection is not None:
+            existing = techspecs_collection.find_one({'_id': phone_id})
+            if existing:
+                # Используем существующий
+                formatted.append({
+                    'brand': existing.get('brand', 'N/A'),
+                    'model': existing.get('model', 'N/A'),
+                    'image_url': existing.get('image_url', PLACEHOLDER),
+                    '_id': existing['_id']
+                })
+                continue
+        
         # Поиск изображения
         image_url = search_phone_image(f"{phone['brand']} {phone['model']}")
         
@@ -240,7 +267,7 @@ def cache_and_format_results(phones):
         }
         
         # Сохранение в MongoDB
-        if techspecs_collection is not None:  # Исправлено: явное сравнение
+        if techspecs_collection is not None:
             techspecs_collection.update_one(
                 {'_id': phone_id},
                 {'$set': doc},
@@ -251,14 +278,6 @@ def cache_and_format_results(phones):
         formatted.append({
             'brand': doc['brand'],
             'model': doc['model'],
-            'release_year': doc['release_year'],
-            'display': doc['display'],
-            'processor': doc['processor'],
-            'ram': doc['ram'],
-            'storage': doc['storage'],
-            'camera': doc['camera'],
-            'battery': doc['battery'],
-            'os': doc['os'],
             'image_url': doc['image_url'],
             '_id': phone_id
         })
@@ -267,7 +286,7 @@ def cache_and_format_results(phones):
 
 def ai_compare_phones(phone1_id, phone2_id, user_id=None):
     """Сравнение двух телефонов с помощью AI"""
-    if techspecs_collection is None:  # Исправлено: явное сравнение
+    if techspecs_collection is None:
         return {"error": "Database unavailable"}
     
     try:
@@ -427,9 +446,9 @@ def compare_with_cohere(phone1_id, phone2_id, user_id):
 
 def save_comparison(phone1, phone2, comparison, user_id):
     """Сохранение результатов сравнения в базу"""
-    from app import comparisons_collection  # Ленивый импорт
+    from app import comparisons_collection
     
-    if comparisons_collection is None:  # Исправлено: явное сравнение
+    if comparisons_collection is None:
         return
         
     comparisons_collection.insert_one({
