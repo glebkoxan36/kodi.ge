@@ -73,12 +73,3 @@ def get_phone_details(phone_id):
         product['images'] = []
     
     return product
-
-# Тестовый запуск
-if __name__ == '__main__':
-    test_results = search_phones("iPhone")
-    print(f"Found {len(test_results)} results")
-    if test_results:
-        first_phone = test_results[0]
-        details = get_phone_details(first_phone['id'])
-        print(f"First phone details: {details.keys()}")
