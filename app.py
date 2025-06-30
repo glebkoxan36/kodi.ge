@@ -23,8 +23,8 @@ from urllib.parse import quote_plus
 # Импорт функций из модуля API
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
 from stripepay import StripePayment
-from image_search import search_phone_image  # Обновленный импорт
-from aicompare import init_techspecs_collection, ai_search_phones, ai_compare_phones  # Импорт AI функций
+from image_search import search_phone_image
+from aicompare import init_techspecs_collection, ai_search_phones, ai_compare_phones
 
 app = Flask(__name__)
 CORS(app)
@@ -43,7 +43,8 @@ def generate_avatar_color(name):
 @app.context_processor
 def inject_utils():
     return {
-        'generate_avatar_color': generate_avatar_color
+        'generate_avatar_color': generate_avatar_color,
+        'ai_search_phones': ai_search_phones  # Инжектируем функцию поиска
     }
 
 # Настройка логирования
@@ -125,11 +126,13 @@ else:
         app.logger.warning(f"Error dropping slug index: {str(e)}")
 
     try:
-        # Создание текстового индекса
+        # Создание индексов
         techspecs_collection.create_index([('search_text', 'text')], name='search_text_index')
-        app.logger.info("Created text index for techspecs collection")
+        techspecs_collection.create_index([('brand', 1)], name='brand_index')
+        techspecs_collection.create_index([('model', 1)], name='model_index')
+        app.logger.info("Created indexes for techspecs collection")
     except Exception as e:
-        app.logger.error(f"Error creating index: {str(e)}")
+        app.logger.error(f"Error creating indexes: {str(e)}")
     
     # Инициализация модуля сравнения телефонов
     init_techspecs_collection(techspecs_collection)
@@ -398,7 +401,7 @@ def apple_check():
     return render_template(
         'applecheck.html',
         service_type=service_type,
-        services_data=services_data,  # Передаем готовый список услуг
+        services_data=services_data,
         stripe_public_key=STRIPE_PUBLIC_KEY,
         user=user_data
     )
@@ -608,7 +611,7 @@ def create_checkout_session():
             stripe_session = stripe_payment.create_checkout_session(
                 imei=imei,
                 service_type=service_type,
-                amount=amount,  # в центах
+                amount=amount,
                 success_url=success_url,
                 cancel_url=cancel_url
             )
@@ -868,7 +871,7 @@ def reparse_imei():
     parsed_data = parse_free_html(html_content)
     
     if parsed_data:
-        parsed_data['reparsed'] = True  # Флаг повторного парсинга
+        parsed_data['reparsed'] = True
         return jsonify(parsed_data)
     
     return jsonify({
@@ -943,7 +946,7 @@ def api_compare_phones():
     data = request.json
     phone1_id = data.get('phone1_id')
     phone2_id = data.get('phone2_id')
-    user_id = session.get('user_id')  # Для сохранения в историю
+    user_id = session.get('user_id')
     
     if not phone1_id or not phone2_id:
         return jsonify({'error': 'Both phone IDs are required'}), 400
