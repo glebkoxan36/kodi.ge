@@ -45,7 +45,7 @@ def generate_avatar_color(name):
     return '#' + hash_obj.hexdigest()[:6]
 
 def ai_search_phones(query):
-    """Поиск телефонов с приоритетом кэша MongoDB"""
+    """Поиск телефонов с приоритетом кэша MongoDB (максимум 3 результата)"""
     if techspecs_collection is None:
         logger.error("Techspecs collection not initialized")
         return []
@@ -56,37 +56,23 @@ def ai_search_phones(query):
         return []
 
     try:
-        # Этап 1: Поиск по бренду (точное совпадение)
-        brand_results = list(techspecs_collection.find(
-            {"brand": {"$regex": f"^{clean_query}$", "$options": "i"}},
-            {"_id": 1, "brand": 1, "model": 1, "image_url": 1}
-        ).limit(10))
-
-        if brand_results:
-            logger.info(f"Found {len(brand_results)} brand results for: {clean_query}")
-            return format_cached_results(brand_results)
-
-        # Этап 2: Поиск по модели (частичное совпадение)
-        model_results = list(techspecs_collection.find(
-            {"model": {"$regex": clean_query, "$options": "i"}},
-            {"_id": 1, "brand": 1, "model": 1, "image_url": 1}
-        ).limit(10))
-
-        if model_results:
-            logger.info(f"Found {len(model_results)} model results for: {clean_query}")
-            return format_cached_results(model_results)
-
-        # Этап 3: Текстовый поиск (fallback)
-        text_results = list(techspecs_collection.find(
-            {"$text": {"$search": clean_query}},
+        # Объединенный поиск (бренд + модель + текст) с лимитом 3
+        results = list(techspecs_collection.find(
+            {
+                "$or": [
+                    {"brand": {"$regex": f"^{clean_query}$", "$options": "i"}},
+                    {"model": {"$regex": clean_query, "$options": "i"}},
+                    {"$text": {"$search": clean_query}}
+                ]
+            },
             {"score": {"$meta": "textScore"}}
-        ).sort([("score", {"$meta": "textScore"})]).limit(10))
+        ).sort([("score", {"$meta": "textScore"})]).limit(3))
 
-        if text_results:
-            logger.info(f"Found {len(text_results)} text results for: {clean_query}")
-            return format_cached_results(text_results)
+        if results:
+            logger.info(f"Found {len(results)} cached results for: {clean_query}")
+            return format_cached_results(results)
 
-        # Если в кеше нет - используем AI
+        # Если в кеше нет - используем AI (запрашиваем 3 модели)
         return search_with_ai(clean_query)
     
     except Exception as e:
@@ -105,16 +91,16 @@ def format_cached_results(cached_results):
 def search_with_ai(query):
     """Поиск телефонов через API с fallback"""
     try:
-        # Сначала пытаемся использовать Gemini
-        if GEMINI_AVAILABLE:
-            return search_with_gemini(query)
-        
-        # Если Gemini недоступен, используем Cohere
+        # Сначала пытаемся использовать Cohere
         if COHERE_AVAILABLE:
             return search_with_cohere(query)
         
+        # Если Cohere недоступен, используем Gemini
+        if GEMINI_AVAILABLE:
+            return search_with_gemini(query)
+        
         # Если оба API недоступны
-        logger.error("Both Gemini and Cohere APIs are unavailable")
+        logger.error("Both Cohere and Gemini APIs are unavailable")
         return []
     
     except Exception as e:
@@ -122,11 +108,11 @@ def search_with_ai(query):
         return []
 
 def search_with_gemini(query):
-    """Поиск через Gemini API"""
+    """Поиск через Gemini API (3 модели)"""
     try:
         logger.info(f"Searching with Gemini: {query}")
         prompt = f"""
-        შექმენით JSON სია 10 ყველაზე პოპულარული სმარტფონის შესახებ, რომლებიც შეესაბამება: '{query}'.
+        შექმენით JSON სია 3 ყველაზე პოპულარული სმარტფონის შესახებ, რომლებიც შეესაბამება: '{query}'.
         ველები თითოეული ტელეფონისთვის:
         - brand: ბრენდი
         - model: მოდელის სახელი
@@ -157,23 +143,17 @@ def search_with_gemini(query):
     except json.JSONDecodeError as e:
         logger.error(f"Gemini JSON decode error: {str(e)}")
         logger.debug(f"Raw Gemini response: {response_text[:500]}")
-        # Попробуем Cohere если Gemini вернул невалидный JSON
-        if COHERE_AVAILABLE:
-            return search_with_cohere(query)
         return []
     except Exception as e:
         logger.error(f"Gemini search error: {str(e)}")
-        # Fallback to Cohere
-        if COHERE_AVAILABLE:
-            return search_with_cohere(query)
         return []
 
 def search_with_cohere(query):
-    """Поиск через Cohere API"""
+    """Поиск через Cohere API (3 модели)"""
     try:
         logger.info(f"Searching with Cohere: {query}")
         prompt = f"""
-        შექმენით JSON სია 10 ყველაზე პოპულარული სმარტფონის შესახებ, რომლებიც შეესაბამება: '{query}'.
+        შექმენით JSON სია 3 ყველაზე პოპულარული სმარტფონის შესახებ, რომლებიც შეესაბამება: '{query}'.
         ველები თითოეული ტელეფონისთვის:
         - brand: ბრენდი
         - model: მოდელის სახელი
@@ -221,9 +201,9 @@ def search_with_cohere(query):
         return []
 
 def cache_and_format_results(phones):
-    """Кэширование результатов в MongoDB и форматирование"""
+    """Кэширование результатов в MongoDB и форматирование (максимум 3 модели)"""
     formatted = []
-    for phone in phones:
+    for phone in phones[:3]:  # Ограничиваем до 3 моделей
         # Генерация ID
         phone_id = f"{phone['brand']}_{phone['model']}" \
             .replace(' ', '_') \
@@ -290,13 +270,13 @@ def ai_compare_phones(phone1_id, phone2_id, user_id=None):
         return {"error": "Database unavailable"}
     
     try:
-        # Сначала пытаемся использовать Gemini
-        if GEMINI_AVAILABLE:
-            return compare_with_gemini(phone1_id, phone2_id, user_id)
-        
-        # Если Gemini недоступен, используем Cohere
+        # Сначала пытаемся использовать Cohere
         if COHERE_AVAILABLE:
             return compare_with_cohere(phone1_id, phone2_id, user_id)
+        
+        # Если Cohere недоступен, используем Gemini
+        if GEMINI_AVAILABLE:
+            return compare_with_gemini(phone1_id, phone2_id, user_id)
         
         # Если оба API недоступны
         return {"error": "Both AI services are unavailable"}
@@ -361,15 +341,9 @@ def compare_with_gemini(phone1_id, phone2_id, user_id):
     except json.JSONDecodeError as e:
         logger.error(f"Gemini comparison JSON error: {str(e)}")
         logger.debug(f"Raw Gemini response: {response_text[:500]}")
-        # Попробуем Cohere если Gemini вернул невалидный JSON
-        if COHERE_AVAILABLE:
-            return compare_with_cohere(phone1_id, phone2_id, user_id)
         return {"error": "Invalid response format"}
     except Exception as e:
         logger.error(f"Gemini comparison error: {str(e)}")
-        # Fallback to Cohere
-        if COHERE_AVAILABLE:
-            return compare_with_cohere(phone1_id, phone2_id, user_id)
         return {"error": "AI service failed"}
 
 def compare_with_cohere(phone1_id, phone2_id, user_id):
