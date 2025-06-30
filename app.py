@@ -24,7 +24,7 @@ from urllib.parse import quote_plus
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
 from stripepay import StripePayment
 from image_search import search_phone_image
-from aicompare import init_techspecs_collection, ai_search_phones, ai_compare_phones
+from techspec import search_phones, get_phone_details, compare_phones  # Изменено
 
 app = Flask(__name__)
 CORS(app)
@@ -44,7 +44,7 @@ def generate_avatar_color(name):
 def inject_utils():
     return {
         'generate_avatar_color': generate_avatar_color,
-        'ai_search_phones': ai_search_phones  # Инжектируем функцию поиска
+        'ai_search_phones': search_phones  # Изменено
     }
 
 # Настройка логирования
@@ -133,9 +133,6 @@ else:
         app.logger.info("Created indexes for techspecs collection")
     except Exception as e:
         app.logger.error(f"Error creating indexes: {str(e)}")
-    
-    # Инициализация модуля сравнения телефонов
-    init_techspecs_collection(techspecs_collection)
 
 # Инициализация StripePayment
 stripe_payment = StripePayment(
@@ -923,22 +920,14 @@ def api_search():
     if not query:
         return jsonify({'error': 'Search query required'}), 400
     
-    results = ai_search_phones(query)
+    results = search_phones(query)
     return jsonify(results)
 
 @app.route('/api/phone_details/<phone_id>', methods=['GET'])
 def api_phone_details(phone_id):
-    if not client:
-        return jsonify({'error': 'Database unavailable'}), 500
-    
-    phone = techspecs_collection.find_one({'_id': phone_id})
+    phone = get_phone_details(phone_id)
     if not phone:
         return jsonify({'error': 'Phone not found'}), 404
-    
-    # Удаляем поля, которые не нужны на клиенте
-    phone.pop('_id', None)
-    phone.pop('search_text', None)
-    phone.pop('last_updated', None)
     return jsonify(phone)
 
 @app.route('/api/compare', methods=['POST'])
@@ -946,14 +935,13 @@ def api_compare_phones():
     data = request.json
     phone1_id = data.get('phone1_id')
     phone2_id = data.get('phone2_id')
-    user_id = session.get('user_id')
     
     if not phone1_id or not phone2_id:
         return jsonify({'error': 'Both phone IDs are required'}), 400
     
-    comparison = ai_compare_phones(phone1_id, phone2_id, user_id)
+    comparison = compare_phones(phone1_id, phone2_id)
     if 'error' in comparison:
-        return jsonify(comparison), 500
+        return jsonify(comparison), 404
     return jsonify(comparison)
 
 # ======================================
