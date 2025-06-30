@@ -1,5 +1,5 @@
+import os
 import requests
-from urllib.parse import quote
 
 class TechSpecsAPI:
     BASE_URL = "https://api.techspecs.io/v5"
@@ -9,8 +9,8 @@ class TechSpecsAPI:
         self.api_key = api_key
         self.headers = {
             "accept": "application/json",
-            "x-api-id": self.api_id,
-            "x-api-key": self.api_key
+            "X-API-ID": self.api_id,
+            "X-API-KEY": self.api_key
         }
     
     def _make_request(self, endpoint, params=None):
@@ -22,8 +22,10 @@ class TechSpecsAPI:
         except requests.exceptions.RequestException as e:
             print(f"Request error: {e}")
             return None
+        except ValueError as e:
+            print(f"JSON decode error: {e}")
+            return None
     
-    # Product Endpoints
     def product_search(self, query, keep_casing=True, page=0, size=10):
         endpoint = "/products/search"
         params = {
@@ -34,10 +36,6 @@ class TechSpecsAPI:
         }
         return self._make_request(endpoint, params)
     
-    def get_product_schemas(self):
-        endpoint = "/products/schemas"
-        return self._make_request(endpoint)
-    
     def get_product_by_id(self, product_id):
         endpoint = f"/products/{product_id}"
         return self._make_request(endpoint)
@@ -45,48 +43,42 @@ class TechSpecsAPI:
     def get_product_images(self, product_id):
         endpoint = f"/products/{product_id}/images"
         return self._make_request(endpoint)
-    
-    # Brand Endpoints
-    def get_brands(self):
-        endpoint = "/brands"
-        return self._make_request(endpoint)
-    
-    def get_brand_logos(self):
-        endpoint = "/brand-logos"
-        return self._make_request(endpoint)
-    
-    # Category Endpoints
-    def get_categories(self):
-        endpoint = "/categories"
-        return self._make_request(endpoint)
 
+# Инициализация API с ключами из переменных окружения
+api_id = os.getenv('TECHSPECS_API_ID')
+api_key = os.getenv('TECHSPECS_API_KEY')
 
-# Пример использования
-if __name__ == "__main__":
-    # Инициализация API с вашими ключами
-    api = TechSpecsAPI(
-        api_id="68625f85b363e86de2ae7e0a",
-        api_key="35a39ff6-545c-44e7-9861-f0c3eed6dcb4"
-    )
+if not api_id or not api_key:
+    raise ValueError("TECHSPECS_API_ID and TECHSPECS_API_KEY must be set in environment variables")
+
+api = TechSpecsAPI(api_id, api_key)
+
+def search_phones(query, size=10):
+    """Поиск телефонов по запросу"""
+    results = api.product_search(query, size=size)
+    if results and 'items' in results:
+        return results['items']
+    return []
+
+def get_phone_details(phone_id):
+    """Получение деталей телефона по ID"""
+    product = api.get_product_by_id(phone_id)
+    if not product:
+        return None
     
-    # Примеры запросов
-    print("=== Product Search ===")
-    search_results = api.product_search("iPhone 14", size=3)
-    print(search_results)
+    images = api.get_product_images(phone_id)
+    if isinstance(images, list):
+        product['images'] = images
+    else:
+        product['images'] = []
     
-    print("\n=== Product Details ===")
-    if search_results and 'items' in search_results and len(search_results['items']) > 0:
-        first_product_id = search_results['items'][0]['id']
-        product_details = api.get_product_by_id(first_product_id)
-        print(f"Product Name: {product_details['data']['name']}")
-        
-        images = api.get_product_images(first_product_id)
-        print(f"Images Count: {len(images)}")
-    
-    print("\n=== Brands ===")
-    brands = api.get_brands()
-    print(f"Total Brands: {len(brands)}")
-    
-    print("\n=== Categories ===")
-    categories = api.get_categories()
-    print(f"Total Categories: {len(categories)}")
+    return product
+
+# Тестовый запуск
+if __name__ == '__main__':
+    test_results = search_phones("iPhone")
+    print(f"Found {len(test_results)} results")
+    if test_results:
+        first_phone = test_results[0]
+        details = get_phone_details(first_phone['id'])
+        print(f"First phone details: {details.keys()}")
