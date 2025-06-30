@@ -541,12 +541,12 @@
                         item.dataset.id = phone._id;
                         
                         item.innerHTML = `
-                            <img src="${phone.image_url}" 
+                            <img src="${phone.image_url || '/static/placeholder.jpg'}" 
                                  class="suggestion-thumb" 
                                  onerror="handleImageError(event)">
                             <div class="suggestion-info">
                                 <div class="suggestion-name">${phone.brand} ${phone.model}</div>
-                                <div class="suggestion-brand">გამოშვების წელი: ${phone.release_year}</div>
+                                <div class="suggestion-brand">გამოშვების წელი: ${phone.release_year || 'უცნობია'}</div>
                             </div>
                         `;
                         
@@ -595,12 +595,12 @@
             }
             
             const newContent = `
-                <img src="${modalSelectedPhone.image_url}" 
+                <img src="${modalSelectedPhone.image_url || '/static/placeholder.jpg'}" 
                      class="phone-thumb" 
                      alt="${modalSelectedPhone.brand} ${modalSelectedPhone.model}"
                      onerror="handleImageError(event)">
                 <div class="phone-selector-title">${modalSelectedPhone.brand} ${modalSelectedPhone.model}</div>
-                <div class="phone-selector-subtitle">გამოშვების წელი: ${modalSelectedPhone.release_year}</div>
+                <div class="phone-selector-subtitle">${modalSelectedPhone.release_year || 'წელი უცნობია'}</div>
             `;
             
             phoneSelector.innerHTML = newContent;
@@ -675,8 +675,8 @@
         
         // Display comparison result
         function displayComparisonResult(comparison) {
-            const phone1 = selectedPhone1;
-            const phone2 = selectedPhone2;
+            const phone1 = comparison.phone1;
+            const phone2 = comparison.phone2;
             
             // Update phone info
             document.getElementById('phone1ResultName').textContent = `${phone1.brand} ${phone1.model}`;
@@ -684,11 +684,11 @@
             document.getElementById('phone1ResultNameShort').textContent = `${phone1.brand} ${phone1.model}`;
             document.getElementById('phone2ResultNameShort').textContent = `${phone2.brand} ${phone2.model}`;
             
-            document.getElementById('phone1ResultImage').src = phone1.image_url;
+            document.getElementById('phone1ResultImage').src = phone1.image_url || '/static/placeholder.jpg';
             document.getElementById('phone1ResultImage').onerror = function() {
                 handleImageError(this);
             };
-            document.getElementById('phone2ResultImage').src = phone2.image_url;
+            document.getElementById('phone2ResultImage').src = phone2.image_url || '/static/placeholder.jpg';
             document.getElementById('phone2ResultImage').onerror = function() {
                 handleImageError(this);
             };
@@ -707,45 +707,45 @@
             }
             
             // Create HTML for each category
-            comparison.comparison.forEach(cat => {
-                const winnerClass1 = cat.winner === 'phone1' ? 'better-value' : '';
-                const winnerClass2 = cat.winner === 'phone2' ? 'better-value' : '';
-                
-                const categoryHtml = `
+            comparison.comparison.forEach(category => {
+                let categoryHtml = `
                 <div class="spec-group">
                     <div class="group-header">
                         <i class="fas fa-folder-open"></i>
-                        <span>${cat.category}</span>
+                        <span>${category.category}</span>
                     </div>
                     <div class="spec-items">
-                        <div class="spec-item">
-                            <div class="spec-name">${phone1.brand} ${phone1.model}</div>
-                            <div class="spec-phone-value ${winnerClass1}">
-                                <div class="spec-phone-detail">${cat.phone1_advantage}</div>
-                            </div>
+                `;
+                
+                category.specs.forEach(spec => {
+                    const winnerClass1 = spec.winner === 'phone1' ? 'better-value' : '';
+                    const winnerClass2 = spec.winner === 'phone2' ? 'better-value' : '';
+                    
+                    categoryHtml += `
+                    <div class="spec-item">
+                        <div class="spec-name">${spec.name}</div>
+                        <div class="spec-phone-value ${winnerClass1}">
+                            <div class="spec-phone-label">${selectedPhone1.brand} ${selectedPhone1.model}</div>
+                            <div class="spec-phone-detail">${spec.phone1_value || 'N/A'}</div>
                         </div>
-                        <div class="spec-item">
-                            <div class="spec-name">${phone2.brand} ${phone2.model}</div>
-                            <div class="spec-phone-value ${winnerClass2}">
-                                <div class="spec-phone-detail">${cat.phone2_advantage}</div>
-                            </div>
-                        </div>
-                        <div class="spec-item">
-                            <div class="spec-name">გამარჯვებული</div>
-                            <div class="spec-phone-value">
-                                <div class="spec-phone-detail">
-                                    ${cat.winner === 'phone1' ? `${phone1.brand} ${phone1.model}` : `${phone2.brand} ${phone2.model}`}
-                                </div>
-                            </div>
+                        <div class="spec-phone-value ${winnerClass2}">
+                            <div class="spec-phone-label">${selectedPhone2.brand} ${selectedPhone2.model}</div>
+                            <div class="spec-phone-detail">${spec.phone2_value || 'N/A'}</div>
                         </div>
                     </div>
-                </div>`;
+                    `;
+                });
+                
+                categoryHtml += `
+                    </div>
+                </div>
+                `;
                 specsContent.innerHTML += categoryHtml;
             });
             
             // Add overall winner
-            if (comparison.overall_winner && comparison.summary) {
-                const overallWinner = comparison.overall_winner === 'phone1' ? 
+            if (comparison.overall_winner) {
+                const winnerPhone = comparison.overall_winner === 'phone1' ? 
                     `${phone1.brand} ${phone1.model}` : `${phone2.brand} ${phone2.model}`;
                 
                 const overallHtml = `
@@ -757,8 +757,8 @@
                     <div class="spec-items">
                         <div class="spec-item">
                             <div class="spec-phone-value" style="grid-column: span 2; text-align: center; padding: 20px;">
-                                <h3>${overallWinner}</h3>
-                                <p>${comparison.summary}</p>
+                                <h3>${winnerPhone}</h3>
+                                <p>მოიგო მეტი კატეგორია</p>
                             </div>
                         </div>
                     </div>
