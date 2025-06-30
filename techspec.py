@@ -3,11 +3,13 @@ import requests
 import re
 from flask import jsonify
 
+TECHSPECS_API_ID = os.getenv('TECHSPECS_API_ID', '68612672b363e86de2ae7d47')
 TECHSPECS_API_KEY = os.getenv('TECHSPECS_API_KEY', 'af00bda7-3f9c-4922-83e9-31985640187f')
 BASE_URL = "https://api.techspecs.io/v5"
 
 headers = {
-    "Authorization": f"Bearer {TECHSPECS_API_KEY}",
+    "X-API-ID": TECHSPECS_API_ID,
+    "X-API-KEY": TECHSPECS_API_KEY,
     "Accept": "application/json"
 }
 
