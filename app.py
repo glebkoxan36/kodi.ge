@@ -24,7 +24,7 @@ from urllib.parse import quote_plus
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
 from stripepay import StripePayment
 from image_search import search_phone_image
-from techspec import search_phones, compare_phones  # Изменено
+from techspec import search_phones, get_phone_details  # Изменено
 
 app = Flask(__name__)
 CORS(app)
