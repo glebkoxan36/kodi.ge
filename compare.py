@@ -1,6 +1,55 @@
 import re
 from collections import defaultdict
 
+# Веса характеристик (чем важнее характеристика, тем выше вес)
+WEIGHTS = {
+    # Производительность
+    "Оценка AnTuTu": 3.0,
+    "Geekbench (одиночное ядро)": 2.5,
+    "Geekbench (многоядерное)": 2.5,
+    "ОЗУ (ГБ)": 2.0,
+    "Тип ОЗУ": 1.5,
+    "Частота ОЗУ (МГц)": 1.7,
+    "ПЗУ (ГБ)": 1.8,
+    "Тип ПЗУ": 1.3,
+    "Скорость ПЗУ": 1.5,
+    
+    # Дисплей
+    "Размер дисплея (дюймы)": 1.8,
+    "Разрешение дисплея": 2.2,
+    "Тип дисплея": 2.0,
+    "Частота обновления (Гц)": 2.5,
+    "Пиковая яркость (нит)": 1.7,
+    "Поддержка HDR": 1.8,
+    "Плотность пикселей (PPI)": 1.6,
+    
+    # Камера
+    "Основная камера (Мп)": 2.2,
+    "Сверхширокоугольная камеа (Мп)": 1.8,
+    "Телефото 1 (Мп)": 1.7,
+    "Телефото 2 (Мп)": 1.5,
+    "Фронтальная камера (Мп)": 1.6,
+    "Возможности зума": 2.0,
+    "Видеозапись": 1.9,
+    
+    # Батарея
+    "Емкость батареи (mAh)": 2.8,
+    "Быстрая зарядка": 2.5,
+    "Беспроводная зарядка": 2.0,
+    "Обратная беспроводная зарядка": 1.5,
+    "Время работы от батареи (ч)": 2.7,
+    
+    # Другие важные
+    "Поддержка 5G": 2.0,
+    "NFC": 1.8,
+    "Сканер отпечатков": 1.7,
+    "Стартовая цена (руб)": 3.0,
+    "Текущая цена (руб)": 3.0,
+    "Процессор": 2.5,
+    "GPU": 2.0,
+    "Защита от воды": 1.8,
+}
+
 SPEC_CATEGORIES = {
     "Общие характеристики": [
         "Бренд", "Модель", "Год выпуска", "Квартал выпуска", "ОС", "Версия ОС", 
@@ -159,6 +208,7 @@ def compare_two_phones(phone1, phone2):
     
     comparison = []
     overall_scores = {'phone1': 0, 'phone2': 0}
+    category_scores = defaultdict(lambda: {'phone1': 0, 'phone2': 0})
 
     for category in ordered_categories:
         specs_list = []
@@ -173,22 +223,46 @@ def compare_two_phones(phone1, phone2):
                     break
             
             winner = None
+            weight = WEIGHTS.get(key, 1.0)  # Вес по умолчанию 1.0
+            
             if rule:
                 winner = compare_values(rule, val1, val2)
                 if winner:
-                    overall_scores[winner] += 1
+                    overall_scores[winner] += weight
+                    category_scores[category][winner] += weight
 
             specs_list.append({
                 'name': key,
                 'phone1_value': val1,
                 'phone2_value': val2,
-                'winner': winner
+                'winner': winner,
+                'weight': weight
             })
+        
+        # Рассчитываем процент побед для категории
+        total_cat = category_scores[category]['phone1'] + category_scores[category]['phone2']
+        cat_percent_phone1 = round(category_scores[category]['phone1'] / total_cat * 100, 1) if total_cat > 0 else 0
+        cat_percent_phone2 = round(category_scores[category]['phone2'] / total_cat * 100, 1) if total_cat > 0 else 0
         
         comparison.append({
             'category': category,
-            'specs': specs_list
+            'specs': specs_list,
+            'category_score_phone1': category_scores[category]['phone1'],
+            'category_score_phone2': category_scores[category]['phone2'],
+            'category_percent_phone1': cat_percent_phone1,
+            'category_percent_phone2': cat_percent_phone2,
         })
+    
+    # Рассчет общего результата
+    total_score = overall_scores['phone1'] + overall_scores['phone2']
+    
+    if total_score > 0:
+        percent_phone1 = round(overall_scores['phone1'] / total_score * 100, 1)
+        percent_phone2 = round(overall_scores['phone2'] / total_score * 100, 1)
+        advantage_percent = round(abs(percent_phone1 - percent_phone2), 1)
+    else:
+        percent_phone1 = percent_phone2 = 50.0
+        advantage_percent = 0.0
     
     overall_winner = None
     if overall_scores['phone1'] > overall_scores['phone2']:
@@ -200,7 +274,13 @@ def compare_two_phones(phone1, phone2):
         'phone1': phone1,
         'phone2': phone2,
         'comparison': comparison,
-        'overall_winner': overall_winner
+        'overall_winner': overall_winner,
+        'total_score_phone1': overall_scores['phone1'],
+        'total_score_phone2': overall_scores['phone2'],
+        'percent_phone1': percent_phone1,
+        'percent_phone2': percent_phone2,
+        'advantage_percent': advantage_percent,
+        'total_comparable_specs': total_score
     }
 
 def generate_image_path(brand, model):
