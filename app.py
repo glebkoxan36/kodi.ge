@@ -23,6 +23,7 @@ from urllib.parse import quote_plus
 # Импорт функций из модуля API
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
 from stripepay import StripePayment
+from compare import compare_two_phones, generate_image_path
 
 app = Flask(__name__)
 CORS(app)
@@ -112,14 +113,19 @@ else:
     payments_collection = db['payments']
     failed_logins_collection = db['failed_logins']
     techspecs_collection = db['techspecs']
+    phonebase_collection = db['phonebase']  # Коллекция для сравнения телефонов
 
-    # Отложенная инициализация индексов
+    # Создание индекса для поиска телефонов
     try:
-        # Удаление проблемного индекса
-        techspecs_collection.drop_index('slug_1')
-        app.logger.info("Dropped problematic slug index")
+        phonebase_collection.create_index([
+            ("Бренд", "text"),
+            ("Модель", "text"),
+            ("Бренд_1", "text"),
+            ("Модель_1", "text")
+        ], name="phone_search_index")
+        app.logger.info("Created text index for phonebase collection")
     except Exception as e:
-        app.logger.warning(f"Error dropping slug index: {str(e)}")
+        app.logger.error(f"Error creating phone search index: {str(e)}")
 
 # Инициализация StripePayment
 stripe_payment = StripePayment(
@@ -1039,6 +1045,75 @@ def upload_carousel_image():
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ======================================
+# Phone Comparison Endpoints
+# ======================================
+
+@app.route('/compare')
+def compare_phones_page():
+    """Страница сравнения телефонов"""
+    return render_template('compare.html')
+
+@app.route('/api/search_phones', methods=['GET'])
+def api_search_phones():
+    query = request.args.get('query', '')
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    
+    if not query or len(query) < 2:
+        return jsonify([])
+    
+    regex = re.compile(f'.*{re.escape(query)}.*', re.IGNORECASE)
+    results = phonebase_collection.find({
+        "$or": [
+            {"Бренд": regex},
+            {"Модель": regex},
+            {"Бренд_1": regex},
+            {"Модель_1": regex}
+        ]
+    }).skip((page-1)*per_page).limit(per_page)
+    
+    phones = []
+    for phone in results:
+        phone_data = {
+            '_id': str(phone['_id']),
+            'brand': phone.get('Бренд', ''),
+            'model': phone.get('Модель', ''),
+            'release_year': phone.get('Год выпуска', ''),
+            'image_url': generate_image_path(
+                phone.get('Бренд', ''), 
+                phone.get('Модель', '')
+            )
+        }
+        phones.append(phone_data)
+    
+    return jsonify(phones)
+
+@app.route('/api/compare', methods=['POST'])
+def api_compare_phones():
+    data = request.json
+    phone1_id = data.get('phone1_id')
+    phone2_id = data.get('phone2_id')
+    
+    if not phone1_id or not phone2_id:
+        return jsonify({'error': 'Missing phone IDs'}), 400
+    
+    try:
+        phone1 = phonebase_collection.find_one({'_id': ObjectId(phone1_id)})
+        phone2 = phonebase_collection.find_one({'_id': ObjectId(phone2_id)})
+    except:
+        return jsonify({'error': 'Invalid phone ID'}), 400
+    
+    if not phone1 or not phone2:
+        return jsonify({'error': 'Phone not found'}), 404
+    
+    # Генерируем пути к изображениям
+    phone1['image_url'] = generate_image_path(phone1.get('Бренд', ''), phone1.get('Модель', ''))
+    phone2['image_url'] = generate_image_path(phone2.get('Бренд', ''), phone2.get('Модель', ''))
+    
+    comparison_result = compare_two_phones(phone1, phone2)
+    return jsonify(comparison_result)
 
 # ======================================
 # User Blueprint (Личный кабинет пользователя)
