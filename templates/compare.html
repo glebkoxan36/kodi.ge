@@ -530,7 +530,7 @@
             `;
             
             try {
-                const response = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
+                const response = await fetch(`/api/search_phones?query=${encodeURIComponent(query)}`);
                 const phones = await response.json();
                 
                 if (phones.length > 0) {
@@ -541,12 +541,12 @@
                         item.dataset.id = phone._id;
                         
                         item.innerHTML = `
-                            <img src="${phone.image_url || '/static/placeholder.jpg'}" 
+                            <img src="${phone.image_url}" 
                                  class="suggestion-thumb" 
                                  onerror="handleImageError(event)">
                             <div class="suggestion-info">
                                 <div class="suggestion-name">${phone.brand} ${phone.model}</div>
-                                <div class="suggestion-brand">გამოშვების წელი: ${phone.release_year || 'უცნობია'}</div>
+                                <div class="suggestion-brand">${phone.release_year || 'წელი უცნობია'}</div>
                             </div>
                         `;
                         
@@ -595,7 +595,7 @@
             }
             
             const newContent = `
-                <img src="${modalSelectedPhone.image_url || '/static/placeholder.jpg'}" 
+                <img src="${modalSelectedPhone.image_url}" 
                      class="phone-thumb" 
                      alt="${modalSelectedPhone.brand} ${modalSelectedPhone.model}"
                      onerror="handleImageError(event)">
@@ -684,11 +684,11 @@
             document.getElementById('phone1ResultNameShort').textContent = `${phone1.brand} ${phone1.model}`;
             document.getElementById('phone2ResultNameShort').textContent = `${phone2.brand} ${phone2.model}`;
             
-            document.getElementById('phone1ResultImage').src = phone1.image_url || '/static/placeholder.jpg';
+            document.getElementById('phone1ResultImage').src = phone1.image_url;
             document.getElementById('phone1ResultImage').onerror = function() {
                 handleImageError(this);
             };
-            document.getElementById('phone2ResultImage').src = phone2.image_url || '/static/placeholder.jpg';
+            document.getElementById('phone2ResultImage').src = phone2.image_url;
             document.getElementById('phone2ResultImage').onerror = function() {
                 handleImageError(this);
             };
@@ -725,11 +725,11 @@
                     <div class="spec-item">
                         <div class="spec-name">${spec.name}</div>
                         <div class="spec-phone-value ${winnerClass1}">
-                            <div class="spec-phone-label">${selectedPhone1.brand} ${selectedPhone1.model}</div>
+                            <div class="spec-phone-label">${phone1.brand} ${phone1.model}</div>
                             <div class="spec-phone-detail">${spec.phone1_value || 'N/A'}</div>
                         </div>
                         <div class="spec-phone-value ${winnerClass2}">
-                            <div class="spec-phone-label">${selectedPhone2.brand} ${selectedPhone2.model}</div>
+                            <div class="spec-phone-label">${phone2.brand} ${phone2.model}</div>
                             <div class="spec-phone-detail">${spec.phone2_value || 'N/A'}</div>
                         </div>
                     </div>
