@@ -553,7 +553,7 @@ def create_checkout_session():
         
         # Для бесплатной проверки не создаем сессию
         if service_type == 'free':
-            return jsonify({'error': 'უფასო შემოწმება არ საჭიროებს გადახდას'}), 400
+            return jsonify({'error': 'უფასო შემოწმება არ საჭიროებს გადახდამ'}), 400
         
         # Если пользователь авторизован и выбрал оплату с баланса
         if use_balance and 'user_id' in session:
@@ -1167,7 +1167,6 @@ def dashboard():
         return redirect(url_for('auth.login'))
     
     user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-    
     if not user:
         flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
@@ -1176,10 +1175,19 @@ def dashboard():
     balance = user.get('balance', 0)
     
     # Последние 5 проверок
-    checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
+    last_checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
+        .sort('timestamp', -1)
+        .limit(5))
+    
+    # Последние 5 сравнений
+    last_comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
+        .sort('timestamp', -1)
+        .limit(5))
     
     # Последние 5 платежей
-    payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
+    last_payments = list(payments_collection.find({'user_id': ObjectId(user_id)})
+        .sort('timestamp', -1)
+        .limit(5))
     
     # Общее количество проверок
     total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
@@ -1191,8 +1199,9 @@ def dashboard():
         'user/dashboard.html',
         user=user,
         balance=balance,
-        checks=checks,
-        payments=payments,
+        last_checks=last_checks,
+        last_comparisons=last_comparisons,
+        last_payments=last_payments,
         total_checks=total_checks,
         total_comparisons=total_comparisons,
         STRIPE_PUBLIC_KEY=STRIPE_PUBLIC_KEY
@@ -1208,7 +1217,6 @@ def settings():
         return redirect(url_for('auth.login'))
     
     user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-    
     if not user:
         flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
@@ -1262,6 +1270,29 @@ def payment_methods():
     """Управление платежными методами"""
     return render_template('user/payment_methods.html')
 
+@user_bp.route('/payment_history')
+@login_required
+def payment_history():
+    """История платежей"""
+    user_id = session['user_id']
+    if not client:
+        flash('Database unavailable', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    if not user:
+        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    # Получаем всю историю платежей
+    payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1))
+    
+    return render_template(
+        'accounts.html',
+        user=user,
+        payments=payments
+    )
+
 @user_bp.route('/history/checks')
 @login_required
 def history_checks():
@@ -1272,7 +1303,6 @@ def history_checks():
         return redirect(url_for('auth.login'))
     
     user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-    
     if not user:
         flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
@@ -1312,7 +1342,6 @@ def history_comparisons():
         return redirect(url_for('auth.login'))
     
     user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-    
     if not user:
         flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
