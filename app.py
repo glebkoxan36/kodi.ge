@@ -114,6 +114,7 @@ else:
     failed_logins_collection = db['failed_logins']
     techspecs_collection = db['techspecs']
     phonebase_collection = db['phonebase']  # Коллекция для сравнения телефонов
+    comparisons_collection = db['comparisons']  # Новая коллекция для истории сравнений
 
     # Создание индекса для поиска телефонов
     try:
@@ -1133,6 +1134,19 @@ def api_compare_phones():
     
     comparison_result = compare_two_phones(phone1, phone2)
     
+    # Сохраняем в историю сравнений
+    if 'user_id' in session:
+        comparison_record = {
+            'user_id': ObjectId(session['user_id']),
+            'phone1_id': ObjectId(phone1_id),
+            'phone2_id': ObjectId(phone2_id),
+            'model1': phone1.get('Модель', ''),
+            'model2': phone2.get('Модель', ''),
+            'result': comparison_result.get('winner', 'draw'),
+            'timestamp': datetime.utcnow()
+        }
+        comparisons_collection.insert_one(comparison_record)
+    
     # Преобразуем все ObjectId в строки для сериализации
     comparison_result = convert_objectids(comparison_result)
     return jsonify(comparison_result)
@@ -1170,6 +1184,9 @@ def dashboard():
     # Общее количество проверок
     total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
     
+    # Общее количество сравнений
+    total_comparisons = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
+    
     return render_template(
         'user/dashboard.html',
         user=user,
@@ -1177,6 +1194,7 @@ def dashboard():
         checks=checks,
         payments=payments,
         total_checks=total_checks,
+        total_comparisons=total_comparisons,
         STRIPE_PUBLIC_KEY=STRIPE_PUBLIC_KEY
     )
 
@@ -1256,6 +1274,43 @@ def history_checks():
         user=user,
         balance=balance,
         checks=checks,
+        page=page,
+        per_page=per_page,
+        total=total
+    )
+
+@user_bp.route('/history/comparisons')
+@login_required
+def history_comparisons():
+    """История сравнений телефонов"""
+    user_id = session['user_id']
+    if not client:
+        flash('Database unavailable', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    
+    if not user:
+        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    balance = user.get('balance', 0)
+    
+    page = int(request.args.get('page', 1))
+    per_page = 20
+    
+    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
+        .sort('timestamp', -1)
+        .skip((page - 1) * per_page)
+        .limit(per_page))
+    
+    total = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
+    
+    return render_template(
+        'user/history_comparisons.html',
+        user=user,
+        balance=balance,
+        comparisons=comparisons,
         page=page,
         per_page=per_page,
         total=total
