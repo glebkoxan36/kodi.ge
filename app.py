@@ -1055,6 +1055,17 @@ def compare_phones_page():
     """Страница сравнения телефонов"""
     return render_template('compare.html')
 
+# Функция для преобразования ObjectId в строки
+def convert_objectids(obj):
+    """Рекурсивно преобразует все ObjectId в строки"""
+    if isinstance(obj, ObjectId):
+        return str(obj)
+    if isinstance(obj, list):
+        return [convert_objectids(item) for item in obj]
+    if isinstance(obj, dict):
+        return {key: convert_objectids(value) for key, value in obj.items()}
+    return obj
+
 @app.route('/api/search_phones', methods=['GET'])
 def api_search_phones():
     query = request.args.get('query', '')
@@ -1121,6 +1132,9 @@ def api_compare_phones():
     phone2['image_url'] = generate_image_path(phone2.get('Бренд', ''), phone2.get('Модель', ''))
     
     comparison_result = compare_two_phones(phone1, phone2)
+    
+    # Преобразуем все ObjectId в строки для сериализации
+    comparison_result = convert_objectids(comparison_result)
     return jsonify(comparison_result)
 
 # ======================================
