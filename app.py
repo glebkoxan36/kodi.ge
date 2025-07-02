@@ -23,7 +23,6 @@ from urllib.parse import quote_plus
 # Импорт функций из модуля API
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
 from stripepay import StripePayment
-from image_search import search_phone_image
 
 app = Flask(__name__)
 CORS(app)
