@@ -6,8 +6,40 @@
     <title>Kodi.ge - ტელეფონების შედარება</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="static/styles.css">
     <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.5;
+        }
+        
+        .gradient-1 {
+            background: radial-gradient(circle at 10% 20%, rgba(0, 114, 255, 0.2) 0%, rgba(0, 0, 0, 0) 50%);
+        }
+        
+        .gradient-2 {
+            background: radial-gradient(circle at 90% 80%, rgba(0, 198, 255, 0.2) 0%, rgba(0, 0, 0, 0) 50%);
+        }
+        
         .phone-selector-container {
             display: flex;
             flex-direction: column;
@@ -27,7 +59,7 @@
         .phone-selector {
             width: 100%;
             max-width: 280px;
-            height: 320px;
+            min-height: 320px;
             perspective: 1000px;
             cursor: pointer;
             border: 2px dashed #444;
@@ -37,6 +69,8 @@
             justify-content: center;
             transition: all 0.3s ease;
             background: rgba(30, 30, 40, 0.5);
+            padding: 15px;
+            box-sizing: border-box;
         }
         
         .phone-selector:hover {
@@ -66,18 +100,21 @@
             font-size: 1.2rem;
             font-weight: 600;
             margin-bottom: 5px;
+            overflow-wrap: break-word;
         }
         
         .phone-selector-subtitle {
             color: #888;
             font-size: 0.9rem;
+            overflow-wrap: break-word;
         }
         
         .phone-thumb {
             max-width: 140px;
             max-height: 140px;
             object-fit: contain;
-            margin-bottom: 15px;
+            margin: 0 auto 15px;
+            display: block;
         }
         
         .vs-container {
@@ -128,14 +165,6 @@
             box-shadow: none;
         }
         
-        .specs-container {
-            background: rgba(20, 20, 30, 0.8);
-            border-radius: 15px;
-            padding: 20px;
-            margin-top: 30px;
-            display: none;
-        }
-        
         .specs-header {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -145,10 +174,16 @@
         }
         
         .specs-phone img {
-            max-width: 120px;
-            max-height: 120px;
+            max-width: 100%;
+            max-height: 140px;
             object-fit: contain;
             margin: 0 auto 10px;
+        }
+        
+        .specs-phone > div {
+            font-weight: 600;
+            font-size: 1.2rem;
+            overflow-wrap: break-word;
         }
         
         .spec-group {
@@ -179,20 +214,30 @@
         
         .spec-item {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            grid-template-columns: 1fr;
+            gap: 10px;
             padding: 15px;
             background: rgba(30, 30, 40, 0.6);
             border-radius: 8px;
         }
         
+        @media (min-width: 768px) {
+            .spec-item {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+            
+            .spec-name {
+                grid-column: span 1;
+            }
+        }
+        
         .spec-name {
-            grid-column: span 2;
             font-weight: 600;
             margin-bottom: 10px;
             color: #00c6ff;
             padding-bottom: 5px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-wrap: break-word;
         }
         
         .spec-phone-value {
@@ -200,7 +245,7 @@
             padding: 10px;
             background: rgba(50, 50, 60, 0.5);
             border-radius: 6px;
-            min-height: 80px;
+            min-height: auto;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -210,11 +255,13 @@
             font-size: 0.85rem;
             color: #aaa;
             margin-bottom: 5px;
+            overflow-wrap: break-word;
         }
         
         .spec-phone-detail {
             font-size: 1.1rem;
             font-weight: 500;
+            overflow-wrap: break-word;
         }
         
         .better-value {
@@ -307,16 +354,19 @@
         
         .suggestion-info {
             flex-grow: 1;
+            min-width: 0;
         }
         
         .suggestion-name {
             font-weight: 500;
             margin-bottom: 3px;
+            overflow-wrap: break-word;
         }
         
         .suggestion-brand {
             font-size: 0.85rem;
             color: #aaa;
+            overflow-wrap: break-word;
         }
         
         .comparison-result {
@@ -365,6 +415,48 @@
             border-radius: 10px;
             margin-top: 20px;
             border: 2px solid #4CAF50;
+        }
+        
+        @media (max-width: 767px) {
+            .specs-header {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .phone-selector {
+                min-height: 250px;
+            }
+            
+            .spec-item {
+                grid-template-columns: 1fr;
+            }
+            
+            .spec-name {
+                grid-column: span 1;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .phone-selector {
+                max-width: 100%;
+                min-height: 200px;
+            }
+            
+            .phone-thumb {
+                max-width: 100px;
+                max-height: 100px;
+            }
+            
+            .vs-circle {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+            
+            .compare-btn {
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
@@ -470,7 +562,7 @@
         function handleImageError(event) {
             const img = event.target || event;
             img.onerror = null;
-            img.src = '/static/placeholder.jpg';
+            img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23555" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
         }
         
         // Open phone selection modal
@@ -663,41 +755,78 @@
             }
         }
         
-        // Display comparison result - FULLY REFACTORED
+        // Словарь переводов спецификаций
+        const specTranslations = {
+            "General": "ზოგადი",
+            "Display": "ეკრანი",
+            "Hardware": "აპარატურა",
+            "Camera": "კამერა",
+            "Battery": "ბატარეა",
+            "Other": "სხვა",
+            "Release year": "გამოშვების წელი",
+            "Dimensions": "ზომები",
+            "Weight": "წონა",
+            "OS": "ოპერაციული სისტემა",
+            "Screen size": "ეკრანის ზომა",
+            "Resolution": "გაფართოება",
+            "Processor": "პროცესორი",
+            "RAM": "ოპერატიული მეხსიერება",
+            "Storage": "შიდა მეხსიერება",
+            "Main Camera": "მთავარი კამერა",
+            "Front Camera": "წინა კამერა",
+            "Battery Capacity": "ბატარეის მოცულობა",
+            "Charging": "დატენვა",
+            "Wireless charging": "უსადენო დატენვა",
+            "Colors": "ფერები",
+            "Water resistance": "წყალგაუმტარობა",
+            "Biometrics": "ბიომეტრია",
+            "Connectivity": "კავშირი",
+            "Price": "ფასი"
+        };
+
+        // Функция для обработки значений спецификаций
+        function processSpecValue(value) {
+            if (!value || value === 'undefined' || value === 'N/A') {
+                return 'მონაცემი არ არის';
+            }
+            return value;
+        }
+
+        // Display comparison result
         function displayComparisonResult(comparison) {
             const phone1 = comparison.phone1;
             const phone2 = comparison.phone2;
             
             const resultContainer = document.getElementById('comparisonResult');
+            resultContainer.style.display = 'block';
             
             // Create the entire result HTML structure
             let resultHtml = `
                 <div class="text-center mb-4">
                     <h2 class="text-white">შედარების შედეგები</h2>
-                    <div class="d-flex justify-content-center align-items-center">
+                    <div class="d-flex justify-content-center align-items-center flex-wrap">
                         <div class="h4 text-center mx-3">${phone1.brand} ${phone1.model}</div>
                         <span class="vs-circle">VS</span>
                         <div class="h4 text-center mx-3">${phone2.brand} ${phone2.model}</div>
                     </div>
                 </div>
                 
-                <div class="specs-container" style="display: block;">
-                    <div class="specs-header">
-                        <div class="specs-phone">
-                            <img src="${phone1.image_url}" 
-                                 alt="${phone1.brand} ${phone1.model}" 
-                                 class="img-fluid"
-                                 onerror="handleImageError(this)">
-                            <div>${phone1.brand} ${phone1.model}</div>
-                        </div>
-                        <div class="specs-phone">
-                            <img src="${phone2.image_url}" 
-                                 alt="${phone2.brand} ${phone2.model}" 
-                                 class="img-fluid"
-                                 onerror="handleImageError(this)">
-                            <div>${phone2.brand} ${phone2.model}</div>
-                        </div>
+                <div class="specs-header">
+                    <div class="specs-phone">
+                        <img src="${phone1.image_url}" 
+                             alt="${phone1.brand} ${phone1.model}" 
+                             class="img-fluid"
+                             onerror="handleImageError(this)">
+                        <div>${phone1.brand} ${phone1.model}</div>
                     </div>
+                    <div class="specs-phone">
+                        <img src="${phone2.image_url}" 
+                             alt="${phone2.brand} ${phone2.model}" 
+                             class="img-fluid"
+                             onerror="handleImageError(this)">
+                        <div>${phone2.brand} ${phone2.model}</div>
+                    </div>
+                </div>
             `;
             
             // Generate specs comparison
@@ -710,29 +839,34 @@
             } else {
                 // Create HTML for each category
                 comparison.comparison.forEach(category => {
+                    const translatedCategory = specTranslations[category.category] || category.category;
+                    
                     resultHtml += `
                     <div class="spec-group">
                         <div class="group-header">
                             <i class="fas fa-folder-open"></i>
-                            <span>${category.category}</span>
+                            <span>${translatedCategory}</span>
                         </div>
                         <div class="spec-items">
                     `;
                     
                     category.specs.forEach(spec => {
+                        const translatedName = specTranslations[spec.name] || spec.name;
+                        const value1 = processSpecValue(spec.phone1_value);
+                        const value2 = processSpecValue(spec.phone2_value);
                         const winnerClass1 = spec.winner === 'phone1' ? 'better-value' : '';
                         const winnerClass2 = spec.winner === 'phone2' ? 'better-value' : '';
                         
                         resultHtml += `
                         <div class="spec-item">
-                            <div class="spec-name">${spec.name}</div>
+                            <div class="spec-name">${translatedName}</div>
                             <div class="spec-phone-value ${winnerClass1}">
                                 <div class="spec-phone-label">${phone1.brand} ${phone1.model}</div>
-                                <div class="spec-phone-detail">${spec.phone1_value || 'N/A'}</div>
+                                <div class="spec-phone-detail">${value1}</div>
                             </div>
                             <div class="spec-phone-value ${winnerClass2}">
                                 <div class="spec-phone-label">${phone2.brand} ${phone2.model}</div>
-                                <div class="spec-phone-detail">${spec.phone2_value || 'N/A'}</div>
+                                <div class="spec-phone-detail">${value2}</div>
                             </div>
                         </div>
                         `;
@@ -767,10 +901,7 @@
                 }
             }
             
-            // Close the specs-container div
-            resultHtml += `</div>`;
-            
-            // Update the DOM all at once
+            // Update the DOM
             resultContainer.innerHTML = resultHtml;
         }
     </script>
