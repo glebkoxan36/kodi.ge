@@ -1198,6 +1198,29 @@ def dashboard():
         STRIPE_PUBLIC_KEY=STRIPE_PUBLIC_KEY
     )
 
+@user_bp.route('/settings')
+@login_required
+def settings():
+    """Страница настроек пользователя"""
+    user_id = session['user_id']
+    if not client:
+        flash('Database unavailable', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    
+    if not user:
+        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+    
+    return render_template(
+        'user/settings.html',
+        user=user,
+        avatar_color=avatar_color
+    )
+
 @user_bp.route('/topup', methods=['GET', 'POST'])
 @login_required
 def topup_balance():
