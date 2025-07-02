@@ -249,6 +249,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            overflow: hidden;
         }
         
         .spec-phone-label {
@@ -262,6 +263,13 @@
             font-size: 1.1rem;
             font-weight: 500;
             overflow-wrap: break-word;
+            word-break: break-word;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
         }
         
         .better-value {
@@ -456,6 +464,10 @@
             .compare-btn {
                 padding: 10px 20px;
                 font-size: 1rem;
+            }
+            
+            .spec-phone-detail {
+                -webkit-line-clamp: 5;
             }
         }
     </style>
@@ -755,41 +767,90 @@
             }
         }
         
-        // Словарь переводов спецификаций
+        // Comprehensive translation dictionary for Russian to Georgian
         const specTranslations = {
-            "General": "ზოგადი",
-            "Display": "ეკრანი",
-            "Hardware": "აპარატურა",
-            "Camera": "კამერა",
-            "Battery": "ბატარეა",
-            "Other": "სხვა",
-            "Release year": "გამოშვების წელი",
-            "Dimensions": "ზომები",
-            "Weight": "წონა",
-            "OS": "ოპერაციული სისტემა",
-            "Screen size": "ეკრანის ზომა",
-            "Resolution": "გაფართოება",
-            "Processor": "პროცესორი",
-            "RAM": "ოპერატიული მეხსიერება",
-            "Storage": "შიდა მეხსიერება",
-            "Main Camera": "მთავარი კამერა",
-            "Front Camera": "წინა კამერა",
-            "Battery Capacity": "ბატარეის მოცულობა",
-            "Charging": "დატენვა",
-            "Wireless charging": "უსადენო დატენვა",
-            "Colors": "ფერები",
-            "Water resistance": "წყალგაუმტარობა",
-            "Biometrics": "ბიომეტრია",
-            "Connectivity": "კავშირი",
-            "Price": "ფასი"
+            // Categories
+            "Общее": "ზოგადი",
+            "Дисплей": "ეკრანი",
+            "Аппаратное обеспечение": "აპარატურა",
+            "Камера": "კამერა",
+            "Батарея": "ბატარეა",
+            "Другое": "სხვა",
+            "Сеть": "ქსელი",
+            "Память": "მეხსიერება",
+            "Производительность": "შესრულება",
+            "Датчики": "სენსორები",
+            
+            // Specifications
+            "Год выпуска": "გამოშვების წელი",
+            "Размеры": "ზომები",
+            "Вес": "წონა",
+            "ОС": "ოპერაციული სისტემა",
+            "Размер экрана": "ეკრანის ზომა",
+            "Разрешение": "გაფართოება",
+            "Процессор": "პროცესორი",
+            "Оперативная память": "ოპერატიული მეხსიერება",
+            "Память": "შიდა მეხსიერება",
+            "Основная камера": "მთავარი კამერა",
+            "Фронтальная камера": "წინა კამერა",
+            "Емкость аккумулятора": "ბატარეის მოცულობა",
+            "Зарядка": "დატენვა",
+            "Беспроводная зарядка": "უსადენო დატენვა",
+            "Цвета": "ფერები",
+            "Водонепроницаемость": "წყალგაუმტარობა",
+            "Биометрия": "ბიომეტრია",
+            "Связь": "კავშირი",
+            "Цена": "ფასი",
+            "Тип дисплея": "ეკრანის ტიპი",
+            "Частота обновления": "განახლების სიხშირე",
+            "SIM-карта": "SIM ბარათი",
+            "GPU": "გრაფიკული პროცესორი",
+            "Слот для карты памяти": "მეხსიერების ბარათის სლოტი",
+            "Видеосъемка": "ვიდეო ჩაწერა",
+            "Аудио": "აუდიო",
+            "Wi-Fi": "Wi-Fi",
+            "Bluetooth": "Bluetooth",
+            "NFC": "NFC",
+            "USB": "USB",
+            "GPS": "GPS",
+            "Датчик отпечатков пальцев": "თითის ანაბეჭდის სენსორი",
+            "Датчик освещенности": "განათების სენსორი",
+            "Акселерометр": "აქსელერომეტრი",
+            "Гироскоп": "გიროსკოპი",
+            "Компас": "კომპასი"
         };
 
-        // Функция для обработки значений спецификаций
+        // Function to process and translate specification values
         function processSpecValue(value) {
-            if (!value || value === 'undefined' || value === 'N/A') {
+            // Handle undefined values
+            if (value === undefined || value === null) {
                 return 'მონაცემი არ არის';
             }
-            return value;
+            
+            // Convert to string and trim
+            const strValue = String(value).trim();
+            
+            // Handle empty values
+            if (strValue === '' || strValue === 'undefined' || strValue === 'N/A') {
+                return 'მონაცემი არ არის';
+            }
+            
+            // Handle boolean values
+            if (strValue.toLowerCase() === 'true') return 'დიახ';
+            if (strValue.toLowerCase() === 'false') return 'არა';
+            
+            // Handle common specifications
+            if (strValue.includes('Android')) return strValue.replace('Android', 'Android');
+            if (strValue.includes('iOS')) return strValue.replace('iOS', 'iOS');
+            
+            // Handle common units
+            if (strValue.includes('мАч')) return strValue.replace('мАч', 'მილიმაპერი');
+            if (strValue.includes('Гц')) return strValue.replace('Гц', 'ჰერცი');
+            if (strValue.includes('дюйм')) return strValue.replace('дюйм', 'დუიმი');
+            if (strValue.includes('г')) return strValue.replace('г', 'გრამი');
+            if (strValue.includes('Мп')) return strValue.replace('Мп', 'მეგაპიქსელი');
+            
+            return strValue;
         }
 
         // Display comparison result
@@ -839,6 +900,7 @@
             } else {
                 // Create HTML for each category
                 comparison.comparison.forEach(category => {
+                    // Translate category name
                     const translatedCategory = specTranslations[category.category] || category.category;
                     
                     resultHtml += `
@@ -850,10 +912,16 @@
                         <div class="spec-items">
                     `;
                     
+                    // Add each specification in the category
                     category.specs.forEach(spec => {
+                        // Translate specification name
                         const translatedName = specTranslations[spec.name] || spec.name;
+                        
+                        // Process and translate values
                         const value1 = processSpecValue(spec.phone1_value);
                         const value2 = processSpecValue(spec.phone2_value);
+                        
+                        // Determine winner classes
                         const winnerClass1 = spec.winner === 'phone1' ? 'better-value' : '';
                         const winnerClass2 = spec.winner === 'phone2' ? 'better-value' : '';
                         
