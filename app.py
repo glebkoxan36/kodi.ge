@@ -24,7 +24,6 @@ from urllib.parse import quote_plus
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
 from stripepay import StripePayment
 from image_search import search_phone_image
-from techspec import search_phones, get_phone_details  # Изменено
 
 app = Flask(__name__)
 CORS(app)
@@ -43,8 +42,7 @@ def generate_avatar_color(name):
 @app.context_processor
 def inject_utils():
     return {
-        'generate_avatar_color': generate_avatar_color,
-        'ai_search_phones': search_phones  # Изменено
+        'generate_avatar_color': generate_avatar_color
     }
 
 # Настройка логирования
@@ -105,7 +103,6 @@ else:
     db = client['imei_checker']
     checks_collection = db['results']
     prices_collection = db['prices']
-    comparisons_collection = db['comparisons']
     phones_collection = db['phones']
     parser_logs_collection = db['parser_logs']
     admin_users_collection = db['admin_users']
@@ -124,15 +121,6 @@ else:
         app.logger.info("Dropped problematic slug index")
     except Exception as e:
         app.logger.warning(f"Error dropping slug index: {str(e)}")
-
-    try:
-        # Создание индексов
-        techspecs_collection.create_index([('search_text', 'text')], name='search_text_index')
-        techspecs_collection.create_index([('brand', 1)], name='brand_index')
-        techspecs_collection.create_index([('model', 1)], name='model_index')
-        app.logger.info("Created indexes for techspecs collection")
-    except Exception as e:
-        app.logger.error(f"Error creating indexes: {str(e)}")
 
 # Инициализация StripePayment
 stripe_payment = StripePayment(
@@ -911,40 +899,6 @@ def internal_server_error(e):
     ), 500
 
 # ======================================
-# API Endpoints for Phone Comparison
-# ======================================
-
-@app.route('/api/search', methods=['GET'])
-def api_search():
-    query = request.args.get('query', '').strip()
-    if not query:
-        return jsonify({'error': 'Search query required'}), 400
-    
-    results = search_phones(query)
-    return jsonify(results)
-
-@app.route('/api/phone_details/<phone_id>', methods=['GET'])
-def api_phone_details(phone_id):
-    phone = get_phone_details(phone_id)
-    if not phone:
-        return jsonify({'error': 'Phone not found'}), 404
-    return jsonify(phone)
-
-@app.route('/api/compare', methods=['POST'])
-def api_compare_phones():
-    data = request.json
-    phone1_id = data.get('phone1_id')
-    phone2_id = data.get('phone2_id')
-    
-    if not phone1_id or not phone2_id:
-        return jsonify({'error': 'Both phone IDs are required'}), 400
-    
-    comparison = compare_phones(phone1_id, phone2_id)
-    if 'error' in comparison:
-        return jsonify(comparison), 404
-    return jsonify(comparison)
-
-# ======================================
 # Health Check
 # ======================================
 
@@ -1088,14 +1042,6 @@ def upload_carousel_image():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ======================================
-# Comparison Page
-# ======================================
-
-@app.route('/compare')
-def compare_phones():
-    return render_template('compare.html')
-
-# ======================================
 # User Blueprint (Личный кабинет пользователя)
 # ======================================
 
@@ -1122,25 +1068,19 @@ def dashboard():
     # Последние 5 проверок
     checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
-    # Последние 5 сравнений
-    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
-    
     # Последние 5 платежей
     payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
-    # Общее количество операций
+    # Общее количество проверок
     total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
-    total_comparisons = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
     
     return render_template(
         'user/dashboard.html',
         user=user,
         balance=balance,
         checks=checks,
-        comparisons=comparisons,
         payments=payments,
         total_checks=total_checks,
-        total_comparisons=total_comparisons,
         STRIPE_PUBLIC_KEY=STRIPE_PUBLIC_KEY
     )
 
@@ -1220,46 +1160,6 @@ def history_checks():
         user=user,
         balance=balance,
         checks=checks,
-        page=page,
-        per_page=per_page,
-        total=total
-    )
-
-@user_bp.route('/history/comparisons')
-@login_required
-def history_comparisons():
-    """История сравнений телефонов"""
-    user_id = session['user_id']
-    if not client:
-        flash('Database unavailable', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-    
-    if not user:
-        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    balance = user.get('balance', 0)
-    
-    page = int(request.args.get('page', 1))
-    per_page = 20
-    
-    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
-        .sort('timestamp', -1)
-        .skip((page - 1) * per_page)
-        .limit(per_page))
-    
-    total = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
-    
-    for comp in comparisons:
-        comp['timestamp'] = comp['timestamp'].strftime('%Y-%m-%d %H:%M')
-    
-    return render_template(
-        'user/history_comparisons.html',
-        user=user,
-        balance=balance,
-        comparisons=comparisons,
         page=page,
         per_page=per_page,
         total=total
