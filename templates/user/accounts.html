@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2 class="section-title">ანგარიშები</h2>
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-wallet me-2"></i>
+                ბალანსის მართვა
+            </div>
+            <div class="card-body">
+                <div class="balance-summary">
+                    <div class="balance-label">მიმდინარე ბალანსი:</div>
+                    <div class="balance-amount">{{ balance }} ₾</div>
+                    <button class="btn btn-primary mt-3" onclick="showTopupModal()">
+                        <i class="fas fa-plus me-2"></i>ბალანსის შევსება
+                    </button>
+                </div>
+                
+                <div class="payment-history mt-5">
+                    <h4><i class="fas fa-history me-2"></i>გადახდების ისტორია</h4>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>თარიღი</th>
+                                <th>თანხა</th>
+                                <th>ტიპი</th>
+                                <th>სტატუსი</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td>{{ payment.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
+                                <td>{{ payment.amount }} ₾</td>
+                                <td>{{ payment.type }}</td>
+                                <td>
+                                    {% if payment.status == 'success' %}
+                                        <span class="badge bg-success">წარმატებული</span>
+                                    {% elif payment.status == 'pending' %}
+                                        <span class="badge bg-warning">მუშავდება</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">შეცდომა</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
