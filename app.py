@@ -1061,34 +1061,42 @@ def api_search_phones():
     page = int(request.args.get('page', 1))
     per_page = 10
     
+    if not client:
+        return jsonify({'error': 'Database unavailable'}), 500
+    
     if not query or len(query) < 2:
         return jsonify([])
     
-    regex = re.compile(f'.*{re.escape(query)}.*', re.IGNORECASE)
-    results = phonebase_collection.find({
-        "$or": [
-            {"Бренд": regex},
-            {"Модель": regex},
-            {"Бренд_1": regex},
-            {"Модель_1": regex}
-        ]
-    }).skip((page-1)*per_page).limit(per_page)
+    try:
+        regex = re.compile(f'.*{re.escape(query)}.*', re.IGNORECASE)
+        results = phonebase_collection.find({
+            "$or": [
+                {"Бренд": regex},
+                {"Модель": regex},
+                {"Бренд_1": regex},
+                {"Модель_1": regex}
+            ]
+        }).skip((page-1)*per_page).limit(per_page)
+        
+        phones = []
+        for phone in results:
+            phone_data = {
+                '_id': str(phone['_id']),
+                'brand': phone.get('Бренд', ''),
+                'model': phone.get('Модель', ''),
+                'release_year': phone.get('Год выпуска', ''),
+                'image_url': generate_image_path(
+                    phone.get('Бренд', ''), 
+                    phone.get('Модель', '')
+                )
+            }
+            phones.append(phone_data)
+        
+        return jsonify(phones)
     
-    phones = []
-    for phone in results:
-        phone_data = {
-            '_id': str(phone['_id']),
-            'brand': phone.get('Бренд', ''),
-            'model': phone.get('Модель', ''),
-            'release_year': phone.get('Год выпуска', ''),
-            'image_url': generate_image_path(
-                phone.get('Бренд', ''), 
-                phone.get('Модель', '')
-            )
-        }
-        phones.append(phone_data)
-    
-    return jsonify(phones)
+    except Exception as e:
+        app.logger.error(f"Error in api_search_phones: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/api/compare', methods=['POST'])
 def api_compare_phones():
