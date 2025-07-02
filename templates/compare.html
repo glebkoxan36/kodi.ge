@@ -531,6 +531,12 @@
             
             try {
                 const response = await fetch(`/api/search_phones?query=${encodeURIComponent(query)}`);
+                
+                // Handle HTTP errors
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const phones = await response.json();
                 
                 if (phones.length > 0) {
@@ -651,20 +657,25 @@
                     })
                 });
                 
+                // Handle HTTP errors
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const comparison = await response.json();
                 
-                if (response.ok) {
-                    displayComparisonResult(comparison);
-                } else {
-                    throw new Error(comparison.error || 'შედარება ვერ მოხერხდა');
+                if (comparison.error) {
+                    throw new Error(comparison.error);
                 }
+                
+                displayComparisonResult(comparison);
                 
             } catch (error) {
                 console.error('Error comparing phones:', error);
                 document.getElementById('comparisonResult').innerHTML = `
                     <div class="alert alert-danger text-center">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        ${error.message}
+                        ${error.message || 'შედარება ვერ მოხერხდა'}
                     </div>
                 `;
             } finally {
@@ -771,4 +782,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
