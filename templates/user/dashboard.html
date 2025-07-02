@@ -361,7 +361,7 @@
                                 <tr>
                                     <th>თარიღი</th>
                                     <th>IMEI</th>
-                                    <th>სტატუსი</th>
+                                    <th>ტიპი</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -369,17 +369,7 @@
                                 <tr>
                                     <td>{{ check.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
                                     <td>{{ check.imei }}</td>
-                                    <td>
-                                        {% if check.status == 'clean' %}
-                                            <span class="status-badge status-clean">სუფთა</span>
-                                        {% elif check.status == 'blacklisted' %}
-                                            <span class="status-badge status-blacklisted">შავი სია</span>
-                                        {% elif check.status == 'locked' %}
-                                            <span class="status-badge status-locked">დაბლოკილი</span>
-                                        {% else %}
-                                            <span class="status-badge status-unknown">უცნობი</span>
-                                        {% endif %}
-                                    </td>
+                                    <td>{{ check.service_type }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -446,7 +436,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for payment in payments %}
+                        {% for payment in last_payments %}
                         <tr>
                             <td>{{ payment.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
                             <td>{{ payment.amount }} ₾</td>
