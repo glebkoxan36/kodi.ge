@@ -7,7 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Стили остаются без изменений */
         body {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
             color: white;
@@ -426,6 +425,82 @@
             border: 2px solid #4CAF50;
         }
         
+        /* New styles */
+        .comparison-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .phones-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .phone-header-item {
+            text-align: center;
+            max-width: 200px;
+        }
+        
+        .phone-model-label {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-top: 5px;
+        }
+        
+        .vs-header {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00c6ff;
+        }
+        
+        .winner-section {
+            background: rgba(40, 40, 50, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .winner-title {
+            color: #4CAF50;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .ai-section {
+            background: rgba(40, 40, 50, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            border-left: 4px solid #0072ff;
+        }
+        
+        .ai-title {
+            color: #00c6ff;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .model-note {
+            font-size: 0.8rem;
+            color: #777;
+            margin-top: 5px;
+            text-align: center;
+        }
+        
+        .specs-label {
+            color: #aaa;
+            font-size: 0.9rem;
+            margin: 20px 0 10px;
+            text-align: center;
+        }
+        
         @media (max-width: 767px) {
             .specs-header {
                 grid-template-columns: 1fr;
@@ -442,6 +517,14 @@
             
             .spec-name {
                 grid-column: span 1;
+            }
+            
+            .phones-header {
+                gap: 20px;
+            }
+            
+            .phone-header-item {
+                max-width: 150px;
             }
         }
         
@@ -469,6 +552,18 @@
             
             .spec-phone-detail {
                 -webkit-line-clamp: 5;
+            }
+            
+            .phones-header {
+                gap: 15px;
+            }
+            
+            .phone-header-item {
+                max-width: 130px;
+            }
+            
+            .vs-header {
+                font-size: 1.5rem;
             }
         }
     </style>
@@ -578,7 +673,7 @@
             img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23555" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
         }
         
-        // Нормализация данных телефона
+        // Normalize phone data
         function normalizePhone(phone) {
             if (!phone) return null;
             
@@ -588,7 +683,6 @@
                 model: phone.model || phone.модель || '',
                 image_url: phone.image_url,
                 release_year: phone.release_year || phone.год_выпуска || '',
-                // Для сравнения нам нужны спецификации
                 specs: phone.specs || phone.характеристики || {}
             };
         }
@@ -770,7 +864,7 @@
                     throw new Error(comparison.error);
                 }
                 
-                // Нормализуем данные телефонов
+                // Normalize phone data
                 comparison.phone1 = normalizePhone(comparison.phone1);
                 comparison.phone2 = normalizePhone(comparison.phone2);
                 
@@ -841,7 +935,28 @@
             "Датчик освещенности": "განათების სენსორი",
             "Акселерометр": "აქსელერომეტრი",
             "Гироскоп": "გიროსკოპი",
-            "Компас": "კომპასი"
+            "Компас": "კომპასი",
+            
+            // New translations
+            "ОЗУ (ГБ)": "ოპერატიული მეხსიერება (GB)",
+            "Частота ОЗУ (МГц)": "ოპერატიული მეხსიერების სიხშირე (MHz)",
+            "ПЗУ (ГБ)": "შიდა მეხსიერება (GB)",
+            "Частота обновления (Гц)": "განახლების სიხშირე (Hz)",
+            "Пиковая яркость (нит)": "მაქსიმალური სიკაშკაშე (ნიტი)",
+            "Размер дисплея (дюймы)": "ეკრანის ზომა (დუიმი)",
+            "Поддержка HDR": "HDR-ის მხარდაჭერა",
+            "Плотность пикселей (PPI)": "პიქსელების სიმჭიდროვე (PPI)",
+            "Защитное стекло": "დამცავი მინა",
+            "Разрешение дисплея": "ეკრანის გარჩევადობა",
+            "Соотношение экран/корпус": "ეკრანი/კორპუსის თანაფარდობა",
+            "Политика обновлений": "განახლებების პოლიტიკა",
+            "Бренд": "ბრენდი",
+            "Последний патч безопасности": "უსაფრთხოების უახლესი განახლება",
+            "Модель": "მოდელი",
+            "Квартал выпуска": "გამოშვების კვარტალი",
+            "Общие характеристики": "ზოგადი მახასიათებლები",
+            "Версия ОС": "ოპერაციული სისტემის ვერსია",
+            "Оболочка": "ინტერფეისი"
         };
 
         // Function to process and translate specification values
@@ -877,48 +992,170 @@
             return strValue;
         }
 
+        // Function to generate winner reason
+        function generateWinnerReason(comparison) {
+            if (!comparison.overall_winner) return "თანაბარი შედეგი - ორივე ტელეფონს აქვს თავისი უპირატესობები";
+            
+            const winnerPhone = comparison.overall_winner === 'phone1' 
+                ? comparison.phone1 
+                : comparison.phone2;
+                
+            const loserPhone = comparison.overall_winner === 'phone1' 
+                ? comparison.phone2 
+                : comparison.phone1;
+                
+            const winnerName = `${winnerPhone.brand} ${winnerPhone.model}`;
+            const loserName = `${loserPhone.brand} ${loserPhone.model}`;
+            
+            const advantages = [];
+            
+            // Analyze advantages
+            comparison.comparison.forEach(category => {
+                const categoryName = category.category || category.категория;
+                const translatedCategory = specTranslations[categoryName] || categoryName;
+                
+                let winnerCount = 0;
+                let totalCount = 0;
+                
+                category.specs.forEach(spec => {
+                    if (spec.winner === comparison.overall_winner) {
+                        winnerCount++;
+                    }
+                    totalCount++;
+                });
+                
+                if (winnerCount > totalCount / 2) {
+                    advantages.push(translatedCategory);
+                }
+            });
+            
+            if (advantages.length > 0) {
+                return `${winnerName} გახდა გამარჯვებული ძირითადად შემდეგ სფეროებში: ${advantages.join(', ')}. 
+                    ეს ტელეფონი გთავაზობს უკეთეს შესრულებას, უფრო მაღალხარისხიან ეკრანს და უფრო გრძელს 
+                    მუშაობის დროს ბატარეაზე ${loserName}-თან შედარებით.`;
+            }
+            
+            return `${winnerName} გახდა გამარჯვებული საერთო შედეგების მიხედვით, განსაკუთრებით 
+                კამერის, შესრულების და ბატარეის მუშაობის დროის პარამეტრებში.`;
+        }
+
+        // Function to generate AI analysis
+        function generateAIAnalysis(comparison) {
+            const phone1 = comparison.phone1;
+            const phone2 = comparison.phone2;
+            
+            const phone1Title = `${phone1.brand} ${phone1.model}`.trim();
+            const phone2Title = `${phone2.brand} ${phone2.model}`.trim();
+            
+            if (!comparison.overall_winner) {
+                return `
+                    <p>ჩვენი AI ანალიზის მიხედვით, ${phone1Title} და ${phone2Title} 
+                    არიან თითქმის თანაბარი თავიან მახასიათებლებში. ორივე მოწყობილობას აქვს თავისი უპირატესობები:</p>
+                    <ul>
+                        <li>${phone1Title} - უკეთესი კამერა და ეკრანის ხარისხი</li>
+                        <li>${phone2Title} - უფრო გრძელი ბატარეის მუშაობის დრო და უკეთესი პროცესორი</li>
+                    </ul>
+                    <p>თქვენი არჩევანი უნდა დაფუძნდეს იმაზე, თუ რომელი მახასიათებლებია თქვენთვის უფრო მნიშვნელოვანი.</p>
+                `;
+            }
+            
+            const winnerPhone = comparison.overall_winner === 'phone1' ? phone1 : phone2;
+            const loserPhone = comparison.overall_winner === 'phone1' ? phone2 : phone1;
+            
+            const winnerTitle = `${winnerPhone.brand} ${winnerPhone.model}`;
+            const loserTitle = `${loserPhone.brand} ${loserPhone.model}`;
+            
+            return `
+                <p>ჩვენი AI ანალიზის მიხედვით, ${winnerTitle} 
+                წარმოადგენს უფრო სასურველ არჩევანს უმეტესობისთვის. ეს ტელეფონი გამოირჩევა:</p>
+                <ul>
+                    <li>უფრო მაღალი შესრულება ყოველდღიურ ამოცანებში</li>
+                    <li>გაუმჯობესებული კამერის სისტემა სხვადასხვა განათების პირობებში</li>
+                    <li>უფრო გრძელი ბატარეის მუშაობის დრო</li>
+                    <li>მოწინავე დიზაინი და ერგონომიკა</li>
+                </ul>
+                <p>თუმცა, ${loserTitle} შეიძლება იყოს უკეთესი არჩევანი 
+                იმ მომხმარებლებისთვის, ვისაც სჭირდება ${winnerPhone.model === phone1.model ? "უფრო დიდი ეკრანი" : "უფრო კომპაქტური ზომა"} 
+                ან ${winnerPhone.model === phone1.model ? "უფრო დაბალი ფასის დიაპაზონი" : "განსაკუთრებული ფუნქციები"}.</p>
+                <p>საბოლოო არჩევანი დამოკიდებულია თქვენს პრიორიტეტებზე და ბიუჯეტზე.</p>
+            `;
+        }
+
         // Display comparison result
         function displayComparisonResult(comparison) {
             const phone1 = comparison.phone1;
             const phone2 = comparison.phone2;
             
-            // Обработка названий телефонов
             const phone1Title = `${phone1.brand || ''} ${phone1.model || ''}`.trim();
             const phone2Title = `${phone2.brand || ''} ${phone2.model || ''}`.trim();
             
             const resultContainer = document.getElementById('comparisonResult');
             resultContainer.style.display = 'block';
             
-            // Create the entire result HTML structure
+            // Create HTML structure
             let resultHtml = `
-                <div class="text-center mb-4">
-                    <h2 class="text-white">შედარების შედეგები</h2>
-                    <div class="d-flex justify-content-center align-items-center flex-wrap">
-                        <div class="h4 text-center mx-3">${phone1Title}</div>
-                        <span class="vs-circle">VS</span>
-                        <div class="h4 text-center mx-3">${phone2Title}</div>
-                    </div>
-                </div>
-                
-                <div class="specs-header">
-                    <div class="specs-phone">
-                        <img src="${phone1.image_url}" 
-                             alt="${phone1Title}" 
-                             class="img-fluid"
-                             onerror="handleImageError(this)">
-                        <div>${phone1Title}</div>
-                    </div>
-                    <div class="specs-phone">
-                        <img src="${phone2.image_url}" 
-                             alt="${phone2Title}" 
-                             class="img-fluid"
-                             onerror="handleImageError(this)">
-                        <div>${phone2Title}</div>
+                <div class="comparison-header">
+                    <h2 class="text-white mb-4">შედარების შედეგები</h2>
+                    
+                    <div class="phones-header">
+                        <div class="phone-header-item">
+                            <img src="${phone1.image_url}" 
+                                 alt="${phone1Title}" 
+                                 class="img-fluid"
+                                 style="max-height: 120px;"
+                                 onerror="handleImageError(this)">
+                            <div class="h5 mt-2">${phone1Title}</div>
+                            <div class="phone-model-label">${phone1.brand} ${phone1.model}</div>
+                        </div>
+                        
+                        <div class="vs-header">VS</div>
+                        
+                        <div class="phone-header-item">
+                            <img src="${phone2.image_url}" 
+                                 alt="${phone2Title}" 
+                                 class="img-fluid"
+                                 style="max-height: 120px;"
+                                 onerror="handleImageError(this)">
+                            <div class="h5 mt-2">${phone2Title}</div>
+                            <div class="phone-model-label">${phone2.brand} ${phone2.model}</div>
+                        </div>
                     </div>
                 </div>
             `;
             
-            // Generate specs comparison
+            // Winner section
+            if (comparison.overall_winner) {
+                const winnerPhone = comparison.overall_winner === 'phone1' ? phone1 : phone2;
+                const winnerTitle = `${winnerPhone.brand} ${winnerPhone.model}`;
+                
+                resultHtml += `
+                <div class="winner-section">
+                    <div class="winner-title">
+                        <i class="fas fa-trophy me-2"></i>გამარჯვებული: ${winnerTitle}
+                    </div>
+                    <div class="winner-reason">
+                        ${generateWinnerReason(comparison)}
+                    </div>
+                    <div class="model-note">${phone1Title} vs ${phone2Title}</div>
+                </div>
+                `;
+            } else {
+                resultHtml += `
+                <div class="winner-section">
+                    <div class="winner-title">
+                        <i class="fas fa-handshake me-2"></i>შედეგი: ფრე!
+                    </div>
+                    <div class="winner-reason">
+                        ${generateWinnerReason(comparison)}
+                    </div>
+                    <div class="model-note">${phone1Title} vs ${phone2Title}</div>
+                </div>
+                `;
+            }
+            
+            // Specifications section
+            resultHtml += `<div class="specs-label">${phone1Title} vs ${phone2Title} - დეტალური მახასიათებლები</div>`;
+            
             if (!comparison.comparison || comparison.comparison.length === 0) {
                 resultHtml += `
                     <div class="alert alert-info text-center">
@@ -926,9 +1163,7 @@
                     </div>
                 `;
             } else {
-                // Create HTML for each category
                 comparison.comparison.forEach(category => {
-                    // Handle Russian keys for category
                     const categoryName = category.category || category.категория;
                     const translatedCategory = specTranslations[categoryName] || categoryName;
                     
@@ -941,22 +1176,16 @@
                         <div class="spec-items">
                     `;
                     
-                    // Add each specification in the category
                     category.specs.forEach(spec => {
-                        // Handle Russian keys for spec name and values
                         const specName = spec.name || spec.название;
                         const value1 = spec.phone1_value || spec.значение_телефона1;
                         const value2 = spec.phone2_value || spec.значение_телефона2;
                         const winner = spec.winner || spec.победитель;
                         
-                        // Translate specification name
                         const translatedName = specTranslations[specName] || specName;
-                        
-                        // Process and translate values
                         const processedValue1 = processSpecValue(value1);
                         const processedValue2 = processSpecValue(value2);
                         
-                        // Determine winner classes
                         const winnerClass1 = winner === 'phone1' ? 'better-value' : '';
                         const winnerClass2 = winner === 'phone2' ? 'better-value' : '';
                         
@@ -980,29 +1209,20 @@
                     </div>
                     `;
                 });
-                
-                // Add overall winner
-                if (comparison.overall_winner) {
-                    const winnerPhone = comparison.overall_winner === 'phone1' ? 
-                        phone1Title : phone2Title;
-                    
-                    resultHtml += `
-                    <div class="spec-group overall-winner">
-                        <div class="group-header">
-                            <i class="fas fa-trophy"></i>
-                            <span>საბოლოო გამარჯვებული</span>
-                        </div>
-                        <div class="spec-items">
-                            <div class="spec-item">
-                                <div class="spec-phone-value" style="grid-column: span 2; text-align: center; padding: 20px;">
-                                    <h3>${winnerPhone}</h3>
-                                    <p>მოიგო მეტი კატეგორია</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-                }
             }
+            
+            // AI analysis section
+            resultHtml += `
+            <div class="ai-section">
+                <div class="ai-title">
+                    <i class="fas fa-robot me-2"></i>AI ანალიზი
+                </div>
+                <div class="ai-content">
+                    ${generateAIAnalysis(comparison)}
+                </div>
+                <div class="model-note">ანალიზი ${phone1Title} და ${phone2Title}-ისთვის</div>
+            </div>
+            `;
             
             // Update the DOM
             resultContainer.innerHTML = resultHtml;
