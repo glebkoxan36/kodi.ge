@@ -5,7 +5,60 @@ function createMobileMenuStructure() {
     const mobileMenuContainer = document.getElementById('mobile-menu-container');
     if (!mobileMenuContainer) return;
     
-    mobileMenuContainer.innerHTML = `
+    const isDashboard = window.location.pathname.includes('dashboard');
+    
+    if (isDashboard) {
+        createDashboardMobileMenu(mobileMenuContainer);
+    } else {
+        createMainMobileMenu(mobileMenuContainer);
+    }
+}
+
+function createDashboardMobileMenu(container) {
+    container.innerHTML = `
+        <div class="mobile-menu-modal" id="mobileMenuModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button class="close-modal" onclick="closeMobileMenu()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="menu-grid">
+                        <div class="menu-item" onclick="window.location.href='/'; closeAllMobileMenus();">
+                            <i class="fas fa-home"></i>
+                            <span>მთავარი</span>
+                        </div>
+                        <div class="menu-item" onclick="window.location.href='/accounts'; closeAllMobileMenus();">
+                            <i class="fas fa-wallet"></i>
+                            <span>ანგარიშები</span>
+                        </div>
+                        <div class="menu-item" onclick="window.location.href='/history-checks'; closeAllMobileMenus();">
+                            <i class="fas fa-history"></i>
+                            <span>IMEI ისტორია</span>
+                        </div>
+                        <div class="menu-item" onclick="window.location.href='/history-comparisons'; closeAllMobileMenus();">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span>შედარებები</span>
+                        </div>
+                        <div class="menu-item" onclick="window.location.href='/settings'; closeAllMobileMenus();">
+                            <i class="fas fa-cog"></i>
+                            <span>პარამეტრები</span>
+                        </div>
+                        <div class="menu-item" onclick="window.location.href='/logout'; closeAllMobileMenus();">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>გასვლა</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createMainMobileMenu(container) {
+    container.innerHTML = `
         <!-- Mobile Menu Modal -->
         <div class="mobile-menu-modal" id="mobileMenuModal">
             <button class="close-modal" onclick="closeMobileMenu()">
