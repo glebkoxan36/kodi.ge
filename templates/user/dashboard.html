@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='mobilemenu.css') }}">
+    <script src="https://js.stripe.com/v3/"></script>
     <style>
         .user-info-avatar {
             width: 80px;
@@ -276,8 +277,6 @@
             </div>
         </div>
         
-        <h1 class="section-title">პირადი კაბინეტი</h1>
-        
         <div class="row">
             <div class="col-md-6 mb-4">
                 <div class="card">
@@ -342,21 +341,6 @@
                     <button class="topup-btn" onclick="showTopupModal()">
                         <i class="fas fa-plus me-2"></i>ბალანსის შევსება
                     </button>
-                </div>
-            </div>
-        </div>
-        
-        <div class="mobile-only-section">
-            <div class="row mb-4">
-                <div class="col-6">
-                    <a href="{{ url_for('user.history_checks') }}" class="btn btn-primary w-100">
-                        <i class="fas fa-mobile-alt me-2"></i>IMEI ისტორია
-                    </a>
-                </div>
-                <div class="col-6">
-                    <a href="{{ url_for('user.history_comparisons') }}" class="btn btn-info w-100">
-                        <i class="fas fa-exchange-alt me-2"></i>შედარებები
-                    </a>
                 </div>
             </div>
         </div>
@@ -449,7 +433,7 @@
                     <i class="fas fa-credit-card me-2"></i>
                     გადახდების ისტორია
                 </div>
-                <a href="#" class="view-all-link">ყველას ნახვა</a>
+                <a href="{{ url_for('user.payment_history') }}" class="view-all-link">ყველას ნახვა</a>
             </div>
             <div class="card-body">
                 <table class="history-table">
@@ -645,7 +629,9 @@
     
     <!-- Dashboard Script -->
     <script>
-        // JavaScript для управления модальными окнами
+        // Initialize Stripe with your public key
+        const stripe = Stripe('{{ stripe_public_key }}');
+        
         function showTopupModal() {
             document.getElementById('topupModal').style.display = 'flex';
         }
@@ -655,7 +641,7 @@
             document.getElementById('successModal').style.display = 'none';
         }
         
-        function initiatePayment() {
+        async function initiatePayment() {
             const amount = parseFloat(document.getElementById('amount').value);
             
             if (amount < 1) {
@@ -663,30 +649,64 @@
                 return;
             }
             
-            // Показать спиннер загрузки
+            // Get selected payment method
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').id;
+            
+            // Show loading spinner
             document.getElementById('spinner').style.display = 'flex';
             
-            // Симуляция процесса оплаты
-            setTimeout(() => {
-                // Скрыть спиннер
+            try {
+                // Send request to server to create payment session
+                const response = await fetch('/create-payment-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        amount: amount * 100, // Convert to cents
+                        currency: 'gel',
+                        payment_method: paymentMethod
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Payment failed');
+                }
+                
+                // Redirect to Stripe Checkout
+                const result = await stripe.redirectToCheckout({
+                    sessionId: data.sessionId
+                });
+                
+                if (result.error) {
+                    throw new Error(result.error.message);
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                alert(`გადახდის დროს მოხდა შეცდომა: ${error.message}`);
+            } finally {
+                // Hide spinner
                 document.getElementById('spinner').style.display = 'none';
-                
-                // Закрыть модальное окно пополнения
-                document.getElementById('topupModal').style.display = 'none';
-                
-                // Обновить данные в модальном окне успеха
-                document.getElementById('successAmount').textContent = amount.toFixed(2) + ' ₾';
-                
-                // Здесь будет реальный запрос к серверу для обновления баланса
-                // В демо-версии просто обновляем отображение
-                const currentBalance = parseFloat("{{ balance }}");
-                const newBalance = currentBalance + amount;
-                document.getElementById('newBalance').textContent = newBalance.toFixed(2) + ' ₾';
-                
-                // Показать модальное окно успеха
-                document.getElementById('successModal').style.display = 'flex';
-            }, 1500);
+            }
         }
+        
+        // Listen for success query parameter
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const paymentStatus = urlParams.get('payment');
+            
+            if (paymentStatus === 'success') {
+                const amount = urlParams.get('amount') || '10.00';
+                const newBalance = urlParams.get('balance') || '35.50';
+                
+                document.getElementById('successAmount').textContent = `${amount} ₾`;
+                document.getElementById('newBalance').textContent = `${newBalance} ₾`;
+                document.getElementById('successModal').style.display = 'flex';
+            }
+        });
     </script>
 </body>
 </html>
