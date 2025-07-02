@@ -412,29 +412,7 @@
             
             <!-- Comparison Result -->
             <div class="comparison-result" id="comparisonResult">
-                <div class="text-center mb-4">
-                    <h2 class="text-white">შედარების შედეგები</h2>
-                    <div class="d-flex justify-content-center align-items-center">
-                        <div id="phone1ResultName" class="h4 text-center mx-3"></div>
-                        <span class="vs-circle">VS</span>
-                        <div id="phone2ResultName" class="h4 text-center mx-3"></div>
-                    </div>
-                </div>
-                
-                <div class="specs-container">
-                    <div class="specs-header">
-                        <div class="specs-phone">
-                            <img id="phone1ResultImage" src="" alt="Phone 1" class="img-fluid">
-                            <div id="phone1ResultNameShort"></div>
-                        </div>
-                        <div class="specs-phone">
-                            <img id="phone2ResultImage" src="" alt="Phone 2" class="img-fluid">
-                            <div id="phone2ResultNameShort"></div>
-                        </div>
-                    </div>
-                    
-                    <div id="specsContent"></div>
-                </div>
+                <!-- Results will be dynamically inserted here -->
             </div>
         </div>
     </div>
@@ -672,7 +650,8 @@
                 
             } catch (error) {
                 console.error('Error comparing phones:', error);
-                document.getElementById('comparisonResult').innerHTML = `
+                const resultContainer = document.getElementById('comparisonResult');
+                resultContainer.innerHTML = `
                     <div class="alert alert-danger text-center">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         ${error.message || 'შედარება ვერ მოხერხდა'}
@@ -684,102 +663,116 @@
             }
         }
         
-        // Display comparison result
+        // Display comparison result - FULLY REFACTORED
         function displayComparisonResult(comparison) {
             const phone1 = comparison.phone1;
             const phone2 = comparison.phone2;
             
-            // Update phone info
-            document.getElementById('phone1ResultName').textContent = `${phone1.brand} ${phone1.model}`;
-            document.getElementById('phone2ResultName').textContent = `${phone2.brand} ${phone2.model}`;
-            document.getElementById('phone1ResultNameShort').textContent = `${phone1.brand} ${phone1.model}`;
-            document.getElementById('phone2ResultNameShort').textContent = `${phone2.brand} ${phone2.model}`;
+            const resultContainer = document.getElementById('comparisonResult');
             
-            document.getElementById('phone1ResultImage').src = phone1.image_url;
-            document.getElementById('phone1ResultImage').onerror = function() {
-                handleImageError(this);
-            };
-            document.getElementById('phone2ResultImage').src = phone2.image_url;
-            document.getElementById('phone2ResultImage').onerror = function() {
-                handleImageError(this);
-            };
+            // Create the entire result HTML structure
+            let resultHtml = `
+                <div class="text-center mb-4">
+                    <h2 class="text-white">შედარების შედეგები</h2>
+                    <div class="d-flex justify-content-center align-items-center">
+                        <div class="h4 text-center mx-3">${phone1.brand} ${phone1.model}</div>
+                        <span class="vs-circle">VS</span>
+                        <div class="h4 text-center mx-3">${phone2.brand} ${phone2.model}</div>
+                    </div>
+                </div>
+                
+                <div class="specs-container" style="display: block;">
+                    <div class="specs-header">
+                        <div class="specs-phone">
+                            <img src="${phone1.image_url}" 
+                                 alt="${phone1.brand} ${phone1.model}" 
+                                 class="img-fluid"
+                                 onerror="handleImageError(this)">
+                            <div>${phone1.brand} ${phone1.model}</div>
+                        </div>
+                        <div class="specs-phone">
+                            <img src="${phone2.image_url}" 
+                                 alt="${phone2.brand} ${phone2.model}" 
+                                 class="img-fluid"
+                                 onerror="handleImageError(this)">
+                            <div>${phone2.brand} ${phone2.model}</div>
+                        </div>
+                    </div>
+            `;
             
             // Generate specs comparison
-            const specsContent = document.getElementById('specsContent');
-            specsContent.innerHTML = '';
-            
             if (!comparison.comparison || comparison.comparison.length === 0) {
-                specsContent.innerHTML = `
+                resultHtml += `
                     <div class="alert alert-info text-center">
                         ტელეფონების შედარება ვერ მოხერხდა
                     </div>
                 `;
-                return;
-            }
-            
-            // Create HTML for each category
-            comparison.comparison.forEach(category => {
-                let categoryHtml = `
-                <div class="spec-group">
-                    <div class="group-header">
-                        <i class="fas fa-folder-open"></i>
-                        <span>${category.category}</span>
-                    </div>
-                    <div class="spec-items">
-                `;
-                
-                category.specs.forEach(spec => {
-                    const winnerClass1 = spec.winner === 'phone1' ? 'better-value' : '';
-                    const winnerClass2 = spec.winner === 'phone2' ? 'better-value' : '';
-                    
-                    categoryHtml += `
-                    <div class="spec-item">
-                        <div class="spec-name">${spec.name}</div>
-                        <div class="spec-phone-value ${winnerClass1}">
-                            <div class="spec-phone-label">${phone1.brand} ${phone1.model}</div>
-                            <div class="spec-phone-detail">${spec.phone1_value || 'N/A'}</div>
+            } else {
+                // Create HTML for each category
+                comparison.comparison.forEach(category => {
+                    resultHtml += `
+                    <div class="spec-group">
+                        <div class="group-header">
+                            <i class="fas fa-folder-open"></i>
+                            <span>${category.category}</span>
                         </div>
-                        <div class="spec-phone-value ${winnerClass2}">
-                            <div class="spec-phone-label">${phone2.brand} ${phone2.model}</div>
-                            <div class="spec-phone-detail">${spec.phone2_value || 'N/A'}</div>
+                        <div class="spec-items">
+                    `;
+                    
+                    category.specs.forEach(spec => {
+                        const winnerClass1 = spec.winner === 'phone1' ? 'better-value' : '';
+                        const winnerClass2 = spec.winner === 'phone2' ? 'better-value' : '';
+                        
+                        resultHtml += `
+                        <div class="spec-item">
+                            <div class="spec-name">${spec.name}</div>
+                            <div class="spec-phone-value ${winnerClass1}">
+                                <div class="spec-phone-label">${phone1.brand} ${phone1.model}</div>
+                                <div class="spec-phone-detail">${spec.phone1_value || 'N/A'}</div>
+                            </div>
+                            <div class="spec-phone-value ${winnerClass2}">
+                                <div class="spec-phone-label">${phone2.brand} ${phone2.model}</div>
+                                <div class="spec-phone-detail">${spec.phone2_value || 'N/A'}</div>
+                            </div>
+                        </div>
+                        `;
+                    });
+                    
+                    resultHtml += `
                         </div>
                     </div>
                     `;
                 });
                 
-                categoryHtml += `
-                    </div>
-                </div>
-                `;
-                specsContent.innerHTML += categoryHtml;
-            });
-            
-            // Add overall winner
-            if (comparison.overall_winner) {
-                const winnerPhone = comparison.overall_winner === 'phone1' ? 
-                    `${phone1.brand} ${phone1.model}` : `${phone2.brand} ${phone2.model}`;
-                
-                const overallHtml = `
-                <div class="spec-group overall-winner">
-                    <div class="group-header">
-                        <i class="fas fa-trophy"></i>
-                        <span>საბოლოო გამარჯვებული</span>
-                    </div>
-                    <div class="spec-items">
-                        <div class="spec-item">
-                            <div class="spec-phone-value" style="grid-column: span 2; text-align: center; padding: 20px;">
-                                <h3>${winnerPhone}</h3>
-                                <p>მოიგო მეტი კატეგორია</p>
+                // Add overall winner
+                if (comparison.overall_winner) {
+                    const winnerPhone = comparison.overall_winner === 'phone1' ? 
+                        `${phone1.brand} ${phone1.model}` : `${phone2.brand} ${phone2.model}`;
+                    
+                    resultHtml += `
+                    <div class="spec-group overall-winner">
+                        <div class="group-header">
+                            <i class="fas fa-trophy"></i>
+                            <span>საბოლოო გამარჯვებული</span>
+                        </div>
+                        <div class="spec-items">
+                            <div class="spec-item">
+                                <div class="spec-phone-value" style="grid-column: span 2; text-align: center; padding: 20px;">
+                                    <h3>${winnerPhone}</h3>
+                                    <p>მოიგო მეტი კატეგორია</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>`;
-                specsContent.innerHTML += overallHtml;
+                    </div>`;
+                }
             }
             
-            // Show specs container
-            document.querySelector('.specs-container').style.display = 'block';
+            // Close the specs-container div
+            resultHtml += `</div>`;
+            
+            // Update the DOM all at once
+            resultContainer.innerHTML = resultHtml;
         }
     </script>
 </body>
-    </html>
+</html>
