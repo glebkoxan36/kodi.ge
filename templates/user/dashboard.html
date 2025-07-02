@@ -7,7 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="stylesheet" href="static/mobilemenu.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='mobilemenu.css') }}">
     <style>
         .user-info-avatar {
             width: 80px;
@@ -199,6 +199,7 @@
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
     
+    <!-- Bottom mobile menu button -->
     <div class="mobile-menu-bottom" id="mobileMenuBottom">
         <button class="mobile-menu-btn" id="mobileMenuBtn">
             <i class="fas fa-bars"></i>
@@ -259,6 +260,22 @@
     </div>
     
     <div class="main-content">
+        <!-- Added logo and site name like in index.html -->
+        <div class="hero-section mb-5">
+            <div class="text-center mb-4">
+                <div class="logo-animated">
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-core">
+                        <div class="logo-letter">K</div>
+                    </div>
+                </div>
+                <h1 class="display-4 fw-bold mt-3">KODI.GE</h1>
+                <p class="lead">პირადი კაბინეტი</p>
+            </div>
+        </div>
+        
         <h1 class="section-title">პირადი კაბინეტი</h1>
         
         <div class="row">
@@ -495,6 +512,7 @@
         </footer>
     </div>
     
+    <!-- Topup Balance Modal -->
     <div class="result-modal" id="topupModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -550,6 +568,7 @@
         </div>
     </div>
     
+    <!-- Payment Success Modal -->
     <div class="result-modal" id="successModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -573,37 +592,38 @@
         </div>
     </div>
     
+    <!-- Mobile Menu Modal -->
     <div class="mobile-menu-modal" id="mobileMenuModal">
         <div class="modal-content">
             <div class="modal-header">
-                <button class="close-modal" onclick="closeMobileMenu()">
+                <button class="close-modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             
             <div class="modal-body">
                 <div class="menu-grid">
-                    <div class="menu-item" onclick="window.location.href='{{ url_for('index') }}'; closeAllMobileMenus();">
+                    <div class="menu-item" onclick="window.location.href='{{ url_for('index') }}'">
                         <i class="fas fa-home"></i>
                         <span>მთავარი</span>
                     </div>
-                    <div class="menu-item" onclick="window.location.href='{{ url_for('user.topup_balance') }}'; closeAllMobileMenus();">
+                    <div class="menu-item" onclick="window.location.href='{{ url_for('user.topup_balance') }}'">
                         <i class="fas fa-wallet"></i>
                         <span>ანგარიშები</span>
                     </div>
-                    <div class="menu-item" onclick="window.location.href='{{ url_for('user.history_checks') }}'; closeAllMobileMenus();">
+                    <div class="menu-item" onclick="window.location.href='{{ url_for('user.history_checks') }}'">
                         <i class="fas fa-history"></i>
                         <span>IMEI ისტორია</span>
                     </div>
-                    <div class="menu-item" onclick="window.location.href='{{ url_for('user.history_comparisons') }}'; closeAllMobileMenus();">
+                    <div class="menu-item" onclick="window.location.href='{{ url_for('user.history_comparisons') }}'">
                         <i class="fas fa-exchange-alt"></i>
                         <span>შედარებები</span>
                     </div>
-                    <div class="menu-item" onclick="window.location.href='{{ url_for('user.settings') }}'; closeAllMobileMenus();">
+                    <div class="menu-item" onclick="window.location.href='{{ url_for('user.settings') }}'">
                         <i class="fas fa-cog"></i>
                         <span>პარამეტრები</span>
                     </div>
-                    <div class="menu-item" onclick="window.location.href='{{ url_for('auth.logout') }}'; closeAllMobileMenus();">
+                    <div class="menu-item" onclick="window.location.href='{{ url_for('auth.logout') }}'">
                         <i class="fas fa-sign-out-alt"></i>
                         <span>გასვლა</span>
                     </div>
@@ -612,12 +632,18 @@
         </div>
     </div>
     
+    <!-- Loading Spinner -->
     <div class="spinner-container" id="spinner">
         <div class="spinner"></div>
     </div>
     
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Mobile Menu JS -->
+    <script src="{{ url_for('static', filename='js/mobilemenu.js') }}"></script>
+    
+    <!-- Dashboard Script -->
     <script>
         // JavaScript для управления модальными окнами
         function showTopupModal() {
@@ -661,62 +687,6 @@
                 document.getElementById('successModal').style.display = 'flex';
             }, 1500);
         }
-        
-        // Функции для мобильного меню
-        function openMobileMenu() {
-            try {
-                const modal = document.getElementById('mobileMenuModal');
-                modal.style.display = 'flex';
-                setTimeout(() => {
-                    modal.classList.add('open');
-                }, 10);
-            } catch(e) {
-                console.error('Error opening mobile menu:', e);
-            }
-        }
-        
-        function closeMobileMenu() {
-            try {
-                const modal = document.getElementById('mobileMenuModal');
-                modal.classList.remove('open');
-                setTimeout(() => {
-                    modal.style.display = 'none';
-                }, 400);
-            } catch(e) {
-                console.error('Error closing mobile menu:', e);
-            }
-        }
-        
-        function closeAllMobileMenus() {
-            closeMobileMenu();
-        }
-        
-        // Инициализация кнопки мобильного меню
-        document.addEventListener('DOMContentLoaded', () => {
-            try {
-                const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-                if (mobileMenuBtn) {
-                    mobileMenuBtn.addEventListener('click', openMobileMenu);
-                }
-            } catch(e) {
-                console.error('Mobile menu setup error:', e);
-            }
-            
-            // Закрытие меню при клике снаружи
-            document.addEventListener('click', (e) => {
-                try {
-                    const mobileMenuModal = document.getElementById('mobileMenuModal');
-                    
-                    if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
-                        !mobileMenuModal.contains(e.target) && 
-                        e.target.id !== 'mobileMenuBtn') {
-                        closeMobileMenu();
-                    }
-                } catch(e) {
-                    console.error('Click handler error:', e);
-                }
-            });
-        });
     </script>
 </body>
 </html>
