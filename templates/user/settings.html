@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2 class="section-title">პარამეტრები</h2>
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-user-cog me-2"></i>
+                პროფილის პარამეტრები
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label for="firstName" class="form-label">სახელი</label>
+                        <input type="text" class="form-control" id="firstName" value="{{ user.first_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="lastName" class="form-label">გვარი</label>
+                        <input type="text" class="form-control" id="lastName" value="{{ user.last_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">ელ. ფოსტა</label>
+                        <input type="email" class="form-control" id="email" value="{{ user.email }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">ტელეფონი</label>
+                        <input type="tel" class="form-control" id="phone" value="{{ user.phone }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">ცვლილებების შენახვა</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <i class="fas fa-shield-alt me-2"></i>
+                უსაფრთხოება
+            </div>
+            <div class="card-body">
+                <a href="#" class="btn btn-outline-primary">პაროლის შეცვლა</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
