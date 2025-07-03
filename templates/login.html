@@ -25,6 +25,9 @@
         </div>
         
         <form id="login-form">
+            <!-- CSRF токен для защиты -->
+            <input type="hidden" name="csrf_token" id="csrf_token" value="{{ csrf_token() }}">
+            
             <div class="form-group">
                 <label class="form-label" for="identifier">მომხმარებელი, ელ. ფოსტა ან ტელეფონი</label>
                 <input type="text" class="form-control" id="identifier" name="identifier" required>
@@ -196,9 +199,7 @@
             
             try {
                 // Отправка данных на сервер
-                const formData = new FormData();
-                formData.append('identifier', identifier);
-                formData.append('password', password);
+                const formData = new FormData(e.target);
                 
                 const response = await fetch('/login', {
                     method: 'POST',
