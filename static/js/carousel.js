@@ -77,6 +77,14 @@ document.addEventListener('DOMContentLoaded', function() {
             gap: 12px;
             z-index: 20;
         }
+    .carousel {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    margin: 30px auto;
+    max-width: 1000px;
+    min-height: 500px;
+}
         .pagination-dot {
             width: 14px;
             height: 14px;
