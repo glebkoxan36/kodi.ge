@@ -14,13 +14,14 @@ from flask_cors import CORS
 from pymongo import MongoClient
 import stripe
 from functools import wraps
-from bs4 import BeautifulSoup
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from urllib.parse import quote_plus
 
-# Импорт функций сравнения
+# Импорт модулей
+from ifreeapi import validate_imei, perform_api_check, parse_free_html, SERVICE_TYPES
+from stripepay import StripePayment
 from compare import compare_two_phones, generate_image_path
 
 app = Flask(__name__)
@@ -490,32 +491,6 @@ def android_check():
         user=user_data
     )
 
-# Заглушки для функций, которые должны быть в других модулях
-def validate_imei(imei):
-    """Заглушка для валидации IMEI"""
-    return True
-
-def perform_api_check(imei, service_type):
-    """Заглушка для проверки IMEI через API"""
-    return {"status": "success", "data": f"Результат для {imei} и {service_type}"}
-
-class StripePayment:
-    """Заглушка для класса StripePayment"""
-    def __init__(self, **kwargs):
-        pass
-    
-    def create_checkout_session(self, **kwargs):
-        return type('obj', (object,), {'id': 'test_session_id'})
-    
-    def deduct_balance(self, user_id, amount):
-        return True
-    
-    def handle_webhook(self, payload, sig_header):
-        pass
-    
-    def create_topup_session(self, **kwargs):
-        return type('obj', (object,), {'url': '/success'})
-
 # Инициализация StripePayment
 stripe_payment = StripePayment(
     stripe_api_key=stripe.api_key,
@@ -730,75 +705,6 @@ def get_check_result():
         'result': record['result']
     })
 
-def parse_free_html(html_content):
-    try:
-        soup = BeautifulSoup(html_content, 'html.parser')
-        result = {}
-        
-        # 1. Парсинг табличных данных
-        for table in soup.find_all('table'):
-            for row in table.find_all('tr'):
-                cols = row.find_all('td')
-                if len(cols) == 2:
-                    key = cols[0].get_text(strip=True).replace(':', '').replace(' ', '_').lower()
-                    value = cols[1].get_text(strip=True)
-                    result[key] = value
-
-        # 2. Парсинг всех возможных пар ключ-значение
-        pattern = re.compile(
-            r'(Device|Model|Serial|IMEI|ICCID|FMI|Activation Status|'
-            r'Blacklist Status|Sim Lock|MDM Status|Google Account Status|'
-            r'Carrier|Purchase Date|Warranty Status|Activation Policy|'
-            r'Network Lock|Coverage|Find My iPhone|iCloud Status|'
-            r'Activation Lock|Last Restore|Factory Unlocked|Refurbished|'
-            r'Replaced|Loaner|AppleCare|Blocked Status|Restore Status|'
-            r'Activation Date|Purchase Country|Next Tether Policy|Sim Lock Policy)'
-            r'[\s:]*', 
-            re.IGNORECASE
-        )
-        
-        for element in soup.find_all(string=pattern):
-            match = pattern.search(element)
-            if match:
-                label = match.group(1).strip()
-                key = label.replace(' ', '_').lower()
-                
-                # Поиск значения в структуре документа
-                value = ""
-                parent = element.parent
-                
-                # Случай 1: Значение в том же элементе после двоеточия
-                if ':' in element:
-                    value = element.split(':', 1)[1].strip()
-                
-                # Случай 2: Значение в соседнем элементе
-                elif parent and parent.find_next_sibling():
-                    value = parent.find_next_sibling().get_text(strip=True)
-                
-                # Случай 3: Значение в следующем текстовом узле
-                elif element.next_sibling:
-                    value = element.next_sibling.strip()
-                
-                if value:
-                    result[key] = value
-
-        # 3. Дополнительный сбор данных из заголовков и значений
-        for header in soup.find_all(['h3', 'h4', 'strong', 'b']):
-            text = header.get_text(strip=True)
-            if ':' in text:
-                key, value = text.split(':', 1)
-                key = key.strip().replace(' ', '_').lower()
-                result[key] = value.strip()
-            elif header.next_sibling:
-                key = text.replace(':', '').replace(' ', '_').lower()
-                result[key] = header.next_sibling.strip()
-
-        return result
-    
-    except Exception as e:
-        current_app.logger.error(f"Advanced HTML parsing error: {str(e)}")
-        return None
-
 @app.route('/perform_check', methods=['POST'])
 def perform_check():
     try:
@@ -806,7 +712,6 @@ def perform_check():
         imei = data.get('imei')
         service_type = data.get('service_type')
         
-        if not imei or not service_type:
         if not imei or not service_type:
             return jsonify({'error': 'არასაკმარისი პარამეტრები'}), 400
         
