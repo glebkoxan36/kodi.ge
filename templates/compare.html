@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ka">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Сравнение телефонов</title>
+    <title>ტელეფონების შედარება</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
-        /* Основные стили */
         :root {
             --primary-color: #0a0e17;
             --secondary-color: #1a243c;
@@ -47,7 +46,6 @@
             text-shadow: 0 0 20px rgba(0, 198, 255, 0.3);
         }
         
-        /* Стили для кнопок выбора телефонов */
         .phone-selectors {
             display: flex;
             flex-direction: column;
@@ -77,22 +75,6 @@
             box-shadow: 0 10px 25px rgba(0, 198, 255, 0.2);
         }
         
-        .phone-selector-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(0, 198, 255, 0.1), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .phone-selector-btn:hover::before {
-            opacity: 1;
-        }
-        
         .phone-thumb-container {
             width: 80px;
             height: 80px;
@@ -111,10 +93,6 @@
             transition: transform 0.3s ease;
         }
         
-        .phone-selector-btn:hover .add-icon {
-            transform: scale(1.2);
-        }
-        
         .phone-info-text {
             flex: 1;
         }
@@ -131,7 +109,6 @@
             color: var(--text-secondary);
         }
         
-        /* Стили для модального окна */
         .result-modal {
             display: none;
             position: fixed;
@@ -195,18 +172,8 @@
             border-radius: 50%;
         }
         
-        .close-modal:hover {
-            color: var(--accent-color);
-            background: rgba(255, 255, 255, 0.1);
-            transform: rotate(90deg);
-        }
-        
         .modal-body {
             padding: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
         }
         
         .form-control {
@@ -218,12 +185,6 @@
             color: white;
             font-size: 1rem;
             transition: all 0.3s ease;
-        }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(0, 198, 255, 0.2);
         }
         
         #searchResults {
@@ -257,31 +218,10 @@
             padding: 5px;
         }
         
-        .phone-search-info {
-            flex: 1;
-        }
-        
-        .phone-search-name {
-            font-size: 1.1rem;
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
-        
-        .phone-search-details {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-        
-        /* Стили для результатов сравнения */
         .comparison-section {
             display: none;
             margin-top: 30px;
             animation: fadeIn 0.5s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
         
         .winner-display {
@@ -303,16 +243,6 @@
             overflow: hidden;
         }
         
-        .phone-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: linear-gradient(to right, var(--accent-color), var(--success-color));
-        }
-        
         .winner {
             border: 2px solid var(--success-color);
             box-shadow: 0 0 30px rgba(0, 214, 143, 0.4);
@@ -325,19 +255,6 @@
             object-fit: contain;
             margin: 0 auto 20px;
             display: block;
-            transition: transform 0.3s ease;
-        }
-        
-        .winner .phone-thumb {
-            transform: scale(1.05);
-        }
-        
-        .phone-card h3 {
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-            background: linear-gradient(to right, var(--accent-color), var(--success-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
         
         .vs-circle {
@@ -392,11 +309,6 @@
             margin: 30px 0;
         }
         
-        .btn-primary:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 198, 255, 0.4);
-        }
-        
         .ai-analysis {
             position: relative;
             overflow: hidden;
@@ -409,10 +321,37 @@
             font-size: 5rem;
             opacity: 0.05;
             color: var(--accent-color);
-            z-index: 0;
         }
         
-        /* Адаптивность */
+        /* Компактные стили для характеристик */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        
+        .specs-table th {
+            text-align: left;
+            padding: 8px 12px;
+            background: rgba(0, 198, 255, 0.1);
+            color: var(--accent-color);
+        }
+        
+        .specs-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            vertical-align: top;
+        }
+        
+        .specs-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .winner-value {
+            color: var(--success-color);
+            font-weight: bold;
+        }
+        
         @media (max-width: 768px) {
             .winner-display {
                 flex-direction: column;
@@ -431,12 +370,16 @@
                 margin-right: 0;
                 margin-bottom: 15px;
             }
+            
+            .specs-table {
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="main-content">
-        <h1 class="section-title">Сравнение телефонов</h1>
+        <h1 class="section-title">ტელეფონების შედარება</h1>
         
         <div class="phone-selectors">
             <button id="selectPhone1Btn" class="phone-selector-btn">
@@ -444,8 +387,8 @@
                     <div class="add-icon">+</div>
                 </div>
                 <div class="phone-info-text">
-                    <div class="phone-title">Выберите первый телефон</div>
-                    <div class="phone-subtitle">Нажмите, чтобы добавить для сравнения</div>
+                    <div class="phone-title">აირჩიეთ პირველი ტელეფონი</div>
+                    <div class="phone-subtitle">დააწკაპუნეთ შესადარებლად დასამატებლად</div>
                 </div>
             </button>
             
@@ -454,20 +397,20 @@
                     <div class="add-icon">+</div>
                 </div>
                 <div class="phone-info-text">
-                    <div class="phone-title">Выберите второй телефон</div>
-                    <div class="phone-subtitle">Нажмите, чтобы добавить для сравнения</div>
+                    <div class="phone-title">აირჩიეთ მეორე ტელეფონი</div>
+                    <div class="phone-subtitle">დააწკაპუნეთ შესადარებლად დასამატებლად</div>
                 </div>
             </button>
         </div>
         
         <div id="singlePhoneSpecs" class="comparison-section">
-            <!-- Здесь будут отображаться характеристики одного телефона -->
+            <!-- ერთი ტელეფონის მახასიათებლები -->
         </div>
         
         <div id="comparisonResult" class="comparison-section">
             <div class="winner-display">
                 <div id="phone1Card" class="phone-card">
-                    <img id="winnerImage" class="phone-thumb" src="" alt="Победитель">
+                    <img id="winnerImage" class="phone-thumb" src="" alt="გამარჯვებული">
                     <h3 id="winnerName"></h3>
                     <div class="winner-percentage" style="font-size: 2rem; color: var(--success-color); font-weight: bold;"></div>
                 </div>
@@ -475,7 +418,7 @@
                 <div class="vs-circle">VS</div>
                 
                 <div id="phone2Card" class="phone-card">
-                    <img id="loserImage" class="phone-thumb" src="" alt="Проигравший">
+                    <img id="loserImage" class="phone-thumb" src="" alt="დამარცხებული">
                     <h3 id="loserName"></h3>
                     <div class="loser-percentage" style="font-size: 1.5rem; color: var(--text-secondary);"></div>
                 </div>
@@ -483,20 +426,20 @@
             
             <div class="card">
                 <div class="card-header">
-                    <h3>Ключевые преимущества</h3>
+                    <h3>ძირითადი უპირატესობები</h3>
                 </div>
                 <div class="card-body" id="winnerReason"></div>
             </div>
             
-            <button id="showFullSpecsBtn" class="btn-primary">Показать все характеристики</button>
+            <button id="showFullSpecsBtn" class="btn-primary">ყველა მახასიათებლის ჩვენება</button>
             
             <div id="fullSpecs" style="display: none; margin-top: 20px;">
-                <!-- Здесь будут все характеристики -->
+                <!-- ყველა მახასიათებელი -->
             </div>
             
             <div class="ai-analysis card">
                 <div class="card-header">
-                    <h3>Анализ ИИ</h3>
+                    <h3>AI ანალიზი</h3>
                 </div>
                 <div class="card-body" id="aiAnalysisText"></div>
                 <div class="ai-icon">AI</div>
@@ -504,16 +447,16 @@
         </div>
     </div>
 
-    <!-- Модальное окно поиска телефонов -->
+    <!-- ტელეფონების ძიების მოდალური ფანჯარა -->
     <div id="phoneSearchModal" class="result-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">Поиск телефонов</h2>
+                <h2 class="modal-title">ტელეფონების ძებნა</h2>
                 <button class="close-modal">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <input type="text" id="phoneSearchInput" class="form-control" placeholder="Поиск по бренду или модели...">
+                    <input type="text" id="phoneSearchInput" class="form-control" placeholder="ძებნა ბრენდის ან მოდელის მიხედვით...">
                 </div>
                 <div id="searchResults"></div>
             </div>
@@ -526,28 +469,28 @@
             let phone1 = null;
             let phone2 = null;
             
-            // Открытие модального окна
+            // მოდალური ფანჯრის გახსნა
             $('#selectPhone1Btn, #selectPhone2Btn').click(function() {
                 selectedTarget = $(this).attr('id').replace('Btn', '');
-                $('.modal-title').text('Выберите телефон для ' + (selectedTarget === 'selectPhone1' ? 'первого' : 'второго'));
+                $('.modal-title').text('აირჩიეთ ტელეფონი ' + (selectedTarget === 'selectPhone1' ? 'პირველი' : 'მეორე'));
                 $('#phoneSearchModal').css('display', 'flex');
                 $('#phoneSearchInput').val('').focus();
                 $('#searchResults').html('');
             });
             
-            // Закрытие модального окна
+            // მოდალური ფანჯრის დახურვა
             $('.close-modal').click(function() {
                 $('#phoneSearchModal').hide();
             });
             
-            // Закрытие при клике вне модального окна
+            // მოდალური ფანჯრის დახურვა გარეთ დაწკაპუნებით
             $(document).click(function(event) {
                 if ($(event.target).hasClass('result-modal')) {
                     $('#phoneSearchModal').hide();
                 }
             });
             
-            // Поиск телефонов
+            // ტელეფონების ძებნა
             $('#phoneSearchInput').keyup(function() {
                 const query = $(this).val();
                 if (query.length < 2) {
@@ -555,130 +498,65 @@
                     return;
                 }
                 
-                // Эмуляция данных с сервера
-                const mockData = [
-                    {
-                        _id: "1",
-                        brand: "Samsung",
-                        model: "Galaxy S23 Ultra",
-                        release_year: "2023",
-                        image_url: "https://via.placeholder.com/150"
-                    },
-                    {
-                        _id: "2",
-                        brand: "Apple",
-                        model: "iPhone 14 Pro",
-                        release_year: "2022",
-                        image_url: "https://via.placeholder.com/150"
-                    },
-                    {
-                        _id: "3",
-                        brand: "Xiaomi",
-                        model: "13 Pro",
-                        release_year: "2023",
-                        image_url: "https://via.placeholder.com/150"
-                    },
-                    {
-                        _id: "4",
-                        brand: "Google",
-                        model: "Pixel 7 Pro",
-                        release_year: "2022",
-                        image_url: "https://via.placeholder.com/150"
-                    }
-                ];
-                
-                // Фильтрация мок данных
-                const filteredData = mockData.filter(phone => {
-                    const searchStr = `${phone.brand} ${phone.model}`.toLowerCase();
-                    return searchStr.includes(query.toLowerCase());
-                });
-                
-                let html = '';
-                if (filteredData.length > 0) {
-                    filteredData.forEach(phone => {
-                        html += `
-                            <div class="phone-search-result" data-id="${phone._id}">
-                                <img src="${phone.image_url}" alt="${phone.brand} ${phone.model}">
-                                <div class="phone-search-info">
-                                    <div class="phone-search-name">${phone.brand} ${phone.model}</div>
-                                    <div class="phone-search-details">Год выпуска: ${phone.release_year}</div>
+                $.get('/api/search_phones', { query: query }, function(data) {
+                    let html = '';
+                    if (data.length > 0) {
+                        data.forEach(phone => {
+                            html += `
+                                <div class="phone-search-result" data-id="${phone._id}">
+                                    <img src="${phone.image_url || '/static/placeholder.jpg'}" alt="${phone.brand} ${phone.model}">
+                                    <div class="phone-search-info">
+                                        <div class="phone-search-name">${phone.brand} ${phone.model}</div>
+                                        <div class="phone-search-details">გამოშვების წელი: ${phone.release_year || 'არ არის მითითებული'}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
+                            `;
+                        });
+                    } else {
+                        html = '<div class="phone-search-result" style="justify-content: center; padding: 30px;">ტელეფონები ვერ მოიძებნა</div>';
+                    }
+                    $('#searchResults').html(html);
+                    
+                    // ტელეფონის არჩევა
+                    $('.phone-search-result').click(function() {
+                        const phoneId = $(this).data('id');
+                        selectPhone(phoneId);
                     });
-                } else {
-                    html = '<div class="phone-search-result" style="justify-content: center; padding: 30px;">Телефоны не найдены</div>';
-                }
-                $('#searchResults').html(html);
-                
-                // Обработка выбора телефона
-                $('.phone-search-result').click(function() {
-                    const phoneId = $(this).data('id');
-                    selectPhone(phoneId);
+                }).fail(function() {
+                    $('#searchResults').html('<div class="phone-search-result" style="justify-content: center; padding: 30px;">შეცდომა მონაცემების ჩატვირთვისას</div>');
                 });
             });
             
-            // Выбор телефона
+            // ტელეფონის არჩევა
             function selectPhone(phoneId) {
-                // Эмуляция данных телефона
-                const mockPhones = {
-                    "1": {
-                        _id: "1",
-                        brand: "Samsung",
-                        model: "Galaxy S23 Ultra",
-                        release_year: "2023",
-                        image_url: "https://via.placeholder.com/300"
-                    },
-                    "2": {
-                        _id: "2",
-                        brand: "Apple",
-                        model: "iPhone 14 Pro",
-                        release_year: "2022",
-                        image_url: "https://via.placeholder.com/300"
-                    },
-                    "3": {
-                        _id: "3",
-                        brand: "Xiaomi",
-                        model: "13 Pro",
-                        release_year: "2023",
-                        image_url: "https://via.placeholder.com/300"
-                    },
-                    "4": {
-                        _id: "4",
-                        brand: "Google",
-                        model: "Pixel 7 Pro",
-                        release_year: "2022",
-                        image_url: "https://via.placeholder.com/300"
+                $.get('/api/phone_details', { id: phoneId }, function(phone) {
+                    if (selectedTarget === 'selectPhone1') {
+                        phone1 = phone;
+                        updatePhoneDisplay(phone, '#selectPhone1Btn');
+                    } else {
+                        phone2 = phone;
+                        updatePhoneDisplay(phone, '#selectPhone2Btn');
                     }
-                };
-                
-                const phone = mockPhones[phoneId];
-                
-                if (selectedTarget === 'selectPhone1') {
-                    phone1 = phone;
-                    updatePhoneDisplay(phone, '#selectPhone1Btn');
-                } else {
-                    phone2 = phone;
-                    updatePhoneDisplay(phone, '#selectPhone2Btn');
-                }
-                
-                $('#phoneSearchModal').hide();
-                checkComparisonState();
+                    
+                    $('#phoneSearchModal').hide();
+                    checkComparisonState();
+                }).fail(function() {
+                    alert('ტელეფონის მონაცემების ჩატვირთვა ვერ მოხერხდა');
+                });
             }
             
-            // Обновление отображения телефона
+            // ტელეფონის ჩვენება
             function updatePhoneDisplay(phone, btnSelector) {
                 $(btnSelector).html(`
                     <div class="phone-thumb-container">
-                        <img src="${phone.image_url}" alt="${phone.brand} ${phone.model}" style="max-width: 100%; max-height: 100%;">
+                        <img src="${phone.image_url || '/static/placeholder.jpg'}" alt="${phone.brand} ${phone.model}" style="max-width: 100%; max-height: 100%;">
                     </div>
                     <div class="phone-info-text">
                         <div class="phone-title">${phone.brand} ${phone.model}</div>
-                        <div class="phone-subtitle">Год выпуска: ${phone.release_year}</div>
+                        <div class="phone-subtitle">გამოშვების წელი: ${phone.release_year || 'არ არის მითითებული'}</div>
                     </div>
                 `);
                 
-                // Добавляем анимацию
                 $(btnSelector).css({
                     transform: 'scale(0.95)',
                     border: '2px solid rgba(0, 198, 255, 0.5)'
@@ -692,7 +570,7 @@
                 }, 300);
             }
             
-            // Проверка состояния выбора
+            // შემოწმება
             function checkComparisonState() {
                 if (phone1 && !phone2) {
                     showSinglePhoneSpecs(phone1);
@@ -703,95 +581,70 @@
                 }
             }
             
-            // Показ характеристик одного телефона
+            // ერთი ტელეფონის მახასიათებლები
             function showSinglePhoneSpecs(phone) {
                 $('#singlePhoneSpecs').show().html(`
                     <div class="card">
                         <div class="card-header">
-                            <h3>Характеристики ${phone.brand} ${phone.model}</h3>
+                            <h3>${phone.brand} ${phone.model} - მახასიათებლები</h3>
                         </div>
                         <div class="card-body">
-                            <img src="${phone.image_url}" class="phone-thumb" style="margin: 0 auto 30px; display: block;">
-                            <p style="text-align: center;">Здесь будут отображаться подробные характеристики телефона</p>
+                            <img src="${phone.image_url || '/static/placeholder.jpg'}" class="phone-thumb" style="margin: 0 auto 30px; display: block;">
+                            <p style="text-align: center;">მახასიათებლების ჩატვირთვა...</p>
                         </div>
                     </div>
                 `);
+                
+                $.get('/api/phone_specs', { id: phone._id }, function(specs) {
+                    let specsHtml = '<table class="specs-table">';
+                    specs.forEach(spec => {
+                        specsHtml += `
+                            <tr>
+                                <td>${spec.name}</td>
+                                <td>${spec.value || '-'}</td>
+                            </tr>
+                        `;
+                    });
+                    specsHtml += '</table>';
+                    
+                    $('#singlePhoneSpecs .card-body').html(`
+                        <img src="${phone.image_url || '/static/placeholder.jpg'}" class="phone-thumb" style="margin: 0 auto 30px; display: block;">
+                        ${specsHtml}
+                    `);
+                });
+                
                 $('#comparisonResult').hide();
             }
             
-            // Сравнение телефонов
+            // ტელეფონების შედარება
             function comparePhones() {
-                // Эмуляция данных сравнения
-                const mockResult = {
-                    overall_winner: "phone1",
-                    percent_phone1: 78,
-                    percent_phone2: 65,
-                    comparison: [
-                        {
-                            category: "Экран",
-                            category_percent_phone1: 85,
-                            category_percent_phone2: 75,
-                            specs: [
-                                {
-                                    name: "Разрешение",
-                                    phone1_value: "1440x3088",
-                                    phone2_value: "1179x2556",
-                                    winner: "phone1"
-                                },
-                                {
-                                    name: "Частота обновления",
-                                    phone1_value: "120 Гц",
-                                    phone2_value: "120 Гц",
-                                    winner: "equal"
-                                }
-                            ]
-                        },
-                        {
-                            category: "Производительность",
-                            category_percent_phone1: 90,
-                            category_percent_phone2: 80,
-                            specs: [
-                                {
-                                    name: "Процессор",
-                                    phone1_value: "Snapdragon 8 Gen 2",
-                                    phone2_value: "Apple A16 Bionic",
-                                    winner: "phone1"
-                                },
-                                {
-                                    name: "Оперативная память",
-                                    phone1_value: "12 ГБ",
-                                    phone2_value: "6 ГБ",
-                                    winner: "phone1"
-                                }
-                            ]
-                        }
-                    ],
-                    ai_analysis: "Samsung Galaxy S23 Ultra показывает лучшие результаты в категориях экрана и производительности благодаря более высокому разрешению экрана и большему объему оперативной памяти. iPhone 14 Pro демонстрирует отличную оптимизацию, но уступает в мультизадачности из-за меньшего объема RAM."
-                };
-                
-                displayComparisonResult(mockResult);
+                $.post('/api/compare_phones', {
+                    phone1_id: phone1._id,
+                    phone2_id: phone2._id
+                }, function(result) {
+                    displayComparisonResult(result);
+                }).fail(function() {
+                    alert('შედარების პროცესი ვერ მოხერხდა');
+                });
             }
             
-            // Отображение результатов сравнения
+            // შედარების შედეგის ჩვენება
             function displayComparisonResult(result) {
-                // Определяем победителя
                 const winner = result.overall_winner === 'phone1' ? phone1 : phone2;
                 const loser = result.overall_winner === 'phone1' ? phone2 : phone1;
                 
-                // Обновляем отображение
-                $('#winnerImage').attr('src', winner.image_url);
+                $('#winnerImage').attr('src', winner.image_url || '/static/placeholder.jpg');
                 $('#winnerName').text(`${winner.brand} ${winner.model}`);
                 $('.winner-percentage').text(`${result.percent_phone1}%`);
                 
-                $('#loserImage').attr('src', loser.image_url);
+                $('#loserImage').attr('src', loser.image_url || '/static/placeholder.jpg');
                 $('#loserName').text(`${loser.brand} ${loser.model}`);
                 $('.loser-percentage').text(`${result.percent_phone2}%`);
                 
-                // Добавляем класс победителю
                 $(`#phone1Card`).toggleClass('winner', result.overall_winner === 'phone1');
                 $(`#phone2Card`).toggleClass('winner', result.overall_winner === 'phone2');
                 
-                // Ключевые преимущества
+                // უპირატესობები
                 let advantagesHtml = '';
                 result.comparison.forEach(category => {
                     if (category.category_percent_phone1 !== category.category_percent_phone2) {
@@ -807,27 +660,33 @@
                                     <span style="color: var(--success-color);">${winnerPercent}%</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between;">
-                                    <span>${winnerPhone} превосходит на ${winnerPercent - loserPercent}%</span>
+                                    <span>${winnerPhone} უკეთესია ${winnerPercent - loserPercent}%-ით</span>
                                     <span style="color: var(--text-secondary);">${loserPercent}%</span>
                                 </div>
                             </div>
                         `;
                     }
                 });
-                $('#winnerReason').html(advantagesHtml);
+                $('#winnerReason').html(advantagesHtml || '<p>უპირატესობები არ მოიძებნა</p>');
                 
-                // Полные характеристики
+                // ყველა მახასიათებელი
                 let fullSpecsHtml = '';
                 result.comparison.forEach(category => {
                     fullSpecsHtml += `
                         <div class="spec-group">
-                            <div class="spec-header" style="padding: 15px; background: rgba(0, 198, 255, 0.1); border-radius: 12px; margin-bottom: 15px;">
-                                <h4 style="font-size: 1.2rem;">${category.category}</h4>
+                            <div class="card-header">
+                                <h4>${category.category}</h4>
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 30px;">
-                                <div style="font-weight: bold; text-align: center;">Характеристика</div>
-                                <div style="font-weight: bold; text-align: center;">${phone1.brand}</div>
-                                <div style="font-weight: bold; text-align: center;">${phone2.brand}</div>
+                            <div class="card-body">
+                                <table class="specs-table">
+                                    <thead>
+                                        <tr>
+                                            <th>მახასიათებელი</th>
+                                            <th>${phone1.brand}</th>
+                                            <th>${phone2.brand}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                     `;
                     
                     category.specs.forEach(spec => {
@@ -835,36 +694,42 @@
                         const isPhone2Winner = spec.winner === 'phone2';
                         
                         fullSpecsHtml += `
-                            <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">${spec.name}</div>
-                            <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; ${isPhone1Winner ? 'color: var(--success-color); font-weight: bold;' : ''}">${spec.phone1_value}</div>
-                            <div style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; ${isPhone2Winner ? 'color: var(--success-color); font-weight: bold;' : ''}">${spec.phone2_value}</div>
+                            <tr>
+                                <td>${spec.name}</td>
+                                <td class="${isPhone1Winner ? 'winner-value' : ''}">${spec.phone1_value || '-'}</td>
+                                <td class="${isPhone2Winner ? 'winner-value' : ''}">${spec.phone2_value || '-'}</td>
+                            </tr>
                         `;
                     });
                     
                     fullSpecsHtml += `
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     `;
                 });
                 $('#fullSpecs').html(fullSpecsHtml);
                 
-                // Анализ ИИ
-                $('#aiAnalysisText').html(result.ai_analysis);
+                // AI ანალიზი
+                $('#aiAnalysisText').html(result.ai_analysis || "AI ანალიზი ხელმიუწვდომელია");
                 
-                // Показываем секции
                 $('#singlePhoneSpecs').hide();
                 $('#comparisonResult').show();
             }
             
-            // Скрытие всех секций
+            // ყველა სექციის დამალვა
             function hideAllSections() {
                 $('#singlePhoneSpecs').hide();
                 $('#comparisonResult').hide();
             }
             
-            // Кнопка показа всех характеристик
+            // ყველა მახასიათებლის ჩვენება/დამალვა
             $('#showFullSpecsBtn').click(function() {
                 $('#fullSpecs').slideToggle();
+                $(this).text(function(i, text) {
+                    return text === "ყველა მახასიათებლის ჩვენება" ? "მახასიათებლების დამალვა" : "ყველა მახასიათებლის ჩვენება";
+                });
             });
         });
     </script>
