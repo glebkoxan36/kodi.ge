@@ -86,3 +86,73 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         return {'error': f'ქსელის შეცდომა: {str(e)}'}
     except Exception as e:
         return {'error': f'გაუთვალისწინებელი შეცდომა: {str(e)}'}
+
+def parse_free_html(html_content: str) -> dict:
+    """Парсит HTML-ответ бесплатной проверки IMEI"""
+    try:
+        soup = BeautifulSoup(html_content, 'html.parser')
+        result = {}
+        
+        # 1. Парсинг табличных данных
+        for table in soup.find_all('table'):
+            for row in table.find_all('tr'):
+                cols = row.find_all('td')
+                if len(cols) == 2:
+                    key = cols[0].get_text(strip=True).replace(':', '').replace(' ', '_').lower()
+                    value = cols[1].get_text(strip=True)
+                    result[key] = value
+
+        # 2. Парсинг всех возможных пар ключ-значение
+        pattern = re.compile(
+            r'(Device|Model|Serial|IMEI|ICCID|FMI|Activation Status|'
+            r'Blacklist Status|Sim Lock|MDM Status|Google Account Status|'
+            r'Carrier|Purchase Date|Warranty Status|Activation Policy|'
+            r'Network Lock|Coverage|Find My iPhone|iCloud Status|'
+            r'Activation Lock|Last Restore|Factory Unlocked|Refurbished|'
+            r'Replaced|Loaner|AppleCare|Blocked Status|Restore Status|'
+            r'Activation Date|Purchase Country|Next Tether Policy|Sim Lock Policy)'
+            r'[\s:]*', 
+            re.IGNORECASE
+        )
+        
+        for element in soup.find_all(string=pattern):
+            match = pattern.search(element)
+            if match:
+                label = match.group(1).strip()
+                key = label.replace(' ', '_').lower()
+                
+                # Поиск значения в структуре документа
+                value = ""
+                parent = element.parent
+                
+                # Случай 1: Значение в том же элементе после двоеточия
+                if ':' in element:
+                    value = element.split(':', 1)[1].strip()
+                
+                # Случай 2: Значение в соседнем элементе
+                elif parent and parent.find_next_sibling():
+                    value = parent.find_next_sibling().get_text(strip=True)
+                
+                # Случай 3: Значение в следующем текстовом узле
+                elif element.next_sibling:
+                    value = element.next_sibling.strip()
+                
+                if value:
+                    result[key] = value
+
+        # 3. Дополнительный сбор данных из заголовков и значений
+        for header in soup.find_all(['h3', 'h4', 'strong', 'b']):
+            text = header.get_text(strip=True)
+            if ':' in text:
+                key, value = text.split(':', 1)
+                key = key.strip().replace(' ', '_').lower()
+                result[key] = value.strip()
+            elif header.next_sibling:
+                key = text.replace(':', '').replace(' ', '_').lower()
+                result[key] = header.next_sibling.strip()
+
+        return result
+    
+    except Exception as e:
+        logging.error(f"Advanced HTML parsing error: {str(e)}")
+        return None
