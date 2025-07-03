@@ -18,8 +18,9 @@ from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from urllib.parse import quote_plus
-from flask_wtf.csrf import CSRFProtect, generate_csrf  # Импортируем для CSRF
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_session import Session
+from bs4 import BeautifulSoup  # Добавлен импорт
 
 # Импорт модулей
 from ifreeapi import validate_imei, perform_api_check, parse_free_html, SERVICE_TYPES
@@ -1269,10 +1270,11 @@ def history_checks():
     page = int(request.args.get('page', 1))
     per_page = 20
     
-    checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
-        .sort('timestamp', -1)
-        .skip((page - 1) * per_page)
-        .limit(per_page))
+    # Исправленный запрос с пагинацией
+    query = checks_collection.find({'user_id': ObjectId(user_id)})
+    query = query.sort('timestamp', -1)
+    query = query.skip((page - 1) * per_page).limit(per_page)
+    checks = list(query)
     
     total = checks_collection.count_documents({'user_id': ObjectId(user_id)})
     
@@ -1308,10 +1310,11 @@ def history_comparisons():
     page = int(request.args.get('page', 1))
     per_page = 20
     
-    comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)})
-        .sort('timestamp', -1)
-        .skip((page - 1) * per_page)
-        .limit(per_page))
+    # Исправленный запрос с пагинацией
+    query = comparisons_collection.find({'user_id': ObjectId(user_id)})
+    query = query.sort('timestamp', -1)
+    query = query.skip((page - 1) * per_page).limit(per_page)
+    comparisons = list(query)
     
     total = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
     
