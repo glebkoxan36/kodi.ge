@@ -40,7 +40,7 @@ WEIGHTS = {
 SPEC_CATEGORIES = {
     "Процессор": [
         "Процессор", "CPU Балл", "CPU Ядра", "CPU Частота (ГГц)",
-        "Оценка AnTuTu", "Geekbench (одиночное ядро)", "Geekbench (многоядерное)", "TDP (Вт)"
+        "Оценка AnTuTu", "Geekbench (одиночное ядо)", "Geekbench (многоядерное)", "TDP (Вт)"
     ],
     "Видеокарта": [
         "GPU", "GPU Балл", "3DMark Wild Life", "GFXBench ES 3.1 (fps)", 
