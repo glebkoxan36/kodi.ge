@@ -57,13 +57,9 @@ def generate_avatar_color(name):
 @app.context_processor
 def inject_utils():
     return {
-        'generate_avatar_color': generate_avatar_color
+        'generate_avatar_color': generate_avatar_color,
+        'csrf_token': generate_csrf()  # Объединенный контекстный процессор
     }
-
-# Контекстный процессор для передачи csrf_token в шаблоны
-@app.context_processor
-def inject_csrf_token():
-    return {'csrf_token': generate_csrf()}
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
