@@ -86,7 +86,7 @@
             filter: drop-shadow(0 5px 10px rgba(0, 198, 255, 0.5));
         }
         
-        /* Базовые стили для карусели */
+        /* НОВЫЕ СТИЛИ ДЛЯ КАРУСЕЛИ */
         .carousel {
             position: relative;
             max-width: 1000px;
@@ -97,19 +97,32 @@
             min-height: 400px;
             background: #000;
         }
+        
         .carousel-inner {
-            display: flex;
-            height: 100%;
-        }
-        .slide {
-            min-width: 100%;
-            box-sizing: border-box;
             position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+        }
+        
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
         }
+        
+        .slide.active {
+            opacity: 1;
+            z-index: 1;
+        }
+        
         .slide img {
             width: 100%;
             height: 100%;
@@ -117,11 +130,128 @@
             display: block;
         }
         
+        /* Стили для заглушки */
+        .placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .placeholder-text {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-top: 30px;
+            letter-spacing: 1px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #111; /* Темный цвет текста */
+            text-shadow: 
+                0 0 5px rgba(255, 255, 255, 0.8),
+                0 0 15px rgba(255, 255, 255, 0.6),
+                0 0 25px rgba(200, 200, 255, 0.4); /* Неоновая подсветка */
+            position: relative;
+            z-index: 10;
+            padding: 15px 30px;
+        }
+        
+        .floating-circles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            top: 0;
+            left: 0;
+        }
+        
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+            filter: blur(1px);
+            opacity: 0.7;
+            box-shadow: 0 0 30px currentColor;
+        }
+        
+        /* Разнонаправленные анимации */
+        @keyframes float-right {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            100% {
+                transform: translate(calc(100vw - 150px), calc(100vh - 150px)) rotate(360deg);
+            }
+        }
+        
+        @keyframes float-left {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            100% {
+                transform: translate(calc(-100vw + 150px), calc(100vh - 150px)) rotate(-360deg);
+            }
+        }
+        
+        @keyframes float-up {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            100% {
+                transform: translate(calc(50vw - 75px), calc(-100vh + 150px)) rotate(180deg);
+            }
+        }
+        
+        @keyframes float-down {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            100% {
+                transform: translate(calc(-50vw + 75px), calc(100vh - 150px)) rotate(-180deg);
+            }
+        }
+        
+        @keyframes float-diagonal1 {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            100% {
+                transform: translate(calc(100vw - 150px), calc(-100vh + 150px)) rotate(270deg);
+            }
+        }
+        
+        @keyframes float-diagonal2 {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            100% {
+                transform: translate(calc(-100vw + 150px), calc(-100vh + 150px)) rotate(-270deg);
+            }
+        }
+        
         /* Адаптивность карусели */
         @media (max-width: 768px) {
             .carousel {
                 min-height: 300px;
                 max-width: 95%;
+            }
+            .placeholder-text {
+                font-size: 2rem;
+                padding: 10px 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .placeholder-text {
+                font-size: 1.5rem;
             }
         }
     </style>
@@ -257,17 +387,55 @@
                 <p class="lead">პროფესიონალური IMEI შემოწმების სერვისი</p>
             </div>
             
-            <!-- Карусель -->
+            <!-- НОВАЯ КАРУСЕЛЬ -->
             <div class="carousel" id="carousel-container">
                 <div class="carousel-inner">
-                    <div class="slide">
-                        <img src="static/images/slide1.jpg" alt="Apple IMEI Check">
+                    <!-- Слайд 1 -->
+                    <div class="slide active">
+                        <div class="placeholder">
+                            <div class="floating-circles"></div>
+                            <div class="logo-animated">
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-core">
+                                    <div class="logo-letter">K</div>
+                                </div>
+                            </div>
+                            <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
+                        </div>
                     </div>
+                    
+                    <!-- Слайд 2 -->
                     <div class="slide">
-                        <img src="static/images/slide2.jpg" alt="IMEI Services">
+                        <div class="placeholder">
+                            <div class="floating-circles"></div>
+                            <div class="logo-animated">
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-core">
+                                    <div class="logo-letter">K</div>
+                                </div>
+                            </div>
+                            <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
+                        </div>
                     </div>
+                    
+                    <!-- Слайд 3 -->
                     <div class="slide">
-                        <img src="static/images/slide3.jpg" alt="Phone Comparison">
+                        <div class="placeholder">
+                            <div class="floating-circles"></div>
+                            <div class="logo-animated">
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-core">
+                                    <div class="logo-letter">K</div>
+                                </div>
+                            </div>
+                            <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -428,11 +596,96 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Скрипт карусели -->
-    <script src="static/js/carousel.js"></script>
-    
-    <!-- Подключение объединенного мобильного меню -->
-    <script src="static/js/mobilemenu.js"></script>
+    <!-- Скрипт для новой карусели -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const slides = document.querySelectorAll('.slide');
+            let currentSlide = 0;
+            
+            // Функция для переключения слайдов
+            function nextSlide() {
+                slides[currentSlide].classList.remove('active');
+                currentSlide = (currentSlide + 1) % slides.length;
+                slides[currentSlide].classList.add('active');
+            }
+            
+            // Запуск автоматической смены слайдов
+            setInterval(nextSlide, 5000);
+            
+            // Генерация плавающих кругов для заглушки
+            function createFloatingCircles() {
+                const containers = document.querySelectorAll('.floating-circles');
+                const colors = [
+                    '#ff9a9e', // розовый
+                    '#a6c1ee', // голубой
+                    '#fbc2eb', // фиолетовый
+                    '#fad0c4', // персиковый
+                    '#9affd4', // мятный
+                    '#ffe39a', // желтый
+                    '#ca9aff'  // лавандовый
+                ];
+                
+                // Разные анимации движения
+                const animations = [
+                    'float-right',
+                    'float-left',
+                    'float-up',
+                    'float-down',
+                    'float-diagonal1',
+                    'float-diagonal2'
+                ];
+                
+                containers.forEach(container => {
+                    // Очищаем существующие круги
+                    container.innerHTML = '';
+                    
+                    // Создаем 10-15 случайных кругов
+                    const circleCount = Math.floor(Math.random() * 6) + 10;
+                    for (let i = 0; i < circleCount; i++) {
+                        const circle = document.createElement('div');
+                        circle.classList.add('circle');
+                        
+                        // Случайные размеры (20-150px)
+                        const size = Math.floor(Math.random() * 130) + 20;
+                        
+                        // Случайные стартовые позиции
+                        const top = Math.floor(Math.random() * 100);
+                        const left = Math.floor(Math.random() * 100);
+                        
+                        // Случайная скорость (10-30s)
+                        const duration = Math.floor(Math.random() * 20) + 10;
+                        
+                        // Случайная задержка анимации
+                        const delay = -(Math.floor(Math.random() * 15));
+                        
+                        // Случайный цвет из палитры
+                        const color = colors[Math.floor(Math.random() * colors.length)];
+                        
+                        // Случайная анимация
+                        const animation = animations[Math.floor(Math.random() * animations.length)];
+                        
+                        circle.style.width = `${size}px`;
+                        circle.style.height = `${size}px`;
+                        circle.style.top = `${top}%`;
+                        circle.style.left = `${left}%`;
+                        circle.style.animationDelay = `${delay}s`;
+                        circle.style.animationDuration = `${duration}s`;
+                        circle.style.animationName = animation;
+                        circle.style.backgroundColor = color;
+                        circle.style.boxShadow = `0 0 ${size/2}px ${color}`;
+                        
+                        container.appendChild(circle);
+                    }
+                });
+            }
+            
+            // Инициализация при загрузке
+            createFloatingCircles();
+            
+            // Обновляем круги каждые 30 секунд
+            setInterval(createFloatingCircles, 30000);
+        });
+    </script>
     
     <!-- Скрипт для счетчика статистики -->
     <script>
