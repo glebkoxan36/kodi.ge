@@ -19,6 +19,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from urllib.parse import quote_plus
 from flask_wtf.csrf import CSRFProtect, generate_csrf  # Импортируем для CSRF
+from flask_session import Session
 
 # Импорт модулей
 from ifreeapi import validate_imei, perform_api_check, parse_free_html, SERVICE_TYPES
@@ -28,6 +29,14 @@ from compare import compare_two_phones, generate_image_path
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
+
+# Настройки сессии
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    PERMANENT_SESSION_LIFETIME=timedelta(days=7)
+Session(app)
 
 # Инициализация CSRF защиты
 csrf = CSRFProtect(app)
@@ -1402,6 +1411,7 @@ def register():
     session['user_id'] = str(result.inserted_id)
     session['username'] = username
     session['role'] = 'user'
+    session.modified = True  # Критически важно!
     
     return jsonify({"success": True, "message": "რეგისტრაცია წარმატებით დასრულდა!"}), 201
 
@@ -1470,6 +1480,7 @@ def login():
         session['user_id'] = str(user['_id'])
         session['username'] = user['username']
         session['role'] = user['role']
+        session.modified = True  # Критически важно!
         app.logger.info(f"Successful login for: {user['username']} (Role: {user['role']})")
         
         if next_url:
