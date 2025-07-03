@@ -18,6 +18,7 @@ from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from urllib.parse import quote_plus
+from flask_wtf.csrf import CSRFProtect, generate_csrf  # Импортируем для CSRF
 
 # Импорт модулей
 from ifreeapi import validate_imei, perform_api_check, parse_free_html, SERVICE_TYPES
@@ -27,6 +28,9 @@ from compare import compare_two_phones, generate_image_path
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
+
+# Инициализация CSRF защиты
+csrf = CSRFProtect(app)
 
 # Функция для генерации цвета аватара
 def generate_avatar_color(name):
@@ -43,6 +47,11 @@ def inject_utils():
     return {
         'generate_avatar_color': generate_avatar_color
     }
+
+# Контекстный процессор для передачи csrf_token в шаблоны
+@app.context_processor
+def inject_csrf_token():
+    return {'csrf_token': generate_csrf()}
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -1129,6 +1138,9 @@ def dashboard():
     # Общее количество сравнений
     total_comparisons = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
     
+    # Генерируем цвет аватара
+    avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+    
     return render_template(
         'user/dashboard.html',
         user=user,
@@ -1138,7 +1150,8 @@ def dashboard():
         last_payments=last_payments,
         total_checks=total_checks,
         total_comparisons=total_comparisons,
-        STRIPE_PUBLIC_KEY=STRIPE_PUBLIC_KEY
+        stripe_public_key=STRIPE_PUBLIC_KEY,
+        avatar_color=avatar_color  # Передаем цвет аватара
     )
 
 @user_bp.route('/settings')
