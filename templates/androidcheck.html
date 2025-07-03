@@ -6,6 +6,7 @@
     <title>KODI.GE - Android IMEI შემოწმება</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
         /* Дополнительные стили для решения проблем */
         #selected-service-container, 
@@ -157,6 +158,11 @@
     
     <script src="https://js.stripe.com/v3/"></script>
     <script>
+        // Функция для получения CSRF-токена
+        function getCSRFToken() {
+            return document.querySelector('meta[name="csrf-token"]').content;
+        }
+        
         const stripe = Stripe('{{ stripe_public_key }}');
         const services = {{ services_data | tojson | safe }};
         
@@ -396,6 +402,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({
@@ -476,6 +483,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({
