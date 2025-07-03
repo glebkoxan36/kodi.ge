@@ -20,7 +20,7 @@ from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from urllib.parse import quote_plus
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_session import Session
-from bs4 import BeautifulSoup  # Добавлен импорт
+from bs4 import BeautifulSoup
 
 # Импорт модулей
 from ifreeapi import validate_imei, perform_api_check, parse_free_html, SERVICE_TYPES
@@ -31,8 +31,9 @@ app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 
-# Настройки сессии
+# Настройки сессии - КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ
 app.config.update(
+    SESSION_TYPE='filesystem',  # Явно указан тип хранилища сессий
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
