@@ -287,7 +287,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-4">
                             <div class="user-avatar-container user-info-avatar me-4" 
-                                 style="background-color: {{ user.avatar_color }};">
+                                 style="background-color: {{ avatar_color }};">  <!-- Используем переданный цвет -->
                                 {% if user.avatar_url %}
                                     <img src="{{ user.avatar_url }}" alt="User Avatar" class="user-avatar">
                                 {% else %}
@@ -651,7 +651,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token() }}'
+                        'X-CSRFToken': '{{ csrf_token }}'  // Исправлено: убраны скобки
                     },
                     body: JSON.stringify({
                         amount: amount * 100, // Convert to cents
@@ -699,4 +699,4 @@
         });
     </script>
 </body>
-</html>
+                </html>
