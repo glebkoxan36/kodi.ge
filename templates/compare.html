@@ -771,6 +771,30 @@
             let phone1 = null;
             let phone2 = null;
             
+            // Функция для получения CSRF токена из cookies
+            function getCSRFToken() {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const [name, value] = cookie.trim().split('=');
+                    if (name === 'csrf_token') {
+                        return decodeURIComponent(value);
+                    }
+                }
+                return null;
+            }
+            
+            // Настройка AJAX для отправки CSRF токена
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        const csrfToken = getCSRFToken();
+                        if (csrfToken) {
+                            xhr.setRequestHeader('X-CSRFToken', csrfToken);
+                        }
+                    }
+                }
+            });
+            
             // Показываем вторую кнопку после выбора первого телефона
             function showSecondSelector() {
                 $('#secondSelectorContainer').show();
@@ -815,8 +839,11 @@
                 `);
                 
                 // Запрос к API для поиска телефонов
-                $.get('/api/search_phones', { query: query })
-                    .done(function(data) {
+                $.ajax({
+                    url: '/api/search_phones',
+                    type: 'GET',
+                    data: { query: query },
+                    success: function(data) {
                         let html = '';
                         if (data.length > 0) {
                             data.forEach(phone => {
@@ -840,15 +867,16 @@
                             const phoneId = $(this).data('id');
                             selectPhone(phoneId);
                         });
-                    })
-                    .fail(function() {
+                    },
+                    error: function() {
                         $('#searchResults').html(`
                             <div class="error-message">
                                 ძებნის პროცესში მოხდა შეცდომა
                                 <button class="retry-btn" onclick="$('#phoneSearchInput').keyup()">ხელახლა ცდა</button>
                             </div>
                         `);
-                    });
+                    }
+                });
             });
             
             // Выбор телефона
@@ -856,8 +884,11 @@
                 showLoading(selectedTarget);
                 
                 // Запрос деталей телефона
-                $.get('/api/phone_details', { id: phoneId })
-                    .done(function(phone) {
+                $.ajax({
+                    url: '/api/phone_details',
+                    type: 'GET',
+                    data: { id: phoneId },
+                    success: function(phone) {
                         if (selectedTarget === 'selectPhone1') {
                             phone1 = phone;
                             updatePhoneDisplay(phone, '#selectPhone1Btn');
@@ -868,10 +899,11 @@
                         }
                         $('#phoneSearchModal').hide();
                         checkComparisonState();
-                    })
-                    .fail(function() {
+                    },
+                    error: function() {
                         showError(selectedTarget, 'ტელეფონის ინფორმაციის ჩატვირთვა ვერ მოხერხდა');
-                    });
+                    }
+                });
             }
             
             // Индикатор загрузки
@@ -991,21 +1023,26 @@
                 `).show();
                 
                 // Отправка запроса на сравнение
-                $.post('/api/compare', {
-                    phone1_id: phone1._id,
-                    phone2_id: phone2._id
-                })
-                    .done(function(result) {
+                $.ajax({
+                    url: '/api/compare',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        phone1_id: phone1._id,
+                        phone2_id: phone2._id
+                    }),
+                    success: function(result) {
                         displayComparisonResult(result);
-                    })
-                    .fail(function() {
+                    },
+                    error: function() {
                         $('#comparisonResult').html(`
                             <div class="error-message" style="margin: 30px;">
                                 შედარების პროცესი ვერ მოხერხდა
                                 <button class="retry-btn" onclick="comparePhones()">ხელახლა ცდა</button>
                             </div>
                         `);
-                    });
+                    }
+                });
             }
             
             // Отображение результатов сравнения
@@ -1152,8 +1189,11 @@
                     </div>
                 `);
                 
-                $.get('/api/phone_details', { id: phoneId })
-                    .done(function(phone) {
+                $.ajax({
+                    url: '/api/phone_details',
+                    type: 'GET',
+                    data: { id: phoneId },
+                    success: function(phone) {
                         if (target === 'selectPhone1') {
                             phone1 = phone;
                             updatePhoneDisplay(phone, '#selectPhone1Btn');
@@ -1162,10 +1202,11 @@
                             updatePhoneDisplay(phone, '#selectPhone2Btn');
                         }
                         checkComparisonState();
-                    })
-                    .fail(function() {
+                    },
+                    error: function() {
                         showError(target, 'ტელეფონის ინფორმაციის ჩატვირთვა ვერ მოხერხდა');
-                    });
+                    }
+                });
             } else {
                 $(`#${target}Btn`).click();
             }
@@ -1180,21 +1221,26 @@
                     </div>
                 `).show();
                 
-                $.post('/api/compare', {
-                    phone1_id: phone1._id,
-                    phone2_id: phone2._id
-                })
-                    .done(function(result) {
+                $.ajax({
+                    url: '/api/compare',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        phone1_id: phone1._id,
+                        phone2_id: phone2._id
+                    }),
+                    success: function(result) {
                         displayComparisonResult(result);
-                    })
-                    .fail(function() {
+                    },
+                    error: function() {
                         $('#comparisonResult').html(`
                             <div class="error-message" style="margin: 30px;">
                                 შედარების პროცესი ვერ მოხერხდა
                                 <button class="retry-btn" onclick="comparePhones()">ხელახლა ცდა</button>
                             </div>
                         `);
-                    });
+                    }
+                });
             }
         };
         
