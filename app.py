@@ -1553,6 +1553,19 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(auth_bp)
 
+# Обработчик ошибок CSRF
+@csrf.error_handler
+def csrf_error(reason):
+    app.logger.warning(f"CSRF error: {reason}")
+    return jsonify({'error': f'CSRF token error: {reason}'}), 400
+
+# Установка CSRF-куки для AJAX
+@app.after_request
+def set_csrf_cookie(response):
+    if request.path.startswith('/'):
+        response.set_cookie('csrf_token', generate_csrf())
+    return response
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
