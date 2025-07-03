@@ -25,6 +25,9 @@
         </div>
         
         <form id="registration-form">
+            <!-- CSRF токен для защиты -->
+            <input type="hidden" name="csrf_token" id="csrf_token" value="{{ csrf_token() }}">
+            
             <div class="form-group">
                 <label class="form-label" for="first_name">სახელი</label>
                 <input type="text" class="form-control" id="first_name" name="first_name" required>
@@ -275,25 +278,36 @@
             registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> რეგისტრაცია';
             
             try {
-                // Здесь будет AJAX запрос на сервер
-                // Имитация запроса
-                setTimeout(() => {
-                    const success = true;
+                // Сбор данных формы
+                const formData = new FormData(e.target);
+                
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Анимация успешной регистрации
+                    registerBtn.innerHTML = '<i class="fas fa-check"></i> წარმატებული რეგისტრაცია';
+                    registerBtn.style.background = 'var(--success-color)';
                     
-                    if (success) {
-                        // Анимация успешной регистрации
-                        registerBtn.innerHTML = '<i class="fas fa-check"></i> წარმატებული რეგისტრაცია';
-                        registerBtn.style.background = 'var(--success-color)';
-                        
-                        setTimeout(() => {
-                            alert('რეგისტრაცია წარმატებით დასრულდა!');
-                            window.location.href = '/';
-                        }, 1500);
+                    setTimeout(() => {
+                        alert('რეგისტრაცია წარმატებით დასრულდა!');
+                        window.location.href = '/user/dashboard';
+                    }, 1500);
+                } else {
+                    registerBtn.innerHTML = originalText;
+                    // Отображение ошибок сервера
+                    if (data.errors) {
+                        data.errors.forEach(error => {
+                            showError('general_error', error);
+                        });
                     } else {
-                        registerBtn.innerHTML = originalText;
                         showError('general_error', 'რეგისტრაციის დროს მოხდა შეცდომა. გთხოვთ სცადოთ თავიდან');
                     }
-                }, 1500);
+                }
             } catch (error) {
                 registerBtn.innerHTML = originalText;
                 showError('general_error', 'სერვერული შეცდომა. გთხოვთ სცადოთ მოგვიანებით');
@@ -321,4 +335,4 @@
         });
     </script>
 </body>
-                    </html>
+    </html>
