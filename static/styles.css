@@ -105,7 +105,7 @@ body {
 }
 
 /* ===== UTILITY CLASSES ===== */
-.text-info, .text-info * { color: var(--accent-color) !important; }
+.text-info, .text-info * { color: var(--ffffff) !important; }
 .text-warning, .text-warning * { color: var(--warning-color) !important; }
 .text-success, .text-success * { color: var(--success-color) !important; }
 .user-balance, .user-balance * { color: #00ff9d !important; }
