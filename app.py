@@ -39,7 +39,6 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(days=7)
-)
 Session(app)
 
 # Инициализация CSRF защиты
@@ -623,10 +622,17 @@ def create_checkout_session():
         
         # Если не используем баланс (неавторизован или недостаточно средств)
         if not use_balance:
-            # Используем StripePayment для создания сессии
-            success_url = url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}&imei=' + imei + '&service_type=' + service_type
-            cancel_url = url_for('android_check', _external=True) + f'?type={service_type}'
+            # Используем базовый URL из запроса
+            base_url = request.host_url.rstrip('/')
+            success_url = f"{base_url}/success?session_id={{CHECKOUT_SESSION_ID}}&imei={imei}&service_type={service_type}"
             
+            # Определяем cancel_url в зависимости от типа услуги
+            if service_type in ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']:
+                cancel_url = f"{base_url}/apple_check?type={service_type}"
+            else:
+                cancel_url = f"{base_url}/android_check?type={service_type}"
+            
+            # Используем StripePayment для создания сессии
             stripe_session = stripe_payment.create_checkout_session(
                 imei=imei,
                 service_type=service_type,
@@ -1324,8 +1330,9 @@ def topup_balance():
         
         # Используем StripePayment для создания сессии пополнения
         try:
-            success_url = url_for('user.topup_success', _external=True)
-            cancel_url = url_for('user.topup_balance', _external=True)
+            base_url = request.host_url.rstrip('/')
+            success_url = f"{base_url}/user/topup/success"
+            cancel_url = f"{base_url}/user/topup"
             
             stripe_session = stripe_payment.create_topup_session(
                 user_id=str(session['user_id']),
@@ -1697,4 +1704,4 @@ def handle_csrf_error(e):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)
