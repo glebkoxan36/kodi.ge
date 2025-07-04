@@ -1,10 +1,9 @@
 // static/js/mobilemenu.js
 (function() {
-    // Добавляем стили в head документа
+    // Добавляем стили
     const style = document.createElement('style');
     style.id = 'mobile-menu-styles';
     style.textContent = `
-        /* Мобильное меню и аватар */
         .mobile-menu-bottom {
             display: none;
             position: fixed;
@@ -466,7 +465,6 @@
     // Глобальные функции навигации
     window.goToLogin = function() {
         closeAllMobileMenus();
-        // Добавляем небольшую задержку для гарантированного закрытия меню
         setTimeout(() => {
             window.location.href = "/auth/login";
         }, 100);
@@ -474,7 +472,6 @@
 
     window.goToDashboard = function() {
         closeAllMobileMenus();
-        // Добавляем небольшую задержку для гарантированного закрытия меню
         setTimeout(() => {
             window.location.href = "/user/dashboard";
         }, 100);
@@ -482,7 +479,7 @@
 
     // Функция для генерации HTML пользователя
     function generateUserHTML() {
-        if (window.currentUser) {
+        if (window.currentUser && window.currentUser.first_name) {
             return `
                 <div class="floating-avatar" onclick="window.goToDashboard()">
                     <div class="avatar-placeholder" style="background-color: ${window.currentUser.avatar_color}">
@@ -547,23 +544,23 @@
                                 <i class="fas fa-home"></i>
                                 <span>მთავარი</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/accounts'; closeAllMobileMenus();">
+                            <div class="menu-item" onclick="window.location.href='/user/payment_history'; closeAllMobileMenus();">
                                 <i class="fas fa-wallet"></i>
                                 <span>ანგარიშები</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/history-checks'; closeAllMobileMenus();">
+                            <div class="menu-item" onclick="window.location.href='/user/history_checks'; closeAllMobileMenus();">
                                 <i class="fas fa-history"></i>
                                 <span>IMEI ისტორია</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/history-comparisons'; closeAllMobileMenus();">
+                            <div class="menu-item" onclick="window.location.href='/user/history_comparisons'; closeAllMobileMenus();">
                                 <i class="fas fa-exchange-alt"></i>
                                 <span>შედარებები</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/settings'; closeAllMobileMenus();">
+                            <div class="menu-item" onclick="window.location.href='/user/settings'; closeAllMobileMenus();">
                                 <i class="fas fa-cog"></i>
                                 <span>პარამეტრები</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/logout'; closeAllMobileMenus();">
+                            <div class="menu-item" onclick="window.location.href='/auth/logout'; closeAllMobileMenus();">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>გასვლა</span>
                             </div>
@@ -836,35 +833,23 @@
 
     // Initialize mobile menu when the page loads
     document.addEventListener('DOMContentLoaded', () => {
-        // Получаем данные пользователя из глобальной переменной
-        window.currentUser = window.currentUser || null;
-        
-        // Создаем HTML структуру меню
+        // Создаем структуру меню
         createMobileMenuStructure();
         
-        // Create mobile menu button if not exists
-        if (!document.getElementById('mobileMenuBottom')) {
-            const menuBtn = document.createElement('div');
-            menuBtn.className = 'mobile-menu-bottom';
-            menuBtn.id = 'mobileMenuBottom';
-            menuBtn.innerHTML = `
-                <button class="mobile-menu-btn" id="mobileMenuBtn">
-                    <i class="fas fa-bars"></i>
-                </button>
-            `;
-            document.body.appendChild(menuBtn);
-        }
-        
         // Mobile menu button setup
-        try {
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            if (mobileMenuBtn) {
-                mobileMenuBtn.addEventListener('click', openMobileMenu);
-            } else {
-                console.warn('Mobile menu button not found');
-            }
-        } catch(e) {
-            console.error('Mobile menu setup error:', e);
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', function() {
+                // Пересоздаем меню для обновления данных пользователя
+                const container = document.getElementById('mobile-menu-container');
+                if (container) {
+                    container.remove();
+                }
+                createMobileMenuStructure();
+                openMobileMenu();
+            });
+        } else {
+            console.warn('Mobile menu button not found');
         }
 
         // Close menu when clicking outside
