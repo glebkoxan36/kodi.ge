@@ -40,52 +40,48 @@ def validate_imei(imei: str) -> bool:
     """Проверяет корректность формата IMEI"""
     return len(imei) == 15 and imei.isdigit()
 
-def perform_api_check(imei: str, service_type: str) -> dict:
-    """Выполняет проверку IMEI через внешний API"""
-    if service_type not in SERVICE_TYPES:
-        return {'error': f'შემოწმების უცნობი ტიპი: {service_type}'}
-    
-    if not validate_imei(imei):
-        return {'error': 'IMEI-ის არასწორი ფორმატი. უნდა შედგებოდეს 15 ციფრისგან.'}
-    
-    service_code = SERVICE_TYPES[service_type]
-    data = {
-        "service": service_code,
-        "imei": imei,
-        "key": API_KEY
+def parse_free_json(data: dict) -> dict:
+    """Парсит JSON-ответ бесплатной проверки IMEI для Android устройств"""
+    # Словарь для перевода ключей на грузинский язык
+    key_mapping = {
+        'brand': 'ბრენდი',
+        'model': 'მოდელი',
+        'modelName': 'მოდელის სახელი',
+        'manufacturer': 'მწარმოებელი',
+        'status': 'სტატუსი',
+        'activation_status': 'აქტივაციის სტატუსი',
+        'fmi_status': 'FMI სტატუსი',
+        'sim_lock': 'SIM ლოკი',
+        'blacklist_status': 'შავი სიის სტატუსი',
+        'carrier': 'ოპერატორი',
+        'warranty_status': 'გარანტიის სტატუსი',
+        'imei': 'IMEI ნომერი',
+        'serial': 'სერიული ნომერი',
+        'manufacture_date': 'წარმოების თარიღი',
+        'purchase_date': 'შეძენის თარიღი',
+        'activation_date': 'აქტივაციის თარიღი',
+        'purchase_country': 'შეძენის ქვეყანა',
+        'last_restore': 'ბოლო აღდგენა',
+        'factory_unlocked': 'ქარხნულად გახსნილი',
+        'refurbished': 'რემონტირებული',
+        'replaced': 'შეცვლილი',
+        'loaner': 'სესხით',
+        'applecare': 'AppleCare',
+        'blocked_status': 'ბლოკირების სტატუსი',
+        'restore_status': 'აღდგენის სტატუსი',
+        'next_tether_policy': 'შემდეგი პოლიტიკა',
+        'sim_lock_policy': 'SIM ლოკის პოლიტიკა',
     }
+
+    result = {}
     
-    try:
-        response = requests.post(API_URL, data=data, timeout=30)
-        
-        if response.status_code != 200:
-            return {
-                'error': f'სერვერის შეცდომა: {response.status_code}',
-                'details': response.text[:200] + '...' if len(response.text) > 200 else response.text
-            }
-        
-        # Для бесплатной проверки возвращаем HTML-контент
-        if service_type == 'free':
-            return {'html_content': response.text}
-        
-        try:
-            # Пытаемся обработать ответ как JSON
-            json_data = response.json()
-            
-            if not json_data.get('success'):
-                error_msg = json_data.get('error', 'API-ის უცნობი შეცდომა')
-                return {'error': f'შემოწმების შეცდომა: {error_msg}'}
-                
-            return json_data.get('data', {})
-            
-        except ValueError:
-            # Если ответ не JSON, возвращаем как HTML
-            return {'html_content': response.text}
-    
-    except requests.exceptions.RequestException as e:
-        return {'error': f'ქსელის შეცდომა: {str(e)}'}
-    except Exception as e:
-        return {'error': f'გაუთვალისწინებელი შეცდომა: {str(e)}'}
+    # Обработка и перевод ключей
+    for key, value in data.items():
+        # Переводим ключ если он есть в словаре, иначе оставляем оригинальный
+        georgian_key = key_mapping.get(key, key)
+        result[georgian_key] = value
+
+    return result
 
 def parse_free_html(html_content: str) -> dict:
     """Парсит HTML-ответ бесплатной проверки IMEI"""
@@ -156,3 +152,59 @@ def parse_free_html(html_content: str) -> dict:
     except Exception as e:
         logging.error(f"Advanced HTML parsing error: {str(e)}")
         return None
+
+def perform_api_check(imei: str, service_type: str) -> dict:
+    """Выполняет проверку IMEI через внешний API"""
+    if service_type not in SERVICE_TYPES:
+        return {'error': f'შემოწმების უცნობი ტიპი: {service_type}'}
+    
+    if not validate_imei(imei):
+        return {'error': 'IMEI-ის არასწორი ფორმატი. უნდა შედგებოდეს 15 ციფრისგან.'}
+    
+    service_code = SERVICE_TYPES[service_type]
+    data = {
+        "service": service_code,
+        "imei": imei,
+        "key": API_KEY
+    }
+    
+    try:
+        response = requests.post(API_URL, data=data, timeout=30)
+        
+        if response.status_code != 200:
+            return {
+                'error': f'სერვერის შეცდომა: {response.status_code}',
+                'details': response.text[:200] + '...' if len(response.text) > 200 else response.text
+            }
+        
+        # Для бесплатной проверки
+        if service_type == 'free':
+            try:
+                # Пробуем обработать как JSON (Android устройства)
+                json_data = response.json()
+                if isinstance(json_data, dict) and 'status' in json_data:
+                    return parse_free_json(json_data)
+            except:
+                pass
+            
+            # Если не JSON, обрабатываем как HTML (Apple устройства)
+            return parse_free_html(response.text)
+    
+        try:
+            # Пытаемся обработать ответ как JSON
+            json_data = response.json()
+            
+            if not json_data.get('success'):
+                error_msg = json_data.get('error', 'API-ის უცნობი შეცდომა')
+                return {'error': f'შემოწმების შეცდომა: {error_msg}'}
+                
+            return json_data.get('data', {})
+            
+        except ValueError:
+            # Если ответ не JSON, возвращаем как HTML
+            return {'html_content': response.text}
+    
+    except requests.exceptions.RequestException as e:
+        return {'error': f'ქსელის შეცდომა: {str(e)}'}
+    except Exception as e:
+        return {'error': f'გაუთვალისწინებელი შეცდომა: {str(e)}'}
