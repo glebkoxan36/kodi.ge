@@ -2,10 +2,15 @@ import os
 import re
 import requests
 import logging
+import time
+import threading
 from bs4 import BeautifulSoup
 
 API_URL = os.getenv('API_URL', "https://api.ifreeicloud.co.uk")
 API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
+
+# Семафор для ограничения одновременных запросов
+REQUEST_SEMAPHORE = threading.Semaphore(3)  # Максимум 3 одновременных запроса
 
 SERVICE_TYPES = {
     # Apple сервисы
@@ -37,12 +42,25 @@ SERVICE_TYPES = {
 }
 
 def validate_imei(imei: str) -> bool:
-    """Проверяет корректность формата IMEI"""
-    return len(imei) == 15 and imei.isdigit()
+    """Проверяет корректность формата IMEI с использованием алгоритма Луна"""
+    if len(imei) != 15 or not imei.isdigit():
+        return False
+    
+    # Алгоритм Луна
+    total = 0
+    for i, char in enumerate(imei[:14]):
+        digit = int(char)
+        if i % 2 == 1:  # Четные позиции (по индексу, начиная с 0)
+            digit *= 2
+            if digit > 9:
+                digit -= 9
+        total += digit
+    
+    check_digit = (10 - (total % 10)) % 10
+    return check_digit == int(imei[14])
 
 def parse_free_json(data: dict) -> dict:
     """Парсит JSON-ответ бесплатной проверки IMEI для Android устройств"""
-    # Словарь для перевода ключей на грузинский язык
     key_mapping = {
         'brand': 'ბრენდი',
         'model': 'მოდელი',
@@ -77,10 +95,15 @@ def parse_free_json(data: dict) -> dict:
     
     # Обработка и перевод ключей
     for key, value in data.items():
-        # Переводим ключ если он есть в словаре, иначе оставляем оригинальный
         georgian_key = key_mapping.get(key, key)
         result[georgian_key] = value
 
+    # Валидация полученных данных
+    required_keys = ['imei', 'model', 'status']
+    for key in required_keys:
+        if key not in result:
+            result[key] = 'N/A'
+            
     return result
 
 def parse_free_html(html_content: str) -> dict:
@@ -147,64 +170,100 @@ def parse_free_html(html_content: str) -> dict:
                 key = text.replace(':', '').replace(' ', '_').lower()
                 result[key] = header.next_sibling.strip()
 
+        # Валидация полученных данных
+        required_keys = ['imei', 'model', 'status']
+        for key in required_keys:
+            if key not in result:
+                logging.warning(f"Missing required key in free check: {key}")
+                result[key] = 'N/A'
+                
+        # Проверка полноты данных
+        if len(result) < 5:
+            logging.error("Insufficient data in free check response")
+            return {'error': 'Incomplete data in free check response'}
+            
         return result
     
     except Exception as e:
         logging.error(f"Advanced HTML parsing error: {str(e)}")
-        return None
+        return {'error': f'Parsing failed: {str(e)}'}
 
 def perform_api_check(imei: str, service_type: str) -> dict:
-    """Выполняет проверку IMEI через внешний API"""
-    if service_type not in SERVICE_TYPES:
-        return {'error': f'შემოწმების უცნობი ტიპი: {service_type}'}
-    
-    if not validate_imei(imei):
-        return {'error': 'IMEI-ის არასწორი ფორმატი. უნდა შედგებოდეს 15 ციფრისგან.'}
-    
-    service_code = SERVICE_TYPES[service_type]
-    data = {
-        "service": service_code,
-        "imei": imei,
-        "key": API_KEY
-    }
-    
-    try:
-        response = requests.post(API_URL, data=data, timeout=30)
+    """Выполняет проверку IMEI через внешний API с ограничением одновременных запросов"""
+    with REQUEST_SEMAPHORE:
+        if service_type not in SERVICE_TYPES:
+            return {'error': f'შემოწმების უცნობი ტიპი: {service_type}'}
         
-        if response.status_code != 200:
-            return {
-                'error': f'სერვერის შეცდომა: {response.status_code}',
-                'details': response.text[:200] + '...' if len(response.text) > 200 else response.text
-            }
+        if not validate_imei(imei):
+            return {'error': 'IMEI-ის არასწორი ფორმატი. უნდა შედგებოდეს 15 ციფრისგან და გაიაროს Luhn ალგორითმი.'}
         
-        # Для бесплатной проверки
-        if service_type == 'free':
+        service_code = SERVICE_TYPES[service_type]
+        data = {
+            "service": service_code,
+            "imei": imei,
+            "key": API_KEY
+        }
+        
+        attempts = 0
+        max_attempts = 3
+        delay = 2  # секунды
+        
+        while attempts < max_attempts:
             try:
-                # Пробуем обработать как JSON (Android устройства)
-                json_data = response.json()
-                if isinstance(json_data, dict) and 'status' in json_data:
-                    return parse_free_json(json_data)
-            except:
-                pass
-            
-            # Если не JSON, обрабатываем как HTML (Apple устройства)
-            return parse_free_html(response.text)
-    
-        try:
-            # Пытаемся обработать ответ как JSON
-            json_data = response.json()
-            
-            if not json_data.get('success'):
-                error_msg = json_data.get('error', 'API-ის უცნობი შეცდომა')
-                return {'error': f'შემოწმების შეცდომა: {error_msg}'}
+                # Искусственная задержка перед запросом
+                time.sleep(1)
                 
-            return json_data.get('data', {})
+                response = requests.post(API_URL, data=data, timeout=30)
+                
+                # Искусственная задержка для обработки ответа
+                time.sleep(0.5)
+                
+                if response.status_code != 200:
+                    return {
+                        'error': f'სერვერის შეცდომა: {response.status_code}',
+                        'details': response.text[:200] + '...' if len(response.text) > 200 else response.text
+                    }
+                
+                # Для бесплатной проверки
+                if service_type == 'free':
+                    try:
+                        # Пробуем обработать как JSON (Android устройства)
+                        json_data = response.json()
+                        if isinstance(json_data, dict) and 'status' in json_data:
+                            return parse_free_json(json_data)
+                    except:
+                        pass
+                    
+                    # Если не JSON, обрабатываем как HTML (Apple устройства)
+                    return parse_free_html(response.text)
             
-        except ValueError:
-            # Если ответ не JSON, возвращаем как HTML
-            return {'html_content': response.text}
-    
-    except requests.exceptions.RequestException as e:
-        return {'error': f'ქსელის შეცდომა: {str(e)}'}
-    except Exception as e:
-        return {'error': f'გაუთვალისწინებელი შეცდომა: {str(e)}'}
+                try:
+                    # Пытаемся обработать ответ как JSON
+                    json_data = response.json()
+                    
+                    if not json_data.get('success'):
+                        error_msg = json_data.get('error', 'API-ის უცნობი შეცდომა')
+                        return {'error': f'შემოწმების შეცდომა: {error_msg}'}
+                        
+                    return json_data.get('data', {})
+                    
+                except ValueError:
+                    # Если ответ не JSON, возвращаем как HTML
+                    return {'html_content': response.text}
+            
+            except requests.exceptions.RequestException as e:
+                attempts += 1
+                if attempts < max_attempts:
+                    time.sleep(delay)
+                    delay *= 2  # Экспоненциальная задержка
+                else:
+                    return {'error': f'ქსელის შეცდომა: {str(e)}'}
+            except Exception as e:
+                attempts += 1
+                if attempts < max_attempts:
+                    time.sleep(delay)
+                    delay *= 2
+                else:
+                    return {'error': f'გაუთვალისწინებელი შეცდომა: {str(e)}'}
+        
+        return {'error': 'Request failed after maximum retries'}
