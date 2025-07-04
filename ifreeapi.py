@@ -43,10 +43,15 @@ SERVICE_TYPES = {
 
 def validate_imei(imei: str) -> bool:
     """Проверяет корректность формата IMEI с использованием алгоритма Луна"""
-    if len(imei) != 15 or not imei.isdigit():
+    # Разрешаем 14-15 символов для Android, 15 для Apple
+    if len(imei) not in (14, 15) or not imei.isdigit():
         return False
     
-    # Алгоритм Луна
+    # Для IMEI длиной 14 пропускаем проверку Луна (некоторые Android)
+    if len(imei) == 14:
+        return True
+    
+    # Алгоритм Луна для 15-значных IMEI
     total = 0
     for i, char in enumerate(imei[:14]):
         digit = int(char)
@@ -195,7 +200,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             return {'error': f'შემოწმების უცნობი ტიპი: {service_type}'}
         
         if not validate_imei(imei):
-            return {'error': 'IMEI-ის არასწორი ფორმატი. უნდა შედგებოდეს 15 ციფრისგან და გაიაროს Luhn ალგორითმი.'}
+            return {'error': 'IMEI-ის არასწორი ფორმატი. უნდა შედგებოდეს 14 ან 15 ციფრისგან.'}
         
         service_code = SERVICE_TYPES[service_type]
         data = {
@@ -218,52 +223,58 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 # Искусственная задержка для обработки ответа
                 time.sleep(0.5)
                 
-                if response.status_code != 200:
-                    return {
-                        'error': f'სერვერის შეცდომა: {response.status_code}',
-                        'details': response.text[:200] + '...' if len(response.text) > 200 else response.text
-                    }
+                if response.status_code == 200:
+                    break
                 
-                # Для бесплатной проверки
-                if service_type == 'free':
-                    try:
-                        # Пробуем обработать как JSON (Android устройства)
-                        json_data = response.json()
-                        if isinstance(json_data, dict) and 'status' in json_data:
-                            return parse_free_json(json_data)
-                    except:
-                        pass
+                # Повторная попытка при ошибках сервера
+                if response.status_code >= 500:
+                    raise Exception(f"Server error: {response.status_code}")
                     
-                    # Если не JSON, обрабатываем как HTML (Apple устройства)
-                    return parse_free_html(response.text)
-            
-                try:
-                    # Пытаемся обработать ответ как JSON
-                    json_data = response.json()
-                    
-                    if not json_data.get('success'):
-                        error_msg = json_data.get('error', 'API-ის უცნობი შეცდომა')
-                        return {'error': f'შემოწმების შეცდომა: {error_msg}'}
-                        
-                    return json_data.get('data', {})
-                    
-                except ValueError:
-                    # Если ответ не JSON, возвращаем как HTML
-                    return {'html_content': response.text}
-            
-            except requests.exceptions.RequestException as e:
+            except Exception as e:
                 attempts += 1
                 if attempts < max_attempts:
                     time.sleep(delay)
                     delay *= 2  # Экспоненциальная задержка
                 else:
-                    return {'error': f'ქსელის შეცდომა: {str(e)}'}
-            except Exception as e:
-                attempts += 1
-                if attempts < max_attempts:
-                    time.sleep(delay)
-                    delay *= 2
-                else:
-                    return {'error': f'გაუთვალისწინებელი შეცდომა: {str(e)}'}
+                    return {
+                        'error': f'Request failed after {max_attempts} attempts',
+                        'details': str(e)
+                    }
         
-        return {'error': 'Request failed after maximum retries'}
+        if response.status_code != 200:
+            return {
+                'error': f'სერვერის შეცდომა: {response.status_code}',
+                'details': response.text[:200] + '...' if len(response.text) > 200 else response.text
+            }
+        
+        # Для бесплатной проверки
+        if service_type == 'free':
+            try:
+                # Пробуем обработать как JSON (Android устройства)
+                json_data = response.json()
+                if isinstance(json_data, dict) and 'status' in json_data:
+                    return parse_free_json(json_data)
+            except:
+                pass
+            
+            # Если не JSON, обрабатываем как HTML (Apple устройства)
+            return parse_free_html(response.text)
+    
+        try:
+            # Пытаемся обработать ответ как JSON
+            json_data = response.json()
+            
+            if not json_data.get('success'):
+                error_msg = json_data.get('error', 'API-ის უცნობი შეცდომა')
+                return {'error': f'შემოწმების შეცდომა: {error_msg}'}
+                
+            return json_data.get('data', {})
+            
+        except ValueError:
+            # Если ответ не JSON, возвращаем как HTML
+            return {'html_content': response.text}
+    
+    except requests.exceptions.RequestException as e:
+        return {'error': f'ქსელის შეცდომა: {str(e)}'}
+    except Exception as e:
+        return {'error': f'გაუთვალისწინებელი შეცდომა: {str(e)}'}
