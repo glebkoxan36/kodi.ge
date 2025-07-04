@@ -552,7 +552,12 @@
         });
     </script>
     
-    <!-- Скрипт для счетчика статистики -->
+    window.currentUser = {% if currentUser %}
+            {{ currentUser|tojson|safe }}
+        {% else %}
+            null
+        {% endif %};
+    
     <script>
         // Initialize statistics counter
         document.addEventListener('DOMContentLoaded', () => {
