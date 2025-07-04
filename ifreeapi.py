@@ -195,84 +195,85 @@ def parse_free_html(html_content: str) -> dict:
 
 def perform_api_check(imei: str, service_type: str) -> dict:
     """Выполняет проверку IMEI через внешний API с ограничением одновременных запросов"""
-    with REQUEST_SEMAPHORE:
-        if service_type not in SERVICE_TYPES:
-            return {'error': f'შემოწმების უცნობი ტიპი: {service_type}'}
-        
-        if not validate_imei(imei):
-            return {'error': 'IMEI-ის არასწორი ფორმატი. უნდა შედგებოდეს 14 ან 15 ციფრისგან.'}
-        
-        service_code = SERVICE_TYPES[service_type]
-        data = {
-            "service": service_code,
-            "imei": imei,
-            "key": API_KEY
-        }
-        
-        attempts = 0
-        max_attempts = 3
-        delay = 2  # секунды
-        
-        while attempts < max_attempts:
-            try:
-                # Искусственная задержка перед запросом
-                time.sleep(1)
-                
-                response = requests.post(API_URL, data=data, timeout=30)
-                
-                # Искусственная задержка для обработки ответа
-                time.sleep(0.5)
-                
-                if response.status_code == 200:
-                    break
-                
-                # Повторная попытка при ошибках сервера
-                if response.status_code >= 500:
-                    raise Exception(f"Server error: {response.status_code}")
-                    
-            except Exception as e:
-                attempts += 1
-                if attempts < max_attempts:
-                    time.sleep(delay)
-                    delay *= 2  # Экспоненциальная задержка
-                else:
-                    return {
-                        'error': f'Request failed after {max_attempts} attempts',
-                        'details': str(e)
-                    }
-        
-        if response.status_code != 200:
-            return {
-                'error': f'სერვერის შეცდომა: {response.status_code}',
-                'details': response.text[:200] + '...' if len(response.text) > 200 else response.text
+    try:  # Основной блок try для всей функции
+        with REQUEST_SEMAPHORE:
+            if service_type not in SERVICE_TYPES:
+                return {'error': f'შემოწმების უცნობი ტიპი: {service_type}'}
+            
+            if not validate_imei(imei):
+                return {'error': 'IMEI-ის არასწორი ფორმატი. უნდა შედგებოდეს 14 ან 15 ციფრისგან.'}
+            
+            service_code = SERVICE_TYPES[service_type]
+            data = {
+                "service": service_code,
+                "imei": imei,
+                "key": API_KEY
             }
+            
+            attempts = 0
+            max_attempts = 3
+            delay = 2  # секунды
+            
+            while attempts < max_attempts:
+                try:
+                    # Искусственная задержка перед запросом
+                    time.sleep(1)
+                    
+                    response = requests.post(API_URL, data=data, timeout=30)
+                    
+                    # Искусственная задержка для обработки ответа
+                    time.sleep(0.5)
+                    
+                    if response.status_code == 200:
+                        break
+                    
+                    # Повторная попытка при ошибках сервера
+                    if response.status_code >= 500:
+                        raise Exception(f"Server error: {response.status_code}")
+                        
+                except Exception as e:
+                    attempts += 1
+                    if attempts < max_attempts:
+                        time.sleep(delay)
+                        delay *= 2  # Экспоненциальная задержка
+                    else:
+                        return {
+                            'error': f'Request failed after {max_attempts} attempts',
+                            'details': str(e)
+                        }
         
-        # Для бесплатной проверки
-        if service_type == 'free':
-            try:
-                # Пробуем обработать как JSON (Android устройства)
-                json_data = response.json()
-                if isinstance(json_data, dict) and 'status' in json_data:
-                    return parse_free_json(json_data)
-            except:
-                pass
+            if response.status_code != 200:
+                return {
+                    'error': f'სერვერის შეცდომა: {response.status_code}',
+                    'details': response.text[:200] + '...' if len(response.text) > 200 else response.text
+                }
             
-            # Если не JSON, обрабатываем как HTML (Apple устройства)
-            return parse_free_html(response.text)
-    
-        try:
-            # Пытаемся обработать ответ как JSON
-            json_data = response.json()
-            
-            if not json_data.get('success'):
-                error_msg = json_data.get('error', 'API-ის უცნობი შეცდომა')
-                return {'error': f'შემოწმების შეცდომა: {error_msg}'}
+            # Для бесплатной проверки
+            if service_type == 'free':
+                try:
+                    # Пробуем обработать как JSON (Android устройства)
+                    json_data = response.json()
+                    if isinstance(json_data, dict) and 'status' in json_data:
+                        return parse_free_json(json_data)
+                except:
+                    pass
                 
-            return json_data.get('data', {})
-            
-        except ValueError:
-            # Если ответ не JSON, возвращаем как HTML
-            return {'html_content': response.text}
+                # Если не JSON, обрабатываем как HTML (Apple устройства)
+                return parse_free_html(response.text)
+        
+            try:
+                # Пытаемся обработать ответ как JSON
+                json_data = response.json()
+                
+                if not json_data.get('success'):
+                    error_msg = json_data.get('error', 'API-ის უცნობი შეცდომა')
+                    return {'error': f'შემოწმების შეცდომა: {error_msg}'}
+                    
+                return json_data.get('data', {})
+                
+            except ValueError:
+                # Если ответ не JSON, возвращаем как HTML
+                return {'html_content': response.text}
     
     except requests.exceptions.RequestException as e:
         return {'error': f'ქსელის შეცდომა: {str(e)}'}
