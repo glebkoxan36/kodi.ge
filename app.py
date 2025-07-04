@@ -61,6 +61,25 @@ def inject_utils():
         'csrf_token': generate_csrf
     }
 
+# Контекстный процессор для передачи данных пользователя
+@app.context_processor
+def inject_user_data():
+    if 'user_id' in session and client:
+        user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
+        if user:
+            avatar_color = generate_avatar_color(
+                user.get('first_name', '') + ' ' + user.get('last_name', '')
+            )
+            return {
+                'currentUser': {
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'balance': user.get('balance', 0.0),
+                    'avatar_color': avatar_color
+                }
+            }
+    return {'currentUser': None}
+
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 app.logger.setLevel(logging.INFO)
