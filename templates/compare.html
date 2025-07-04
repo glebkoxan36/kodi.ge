@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ტელეფონების შედარება</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
+ <style>
         :root {
             --primary-color: #0a0e17;
             --secondary-color: #1a243c;
@@ -771,6 +771,23 @@
             let phone1 = null;
             let phone2 = null;
             
+            // Вспомогательные функции для получения данных с русских ключей
+            function getBrand(phone) {
+                return phone.brand || phone.Бренд || phone['Бренд'] || 'Unknown brand';
+            }
+            
+            function getModel(phone) {
+                return phone.model || phone.Модель || phone['Модель'] || 'Unknown model';
+            }
+            
+            function getReleaseYear(phone) {
+                return phone.release_year || phone['Год выпуска'] || 'არ არის მითითებული';
+            }
+            
+            function getImageUrl(phone) {
+                return phone.image_url || phone.image || '/static/placeholder.jpg';
+            }
+            
             // Функция для получения CSRF токена из cookies
             function getCSRFToken() {
                 const cookies = document.cookie.split(';');
@@ -847,12 +864,16 @@
                         let html = '';
                         if (data.length > 0) {
                             data.forEach(phone => {
+                                const brand = getBrand(phone);
+                                const model = getModel(phone);
+                                const releaseYear = getReleaseYear(phone);
+                                
                                 html += `
                                     <div class="phone-search-result" data-id="${phone._id}">
-                                        <img src="${phone.image_url || '/static/placeholder.jpg'}" alt="${phone.brand} ${phone.model}">
+                                        <img src="${getImageUrl(phone)}" alt="${brand} ${model}">
                                         <div class="phone-search-info">
-                                            <div class="phone-search-name">${phone.brand} ${phone.model}</div>
-                                            <div class="phone-search-details">გამოშვების წელი: ${phone.release_year || 'არ არის მითითებული'}</div>
+                                            <div class="phone-search-name">${brand} ${model}</div>
+                                            <div class="phone-search-details">გამოშვების წელი: ${releaseYear}</div>
                                         </div>
                                     </div>
                                 `;
@@ -937,13 +958,18 @@
             
             // Обновление отображения телефона
             function updatePhoneDisplay(phone, btnSelector) {
+                const brand = getBrand(phone);
+                const model = getModel(phone);
+                const releaseYear = getReleaseYear(phone);
+                const imageUrl = getImageUrl(phone);
+                
                 $(btnSelector).html(`
                     <div class="phone-thumb-container">
-                        <img src="${phone.image_url || '/static/placeholder.jpg'}" alt="${phone.brand} ${phone.model}" style="max-width: 100%; max-height: 100%;">
+                        <img src="${imageUrl}" alt="${brand} ${model}" style="max-width: 100%; max-height: 100%;">
                     </div>
                     <div class="phone-info-text">
-                        <div class="phone-title">${phone.brand} ${phone.model}</div>
-                        <div class="phone-subtitle">გამოშვების წელი: ${phone.release_year || 'არ არის მითითებული'}</div>
+                        <div class="phone-title">${brand} ${model}</div>
+                        <div class="phone-subtitle">გამოშვების წელი: ${releaseYear}</div>
                     </div>
                 `);
                 
@@ -973,9 +999,13 @@
             
             // Показать характеристики одного телефона
             function showSinglePhoneSpecs(phone) {
+                const brand = getBrand(phone);
+                const model = getModel(phone);
+                const imageUrl = getImageUrl(phone);
+                
                 // Фильтруем технические характеристики
                 const technicalSpecs = Object.entries(phone)
-                    .filter(([key]) => !['_id', 'image_url', 'brand', 'model', 'release_year'].includes(key))
+                    .filter(([key]) => !['_id', 'image_url', 'image', 'brand', 'model', 'release_year', 'Бренд', 'Модель', 'Год выпуска'].includes(key))
                     .map(([key, value]) => ({
                         key: key,
                         value: value || '-'
@@ -984,10 +1014,10 @@
                 $('#singlePhoneSpecs').show().html(`
                     <div class="card">
                         <div class="card-header">
-                            <h3>${phone.brand} ${phone.model} - მახასიათებლები</h3>
+                            <h3>${brand} ${model} - მახასიათებლები</h3>
                         </div>
                         <div class="card-body">
-                            <img src="${phone.image_url || '/static/placeholder.jpg'}" 
+                            <img src="${imageUrl}" 
                                  class="phone-thumb" 
                                  style="margin: 0 auto 30px; display: block;">
                             <div class="specs-container">
@@ -1032,12 +1062,14 @@
                         phone2_id: phone2._id
                     }),
                     success: function(result) {
+                        console.log("Comparison result:", result);
                         displayComparisonResult(result);
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        console.error("Error comparing phones:", error, xhr.responseText);
                         $('#comparisonResult').html(`
                             <div class="error-message" style="margin: 30px;">
-                                შედარების პროცესი ვერ მოხერხდა
+                                შედარების პროცესი ვერ მოხერხდა: ${xhr.responseText || error}
                                 <button class="retry-btn" onclick="comparePhones()">ხელახლა ცდა</button>
                             </div>
                         `);
@@ -1047,15 +1079,25 @@
             
             // Отображение результатов сравнения
             function displayComparisonResult(result) {
+                const brand1 = getBrand(phone1);
+                const model1 = getModel(phone1);
+                const brand2 = getBrand(phone2);
+                const model2 = getModel(phone2);
+                
                 const winner = result.overall_winner === 'phone1' ? phone1 : phone2;
                 const loser = result.overall_winner === 'phone1' ? phone2 : phone1;
                 
-                $('#winnerImage').attr('src', winner.image_url || '/static/placeholder.jpg');
-                $('#winnerName').text(`${winner.brand} ${winner.model}`);
+                const winnerBrand = getBrand(winner);
+                const winnerModel = getModel(winner);
+                const loserBrand = getBrand(loser);
+                const loserModel = getModel(loser);
+                
+                $('#winnerImage').attr('src', getImageUrl(winner));
+                $('#winnerName').text(`${winnerBrand} ${winnerModel}`);
                 $('.winner-percentage').text(`${result.percent_phone1}%`);
                 
-                $('#loserImage').attr('src', loser.image_url || '/static/placeholder.jpg');
-                $('#loserName').text(`${loser.brand} ${loser.model}`);
+                $('#loserImage').attr('src', getImageUrl(loser));
+                $('#loserName').text(`${loserBrand} ${loserModel}`);
                 $('.loser-percentage').text(`${result.percent_phone2}%`);
                 
                 $(`#phone1Card`).toggleClass('winner', result.overall_winner === 'phone1');
@@ -1069,7 +1111,7 @@
                             const winnerPercent = Math.max(category.category_percent_phone1, category.category_percent_phone2);
                             const loserPercent = Math.min(category.category_percent_phone1, category.category_percent_phone2);
                             const winnerPhone = category.category_percent_phone1 > category.category_percent_phone2 ? 
-                                                phone1.model : phone2.model;
+                                                model1 : model2;
                             
                             advantagesHtml += `
                                 <div class="advantage-item">
@@ -1104,8 +1146,8 @@
                                             <thead>
                                                 <tr>
                                                     <th style="width: 30%;">მახასიათებელი</th>
-                                                    <th style="width: 35%;">${phone1.brand}</th>
-                                                    <th style="width: 35%;">${phone2.brand}</th>
+                                                    <th style="width: 35%;">${brand1}</th>
+                                                    <th style="width: 35%;">${brand2}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -1230,12 +1272,14 @@
                         phone2_id: phone2._id
                     }),
                     success: function(result) {
+                        console.log("Comparison result:", result);
                         displayComparisonResult(result);
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        console.error("Error comparing phones:", error, xhr.responseText);
                         $('#comparisonResult').html(`
                             <div class="error-message" style="margin: 30px;">
-                                შედარების პროცესი ვერ მოხერხდა
+                                შედარების პროცესი ვერ მოხერხდა: ${xhr.responseText || error}
                                 <button class="retry-btn" onclick="comparePhones()">ხელახლა ცდა</button>
                             </div>
                         `);
@@ -1245,15 +1289,25 @@
         };
         
         window.displayComparisonResult = function(result) {
+            const brand1 = getBrand(phone1);
+            const model1 = getModel(phone1);
+            const brand2 = getBrand(phone2);
+            const model2 = getModel(phone2);
+            
             const winner = result.overall_winner === 'phone1' ? phone1 : phone2;
             const loser = result.overall_winner === 'phone1' ? phone2 : phone1;
             
-            $('#winnerImage').attr('src', winner.image_url || '/static/placeholder.jpg');
-            $('#winnerName').text(`${winner.brand} ${winner.model}`);
+            const winnerBrand = getBrand(winner);
+            const winnerModel = getModel(winner);
+            const loserBrand = getBrand(loser);
+            const loserModel = getModel(loser);
+            
+            $('#winnerImage').attr('src', getImageUrl(winner));
+            $('#winnerName').text(`${winnerBrand} ${winnerModel}`);
             $('.winner-percentage').text(`${result.percent_phone1}%`);
             
-            $('#loserImage').attr('src', loser.image_url || '/static/placeholder.jpg');
-            $('#loserName').text(`${loser.brand} ${loser.model}`);
+            $('#loserImage').attr('src', getImageUrl(loser));
+            $('#loserName').text(`${loserBrand} ${loserModel}`);
             $('.loser-percentage').text(`${result.percent_phone2}%`);
             
             $(`#phone1Card`).toggleClass('winner', result.overall_winner === 'phone1');
@@ -1267,7 +1321,7 @@
                         const winnerPercent = Math.max(category.category_percent_phone1, category.category_percent_phone2);
                         const loserPercent = Math.min(category.category_percent_phone1, category.category_percent_phone2);
                         const winnerPhone = category.category_percent_phone1 > category.category_percent_phone2 ? 
-                                            phone1.model : phone2.model;
+                                            model1 : model2;
                         
                         advantagesHtml += `
                             <div class="advantage-item">
@@ -1302,8 +1356,8 @@
                                         <thead>
                                             <tr>
                                                 <th style="width: 30%;">მახასიათებელი</th>
-                                                <th style="width: 35%;">${phone1.brand}</th>
-                                                <th style="width: 35%;">${phone2.brand}</th>
+                                                <th style="width: 35%;">${brand1}</th>
+                                                <th style="width: 35%;">${brand2}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
