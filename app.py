@@ -18,7 +18,7 @@ from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from urllib.parse import quote_plus
-from flask_wtf.csrf import CSRFProtect, generate_csrf
+from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError  # Добавлен CSRFError
 from flask_session import Session
 from bs4 import BeautifulSoup
 
@@ -31,14 +31,13 @@ app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 
-# Настройки сессии - КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ
+# Настройки сессии
 app.config.update(
-    SESSION_TYPE='filesystem',  # Явно указан тип хранилища сессий
+    SESSION_TYPE='filesystem',
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(days=7)
-)
 Session(app)
 
 # Инициализация CSRF защиты
@@ -58,7 +57,7 @@ def generate_avatar_color(name):
 def inject_utils():
     return {
         'generate_avatar_color': generate_avatar_color,
-        'csrf_token': generate_csrf()  # Объединенный контекстный процессор
+        'csrf_token': generate_csrf()
     }
 
 # Настройка логирования
@@ -1553,18 +1552,18 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(auth_bp)
 
-# Обработчик ошибок CSRF
-@csrf.error_handler
-def csrf_error(reason):
-    app.logger.warning(f"CSRF error: {reason}")
-    return jsonify({'error': f'CSRF token error: {reason}'}), 400
-
 # Установка CSRF-куки для AJAX
 @app.after_request
 def set_csrf_cookie(response):
     if request.path.startswith('/'):
         response.set_cookie('csrf_token', generate_csrf())
     return response
+
+# Обработчик ошибок CSRF
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    app.logger.warning(f"CSRF error: {e.description}")
+    return jsonify({'error': f'CSRF token error: {e.description}'}), 400
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
