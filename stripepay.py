@@ -7,35 +7,14 @@ from flask import url_for, current_app
 
 class StripePayment:
     def __init__(self, stripe_api_key, webhook_secret, users_collection, payments_collection):
-        """
-        Инициализация платежной системы Stripe
-        
-        :param stripe_api_key: Секретный ключ Stripe
-        :param webhook_secret: Секрет для верификации вебхуков
-        :param users_collection: Коллекция пользователей MongoDB
-        :param payments_collection: Коллекция платежей MongoDB
-        """
         self.stripe_api_key = stripe_api_key
         self.webhook_secret = webhook_secret
         self.users_collection = users_collection
         self.payments_collection = payments_collection
-        
-        # Настройка Stripe
         stripe.api_key = stripe_api_key
 
     def create_checkout_session(self, imei, service_type, amount, success_url, cancel_url):
-        """
-        Создает сессию оплаты для проверки IMEI
-        
-        :param imei: Номер IMEI устройства
-        :param service_type: Тип услуги (например, 'paid', 'premium')
-        :param amount: Стоимость услуги в центах
-        :param success_url: URL для перенаправления после успешной оплаты
-        :param cancel_url: URL для перенаправления при отмене оплаты
-        :return: Объект сессии Stripe
-        """
         try:
-            print(f"Creating checkout session for: {imei}, service: {service_type}, amount: {amount}")
             return stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[{
@@ -58,19 +37,10 @@ class StripePayment:
                 cancel_url=cancel_url,
             )
         except Exception as e:
-            print(f"Error creating Stripe session: {str(e)}")
+            current_app.logger.error(f"Stripe session error: {str(e)}")
             raise
 
     def create_topup_session(self, user_id, amount, success_url, cancel_url):
-        """
-        Создает сессию для пополнения баланса
-        
-        :param user_id: ID пользователя
-        :param amount: Сумма пополнения в долларах
-        :param success_url: URL для перенаправления после успешной оплаты
-        :param cancel_url: URL для перенаправления при отмене оплаты
-        :return: Объект сессии Stripe
-        """
         try:
             return stripe.checkout.Session.create(
                 payment_method_types=['card'],
@@ -94,17 +64,10 @@ class StripePayment:
                 cancel_url=cancel_url,
             )
         except Exception as e:
-            print(f"Error creating topup session: {str(e)}")
+            current_app.logger.error(f"Topup session error: {str(e)}")
             raise
 
     def deduct_balance(self, user_id, amount):
-        """
-        Списание средств с баланса пользователя
-        
-        :param user_id: ID пользователя
-        :param amount: Сумма списания в долларах
-        :return: True если списание успешно, False если недостаточно средств
-        """
         try:
             result = self.users_collection.update_one(
                 {'_id': ObjectId(user_id), 'balance': {'$gte': amount}},
@@ -112,7 +75,6 @@ class StripePayment:
             )
             
             if result.modified_count > 0:
-                # Запись о платеже
                 self.payments_collection.insert_one({
                     'user_id': ObjectId(user_id),
                     'amount': -amount,
@@ -124,33 +86,26 @@ class StripePayment:
                 return True
             return False
         except Exception as e:
-            print(f"Error deducting balance: {str(e)}")
+            current_app.logger.error(f"Balance deduction error: {str(e)}")
             return False
 
     def handle_webhook(self, payload, sig_header):
-        """Обрабатывает вебхуки от Stripe с улучшенной диагностикой"""
+        """Обрабатывает вебхуки от Stripe"""
         try:
-            # Диагностическое логирование
             current_app.logger.info("Processing Stripe webhook...")
-            current_app.logger.info(f"Payload length: {len(payload)} bytes")
-            current_app.logger.info(f"Signature header: {sig_header or 'MISSING'}")
             
             if not sig_header:
                 current_app.logger.error("Missing Stripe-Signature header")
                 raise ValueError("Missing signature header")
             
-            # Проверка временной метки
-            current_app.logger.info(f"Server time: {int(time.time())}")
-            
-            # Обработка вебхука
             event = stripe.Webhook.construct_event(
                 payload,
                 sig_header,
                 self.webhook_secret,
-                tolerance=300  # 5 минут допуск
+                tolerance=300
             )
             
-            current_app.logger.info(f"Webhook verified: {event['type']}")
+            current_app.logger.info(f"Webhook event: {event['type']}")
             
             # Обработка события
             if event['type'] == 'checkout.session.completed':
@@ -179,6 +134,52 @@ class StripePayment:
                         'timestamp': datetime.utcnow(),
                         'type': 'topup'
                     })
+                
+                # Обычная оплата проверки
+                elif metadata.get('service_type'):
+                    imei = metadata['imei']
+                    service_type = metadata['service_type']
+                    amount = session['amount_total'] / 100
+                    currency = session['currency']
+                    
+                    current_app.logger.info(f"Payment received: imei={imei}, service={service_type}")
+                    
+                    # Запись о платеже
+                    payment_record = {
+                        'stripe_session_id': session['id'],
+                        'imei': imei,
+                        'service_type': service_type,
+                        'amount': amount,
+                        'currency': currency,
+                        'payment_status': session.get('payment_status', 'pending'),
+                        'timestamp': datetime.utcnow(),
+                        'type': 'imei_check'
+                    }
+                    
+                    # Добавляем user_id если есть
+                    if 'user_id' in metadata:
+                        payment_record['user_id'] = ObjectId(metadata['user_id'])
+                    
+                    self.payments_collection.insert_one(payment_record)
+            
+            # Обновление статуса платежа
+            elif event['type'] == 'checkout.session.async_payment_succeeded':
+                session = event['data']['object']
+                current_app.logger.info(f"Payment succeeded: {session['id']}")
+                
+                self.payments_collection.update_one(
+                    {'stripe_session_id': session['id']},
+                    {'$set': {'payment_status': 'succeeded'}}
+                )
+            
+            elif event['type'] == 'checkout.session.async_payment_failed':
+                session = event['data']['object']
+                current_app.logger.warning(f"Payment failed: {session['id']}")
+                
+                self.payments_collection.update_one(
+                    {'stripe_session_id': session['id']},
+                    {'$set': {'payment_status': 'failed'}}
+                )
             
             return event
         
@@ -187,7 +188,6 @@ class StripePayment:
             raise e
         except stripe.error.SignatureVerificationError as e:
             current_app.logger.error(f"Webhook signature error: {str(e)}")
-            # Дополнительная диагностика
             current_app.logger.error(f"Expected secret: {self.webhook_secret[:6]}...")
             current_app.logger.error(f"Payload start: {str(payload)[:100]}...")
             raise e
