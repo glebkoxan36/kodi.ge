@@ -151,7 +151,7 @@
             justify-content: center;
             overflow: hidden;
             margin: 0 auto;
-            background: transparent !important; /* ФИКС: прозрачный фон контейнера */
+            background: transparent !important;
         }
         
         .avatar-placeholder {
@@ -167,7 +167,7 @@
             text-align: center;
             padding: 10px;
             text-shadow: 0 0 12px rgba(0, 198, 255, 0.8);
-            border-radius: 50%; /* ФИКС: скругление для полного фона */
+            border-radius: 50%;
         }
         
         .user-info-container {
@@ -463,31 +463,48 @@
     `;
     document.head.appendChild(style);
 
+    // Глобальные функции навигации
+    window.goToLogin = function() {
+        closeAllMobileMenus();
+        // Добавляем небольшую задержку для гарантированного закрытия меню
+        setTimeout(() => {
+            window.location.href = "/auth/login";
+        }, 100);
+    }
+
+    window.goToDashboard = function() {
+        closeAllMobileMenus();
+        // Добавляем небольшую задержку для гарантированного закрытия меню
+        setTimeout(() => {
+            window.location.href = "/user/dashboard";
+        }, 100);
+    }
+
     // Функция для генерации HTML пользователя
     function generateUserHTML() {
         if (window.currentUser) {
             return `
-                <div class="floating-avatar" style="background-color: ${window.currentUser.avatar_color};" onclick="goToDashboard()">
-                    <div class="avatar-placeholder">
+                <div class="floating-avatar" onclick="window.goToDashboard()">
+                    <div class="avatar-placeholder" style="background-color: ${window.currentUser.avatar_color}">
                         ${window.currentUser.first_name.charAt(0)}${window.currentUser.last_name.charAt(0)}
                     </div>
                 </div>
                 <div class="user-info-container">
-                    <div class="floating-avatar-info" onclick="goToDashboard()">
+                    <div class="floating-avatar-info" onclick="window.goToDashboard()">
                         ${window.currentUser.first_name} ${window.currentUser.last_name}
                     </div>
-                    <div class="user-balance" onclick="goToDashboard()">
+                    <div class="user-balance" onclick="window.goToDashboard()">
                         ბალანსი: ${window.currentUser.balance.toFixed(2)}₾
                     </div>
                 </div>
             `;
         } else {
             return `
-                <div class="floating-avatar" onclick="goToLogin()">
+                <div class="floating-avatar" onclick="window.goToLogin()">
                     <div class="avatar-placeholder">KODI.GE</div>
                 </div>
                 <div class="user-info-container">
-                    <div class="floating-avatar-info" onclick="goToLogin()">
+                    <div class="floating-avatar-info" onclick="window.goToLogin()">
                         ლოგინი|რეგისტრაცია
                     </div>
                 </div>
@@ -815,18 +832,6 @@
         closeMobileMenu();
         closeAppleSubmenu();
         closeAndroidSubmenu();
-    }
-
-    // Redirect to login
-    window.goToLogin = function() {
-        closeAllMobileMenus();
-        window.location.href = "/auth/login";
-    }
-
-    // Redirect to dashboard
-    window.goToDashboard = function() {
-        closeAllMobileMenus();
-        window.location.href = "/user/dashboard";
     }
 
     // Initialize mobile menu when the page loads
