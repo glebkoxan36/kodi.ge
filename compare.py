@@ -1,7 +1,7 @@
 import re
 from collections import defaultdict
 
-# Обновленные веса характеристик
+# Веса характеристик для сравнения
 WEIGHTS = {
     # Процессор
     "Процессор": 4.5,
@@ -80,7 +80,7 @@ SPEC_RULES = {
     ]
 }
 
-# Полный справочник CPU (100+ моделей)
+# Справочник CPU (производительность в баллах)
 CPU_SCORES = {
     "Dimensity 9300": 100, "Snapdragon 8 Gen 3": 98, "A17 Pro": 95, "Exynos 2400": 92,
     "A16 Bionic": 90, "Dimensity 9200 Plus": 88, "Snapdragon 8 Gen 2": 87, 
@@ -115,7 +115,7 @@ CPU_SCORES = {
     "Snapdragon 690": 23
 }
 
-# Полный справочник GPU (80+ моделей)
+# Справочник GPU (производительность в баллах)
 GPU_SCORES = {
     "Apple M4 10-core GPU": 100, "Qualcomm Adreno 840": 98, 
     "ARM Immortalis-G925 MC16": 95, "Apple A18 Pro GPU": 92,
@@ -203,7 +203,7 @@ def normalize_gpu_name(name):
     return name.title()
 
 def enrich_phone_data(phone):
-    """Обогащение данных телефона"""
+    """Обогащение данных телефона дополнительными характеристиками"""
     # Нормализация CPU
     if "Процессор" in phone:
         cpu_name = normalize_cpu_name(phone["Процессор"])
@@ -278,7 +278,7 @@ def compare_values(rule, value1, value2):
         elif idx1 > idx2: return 'phone2'
         return None
     
-    # Обработка числовых значений
+    # Обработка числовых значений (больше = лучше)
     if rule == "numeric":
         num1 = try_parse_number(value1)
         num2 = try_parse_number(value2)
@@ -309,7 +309,7 @@ def compare_values(rule, value1, value2):
     return None
 
 def compare_two_phones(phone1, phone2):
-    """Сравнение двух телефонов"""
+    """Основная функция сравнения двух телефонов"""
     # Обогащение данных
     try:
         phone1 = enrich_phone_data(phone1)
@@ -317,10 +317,12 @@ def compare_two_phones(phone1, phone2):
     except Exception as e:
         print(f"Error enriching phone data: {e}")
     
-    ignore_fields = ['_id', 'ID', 'image_url', 'image']
+    # Игнорируемые поля
+    ignore_fields = ['_id', 'ID', 'image_url', 'image', 'brand', 'model', 'release_year', 'Бренд', 'Модель', 'Год выпуска']
     phone1_clean = {k: v for k, v in phone1.items() if k not in ignore_fields}
     phone2_clean = {k: v for k, v in phone2.items() if k not in ignore_fields}
     
+    # Сбор всех характеристик
     all_keys = set(phone1_clean.keys()) | set(phone2_clean.keys())
     categories = defaultdict(list)
     
@@ -333,34 +335,42 @@ def compare_two_phones(phone1, phone2):
                 break
         categories[category_name].append(key)
     
+    # Упорядочивание категорий
     ordered_categories = []
     for cat in SPEC_CATEGORIES.keys():
         if cat in categories: ordered_categories.append(cat)
     if "Дополнительно" in categories: ordered_categories.append("Дополнительно")
     
+    # Основные структуры для хранения результатов
     comparison = []
     overall_scores = {'phone1': 0, 'phone2': 0}
     category_scores = defaultdict(lambda: {'phone1': 0, 'phone2': 0})
 
+    # Сравнение характеристик по категориям
     for category in ordered_categories:
         specs_list = []
         for key in categories[category]:
             val1 = phone1_clean.get(key, "N/A")
             val2 = phone2_clean.get(key, "N/A")
             
+            # Определение правила сравнения
             rule = None
             for rule_type, fields in SPEC_RULES.items():
-                if key in fields: rule = rule_type
+                if key in fields: 
+                    rule = rule_type
+                    break
             
             winner = None
             weight = WEIGHTS.get(key, 1.0)
             
+            # Применение правила сравнения
             if rule:
                 winner = compare_values(rule, val1, val2)
                 if winner:
                     overall_scores[winner] += weight
                     category_scores[category][winner] += weight
 
+            # Сохранение результата сравнения
             specs_list.append({
                 'name': key,
                 'phone1_value': val1,
@@ -374,6 +384,7 @@ def compare_two_phones(phone1, phone2):
         cat_percent_phone1 = round(category_scores[category]['phone1'] / total_cat * 100, 1) if total_cat > 0 else 0
         cat_percent_phone2 = round(category_scores[category]['phone2'] / total_cat * 100, 1) if total_cat > 0 else 0
         
+        # Сохранение результатов категории
         comparison.append({
             'category': category,
             'specs': specs_list,
@@ -383,7 +394,7 @@ def compare_two_phones(phone1, phone2):
             'category_percent_phone2': cat_percent_phone2,
         })
     
-    # Расчет общего результата
+    # Расчет общего результата сравнения
     total_score = overall_scores['phone1'] + overall_scores['phone2']
     
     if total_score > 0:
@@ -394,13 +405,17 @@ def compare_two_phones(phone1, phone2):
         percent_phone1 = percent_phone2 = 50.0
         advantage_percent = 0.0
     
+    # Определение общего победителя
     overall_winner = None
-    if overall_scores['phone1'] > overall_scores['phone2']: overall_winner = 'phone1'
-    elif overall_scores['phone1'] < overall_scores['phone2']: overall_winner = 'phone2'
+    if overall_scores['phone1'] > overall_scores['phone2']: 
+        overall_winner = 'phone1'
+    elif overall_scores['phone1'] < overall_scores['phone2']: 
+        overall_winner = 'phone2'
     
     # Генерация AI анализа
     ai_analysis = generate_ai_analysis(phone1, phone2, comparison, overall_winner, percent_phone1, percent_phone2)
     
+    # Формирование итогового результата
     return {
         'phone1': phone1,
         'phone2': phone2,
@@ -416,19 +431,22 @@ def compare_two_phones(phone1, phone2):
     }
 
 def generate_ai_analysis(phone1, phone2, comparison, overall_winner, percent1, percent2):
-    """Генерация AI анализа сравнения"""
+    """Генерация текстового AI анализа результатов сравнения"""
+    # Извлечение бренда и модели
     brand1 = phone1.get('Бренд', phone1.get('brand', 'Unknown'))
     model1 = phone1.get('Модель', phone1.get('model', 'Unknown'))
     brand2 = phone2.get('Бренд', phone2.get('brand', 'Unknown'))
     model2 = phone2.get('Модель', phone2.get('model', 'Unknown'))
     
+    # Определение победителя и проигравшего
     winner_model = model1 if overall_winner == 'phone1' else model2
     loser_model = model2 if overall_winner == 'phone1' else model1
     advantage = abs(percent1 - percent2)
     
+    # Формирование базового анализа
     analysis = f"<p>შედარების შედეგები აჩვენებს, რომ <strong>{winner_model}</strong> საერთო ჯამში {advantage}%-ით უკეთესია ვიდრე {loser_model}.</p>"
     
-    # Добавляем информацию по категориям
+    # Добавление информации по категориям
     analysis += "<p>ძირითადი განსხვავებები:</p><ul>"
     
     for category in comparison:
@@ -441,7 +459,7 @@ def generate_ai_analysis(phone1, phone2, comparison, overall_winner, percent1, p
     
     analysis += "</ul>"
     
-    # Заключение
+    # Заключение в зависимости от разницы в процентах
     if advantage < 5:
         analysis += "<p>ორივე მოწყობილობა ძალიან ახლოსაა თავიანთ შესრულებაში. არჩევანი უნდა გაკეთდეს ინდივიდუალური პრიორიტეტების მიხედვით.</p>"
     elif advantage < 15:
