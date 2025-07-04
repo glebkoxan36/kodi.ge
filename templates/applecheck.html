@@ -3,94 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KODI.GE - Apple IMEI შემოწმება</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Kodi.ge - IMEI Checker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link rel="stylesheet" href="static/styles.css">
+   
     <style>
-        /* Дополнительные стили для решения проблем */
-        #selected-service-container, 
-        #payment-method-modal, 
-        #spinner {
-            display: none;
+        .menu-icon-img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto 5px;
         }
         
-        .error-message {
-            color: #ff3860;
-            display: none;
-            margin-top: 5px;
+        /* Анимации для сервисных карточек */
+        .service-card {
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            transform: translateY(0);
         }
         
-        .balance-sufficient { color: #28a745; }
-        .balance-insufficient { color: #dc3545; }
-        .balance-error { color: #ffc107; }
-
-        /* Добавляем стили для компактного отображения */
-        .compact-results {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
+        .service-card:hover {
+            transform: translateY(-10px) rotate(2deg);
+            box-shadow: 0 20px 30px rgba(0, 0, 0, 0.4);
         }
         
-        .result-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 198, 255, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 0;
         }
         
-        .result-grid-item {
+        .service-card:hover::before {
+            opacity: 1;
+        }
+        
+        .service-action {
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            z-index: 2;
+        }
+        
+        .service-action::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: 0.5s;
+            z-index: -1;
+        }
+        
+        .service-action:hover::before {
+            left: 100%;
+        }
+        
+        .service-action:hover {
+            transform: translateX(10px);
+            box-shadow: 0 5px 15px rgba(0, 198, 255, 0.4);
+        }
+        
+        /* Анимация иконок в сервисах */
+        .service-icon i {
+            transition: all 0.5s ease;
+            display: inline-block;
+        }
+        
+        .service-card:hover .service-icon i {
+            transform: scale(1.2) rotate(5deg);
+            filter: drop-shadow(0 5px 10px rgba(0, 198, 255, 0.5));
+        }
+        
+        /* НОВЫЕ СТИЛИ ДЛЯ КАРУСЕЛИ */
+        .carousel {
+            position: relative;
+            max-width: 1000px;
+            margin: 30px auto;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            border-radius: 12px;
+            min-height: 400px;
+            background: #000;
+        }
+        
+        .carousel-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+        }
+        
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .slide.active {
+            opacity: 1;
+            z-index: 1;
+        }
+        
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        /* Стили для заглушки */
+        .placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000; /* Черный фон */
             display: flex;
             flex-direction: column;
-            padding: 10px;
-            background: white;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
         }
         
-        .result-label {
-            font-weight: bold;
-            color: #495057;
-            margin-bottom: 5px;
+        .placeholder-text {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-top: 30px;
+            letter-spacing: 1px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white; /* Белый цвет текста */
+            animation: pulse 2s infinite; /* Пульсация */
+            padding: 15px 30px;
         }
         
-        .result-value {
-            color: #212529;
-            word-break: break-word;
+        /* Анимация пульсации */
+        @keyframes pulse {
+            0% {
+                opacity: 0.5;
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            }
+            50% {
+                opacity: 1;
+                text-shadow: 0 0 20px rgba(255, 255, 255, 1);
+            }
+            100% {
+                opacity: 0.5;
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            }
         }
         
-        .status-clean {
-            color: #28a745;
+        /* Адаптивность карусели */
+        @media (max-width: 768px) {
+            .carousel {
+                min-height: 300px;
+                max-width: 85%; /* Уже на мобильных */
+            }
+            .placeholder-text {
+                font-size: 1.8rem;
+                padding: 10px 20px;
+            }
         }
         
-        .status-warning {
-            color: #dc3545;
-        }
-        
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .history-table th, .history-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #dee2e6;
-        }
-        
-        .history-table th {
-            background-color: #f8f9fa;
-            font-weight: 600;
+        @media (max-width: 480px) {
+            .carousel {
+                max-width: 90%; /* Еще уже на маленьких экранах */
+                min-height: 250px;
+            }
+            .placeholder-text {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Gradient background elements -->
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
     
-    <div class="main-content">
-        <!-- Added logo and site name -->
-        <div class="text-center mb-4">
+    <!-- Bottom mobile menu button -->
+    <div class="mobile-menu-bottom" id="mobileMenuBottom">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Logo -->
+        <div class="sidebar-logo">
             <div class="logo-animated">
                 <div class="logo-ring"></div>
                 <div class="logo-ring"></div>
@@ -99,529 +221,369 @@
                     <div class="logo-letter">K</div>
                 </div>
             </div>
-            <h1 class="display-4 fw-bold mt-3">KODI.GE</h1>
-            <p class="lead">Apple IMEI-ის შემოწმების სერვისი</p>
+            <h2>KODI.GE</h2>
         </div>
         
-        <div class="section-title">
-            <h1>Apple IMEI შემოწმება</h1>
-            <p>აირჩიეთ შემოწმების ტიპი და შეიყვანეთ IMEI ან სერიული ნომერი</p>
+        <!-- User profile in sidebar -->
+        <div class="user-profile-section" onclick="goToLogin()">
+            <div class="user-avatar-container">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            <div class="user-name">
+                ლოგინი/რეგისტრაცია
+            </div>
         </div>
         
-        <div id="services-container" class="services-grid">
-            <!-- JavaScript will generate service cards -->
-        </div>
-        
-        <div id="selected-service-container" class="selected-service-container">
-            <button id="back-to-services" class="btn-back">
-                <i class="fas fa-arrow-left"></i> სერვისების არჩევას დაბრუნება
-            </button>
-            
-            <div class="service-card">
-                <div class="service-icon">
-                    <i id="selected-service-icon" class="fas"></i>
-                </div>
-                <div class="service-title" id="selected-service-title-full">სერვისის დასახელება</div>
-                <div class="service-price" id="selected-service-price">სერვისის ღირებულება</div>
-                <div class="service-description" id="selected-service-description">სერვისის აღწერა</div>
-            </div>
-            
-            <div class="imei-form-container" id="imei-form-container">
-                <div class="form-header">
-                    <h2>მოწყობილობის შემოწმება</h2>
-                </div>
-                <div class="form-body">
-                    <div class="form-group">
-                        <label class="form-label">შეიყვანეთ IMEI ან სერიული ნომერი:</label>
-                        <input type="text" class="form-control" id="imei-input" placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
-                        <div class="error-message" id="imei-error"></div>
-                    </div>
-                    <button class="btn-primary" id="check-btn">შემოწმების დაწყება</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="result-modal" id="result-modal">
-        <div class="modal-content">
-            <div class="card-header">
-                <h2>შემოწმების შედეგები</h2>
-                <button class="close-modal" id="close-modal">&times;</button>
-            </div>
-            <div class="card-body" id="result-content"></div>
-            <div class="card-footer" style="text-align: center; padding: 20px;">
-                <button class="btn-primary" onclick="window.location.href = '{{ url_for('apple_check') }}'">ახალი შემოწმების დაწყება</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- გადახდის მეთოდის არჩევის მოდალური ფანჯარა -->
-    <div class="payment-method-modal" id="payment-method-modal">
-        <div class="payment-method-content">
-            <div class="payment-method-header">
-                <h2>აირჩიეთ გადახდის მეთოდი</h2>
-            </div>
-            <div class="payment-method-options">
-                <div class="payment-option balance" id="balance-option">
-                    <i class="fas fa-wallet"></i>
-                    <div class="option-details">
-                        <div class="option-title">ბალანსიდან გადახდა</div>
-                        <div class="balance-info" id="balance-info">თქვენი ბალანსი: <span id="user-balance">0.00</span> ₾</div>
-                        <div class="balance-info" id="balance-status"></div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="#">
+                    <i class="fas fa-home"></i>
+                    <span>მთავარი</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#appleSubmenu">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>შემოწმება Apple</span>
+                    <i class="fas fa-chevron-down float-end"></i>
+                </a>
+                <div class="collapse" id="appleSubmenu">
+                    <div class="submenu">
+                        <a class="nav-link" href="/applecheck?type=free">
+                            <i class="fas fa-check-circle"></i>
+                            <span>უფასო შემოწმება</span>
+                        </a>
+                        <a class="nav-link" href="/applecheck?type=fmi">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span>პლატანი შემოწმება</span>
+                        </a>
+                        <a class="nav-link" href="/applecheck?type=premium">
+                            <i class="fas fa-crown"></i>
+                            <span>პრემიუმ შემოწმება</span>
+                        </a>
                     </div>
                 </div>
-                <div class="payment-option card" id="card-option">
-                    <i class="fas fa-credit-card"></i>
-                    <div class="option-details">
-                        <div class="option-title">ბარათით გადახდა</div>
-                        <div>უსაფრთხო გადახდა Stripe-ით</div>
-                    </div>
-                </div>
-            </div>
-            <div class="payment-method-footer">
-                <button class="btn-secondary" id="cancel-payment">გაუქმება</button>
-            </div>
-        </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/androidcheck">
+                    <i class="fab fa-android"></i>
+                    <span>შემოწმება Android</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link disabled" href="#">
+                    <i class="fas fa-unlock-alt"></i>
+                    <span>ტელეფონის განბლოკვა</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/compare">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>ტელეფონების შედარება</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/knowledge-base">
+                    <i class="fas fa-book"></i>
+                    <span>ცოდნის ბაზა</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/contacts">
+                    <i class="fas fa-address-card"></i>
+                    <span>კონტაქტი</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>კონფიდენციალურობის პოლიტიკა</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="fas fa-undo"></i>
+                    <span>დაბრუნების პოლიტიკა</span>
+                </a>
+            </li>
+        </ul>
     </div>
     
-    <div class="spinner-container" id="spinner">
-        <div class="spinner"></div>
-    </div>
-    
-    <script src="https://js.stripe.com/v3/"></script>
-    <script>
-        // Функция для получения CSRF-токена
-        function getCSRFToken() {
-            return document.querySelector('meta[name="csrf-token"]').content;
-        }
-        
-        // ინიციალიზაცია Stripe-ის გამოყენებით საჯარო გასაღების
-        const stripe = Stripe('{{ stripe_public_key }}');
-        
-        // ვიყენებთ სერვერიდან მიღებულ მონაცემებს სტატიკური დეკლარაციის ნაცვლად
-        const services = {{ services_data | tojson | safe }};
-        
-        let currentImei = '';
-        let currentServiceType = '';
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            const container = document.getElementById('services-container');
-            
-            // ვამოწმებთ კონტეინერის არსებობას
-            if (!container) {
-                console.error('სერვისების კონტეინერი ვერ მოიძებნა');
-                return;
-            }
-            
-            container.innerHTML = ''; // ვასუფთავებთ კონტეინერს
-            
-            // თუ სერვისები არ არის, ვაჩვენებთ შეტყობინებას
-            if (!services || services.length === 0) {
-                container.innerHTML = '<p>სერვისები დროებით მიუწვდომელია</p>';
-                return;
-            }
-            
-            // ვქმნით სერვისების ბარათებს
-            services.forEach(service => {
-                const card = document.createElement('div');
-                card.className = 'service-card';
-                card.setAttribute('data-service', service.id);
-                card.innerHTML = `
-                    <div class="service-icon">
-                        <i class="fas ${service.icon}"></i>
+    <!-- Main content -->
+    <div class="main-content">
+        <!-- Hero Section with Logo and Carousel -->
+        <div class="hero-section mb-5">
+            <div class="text-center mb-4">
+                <div class="logo-animated">
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-core">
+                        <div class="logo-letter">K</div>
                     </div>
-                    <div class="service-title">${service.title}</div>
-                    <div class="service-description">${service.description}</div>
-                    <div class="service-price">${service.price}</div>
-                    <div class="service-action">არჩევა</div>
-                `;
-                container.appendChild(card);
-            });
-            
-            setupEventListeners();
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            const serviceParam = urlParams.get('type');
-            const imeiParam = urlParams.get('imei');
-            const sessionParam = urlParams.get('session_id');
-            
-            // URL-დან სერვისის ავტომატური არჩევა
-            if (serviceParam && services.some(s => s.id === serviceParam)) {
-                selectService(serviceParam);
-            }
-            
-            // თუ IMEI და სესია არსებობს, ვაჩვენებთ შედეგს
-            if (imeiParam && sessionParam) {
-                currentImei = imeiParam;
-                currentServiceType = serviceParam;
-                document.getElementById('spinner').style.display = 'flex';
-                fetchResultForSession(sessionParam);
-            }
-        });
-        
-        function setupEventListeners() {
-            document.querySelectorAll('.service-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    const serviceId = this.getAttribute('data-service');
-                    selectService(serviceId);
-                    const url = new URL(window.location);
-                    url.searchParams.set('type', serviceId);
-                    window.history.replaceState({}, '', url);
-                });
-            });
-            
-            document.getElementById('back-to-services').addEventListener('click', function() {
-                document.getElementById('selected-service-container').style.display = 'none';
-                document.getElementById('services-container').style.display = 'grid';
-                document.querySelectorAll('.service-card').forEach(card => {
-                    card.classList.remove('selected');
-                });
-                document.getElementById('imei-input').value = '';
-                document.getElementById('imei-error').style.display = 'none';
-                const url = new URL(window.location);
-                url.searchParams.delete('type');
-                window.history.replaceState({}, '', url);
-            });
-            
-            document.getElementById('check-btn').addEventListener('click', startCheck);
-            document.getElementById('close-modal').addEventListener('click', function() {
-                document.getElementById('result-modal').style.display = 'none';
-            });
-            
-            // გადახდის მოდალის დამმუშავებლები
-            document.getElementById('balance-option').addEventListener('click', () => {
-                processPayment(true);
-            });
-            
-            document.getElementById('card-option').addEventListener('click', () => {
-                processPayment(false);
-            });
-            
-            document.getElementById('cancel-payment').addEventListener('click', () => {
-                document.getElementById('payment-method-modal').style.display = 'none';
-            });
-        }
-        
-        function selectService(serviceId) {
-            document.getElementById('services-container').style.display = 'none';
-            const service = services.find(s => s.id === serviceId);
-            document.getElementById('selected-service-icon').className = `fas ${service.icon}`;
-            document.getElementById('selected-service-title-full').textContent = service.title;
-            document.getElementById('selected-service-price').textContent = service.price;
-            document.getElementById('selected-service-description').textContent = service.description;
-            document.getElementById('selected-service-container').style.display = 'block';
-            
-            // Задержка для корректного фокуса
-            setTimeout(() => {
-                document.getElementById('imei-input').focus();
-            }, 100);
-        }
-        
-        function startCheck() {
-            const imei = document.getElementById('imei-input').value.trim();
-            const errorElement = document.getElementById('imei-error');
-            
-            if (!imei) {
-                errorElement.textContent = 'გთხოვთ შეიყვანოთ IMEI ან სერიული ნომერი';
-                errorElement.style.display = 'block';
-                return;
-            }
-            
-            // Обновленная валидация: разрешаем буквы и цифры, минимум 8 символов
-            if (!/^[a-zA-Z0-9]{8,}$/.test(imei)) {
-                errorElement.textContent = 'შეიყვანეთ სწორი IMEI ან სერიული ნომერი (მინიმუმ 8 სიმბოლო)';
-                errorElement.style.display = 'block';
-                return;
-            }
-            
-            errorElement.style.display = 'none';
-            const urlParams = new URLSearchParams(window.location.search);
-            const serviceType = urlParams.get('type');
-            
-            if (!serviceType) {
-                errorElement.textContent = 'გთხოვთ აირჩიოთ შემოწმების ტიპი';
-                errorElement.style.display = 'block';
-                return;
-            }
-            
-            currentImei = imei;
-            currentServiceType = serviceType;
-            
-            // უფასო შემოწმებისთვის
-            if (serviceType === 'free') {
-                performCheck(imei, serviceType);
-                return;
-            }
-            
-            // ავტორიზებული მომხმარებლებისთვის
-            if ({{ 'true' if user else 'false' }}) {
-                fetchUserBalance().then(balance => {
-                    const service = services.find(s => s.id === serviceType);
-                    const priceText = service.price;
-                    const price = parseFloat(priceText.replace('₾', '').trim());
-                    
-                    document.getElementById('user-balance').textContent = balance.toFixed(2);
-                    
-                    if (balance >= price) {
-                        document.getElementById('balance-status').innerHTML = 
-                            `<span class="balance-sufficient">ბალანსი საკმარისია</span>`;
-                    } else {
-                        document.getElementById('balance-status').innerHTML = 
-                            `<span class="balance-insufficient">არასაკმარისი თანხა</span>`;
-                    }
-                    
-                    document.getElementById('payment-method-modal').style.display = 'flex';
-                }).catch(() => {
-                    document.getElementById('balance-status').innerHTML = 
-                        `<span class="balance-error">ბალანსის მონაცემები ვერ მოიძებნა</span>`;
-                });
-            } else {
-                // არაავტორიზებული მომხმარებლებისთვის
-                processPayment(false);
-            }
-        }
-        
-        function fetchUserBalance() {
-            return fetch('/user/dashboard/data')
-                .then(response => {
-                    if (!response.ok) throw new Error('Failed to fetch balance');
-                    return response.json();
-                })
-                .then(data => data.balance)
-                .catch(() => 0.0);
-        }
-        
-        function processPayment(useBalance) {
-            document.getElementById('payment-method-modal').style.display = 'none';
-            document.getElementById('spinner').style.display = 'flex';
-            
-            fetch('/create-checkout-session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken(),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    imei: currentImei,
-                    service_type: currentServiceType,
-                    use_balance: useBalance
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP შეცდომა! სტატუსი: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                document.getElementById('spinner').style.display = 'none';
-                
-                if (data.error) {
-                    const errorElement = document.getElementById('imei-error');
-                    errorElement.textContent = data.error;
-                    errorElement.style.display = 'block';
-                } else {
-                    if (data.payment_method === 'balance') {
-                        fetchResultForSession(data.id);
-                    } else if (data.payment_method === 'stripe') {
-                        stripe.redirectToCheckout({ sessionId: data.id })
-                            .then(result => {
-                                if (result.error) {
-                                    const errorElement = document.getElementById('imei-error');
-                                    errorElement.textContent = `Stripe შეცდომა: ${result.error.message}`;
-                                    errorElement.style.display = 'block';
-                                }
-                            });
-                    }
-                }
-            })
-            .catch(error => {
-                document.getElementById('spinner').style.display = 'none';
-                const errorElement = document.getElementById('imei-error');
-                errorElement.textContent = 'გადახდის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.';
-                errorElement.style.display = 'block';
-                console.error('გადახდის შეცდომა:', error);
-            });
-        }
-        
-        function fetchResultForSession(sessionId) {
-            document.getElementById('spinner').style.display = 'flex';
-            
-            fetch('/get_check_result?session_id=' + sessionId)
-                .then(response => {
-                    if (!response.ok) throw new Error('ქსელის პასუხი არასწორია');
-                    return response.json();
-                })
-                .then(data => {
-                    document.getElementById('spinner').style.display = 'none';
-                    
-                    if (data.error) {
-                        const errorElement = document.getElementById('imei-error');
-                        errorElement.textContent = data.error;
-                        errorElement.style.display = 'block';
-                    } else {
-                        displayResults(currentImei, currentServiceType, data.result);
-                    }
-                })
-                .catch(error => {
-                    document.getElementById('spinner').style.display = 'none';
-                    const errorElement = document.getElementById('imei-error');
-                    errorElement.textContent = 'შედეგის მიღების შეცდომა';
-                    errorElement.style.display = 'block';
-                    console.error('შედეგის მიღების შეცდომა:', error);
-                });
-        }
-        
-        function performCheck(imei, serviceType) {
-            document.getElementById('spinner').style.display = 'flex';
-            
-            fetch('/perform_check', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken(),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    imei: imei,
-                    service_type: serviceType
-                })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('ქსელის შეცდომა');
-                return response.json();
-            })
-            .then(data => {
-                document.getElementById('spinner').style.display = 'none';
-                
-                if (data.error) {
-                    const errorElement = document.getElementById('imei-error');
-                    errorElement.textContent = data.error;
-                    if (data.details) {
-                        errorElement.innerHTML += `<br><small>${data.details}</small>`;
-                    }
-                    errorElement.style.display = 'block';
-                } else {
-                    displayResults(imei, serviceType, data);
-                }
-            })
-            .catch(error => {
-                document.getElementById('spinner').style.display = 'none';
-                const errorElement = document.getElementById('imei-error');
-                errorElement.textContent = 'ქსელის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.';
-                errorElement.style.display = 'block';
-                console.error('შემოწმების შეცდომა:', error);
-            });
-        }
-        
-        function displayResults(imei, serviceType, data) {
-            const resultContent = document.getElementById('result-content');
-            
-            let resultsHTML = `
-                <div class="text-center mb-4">
-                    <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
-                    <h3 class="mt-3">შემოწმება დასრულებულია</h3>
-                    <p>IMEI: ${imei}</p>
-                    <p>შემოწმების ტიპი: ${services.find(s => s.id === serviceType).title}</p>
                 </div>
-            `;
+                <h1 class="display-4 fw-bold mt-3">KODI.GE</h1>
+                <p class="lead">პროფესიონალური IMEI შემოწმების სერვისი</p>
+            </div>
             
-            // Для бесплатной проверки - компактный формат
-            if (serviceType === 'free') {
-                resultsHTML += `
-                    <div class="compact-results">
-                        <div class="result-grid">
-                `;
-                
-                // Определяем порядок и формат отображения полей
-                const displayFields = [
-                    { key: 'brand', label: 'ბრენდი' },
-                    { key: 'model', label: 'მოდელი' },
-                    { key: 'modelName', label: 'მოდელის კოდი' },
-                    { key: 'imei', label: 'IMEI ნომერი' },
-                    { key: 'serial', label: 'სერიული ნომერი' },
-                    { key: 'manufacture_date', label: 'წარმოების თარიღი' },
-                    { key: 'activation_status', label: 'აქტივაციის სტატუსი' },
-                    { key: 'fmi_status', label: 'FMI სტატუსი' },
-                    { key: 'blacklist_status', label: 'შავი სიის სტატუსი' },
-                    { key: 'sim_lock', label: 'SIM ლოკი' },
-                    { key: 'carrier', label: 'ოპერატორი' },
-                    { key: 'warranty_status', label: 'გარანტიის სტატუსი' }
-                ];
-                
-                // Добавляем поля в сетку
-                displayFields.forEach(field => {
-                    if (data[field.key]) {
-                        const value = data[field.key];
-                        let statusClass = '';
-                        const valStr = String(value).toLowerCase();
-                        
-                        if (valStr.includes('off') || valStr.includes('clean') || valStr.includes('unlocked')) {
-                            statusClass = 'status-clean';
-                        } else if (valStr.includes('on') || valStr.includes('blacklisted') || valStr.includes('locked')) {
-                            statusClass = 'status-warning';
-                        }
-                        
-                        resultsHTML += `
-                            <div class="result-grid-item">
-                                <span class="result-label">${field.label}:</span>
-                                <span class="result-value ${statusClass}">${value}</span>
+            <!-- НОВАЯ КАРУСЕЛЬ -->
+            <div class="carousel" id="carousel-container">
+                <div class="carousel-inner">
+                    <!-- Слайд 1 -->
+                    <div class="slide active">
+                        <div class="placeholder">
+                            <div class="logo-animated">
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-core">
+                                    <div class="logo-letter">K</div>
+                                </div>
                             </div>
-                        `;
-                    }
-                });
-                
-                resultsHTML += `
+                            <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
                         </div>
                     </div>
-                `;
-            } 
-            // Для платных проверок - обычная таблица
-            else if (data && Object.keys(data).length > 0) {
-                resultsHTML += `
-                    <div class="table-container">
-                        <table class="history-table">
-                            <tr>
-                                <th>პარამეტრი</th>
-                                <th>მნიშვნელობა</th>
-                            </tr>
-                `;
-                
-                for (const [key, value] of Object.entries(data)) {
-                    if (key === 'error' || key === 'html' || key === 'details') continue;
                     
-                    let statusClass = '';
-                    const valStr = String(value).toLowerCase();
-                    
-                    if (valStr.includes('off') || valStr.includes('clean') || valStr.includes('unlocked')) {
-                        statusClass = 'status-clean';
-                    } else if (valStr.includes('on') || valStr.includes('blacklisted') || valStr.includes('locked')) {
-                        statusClass = 'status-warning';
-                    }
-                    
-                    resultsHTML += `
-                        <tr>
-                            <td>${key}</td>
-                            <td class="${statusClass}">${value}</td>
-                        </tr>
-                    `;
-                }
-                
-                resultsHTML += `
-                        </table>
+                    <!-- Слайд 2 -->
+                    <div class="slide">
+                        <div class="placeholder">
+                            <div class="logo-animated">
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-core">
+                                    <div class="logo-letter">K</div>
+                                </div>
+                            </div>
+                            <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
+                        </div>
                     </div>
-                `;
-            } else {
-                resultsHTML += `
-                    <div class="error-card">
-                        <h4>მონაცემების დამუშავება ვერ მოხერხდა</h4>
-                    </div>`;
+                    
+                    <!-- Слайд 3 -->
+                    <div class="slide">
+                        <div class="placeholder">
+                            <div class="logo-animated">
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-ring"></div>
+                                <div class="logo-core">
+                                    <div class="logo-letter">K</div>
+                                </div>
+                            </div>
+                            <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- About Section -->
+        <div id="about" class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>
+                Kodi.ge-ს შესახებ
+            </div>
+            <div class="card-body">
+                <p class="lead">ჩვენ ვართ ლიდერი IMEI შემოწმების სერვისი საქართველოში</p>
+                <p>ჩვენი მისიაა უზრუნველვყოთ საიმეო ხარისხიანი სერვისი iPhone მომხმარებლებისთვის.</p>
+                <p>გთავაზობთ სრულ ინფორმაციას თქვენი მოწყობილობის სტატუსის შესახებ.</p>
+            </div>
+        </div>
+        
+        <!-- IMEI Info Section -->
+        <div id="imei-info" class="card mt-5">
+            <div class="card-header">
+                <i class="fas fa-qrcode me-2"></i>
+                რა არის IMEI?
+            </div>
+            <div class="card-body">
+                <p>IMEI (International Mobile Equipment Identity) არის უნიკალური 15-ნიშნა ნომერი, რომელიც ყველა მობილურ ტელეფონს აქვს.</p>
+                <p>ამ ნომრის საშუალებით შეგიძლიათ:</p>
+                <ul>
+                    <li>შეამოწმოთ ტელეფონის ავთენტურობა</li>
+                    <li>გაიგოთ დაბლოკილია თუ არა მოწყობილობა</li>
+                    <li>გაიგოთ მოწყობილობის სტატუსი (ქულდებაში, მოპარული, უკანონო)</li>
+                    <li>გაიგოთ ტელეფონის მოდელი და სერიული ნომერი</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Services Section -->
+        <div id="services" class="mt-5">
+            <h2 class="section-title">ჩვენი სერვისები</h2>
+            <div class="row">
+                <!-- Apple Services Card -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 service-card">
+                        <div class="service-icon text-info">
+                            <i class="fab fa-apple fa-3x"></i>
+                        </div>
+                        <h3 class="service-title">Apple IMEI შემოწმება</h3>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> FMI iCloud სტატუსი</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> SIM ლოკის შემოწმება</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> შავი სიის გამოვლენა</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> MDM ბლოკირება</li>
+                        </ul>
+                        <a href="/applecheck" class="service-action">
+                            <i class="fas fa-arrow-right me-1"></i> შეამოწმეთ iPhone
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Android Services Card -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 service-card">
+                        <div class="service-icon text-success">
+                            <i class="fab fa-android fa-3x"></i>
+                        </div>
+                        <h3 class="service-title">Android IMEI შემოწმება</h3>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> Samsung მოწყობილობები</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> Xiaomi და Redmi</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> Google Pixel</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> Huawei და Honor</li>
+                        </ul>
+                        <a href="/androidcheck" class="service-action">
+                            <i class="fas fa-arrow-right me-1"></i> შეამოწმეთ Android
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Phone Comparison Card -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 service-card">
+                        <div class="service-icon text-warning">
+                            <i class="fas fa-robot fa-3x"></i>
+                        </div>
+                        <h3 class="service-title">ტელეფონების შედარება</h3>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> AI-ზე დაფუძნებული ანალიზი</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> მახასიათებლების შედარება</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> ფასის/ხარისხის თანაფარდობა</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> სრული ანგარიშის გენერირება</li>
+                        </ul>
+                        <a href="/compare" class="service-action">
+                            <i class="fas fa-arrow-right me-1"></i> შეადარეთ ტელეფონები
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Statistics Section -->
+        <div class="row mt-4">
+            <div class="col-md-4 mb-4">
+                <div class="card text-center p-4 stat-card">
+                    <i class="fas fa-sync fa-2x mb-3"></i>
+                    <div class="stat-value display-4" id="daily-checks">256</div>
+                    <div class="stat-label">შემოწმება დღეში</div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card text-center p-4 stat-card">
+                    <i class="fas fa-calendar-week fa-2x mb-3"></i>
+                    <div class="stat-value display-4" id="weekly-checks">1785</div>
+                    <div class="stat-label">შემოწმება კვირაში</div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card text-center p-4 stat-card">
+                    <i class="fas fa-calendar-alt fa-2x mb-3"></i>
+                    <div class="stat-value display-4" id="monthly-checks">7320</div>
+                    <div class="stat-label">შემოწმება თვეში</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <footer id="contacts" class="mt-5 pt-4 border-top border-secondary">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <h5>Kodi.ge</h5>
+                    <p>iPhone IMEI შემოწმების პროფესიონალური სერვისი</p>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <h5>კონტაქტი</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-phone me-2"></i> +995 555 12 34 56</li>
+                        <li><i class="fas fa-envelope me-2"></i> info@kodi.ge</li>
+                        <li><i class="fas fa-map-marker-alt me-2"></i> თბილისი, საქართველო</li>
+                    </ul>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <h5>მიჰყევით</h5>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-light"><i class="fab fa-facebook fa-2x"></i></a>
+                        <a href="#" class="text-light"><i class="fab fa-instagram fa-2x"></i></a>
+                        <a href="#" class="text-light"><i class="fab fa-telegram fa-2x"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center py-3">
+                <p class="mb-0">© 2023 Kodi.ge. ყველა უფლება დაცულია.</p>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Mobile Menu Container (will be populated by mobilemenu.js) -->
+    <div id="mobile-menu-container"></div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Инициализация данных пользователя -->
+    <script>
+        window.currentUser = {% if currentUser %}
+            {
+                'first_name': '{{ currentUser.first_name }}',
+                'last_name': '{{ currentUser.last_name }}',
+                'balance': {{ currentUser.balance }},
+                'avatar_color': '{{ generate_avatar_color(currentUser.first_name + " " + currentUser.last_name) }}'
+            }
+        {% else %}
+            null
+        {% endif %};
+    </script>
+    
+    <!-- Mobile Menu Script -->
+    <script src="static/js/mobilemenu.js"></script>
+    
+    <!-- Скрипт для карусели -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const slides = document.querySelectorAll('.slide');
+            let currentSlide = 0;
+            
+            function nextSlide() {
+                slides[currentSlide].classList.remove('active');
+                currentSlide = (currentSlide + 1) % slides.length;
+                slides[currentSlide].classList.add('active');
             }
             
-            resultContent.innerHTML = resultsHTML;
-            document.getElementById('result-modal').style.display = 'flex';
-        }
+            setInterval(nextSlide, 5000);
+        });
+    </script>
+    
+    <!-- Скрипт для счетчиков статистики -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setInterval(() => {
+                try {
+                    const daily = document.getElementById('daily-checks');
+                    const weekly = document.getElementById('weekly-checks');
+                    const monthly = document.getElementById('monthly-checks');
+                    
+                    if(daily) daily.textContent = parseInt(daily.textContent) + 1;
+                    if(weekly) weekly.textContent = parseInt(weekly.textContent) + 1;
+                    if(monthly) monthly.textContent = parseInt(monthly.textContent) + 1;
+                } catch(e) {
+                    console.warn('Error updating counters:', e);
+                }
+            }, 5000);
+        });
     </script>
 </body>
 </html>
