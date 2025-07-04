@@ -195,6 +195,29 @@
                 font-size: 1.5rem;
             }
         }
+        
+        /* Стили для модальных окон */
+        .modal-result-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+        
+        .result-success {
+            color: #28a745;
+        }
+        
+        .result-error {
+            color: #dc3545;
+        }
+        
+        #retryButton {
+            margin-top: 15px;
+        }
+        
+        .loading-spinner {
+            width: 4rem;
+            height: 4rem;
+        }
     </style>
 </head>
 <body>
@@ -528,6 +551,35 @@
         </footer>
     </div>
     
+    <!-- Модальное окно для результатов -->
+    <div class="modal fade" id="paymentResultModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">შედეგი</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="successResult" class="d-none">
+                        <i class="fas fa-check-circle modal-result-icon result-success"></i>
+                        <p class="fs-5">შემოწმება წარმატებით დასრულდა!</p>
+                        <div id="resultData" class="mt-3"></div>
+                    </div>
+                    <div id="errorResult" class="d-none">
+                        <i class="fas fa-times-circle modal-result-icon result-error"></i>
+                        <p class="fs-5">შეცდომა შემოწმების დროს</p>
+                        <p class="text-muted" id="errorCode"></p>
+                        <button class="btn btn-primary mt-2" id="retryButton">კვლავ ცდა</button>
+                    </div>
+                    <div id="loadingIndicator" class="d-none">
+                        <div class="spinner-border text-primary loading-spinner" role="status"></div>
+                        <p class="mt-3">მიმდინარეობს შემოწმება...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Mobile Menu Container (will be populated by mobilemenu.js) -->
     <div id="mobile-menu-container"></div>
     
@@ -583,6 +635,152 @@
                     console.warn('Error updating counters:', e);
                 }
             }, 5000);
+        });
+    </script>
+    
+    <!-- Скрипт для обработки результатов платежа и проверок -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Обработка результатов платежа
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('session_id');
+            const imei = urlParams.get('imei');
+            const serviceType = urlParams.get('service_type');
+            
+            if (sessionId) {
+                showPaymentResult(sessionId, imei, serviceType);
+            }
+            
+            // Обработка результатов бесплатной проверки
+            const freeCheckResult = urlParams.get('free_check_result');
+            if (freeCheckResult) {
+                try {
+                    const resultData = JSON.parse(freeCheckResult);
+                    showCheckResult(resultData);
+                } catch(e) {
+                    console.error('Error parsing free check result:', e);
+                }
+            }
+        });
+        
+        function showPaymentResult(sessionId, imei, serviceType) {
+            const modal = new bootstrap.Modal(document.getElementById('paymentResultModal'));
+            const loading = document.getElementById('loadingIndicator');
+            const success = document.getElementById('successResult');
+            const error = document.getElementById('errorResult');
+            
+            loading.classList.remove('d-none');
+            modal.show();
+            
+            // Запрос на сервер для проверки статуса
+            fetch(`/check_payment?session_id=${sessionId}&imei=${imei}&service_type=${serviceType}`)
+                .then(response => response.json())
+                .then(data => {
+                    loading.classList.add('d-none');
+                    
+                    if (data.success) {
+                        success.classList.remove('d-none');
+                        document.getElementById('resultData').innerHTML = 
+                            `<p><strong>მოწყობილობა:</strong> ${data.model || 'N/A'}</p>
+                             <p><strong>სტატუსი:</strong> ${data.status || 'N/A'}</p>
+                             <p><strong>IMEI:</strong> ${data.imei || imei}</p>`;
+                    } else {
+                        error.classList.remove('d-none');
+                        document.getElementById('errorCode').textContent = 
+                            `შეცდომის კოდი: ${data.error_code || 'UNKNOWN'}`;
+                        
+                        document.getElementById('retryButton').onclick = () => {
+                            window.location.href = `/applecheck?type=${serviceType}&imei=${imei}`;
+                        };
+                    }
+                })
+                .catch(err => {
+                    loading.classList.add('d-none');
+                    error.classList.remove('d-none');
+                    document.getElementById('errorCode').textContent = 
+                        `ქსელური შეცდომა: ${err.message}`;
+                });
+        }
+        
+        function showCheckResult(resultData) {
+            const modal = new bootstrap.Modal(document.getElementById('paymentResultModal'));
+            const loading = document.getElementById('loadingIndicator');
+            const success = document.getElementById('successResult');
+            const error = document.getElementById('errorResult');
+            
+            loading.classList.add('d-none');
+            
+            if (resultData.error) {
+                error.classList.remove('d-none');
+                document.getElementById('errorCode').textContent = resultData.error;
+                
+                document.getElementById('retryButton').onclick = () => {
+                    window.location.reload();
+                };
+            } else {
+                success.classList.remove('d-none');
+                let resultHtml = '';
+                
+                for (const [key, value] of Object.entries(resultData)) {
+                    resultHtml += `<p><strong>${key}:</strong> ${value}</p>`;
+                }
+                
+                document.getElementById('resultData').innerHTML = resultHtml;
+            }
+            
+            modal.show();
+        }
+        
+        // Функция для отправки запроса на бесплатную проверку
+        function submitFreeCheck(imei) {
+            const modal = new bootstrap.Modal(document.getElementById('paymentResultModal'));
+            const loading = document.getElementById('loadingIndicator');
+            const success = document.getElementById('successResult');
+            const error = document.getElementById('errorResult');
+            
+            loading.classList.remove('d-none');
+            success.classList.add('d-none');
+            error.classList.add('d-none');
+            modal.show();
+            
+            fetch(`/check_imei?imei=${imei}&service_type=free`)
+                .then(response => response.json())
+                .then(data => {
+                    loading.classList.add('d-none');
+                    
+                    if (data.error) {
+                        error.classList.remove('d-none');
+                        document.getElementById('errorCode').textContent = data.error;
+                        document.getElementById('retryButton').onclick = () => {
+                            window.location.reload();
+                        };
+                    } else {
+                        success.classList.remove('d-none');
+                        let resultHtml = '';
+                        
+                        for (const [key, value] of Object.entries(data)) {
+                            resultHtml += `<p><strong>${key}:</strong> ${value}</p>`;
+                        }
+                        
+                        document.getElementById('resultData').innerHTML = resultHtml;
+                    }
+                })
+                .catch(err => {
+                    loading.classList.add('d-none');
+                    error.classList.remove('d-none');
+                    document.getElementById('errorCode').textContent = 
+                        `ქსელური შეცდომა: ${err.message}`;
+                });
+        }
+    </script>
+    
+    <!-- Пример использования для формы бесплатной проверки -->
+    <script>
+        // В обработчике формы бесплатной проверки
+        document.getElementById('freeCheckForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const imei = document.getElementById('imeiInput').value;
+            submitFreeCheck(imei);
         });
     </script>
 </body>
