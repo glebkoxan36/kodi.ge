@@ -261,7 +261,7 @@ def compare_values(rule, value1, value2):
         
         # Нормализация значений для сравнения
         val1 = normalize_gpu_name(str(value1))
-        val2 = normalize_gpu_name(str(value2)))
+        val2 = normalize_gpu_name(str(value2))
         
         # Поиск индексов в приоритетном списке
         try:
