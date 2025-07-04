@@ -6,6 +6,7 @@
     <title>ტელეფონების შედარება</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        /* Весь CSS остаётся без изменений */
         :root {
             --primary-color: #0a0e17;
             --secondary-color: #1a243c;
@@ -544,6 +545,12 @@
             font-size: 0.95rem;
         }
         
+        /* Вынесенный стиль для #fullSpecs */
+        #fullSpecs {
+            display: none;
+            margin-top: 20px;
+        }
+        
         @media (max-width: 768px) {
             .section-title {
                 font-size: 1.8rem;
@@ -735,7 +742,7 @@
             
             <button id="showFullSpecsBtn" class="btn-primary">ყველა მახასიათებლის ჩვენება</button>
             
-            <div id="fullSpecs" style="display: none; margin-top: 20px;">
+            <div id="fullSpecs">
                 <!-- ყველა მახასიათებელი -->
             </div>
             
@@ -771,7 +778,7 @@
             let phone1 = null;
             let phone2 = null;
             
-            // Вспомогательные функции для получения данных с русских ключей
+            // Вспомогательные функции для получения данных
             function getBrand(phone) {
                 return phone.brand || phone.Бренд || phone['Бренд'] || 'Unknown brand';
             }
@@ -812,54 +819,44 @@
                 }
             });
             
-            // Обработчики событий
-            $(document).on('click', '.retry-btn', function() {
-                const target = $(this).data('target');
-                window.retryLoadPhone(target);
-            });
-            
-            $(document).on('click', '#showFullSpecsBtn', function() {
-                $('#fullSpecs').slideToggle();
-                $(this).text(function(i, text) {
-                    return text === "ყველა მახასიათებლის ჩვენება" 
-                           ? "მახასიათებლების დამალვა" 
-                           : "ყველა მახასიათებლის ჩვენება";
-                });
-            });
-            
-            $(document).on('click', '.search-retry-btn', function() {
-                $('#phoneSearchInput').trigger('keyup');
-            });
-            
-            // Показываем вторую кнопку после выбора первого телефона
-            function showSecondSelector() {
-                $('#secondSelectorContainer').show();
-                $('#viewSingleSpecsBtn').show();
+            // Регистрация обработчиков событий
+            function setupEventHandlers() {
+                // Обработчики для кнопок
+                $('#selectPhone1Btn, #selectPhone2Btn').on('click', handlePhoneSelectorClick);
+                $('.close-modal').on('click', closeModal);
+                $('#viewSingleSpecsBtn').on('click', handleViewSingleSpecs);
+                $('#showFullSpecsBtn').on('click', toggleFullSpecs);
+                
+                // Обработчики для динамических элементов
+                $(document).on('click', '.retry-btn', handleRetryClick);
+                $(document).on('click', '.phone-search-result', handleSearchResultClick);
+                $(document).on('click', '#retryComparisonBtn', handleRetryComparison);
+                $(document).on('click', '#phoneSearchModal', handleModalBackgroundClick);
+                
+                // Обработка ввода в поле поиска
+                $('#phoneSearchInput').on('keyup', handleSearchInput);
             }
             
-            // Модальное окно
-            $('#selectPhone1Btn, #selectPhone2Btn').click(function() {
+            // Обработчики событий
+            function handlePhoneSelectorClick() {
                 selectedTarget = $(this).attr('id').replace('Btn', '');
                 $('.modal-title').text('აირჩიეთ ტელეფონი ' + (selectedTarget === 'selectPhone1' ? 'პირველი' : 'მეორე'));
                 $('#phoneSearchModal').css('display', 'flex');
                 $('#phoneSearchInput').val('').focus();
                 $('#searchResults').html('');
-            });
+            }
             
-            // Закрытие модального окна
-            $('.close-modal').click(function() {
+            function closeModal() {
                 $('#phoneSearchModal').hide();
-            });
+            }
             
-            // Закрытие модального окна при клике вне его
-            $(document).click(function(event) {
+            function handleModalBackgroundClick(event) {
                 if ($(event.target).hasClass('result-modal')) {
                     $('#phoneSearchModal').hide();
                 }
-            });
+            }
             
-            // Поиск телефонов
-            $('#phoneSearchInput').keyup(function() {
+            function handleSearchInput() {
                 const query = $(this).val();
                 if (query.length < 2) {
                     $('#searchResults').html('');
@@ -880,44 +877,74 @@
                     type: 'GET',
                     data: { query: query },
                     success: function(data) {
-                        let html = '';
-                        if (data.length > 0) {
-                            data.forEach(phone => {
-                                const brand = getBrand(phone);
-                                const model = getModel(phone);
-                                const releaseYear = getReleaseYear(phone);
-                                
-                                html += `
-                                    <div class="phone-search-result" data-id="${phone._id}">
-                                        <img src="${getImageUrl(phone)}" alt="${brand} ${model}">
-                                        <div class="phone-search-info">
-                                            <div class="phone-search-name">${brand} ${model}</div>
-                                            <div class="phone-search-details">გამოშვების წელი: ${releaseYear}</div>
-                                        </div>
-                                    </div>
-                                `;
-                            });
-                        } else {
-                            html = '<div class="phone-search-result" style="justify-content: center; padding: 30px;">ტელეფონები ვერ მოიძებნა</div>';
-                        }
-                        $('#searchResults').html(html);
+                        renderSearchResults(data);
                     },
-                    error: function() {
-                        $('#searchResults').html(`
-                            <div class="error-message">
-                                ძებნის პროცესში მოხდა შეცდომა
-                                <button class="retry-btn search-retry-btn">ხელახლა ცდა</button>
-                            </div>
-                        `);
-                    }
+                    error: renderSearchError
                 });
-            });
+            }
             
-            // Выбор телефона
-            $('#searchResults').on('click', '.phone-search-result', function() {
+            function handleSearchResultClick() {
                 const phoneId = $(this).data('id');
                 selectPhone(phoneId);
-            });
+            }
+            
+            function handleRetryClick() {
+                const target = $(this).data('target');
+                retryLoadPhone(target);
+            }
+            
+            function handleRetryComparison() {
+                comparePhones();
+            }
+            
+            function handleViewSingleSpecs() {
+                if (phone1) {
+                    showSinglePhoneSpecs(phone1);
+                }
+            }
+            
+            function toggleFullSpecs() {
+                $('#fullSpecs').slideToggle();
+                $(this).text(function(i, text) {
+                    return text === "ყველა მახასიათებლის ჩვენება" 
+                           ? "მახასიათებლების დამალვა" 
+                           : "ყველა მახასიათებლის ჩვენება";
+                });
+            }
+            
+            // Вспомогательные функции
+            function renderSearchResults(data) {
+                let html = '';
+                if (data.length > 0) {
+                    data.forEach(phone => {
+                        const brand = getBrand(phone);
+                        const model = getModel(phone);
+                        const releaseYear = getReleaseYear(phone);
+                        
+                        html += `
+                            <div class="phone-search-result" data-id="${phone._id}">
+                                <img src="${getImageUrl(phone)}" alt="${brand} ${model}">
+                                <div class="phone-search-info">
+                                    <div class="phone-search-name">${brand} ${model}</div>
+                                    <div class="phone-search-details">გამოშვების წელი: ${releaseYear}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<div class="phone-search-result" style="justify-content: center; padding: 30px;">ტელეფონები ვერ მოიძებნა</div>';
+                }
+                $('#searchResults').html(html);
+            }
+            
+            function renderSearchError() {
+                $('#searchResults').html(`
+                    <div class="error-message">
+                        ძებნის პროცესში მოხდა შეცდომა
+                        <button class="retry-btn search-retry-btn">ხელახლა ცდა</button>
+                    </div>
+                `);
+            }
             
             function selectPhone(phoneId) {
                 showLoading(selectedTarget);
@@ -928,14 +955,7 @@
                     type: 'GET',
                     data: { id: phoneId },
                     success: function(phone) {
-                        if (selectedTarget === 'selectPhone1') {
-                            phone1 = phone;
-                            updatePhoneDisplay(phone, '#selectPhone1Btn');
-                            showSecondSelector();
-                        } else {
-                            phone2 = phone;
-                            updatePhoneDisplay(phone, '#selectPhone2Btn');
-                        }
+                        updatePhoneSelection(phone);
                         $('#phoneSearchModal').hide();
                         checkComparisonState();
                     },
@@ -945,7 +965,17 @@
                 });
             }
             
-            // Индикатор загрузки
+            function updatePhoneSelection(phone) {
+                if (selectedTarget === 'selectPhone1') {
+                    phone1 = phone;
+                    updatePhoneDisplay(phone, '#selectPhone1Btn');
+                    showSecondSelector();
+                } else {
+                    phone2 = phone;
+                    updatePhoneDisplay(phone, '#selectPhone2Btn');
+                }
+            }
+            
             function showLoading(target) {
                 const btnSelector = `#${target}Btn`;
                 $(btnSelector).html(`
@@ -959,7 +989,6 @@
                 `);
             }
             
-            // Отображение ошибки
             function showError(target, message) {
                 const btnSelector = `#${target}Btn`;
                 $(btnSelector).html(`
@@ -974,7 +1003,6 @@
                 `);
             }
             
-            // Обновление отображения телефона
             function updatePhoneDisplay(phone, btnSelector) {
                 const brand = getBrand(phone);
                 const model = getModel(phone);
@@ -996,6 +1024,7 @@
                     border: '2px solid rgba(0, 198, 255, 0.5)'
                 });
                 
+                // Замена setTimeout со строкой на функцию
                 setTimeout(function() {
                     $(btnSelector).css({
                         transform: 'scale(1)',
@@ -1004,7 +1033,11 @@
                 }, 300);
             }
             
-            // Проверка состояния сравнения
+            function showSecondSelector() {
+                $('#secondSelectorContainer').show();
+                $('#viewSingleSpecsBtn').show();
+            }
+            
             function checkComparisonState() {
                 if (phone1 && !phone2) {
                     $('#comparisonResult').hide();
@@ -1014,13 +1047,6 @@
                     hideAllSections();
                 }
             }
-            
-            // Показать характеристики одного телефона
-            $('#viewSingleSpecsBtn').click(function() {
-                if (phone1) {
-                    showSinglePhoneSpecs(phone1);
-                }
-            });
             
             function showSinglePhoneSpecs(phone) {
                 const brand = getBrand(phone);
@@ -1067,7 +1093,6 @@
                 `);
             }
             
-            // Сравнение телефонов
             function comparePhones() {
                 $('#comparisonResult').html(`
                     <div style="text-align: center; padding: 50px;">
@@ -1086,14 +1111,12 @@
                         phone2_id: phone2._id
                     }),
                     success: function(result) {
-                        console.log("Comparison result:", result);
                         displayComparisonResult(result);
                     },
-                    error: function(xhr, status, error) {
-                        console.error("Error comparing phones:", error, xhr.responseText);
+                    error: function(xhr) {
                         $('#comparisonResult').html(`
                             <div class="error-message" style="margin: 30px;">
-                                შედარების პროცესი ვერ მოხერხდა: ${xhr.responseText || error}
+                                შედარების პროცესი ვერ მოხერხდა: ${xhr.responseText || 'Unknown error'}
                                 <button class="retry-btn" id="retryComparisonBtn">ხელახლა ცდა</button>
                             </div>
                         `);
@@ -1101,11 +1124,6 @@
                 });
             }
             
-            $(document).on('click', '#retryComparisonBtn', function() {
-                comparePhones();
-            });
-            
-            // Отображение результатов сравнения
             function displayComparisonResult(result) {
                 const brand1 = getBrand(phone1);
                 const model1 = getModel(phone1);
@@ -1223,49 +1241,43 @@
                 $('#comparisonResult').show();
             }
             
-            // Скрыть все секции
             function hideAllSections() {
                 $('#singlePhoneSpecs').hide();
                 $('#comparisonResult').hide();
             }
-        });
-        
-        // Глобальные функции для повтора операций
-        window.retryLoadPhone = function(target) {
-            const phoneId = target === 'selectPhone1' ? (phone1 && phone1._id) : (phone2 && phone2._id);
-            if (phoneId) {
-                $(`#${target}Btn`).html(`
-                    <div class="phone-thumb-container">
-                        <div class="loading-spinner"></div>
-                    </div>
-                    <div class="phone-info-text">
-                        <div class="phone-title">იტვირთება...</div>
-                        <div class="phone-subtitle">გთხოვთ დაიცადოთ</div>
-                    </div>
-                `);
-                
-                $.ajax({
-                    url: '/api/phone_details',
-                    type: 'GET',
-                    data: { id: phoneId },
-                    success: function(phone) {
-                        if (target === 'selectPhone1') {
-                            phone1 = phone;
-                            updatePhoneDisplay(phone, '#selectPhone1Btn');
-                        } else {
-                            phone2 = phone;
-                            updatePhoneDisplay(phone, '#selectPhone2Btn');
+            
+            function retryLoadPhone(target) {
+                const phoneId = target === 'selectPhone1' ? (phone1 && phone1._id) : (phone2 && phone2._id);
+                if (phoneId) {
+                    $(`#${target}Btn`).html(`
+                        <div class="phone-thumb-container">
+                            <div class="loading-spinner"></div>
+                        </div>
+                        <div class="phone-info-text">
+                            <div class="phone-title">იტვირთება...</div>
+                            <div class="phone-subtitle">გთხოვთ დაიცადოთ</div>
+                        </div>
+                    `);
+                    
+                    $.ajax({
+                        url: '/api/phone_details',
+                        type: 'GET',
+                        data: { id: phoneId },
+                        success: function(phone) {
+                            updatePhoneSelection(phone);
+                        },
+                        error: function() {
+                            showError(target, 'ტელეფონის ინფორმაციის ჩატვირთვა ვერ მოხერხდა');
                         }
-                        checkComparisonState();
-                    },
-                    error: function() {
-                        showError(target, 'ტელეფონის ინფორმაციის ჩატვირთვა ვერ მოხერხდა');
-                    }
-                });
-            } else {
-                $(`#${target}Btn`).click();
+                    });
+                } else {
+                    $(`#${target}Btn`).click();
+                }
             }
-        };
+            
+            // Инициализация обработчиков событий
+            setupEventHandlers();
+        });
     </script>
 </body>
 </html>
