@@ -160,9 +160,10 @@
             justify-content: center;
             width: 100%;
             height: 100%;
+            background: linear-gradient(135deg, #0a0e17, #1a2138);
             color: #ffffff;
             font-weight: bold;
-            font-size: 1.5rem;
+            font-size: 1rem;
             text-align: center;
             padding: 10px;
             text-shadow: 0 0 12px rgba(0, 198, 255, 0.8);
@@ -461,38 +462,6 @@
     `;
     document.head.appendChild(style);
 
-    // Функция для генерации HTML пользователя
-    function generateUserHTML() {
-        if (window.currentUser) {
-            return `
-                <div class="floating-avatar" style="background-color: ${window.currentUser.avatar_color};" onclick="goToDashboard()">
-                    <div class="avatar-placeholder">
-                        ${window.currentUser.first_name.charAt(0)}${window.currentUser.last_name.charAt(0)}
-                    </div>
-                </div>
-                <div class="user-info-container">
-                    <div class="floating-avatar-info" onclick="goToDashboard()">
-                        ${window.currentUser.first_name} ${window.currentUser.last_name}
-                    </div>
-                    <div class="user-balance" onclick="goToDashboard()">
-                        ბალანსი: ${window.currentUser.balance.toFixed(2)}₾
-                    </div>
-                </div>
-            `;
-        } else {
-            return `
-                <div class="floating-avatar" onclick="goToLogin()">
-                    <div class="avatar-placeholder">KODI.GE</div>
-                </div>
-                <div class="user-info-container">
-                    <div class="floating-avatar-info" onclick="goToLogin()">
-                        ლოგინი|რეგისტრაცია
-                    </div>
-                </div>
-            `;
-        }
-    }
-
     // Создаем HTML структуру мобильного меню
     function createMobileMenuStructure() {
         const mobileMenuContainer = document.createElement('div');
@@ -500,16 +469,15 @@
         document.body.appendChild(mobileMenuContainer);
         
         const isDashboard = window.location.pathname.includes('dashboard');
-        const userHTML = generateUserHTML();
-
+        
         if (isDashboard) {
-            createDashboardMobileMenu(mobileMenuContainer, userHTML);
+            createDashboardMobileMenu(mobileMenuContainer);
         } else {
-            createMainMobileMenu(mobileMenuContainer, userHTML);
+            createMainMobileMenu(mobileMenuContainer);
         }
     }
 
-    function createDashboardMobileMenu(container, userHTML) {
+    function createDashboardMobileMenu(container) {
         container.innerHTML = `
             <div class="mobile-menu-modal" id="mobileMenuModal">
                 <div class="modal-content">
@@ -520,9 +488,6 @@
                     </div>
                     
                     <div class="modal-body">
-                        <div class="floating-avatar-container">
-                            ${userHTML}
-                        </div>
                         <div class="menu-grid">
                             <div class="menu-item" onclick="window.location.href='/'; closeAllMobileMenus();">
                                 <i class="fas fa-home"></i>
@@ -555,7 +520,7 @@
         `;
     }
 
-    function createMainMobileMenu(container, userHTML) {
+    function createMainMobileMenu(container) {
         container.innerHTML = `
             <!-- Mobile Menu Modal -->
             <div class="mobile-menu-modal" id="mobileMenuModal">
@@ -564,7 +529,14 @@
                 </button>
                 
                 <div class="floating-avatar-container">
-                    ${userHTML}
+                    <div class="floating-avatar" onclick="goToLogin()">
+                        <div class="avatar-placeholder">KODI.GE</div>
+                    </div>
+                    <div class="user-info-container">
+                        <div onclick="goToLogin()">
+                            ლოგინი|რეგისტრაცია
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="modal-content">
@@ -618,7 +590,14 @@
                 </button>
 
                 <div class="floating-avatar-container">
-                    ${userHTML}
+                    <div class="floating-avatar" onclick="goToLogin()">
+                        <div class="avatar-placeholder">KODI.GE</div>
+                    </div>
+                    <div class="user-info-container">
+                        <div onclick="goToLogin()">
+                            ლოგინი/რეგისტრაცია
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="modal-content">
@@ -675,7 +654,14 @@
                 </button>
 
                 <div class="floating-avatar-container">
-                    ${userHTML}
+                    <div class="floating-avatar" onclick="goToLogin()">
+                        <div class="avatar-placeholder">KODI.GE</div>
+                    </div>
+                    <div class="user-info-container">
+                        <div onclick="goToLogin()">
+                            ლოგინი/რეგისტრაცია
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="modal-content">
@@ -818,20 +804,17 @@
     // Redirect to login
     window.goToLogin = function() {
         closeAllMobileMenus();
-        window.location.href = "/auth/login";
+        window.location.href = "/login";
     }
 
     // Redirect to dashboard
     window.goToDashboard = function() {
         closeAllMobileMenus();
-        window.location.href = "/user/dashboard";
+        window.location.href = "/dashboard";
     }
 
     // Initialize mobile menu when the page loads
     document.addEventListener('DOMContentLoaded', () => {
-        // Получаем данные пользователя из глобальной переменной
-        window.currentUser = window.currentUser || null;
-        
         // Создаем HTML структуру меню
         createMobileMenuStructure();
         
