@@ -1279,6 +1279,197 @@ body {
   margin-bottom: 20px;
 }
 
+/* ===== PAYMENT STATUS MODALS ===== */
+.payment-status-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 3000;
+  align-items: center;
+  justify-content: center;
+}
+
+.payment-status-modal .modal-content {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.payment-status-modal .status-icon {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.5rem;
+}
+
+.payment-status-modal .status-icon.success {
+  background: rgba(0, 214, 143, 0.15);
+  color: var(--success-color);
+}
+
+.payment-status-modal .status-icon.error {
+  background: rgba(255, 61, 113, 0.15);
+  color: var(--danger-color);
+}
+
+.payment-status-modal h2 {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+}
+
+.payment-status-modal p {
+  margin-bottom: 25px;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.payment-status-modal .spinner.small {
+  width: 40px;
+  height: 40px;
+  margin: 20px auto;
+  border: 4px solid rgba(0, 198, 255, 0.3);
+  border-top: 4px solid var(--accent-color);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+/* ===== APPLE IMEI SPECIFIC STYLES ===== */
+.free-check-results .result-card {
+  background: rgba(30, 30, 40, 0.7) !important;
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.more-results {
+  margin-top: 25px;
+}
+
+.btn-toggle-details {
+  background: rgba(0, 198, 255, 0.1);
+  border: 1px solid rgba(0, 198, 255, 0.2);
+  color: var(--accent-color);
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  width: 100%;
+  text-align: center;
+  margin-top: 15px;
+}
+
+.btn-toggle-details:hover {
+  background: rgba(0, 198, 255, 0.2);
+}
+
+.full-details {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  display: none;
+  overflow: auto;
+}
+
+/* Error Card */
+.error-card {
+  text-align: center;
+  padding: 30px;
+  background: rgba(244, 67, 54, 0.1);
+  border-radius: 12px;
+  border: 1px solid var(--danger-color);
+}
+
+/* Warning Banner */
+.warning-banner {
+  background: rgba(255, 152, 0, 0.2);
+  border: 1px solid var(--warning-color);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.warning-banner i {
+  margin-right: 15px;
+  color: var(--warning-color);
+  font-size: 1.5rem;
+}
+
+/* Raw Results */
+.raw-results {
+  background: rgba(30, 30, 40, 0.7);
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.raw-results pre {
+  white-space: pre-wrap;
+  font-family: monospace;
+  overflow-wrap: break-word;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Table Styles */
+.table-container {
+  overflow-x: auto;
+  margin: 25px 0;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.history-table th {
+  background: rgba(0, 198, 255, 0.1);
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+.history-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.history-table tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.history-table tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
 /* ===== FIXES ===== */
 /* IMEI input fields */
 #imei-input {
@@ -1535,6 +1726,30 @@ body {
     font-size: 16px !important;
     padding: 12px 15px !important;
   }
+  
+  /* Payment status modal on mobile */
+  .payment-status-modal .modal-content {
+    padding: 25px 20px;
+  }
+  
+  .payment-status-modal .status-icon {
+    width: 80px;
+    height: 80px;
+    font-size: 2.5rem;
+  }
+  
+  .payment-status-modal h2 {
+    font-size: 1.5rem;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .free-check-results .result-card {
+    padding: 20px 15px;
+  }
 }
 
 @media (max-width: 576px) {
@@ -1580,6 +1795,12 @@ body {
   .spec-cell {
     grid-column: 1;
   }
+  
+  .history-table th, 
+  .history-table td {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
 }
 
 /* ===== CRITICAL FIXES ===== */
@@ -1592,4 +1813,4 @@ body {
 #imei-input {
   position: relative;
   z-index: 20;
-  }
+}
