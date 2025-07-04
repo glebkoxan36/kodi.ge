@@ -230,11 +230,6 @@
             color: transparent;
         }
         
-        /* Убираем нижние границы и подчеркивание */
-        .menu-item {
-            border-bottom: none !important;
-        }
-        
         /* Убираем подчеркивание у ссылок */
         .menu-item a {
             text-decoration: none !important;
@@ -466,7 +461,7 @@
     window.goToLogin = function() {
         closeAllMobileMenus();
         setTimeout(() => {
-            window.location.href = "/auth/login";
+            window.location.href = "login";
         }, 100);
     }
 
