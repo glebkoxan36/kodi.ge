@@ -8,22 +8,807 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <style>
-        /* Дополнительные стили для решения проблем */
-        #selected-service-container, 
-        #payment-method-modal, 
-        #spinner {
+        /* Общие стили */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            background-attachment: fixed;
+            color: #333;
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+        }
+        
+        .gradient-1 {
+            background: radial-gradient(circle at 10% 20%, rgba(26, 42, 108, 0.8) 0%, transparent 40%);
+        }
+        
+        .gradient-2 {
+            background: radial-gradient(circle at 90% 80%, rgba(178, 31, 31, 0.7) 0%, transparent 40%);
+        }
+        
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            padding: 30px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .text-center {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo-animated {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+        }
+        
+        .logo-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 5px solid transparent;
+            border-radius: 50%;
+            animation: pulse 3s infinite;
+        }
+        
+        .logo-ring:nth-child(1) {
+            border-color: #1a2a6c;
+            animation-delay: 0s;
+        }
+        
+        .logo-ring:nth-child(2) {
+            border-color: #b21f1f;
+            animation-delay: 1s;
+        }
+        
+        .logo-ring:nth-child(3) {
+            border-color: #fdbb2d;
+            animation-delay: 2s;
+        }
+        
+        .logo-core {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .logo-letter {
+            font-size: 40px;
+            font-weight: 900;
+            color: white;
+        }
+        
+        h1.display-4 {
+            font-size: 2.5rem;
+            color: #1a2a6c;
+            margin-top: 20px;
+        }
+        
+        p.lead {
+            font-size: 1.2rem;
+            color: #555;
+            margin-top: 10px;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+        
+        .section-title h1 {
+            font-size: 2rem;
+            color: #1a2a6c;
+            margin-bottom: 10px;
+        }
+        
+        .section-title p {
+            color: #666;
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        /* Стили для карточек сервисов */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+            padding: 25px 20px;
+            text-align: center;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+            border-color: #1a2a6c;
+        }
+        
+        .service-card.selected {
+            border-color: #1a2a6c;
+            background: #f8f9ff;
+        }
+        
+        .service-icon {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .service-icon i {
+            font-size: 30px;
+            color: white;
+        }
+        
+        .service-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1a2a6c;
+            margin-bottom: 10px;
+        }
+        
+        .service-price {
+            font-size: 1.2rem;
+            color: #b21f1f;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .service-description {
+            color: #666;
+            font-size: 0.95rem;
+            margin-top: 10px;
+            min-height: 60px;
+        }
+        
+        .service-action {
+            margin-top: 15px;
+            font-weight: 700;
+            color: #1a2a6c;
+        }
+        
+        /* Контейнер выбранного сервиса */
+        .selected-service-container {
             display: none;
+            margin-top: 20px;
+        }
+        
+        .btn-back {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 25px;
+            display: inline-flex;
+            align-items: center;
+            transition: background 0.3s;
+        }
+        
+        .btn-back:hover {
+            background: #5a6268;
+        }
+        
+        .btn-back i {
+            margin-right: 8px;
+        }
+        
+        /* Форма ввода IMEI */
+        .imei-form-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .form-header {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .form-header h2 {
+            color: white;
+            font-size: 1.5rem;
+        }
+        
+        .form-body {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #444;
+            font-size: 1.1rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: #1a2a6c;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 16px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(178, 31, 31, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(178, 31, 31, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
         }
         
         .error-message {
-            color: #ff3860;
+            color: #e74c3c;
             display: none;
-            margin-top: 5px;
+            margin-top: 10px;
+            padding: 10px;
+            background: #fdecea;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            border-left: 4px solid #e74c3c;
         }
         
-        .balance-sufficient { color: #28a745; }
-        .balance-insufficient { color: #dc3545; }
-        .balance-error { color: #ffc107; }
+        /* Модальное окно результатов */
+        .result-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            max-width: 800px;
+            width: 100%;
+            margin: 50px auto;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            padding: 25px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .card-header h2 {
+            font-size: 1.6rem;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: transform 0.3s;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .close-modal:hover {
+            transform: rotate(90deg);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .card-body {
+            padding: 30px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .card-footer {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+        
+        /* Модальное окно выбора платежного метода */
+        .payment-method-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .payment-method-content {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .payment-method-header {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            padding: 25px;
+            color: white;
+            text-align: center;
+        }
+        
+        .payment-method-header h2 {
+            font-size: 1.6rem;
+        }
+        
+        .payment-method-options {
+            padding: 30px;
+        }
+        
+        .payment-option {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border: 2px solid #eee;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .payment-option:hover {
+            border-color: #1a2a6c;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        .payment-option i {
+            font-size: 2rem;
+            margin-right: 20px;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+        }
+        
+        .payment-option.balance i {
+            background: #27ae60;
+        }
+        
+        .payment-option.card i {
+            background: #3498db;
+        }
+        
+        .option-details {
+            flex: 1;
+        }
+        
+        .option-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #1a2a6c;
+        }
+        
+        .balance-info {
+            font-size: 1rem;
+            margin-top: 8px;
+            color: #555;
+        }
+        
+        .balance-sufficient {
+            color: #27ae60;
+            font-weight: 700;
+        }
+        
+        .balance-insufficient {
+            color: #e74c3c;
+            font-weight: 700;
+        }
+        
+        .balance-error {
+            color: #f39c12;
+            font-weight: 700;
+        }
+        
+        .payment-method-footer {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+            text-align: center;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        /* Стили для спиннера */
+        .spinner-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1002;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .spinner {
+            width: 80px;
+            height: 80px;
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 8px solid #1a2a6c;
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Стили для результатов */
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            color: #1a2a6c;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .result-row:last-child {
+            border-bottom: none;
+        }
+        
+        .result-label {
+            font-weight: 600;
+            color: #555;
+            flex: 1;
+        }
+        
+        .result-value {
+            flex: 1;
+            text-align: right;
+            font-weight: 600;
+        }
+        
+        .status-clean {
+            color: #27ae60;
+        }
+        
+        .status-warning {
+            color: #e74c3c;
+        }
+        
+        .warning-banner {
+            background: #fef3e2;
+            border: 1px solid #f39c12;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .warning-banner i {
+            color: #f39c12;
+            font-size: 1.5rem;
+            margin-right: 15px;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin: 25px 0;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .history-table th,
+        .history-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .history-table th {
+            background: #f8f9ff;
+            color: #1a2a6c;
+            font-weight: 700;
+        }
+        
+        .history-table tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .more-results {
+            margin-top: 25px;
+        }
+        
+        .btn-toggle-details {
+            background: #f8f9ff;
+            border: 2px solid #1a2a6c;
+            color: #1a2a6c;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .btn-toggle-details:hover {
+            background: #1a2a6c;
+            color: white;
+        }
+        
+        .btn-toggle-details i {
+            margin-right: 10px;
+        }
+        
+        .full-details {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .error-card {
+            background: #fdecea;
+            border: 1px solid #e74c3c;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .error-card h4 {
+            color: #e74c3c;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+        
+        /* Анимации */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Медиа-запросы для адаптации */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 15px;
+            }
+            
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .service-card {
+                padding: 20px;
+            }
+            
+            .section-title h1 {
+                font-size: 1.8rem;
+            }
+            
+            .section-title p {
+                font-size: 1rem;
+            }
+            
+            .form-body {
+                padding: 20px;
+            }
+            
+            .modal-content {
+                margin: 20px auto;
+            }
+            
+            .card-body {
+                padding: 20px;
+            }
+            
+            .result-row {
+                flex-direction: column;
+            }
+            
+            .result-value {
+                text-align: left;
+                margin-top: 5px;
+            }
+            
+            .payment-option {
+                padding: 15px;
+            }
+            
+            .payment-option i {
+                font-size: 1.5rem;
+                width: 50px;
+                height: 50px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1.display-4 {
+                font-size: 2rem;
+            }
+            
+            p.lead {
+                font-size: 1rem;
+            }
+            
+            .logo-animated {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .logo-core {
+                top: 15px;
+                left: 15px;
+                width: 70px;
+                height: 70px;
+            }
+            
+            .logo-letter {
+                font-size: 30px;
+            }
+            
+            .section-title h1 {
+                font-size: 1.5rem;
+            }
+            
+            .form-control {
+                padding: 12px 15px;
+                font-size: 1rem;
+            }
+            
+            .btn-primary {
+                padding: 14px;
+                font-size: 1.1rem;
+            }
+            
+            .card-header {
+                padding: 20px 15px;
+            }
+            
+            .card-header h2 {
+                font-size: 1.3rem;
+            }
+            
+            .payment-method-header h2 {
+                font-size: 1.3rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -31,7 +816,6 @@
     <div class="gradient-bg gradient-2"></div>
     
     <div class="main-content">
-        <!-- Added logo and site name -->
         <div class="text-center mb-4">
             <div class="logo-animated">
                 <div class="logo-ring"></div>
@@ -259,6 +1043,31 @@
             }, 100);
         }
         
+        // Функция проверки IMEI по алгоритму Луна
+        function validateImei(imei) {
+            // Разрешаем только цифры
+            if (!/^\d+$/.test(imei)) return false;
+            
+            // Проверяем длину (14 для Android, 15 для Apple)
+            if (imei.length !== 14 && imei.length !== 15) return false;
+            
+            // Для 14-значных IMEI (Android) пропускаем проверку
+            if (imei.length === 14) return true;
+            
+            // Алгоритм Луна для 15-значных IMEI
+            let sum = 0;
+            for (let i = 0; i < 14; i++) {
+                let digit = parseInt(imei[i]);
+                if (i % 2 === 1) { // Четные позиции (по индексу, начиная с 0)
+                    digit *= 2;
+                    if (digit > 9) digit -= 9;
+                }
+                sum += digit;
+            }
+            const checkDigit = (10 - (sum % 10)) % 10;
+            return checkDigit === parseInt(imei[14]);
+        }
+        
         function startCheck() {
             const imei = document.getElementById('imei-input').value.trim();
             const errorElement = document.getElementById('imei-error');
@@ -269,9 +1078,9 @@
                 return;
             }
             
-            // Обновленная валидация: разрешаем буквы и цифры, минимум 8 символов
-            if (!/^[a-zA-Z0-9]{8,}$/.test(imei)) {
-                errorElement.textContent = 'შეიყვანეთ სწორი IMEI ან სერიული ნომერი (მინიმუმ 8 სიმბოლო)';
+            // Валидация IMEI
+            if (!validateImei(imei)) {
+                errorElement.textContent = 'შეიყვანეთ სწორი IMEI ნომერი (14 ან 15 ციფრი)';
                 errorElement.style.display = 'block';
                 return;
             }
@@ -418,6 +1227,10 @@
         function performCheck(imei, serviceType) {
             document.getElementById('spinner').style.display = 'flex';
             
+            // Имитация задержки минимум 1.5 секунды
+            const startTime = Date.now();
+            const minDelay = 1500;
+
             fetch('/perform_check', {
                 method: 'POST',
                 headers: {
@@ -435,25 +1248,49 @@
                 return response.json();
             })
             .then(data => {
-                document.getElementById('spinner').style.display = 'none';
+                // Гарантируем минимальную задержку
+                const elapsed = Date.now() - startTime;
+                const remainingDelay = Math.max(0, minDelay - elapsed);
                 
-                if (data.error) {
-                    const errorElement = document.getElementById('imei-error');
-                    errorElement.textContent = data.error;
-                    if (data.details) {
-                        errorElement.innerHTML += `<br><small>${data.details}</small>`;
+                setTimeout(() => {
+                    document.getElementById('spinner').style.display = 'none';
+                    
+                    if (data.error) {
+                        const errorElement = document.getElementById('imei-error');
+                        errorElement.textContent = data.error;
+                        if (data.details) {
+                            errorElement.innerHTML += `<br><small>${data.details}</small>`;
+                        }
+                        errorElement.style.display = 'block';
+                    } else {
+                        // Проверка на N/A значения
+                        const keyFields = ['model', 'modelName', 'brand'];
+                        const hasNA = keyFields.some(field => 
+                            data[field] && data[field].toUpperCase() === 'N/A'
+                        );
+                        
+                        if (hasNA) {
+                            data.error = 'მოწყობილობის იდენტიფიკაცია ვერ მოხერხდა. სცადეთ ხელახლა.';
+                            const errorElement = document.getElementById('imei-error');
+                            errorElement.innerHTML = data.error;
+                            errorElement.style.display = 'block';
+                        } else {
+                            displayResults(imei, serviceType, data);
+                        }
                     }
-                    errorElement.style.display = 'block';
-                } else {
-                    displayResults(imei, serviceType, data);
-                }
+                }, remainingDelay);
             })
             .catch(error => {
-                document.getElementById('spinner').style.display = 'none';
-                const errorElement = document.getElementById('imei-error');
-                errorElement.textContent = 'ქსელის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.';
-                errorElement.style.display = 'block';
-                console.error('შემოწმების შეცდომა:', error);
+                const elapsed = Date.now() - startTime;
+                const remainingDelay = Math.max(0, minDelay - elapsed);
+                
+                setTimeout(() => {
+                    document.getElementById('spinner').style.display = 'none';
+                    const errorElement = document.getElementById('imei-error');
+                    errorElement.textContent = 'ქსელის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.';
+                    errorElement.style.display = 'block';
+                    console.error('შემოწმების შეცდომა:', error);
+                }, remainingDelay);
             });
         }
         
@@ -462,10 +1299,10 @@
             
             let resultsHTML = `
                 <div class="text-center mb-4">
-                    <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    <i class="fas fa-check-circle text-success" style="font-size: 4rem; color: #27ae60;"></i>
                     <h3 class="mt-3">შემოწმება დასრულებულია</h3>
-                    <p>IMEI: ${imei}</p>
-                    <p>შემოწმების ტიპი: ${services.find(s => s.id === serviceType).title}</p>
+                    <p>IMEI: <strong>${imei}</strong></p>
+                    <p>შემოწმების ტიპი: <strong>${services.find(s => s.id === serviceType).title}</strong></p>
                 </div>
             `;
             
@@ -647,8 +1484,21 @@
                 resultsHTML += `
                     <div class="error-card">
                         <h4>მონაცემების დამუშავება ვერ მოხერხდა</h4>
-                        <button class="btn-secondary" onclick="retryParse('${imei}')">
-                            ხელახლა ცდა
+                        <button class="btn-secondary" onclick="retryCheck()">
+                            სცადეთ ხელახლა
+                        </button>
+                    </div>`;
+            }
+            
+            // Добавляем кнопку повторной попытки в случае ошибки
+            if (data.error || (serviceType === 'free' && 
+                (data.model === 'N/A' || data.modelName === 'N/A'))) {
+                
+                resultsHTML += `
+                    <div class="error-card">
+                        <h4>${data.error || 'მოწყობილობის იდენტიფიკაცია ვერ მოხერხდა'}</h4>
+                        <button class="btn-secondary" onclick="retryCheck()">
+                            სცადეთ ხელახლა
                         </button>
                     </div>`;
             }
@@ -674,6 +1524,15 @@
                 });
         }
         
+        // Функция для повторной проверки
+        function retryCheck() {
+            document.getElementById('spinner').style.display = 'flex';
+            document.getElementById('result-modal').style.display = 'none';
+            setTimeout(() => {
+                performCheck(currentImei, currentServiceType);
+            }, 1000);
+        }
+        
         // Функция для показа/скрытия дополнительных деталей
         function toggleDetails(button) {
             const detailsContainer = button.parentElement.querySelector('.full-details');
@@ -689,4 +1548,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
