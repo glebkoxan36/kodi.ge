@@ -7,6 +7,7 @@ import secrets
 import hashlib
 import requests
 import time
+import threading
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, Blueprint
@@ -43,6 +44,9 @@ Session(app)
 
 # Инициализация CSRF защиты
 csrf = CSRFProtect(app)
+
+# Семафор для ограничения одновременных запросов
+REQUEST_SEMAPHORE = threading.Semaphore(3)  # Максимум 3 одновременных запроса
 
 # Функция для генерации цвета аватара
 def generate_avatar_color(name):
@@ -590,6 +594,15 @@ def create_checkout_session():
                 if user and user.get('balance', 0) >= amount_usd:
                     # Списание средств с баланса
                     if stripe_payment.deduct_balance(user_id, amount_usd):
+                        # Создаем запись о платеже
+                        self.payments_collection.insert_one({
+                            'user_id': ObjectId(user_id),
+                            'amount': -amount_usd,
+                            'currency': 'usd',
+                            'type': 'imei_check',
+                            'timestamp': datetime.utcnow(),
+                            'description': f'Оплата проверки IMEI'
+                        })
                         # Создаем запись о проверке
                         session_id = f"balance_{ObjectId()}"
                         record = {
@@ -640,7 +653,7 @@ def create_checkout_session():
 @app.route('/perform_balance_check', methods=['POST'])
 @csrf.exempt
 def perform_balance_check():
-    """Выполнение проверки при оплате балансом"""
+    """Выполняет проверку при оплате с баланса с повторными попытками"""
     try:
         data = request.json
         imei = data.get('imei')
@@ -650,7 +663,39 @@ def perform_balance_check():
         if not validate_imei(imei):
             return jsonify({'error': 'არასწორი IMEI'}), 400
         
-        result = perform_api_check(imei, service_type)
+        # Выполняем проверку с использованием семафора
+        with REQUEST_SEMAPHORE:
+            time.sleep(1)  # Искусственная задержка перед запросом
+            
+            attempts = 0
+            max_attempts = 3
+            delay = 2  # seconds
+            result = None
+            
+            while attempts < max_attempts:
+                try:
+                    result = perform_api_check(imei, service_type)
+                    
+                    # Искусственная задержка для обработки ответа
+                    time.sleep(0.5)
+                    
+                    if result and 'error' not in result:
+                        break
+                    
+                    # Повторная попытка при ошибках сервера
+                    if result and 'error' in result and 'სერვერის' in result['error']:
+                        raise Exception(f"Server error: {result['error']}")
+                        
+                except Exception as e:
+                    attempts += 1
+                    if attempts < max_attempts:
+                        time.sleep(delay)
+                        delay *= 2  # Экспоненциальная задержка
+                    else:
+                        return jsonify({
+                            'error': f'Request failed after {max_attempts} attempts',
+                            'details': str(e)
+                        }), 500
         
         if not result or 'error' in result:
             error_msg = result.get('error', 'ამ IMEI-სთვის მონაცემები ხელმიუწვდომელია')
@@ -682,7 +727,36 @@ def payment_success():
         # Для Stripe получаем сессию
         stripe_session = stripe.checkout.Session.retrieve(session_id)
         
-        result = perform_api_check(imei, service_type)
+        # Выполняем проверку с использованием семафора
+        with REQUEST_SEMAPHORE:
+            time.sleep(1)  # Искусственная задержка перед запросом
+            
+            attempts = 0
+            max_attempts = 3
+            delay = 2  # seconds
+            result = None
+            
+            while attempts < max_attempts:
+                try:
+                    result = perform_api_check(imei, service_type)
+                    
+                    # Искусственная задержка для обработки ответа
+                    time.sleep(0.5)
+                    
+                    if result and 'error' not in result:
+                        break
+                    
+                    # Повторная попытка при ошибках сервера
+                    if result and 'error' in result and 'სერვერის' in result['error']:
+                        raise Exception(f"Server error: {result['error']}")
+                        
+                except Exception as e:
+                    attempts += 1
+                    if attempts < max_attempts:
+                        time.sleep(delay)
+                        delay *= 2  # Экспоненциальная задержка
+                    else:
+                        return render_template('error.html', error=f"შემოწმება ვერ მოხერხდა {max_attempts} ცდის შემდეგ"), 500
         
         if not result or 'error' in result:
             error_msg = result.get('error', 'ამ IMEI-სთვის მონაცემები ხელმიუწვდომელია')
@@ -713,7 +787,7 @@ def payment_success():
             checks_collection.insert_one(record)
         
         # Перенаправляем на страницу сервиса с параметрами для отображения результата
-        return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
+        return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
     
     except Exception as e:
         app.logger.error(f"Payment success error: {str(e)}")
@@ -757,7 +831,39 @@ def perform_check():
         if not validate_imei(imei):
             return jsonify({'error': 'IMEI-ის არასწორი ფორმატი'}), 400
         
-        result = perform_api_check(imei, service_type)
+        # Выполняем проверку с использованием семафора
+        with REQUEST_SEMAPHORE:
+            time.sleep(1)  # Искусственная задержка перед запросом
+            
+            attempts = 0
+            max_attempts = 3
+            delay = 2  # seconds
+            result = None
+            
+            while attempts < max_attempts:
+                try:
+                    result = perform_api_check(imei, service_type)
+                    
+                    # Искусственная задержка для обработки ответа
+                    time.sleep(0.5)
+                    
+                    if result and 'error' not in result:
+                        break
+                    
+                    # Повторная попытка при ошибках сервера
+                    if result and 'error' in result and 'სერვერის' in result['error']:
+                        raise Exception(f"Server error: {result['error']}")
+                        
+                except Exception as e:
+                    attempts += 1
+                    if attempts < max_attempts:
+                        time.sleep(delay)
+                        delay *= 2  # Экспоненциальная задержка
+                    else:
+                        return jsonify({
+                            'error': f'Request failed after {max_attempts} attempts',
+                            'details': str(e)
+                        }), 500
         
         if not result:
             return jsonify({'error': 'API-დან ცარიელი პასუხი'}), 500
