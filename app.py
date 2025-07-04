@@ -18,7 +18,7 @@ from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from urllib.parse import quote_plus
-from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError  # Добавлен CSRFError
+from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_session import Session
 from bs4 import BeautifulSoup
 
@@ -58,7 +58,7 @@ def generate_avatar_color(name):
 def inject_utils():
     return {
         'generate_avatar_color': generate_avatar_color,
-        'csrf_token': generate_csrf()
+        'csrf_token': generate_csrf
     }
 
 # Настройка логирования
@@ -517,6 +517,7 @@ stripe_payment = StripePayment(
 )
 
 @app.route('/create-checkout-session', methods=['POST'])
+@csrf.exempt
 def create_checkout_session():
     try:
         data = request.json
@@ -618,6 +619,7 @@ def create_checkout_session():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/perform_balance_check', methods=['POST'])
+@csrf.exempt
 def perform_balance_check():
     """Выполнение проверки при оплате балансом"""
     try:
@@ -723,6 +725,7 @@ def get_check_result():
     })
 
 @app.route('/perform_check', methods=['POST'])
+@csrf.exempt
 def perform_check():
     try:
         data = request.get_json()
@@ -806,6 +809,7 @@ def reparse_imei():
     })
 
 @app.route('/stripe_webhook', methods=['POST'])
+@csrf.exempt
 def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
@@ -1003,6 +1007,7 @@ def convert_objectids(obj):
     return obj
 
 @app.route('/api/search_phones', methods=['GET'])
+@csrf.exempt
 def api_search_phones():
     query = request.args.get('query', '')
     page = int(request.args.get('page', 1))
@@ -1046,6 +1051,7 @@ def api_search_phones():
         return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/api/phone_details', methods=['GET'])
+@csrf.exempt
 def api_phone_details():
     """Получение деталей телефона по ID"""
     phone_id = request.args.get('id')
@@ -1068,6 +1074,7 @@ def api_phone_details():
         return jsonify({'error': 'Invalid phone ID'}), 400
 
 @app.route('/api/compare', methods=['POST'])
+@csrf.exempt
 def api_compare_phones():
     data = request.json
     phone1_id = data.get('phone1_id')
@@ -1186,6 +1193,7 @@ def settings():
 
 @user_bp.route('/topup', methods=['GET', 'POST'])
 @login_required
+@csrf.exempt
 def topup_balance():
     """Пополнение баланса"""
     if request.method == 'POST':
@@ -1341,6 +1349,7 @@ def show_register_form():
     return render_template('register.html', current_year=current_year)
 
 @auth_bp.route('/register', methods=['POST'])
+@csrf.exempt
 def register():
     data = request.form
     first_name = data.get('first_name')
@@ -1421,6 +1430,7 @@ def show_login_form():
     return render_template('login.html')
 
 @auth_bp.route('/login', methods=['POST'])
+@csrf.exempt
 def login():
     identifier = request.form.get('identifier', '').strip()
     password = request.form.get('password')
