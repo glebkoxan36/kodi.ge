@@ -40,7 +40,7 @@ WEIGHTS = {
 SPEC_CATEGORIES = {
     "Процессор": [
         "Процессор", "CPU Балл", "CPU Ядра", "CPU Частота (ГГц)",
-        "Оценка AnTuTu", "Geekbench (одиночное ядо)", "Geekbench (многоядерное)", "TDP (Вт)"
+        "Оценка AnTuTu", "Geekbench (одиночное ядро)", "Geekbench (многоядерное)", "TDP (Вт)"
     ],
     "Видеокарта": [
         "GPU", "GPU Балл", "3DMark Wild Life", "GFXBench ES 3.1 (fps)", 
@@ -150,6 +150,9 @@ GPU_SCORES = {
 
 def normalize_cpu_name(name):
     """Нормализация названий процессоров"""
+    if not name:
+        return "Unknown CPU"
+    
     name = name.lower()
     if "dimensity" in name:
         if "9300" in name: return "Dimensity 9300"
@@ -177,6 +180,9 @@ def normalize_cpu_name(name):
 
 def normalize_gpu_name(name):
     """Нормализация названий видеокарт"""
+    if not name:
+        return "Unknown GPU"
+    
     name = name.lower()
     if "adreno" in name:
         if "840" in name: return "Qualcomm Adreno 840"
@@ -229,10 +235,17 @@ def try_parse_number(value):
     """Парсинг числовых значений из строк"""
     if isinstance(value, (int, float)):
         return value
+    if value is None:
+        return None
+        
     try:
-        cleaned = re.sub(r'[^\d.,-]', '', value)
-        cleaned = cleaned.replace(',', '.')
-        return float(cleaned)
+        # Извлекаем число из строки с единицами измерения
+        match = re.search(r'([\d.,-]+)', str(value))
+        if match:
+            cleaned = match.group(1).replace(',', '.')
+            return float(cleaned)
+        else:
+            return None
     except:
         return None
 
@@ -245,8 +258,22 @@ def compare_values(rule, value1, value2):
             "ARM Immortalis-G925", "Apple A18 Pro GPU", 
             "Samsung Xclipse 940"
         ]
-        idx1 = gpu_priority_order.index(value1) if value1 in gpu_priority_order else len(gpu_priority_order)
-        idx2 = gpu_priority_order.index(value2) if value2 in gpu_priority_order else len(gpu_priority_order)
+        
+        # Нормализация значений для сравнения
+        val1 = normalize_gpu_name(str(value1))
+        val2 = normalize_gpu_name(str(value2)))
+        
+        # Поиск индексов в приоритетном списке
+        try:
+            idx1 = gpu_priority_order.index(val1)
+        except ValueError:
+            idx1 = len(gpu_priority_order)
+            
+        try:
+            idx2 = gpu_priority_order.index(val2)
+        except ValueError:
+            idx2 = len(gpu_priority_order)
+            
         if idx1 < idx2: return 'phone1'
         elif idx1 > idx2: return 'phone2'
         return None
@@ -284,10 +311,13 @@ def compare_values(rule, value1, value2):
 def compare_two_phones(phone1, phone2):
     """Сравнение двух телефонов"""
     # Обогащение данных
-    phone1 = enrich_phone_data(phone1)
-    phone2 = enrich_phone_data(phone2)
+    try:
+        phone1 = enrich_phone_data(phone1)
+        phone2 = enrich_phone_data(phone2)
+    except Exception as e:
+        print(f"Error enriching phone data: {e}")
     
-    ignore_fields = ['_id', 'ID', 'image_url']
+    ignore_fields = ['_id', 'ID', 'image_url', 'image']
     phone1_clean = {k: v for k, v in phone1.items() if k not in ignore_fields}
     phone2_clean = {k: v for k, v in phone2.items() if k not in ignore_fields}
     
@@ -368,6 +398,9 @@ def compare_two_phones(phone1, phone2):
     if overall_scores['phone1'] > overall_scores['phone2']: overall_winner = 'phone1'
     elif overall_scores['phone1'] < overall_scores['phone2']: overall_winner = 'phone2'
     
+    # Генерация AI анализа
+    ai_analysis = generate_ai_analysis(phone1, phone2, comparison, overall_winner, percent_phone1, percent_phone2)
+    
     return {
         'phone1': phone1,
         'phone2': phone2,
@@ -378,8 +411,45 @@ def compare_two_phones(phone1, phone2):
         'percent_phone1': percent_phone1,
         'percent_phone2': percent_phone2,
         'advantage_percent': advantage_percent,
-        'total_comparable_specs': total_score
+        'total_comparable_specs': total_score,
+        'ai_analysis': ai_analysis
     }
+
+def generate_ai_analysis(phone1, phone2, comparison, overall_winner, percent1, percent2):
+    """Генерация AI анализа сравнения"""
+    brand1 = phone1.get('Бренд', phone1.get('brand', 'Unknown'))
+    model1 = phone1.get('Модель', phone1.get('model', 'Unknown'))
+    brand2 = phone2.get('Бренд', phone2.get('brand', 'Unknown'))
+    model2 = phone2.get('Модель', phone2.get('model', 'Unknown'))
+    
+    winner_model = model1 if overall_winner == 'phone1' else model2
+    loser_model = model2 if overall_winner == 'phone1' else model1
+    advantage = abs(percent1 - percent2)
+    
+    analysis = f"<p>შედარების შედეგები აჩვენებს, რომ <strong>{winner_model}</strong> საერთო ჯამში {advantage}%-ით უკეთესია ვიდრე {loser_model}.</p>"
+    
+    # Добавляем информацию по категориям
+    analysis += "<p>ძირითადი განსხვავებები:</p><ul>"
+    
+    for category in comparison:
+        if category['category_percent_phone1'] != category['category_percent_phone2']:
+            winner_value = max(category['category_percent_phone1'], category['category_percent_phone2'])
+            loser_value = min(category['category_percent_phone1'], category['category_percent_phone2'])
+            winner_phone = model1 if category['category_percent_phone1'] > category['category_percent_phone2'] else model2
+            
+            analysis += f"<li><strong>{category['category']}</strong>: {winner_phone} {winner_value}%-ით უკეთესია (განსხვავება: {winner_value - loser_value}%)</li>"
+    
+    analysis += "</ul>"
+    
+    # Заключение
+    if advantage < 5:
+        analysis += "<p>ორივე მოწყობილობა ძალიან ახლოსაა თავიანთ შესრულებაში. არჩევანი უნდა გაკეთდეს ინდივიდუალური პრიორიტეტების მიხედვით.</p>"
+    elif advantage < 15:
+        analysis += f"<p><strong>{winner_model}</strong> მნიშვნელოვნად უკეთესია ვიდრე {loser_model}, განსაკუთრებით ზემოთ ჩამოთვლილ კატეგორიებში.</p>"
+    else:
+        analysis += f"<p><strong>{winner_model}</strong> აშკარად უკეთესი არჩევანია ვიდრე {loser_model} ყველა ძირითად კატეგორიაში.</p>"
+    
+    return analysis
 
 def generate_image_path(brand, model):
     """Генерирует путь к изображению телефона"""
