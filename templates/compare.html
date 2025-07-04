@@ -551,6 +551,17 @@
             margin-top: 20px;
         }
         
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .start-comparison-btn {
+            display: none;
+        }
+        
         @media (max-width: 768px) {
             .section-title {
                 font-size: 1.8rem;
@@ -695,21 +706,29 @@
                 </div>
             </button>
             
-            <div id="secondSelectorContainer" class="second-selector-container">
-                <button id="selectPhone2Btn" class="phone-selector-btn">
-                    <div class="phone-thumb-container">
-                        <div class="add-icon">+</div>
-                    </div>
-                    <div class="phone-info-text">
-                        <div class="phone-title">აირჩიეთ მეორე ტელეფონი</div>
-                        <div class="phone-subtitle">დააწკაპუნეთ შესადარებლად დასამატებლად</div>
-                    </div>
+            <div id="afterFirstSelected" style="display: none;">
+                <button id="viewSingleSpecsBtn" class="btn-primary">
+                    ტელეფონის მახასიათებლების ჩვენება
                 </button>
+                
+                <div id="secondSelectorContainer" class="second-selector-container" style="margin-top: 20px;">
+                    <button id="selectPhone2Btn" class="phone-selector-btn">
+                        <div class="phone-thumb-container">
+                            <div class="add-icon">+</div>
+                        </div>
+                        <div class="phone-info-text">
+                            <div class="phone-title">აირჩიეთ მეორე ტელეფონი</div>
+                            <div class="phone-subtitle">დააწკაპუნეთ შესადარებლად დასამატებლად</div>
+                        </div>
+                    </button>
+                </div>
             </div>
             
-            <button id="viewSingleSpecsBtn" class="btn-primary single-phone-btn">
-                ტელეფონის მახასიათებლების ჩვენება
-            </button>
+            <div class="action-buttons">
+                <button id="startComparisonBtn" class="btn-primary start-comparison-btn">
+                    შედარების დაწყება
+                </button>
+            </div>
         </div>
         
         <div id="singlePhoneSpecs" class="comparison-section">
@@ -826,6 +845,7 @@
                 $('.close-modal').on('click', closeModal);
                 $('#viewSingleSpecsBtn').on('click', handleViewSingleSpecs);
                 $('#showFullSpecsBtn').on('click', toggleFullSpecs);
+                $('#startComparisonBtn').on('click', comparePhones);
                 
                 // Обработчики для динамических элементов
                 $(document).on('click', '.retry-btn', handleRetryClick);
@@ -969,10 +989,11 @@
                 if (selectedTarget === 'selectPhone1') {
                     phone1 = phone;
                     updatePhoneDisplay(phone, '#selectPhone1Btn');
-                    showSecondSelector();
+                    showAfterFirstSelected();
                 } else {
                     phone2 = phone;
                     updatePhoneDisplay(phone, '#selectPhone2Btn');
+                    showComparisonButton();
                 }
             }
             
@@ -1033,16 +1054,23 @@
                 }, 300);
             }
             
-            function showSecondSelector() {
-                $('#secondSelectorContainer').show();
+            function showAfterFirstSelected() {
+                $('#afterFirstSelected').show();
                 $('#viewSingleSpecsBtn').show();
+                $('#startComparisonBtn').hide();
+            }
+            
+            function showComparisonButton() {
+                $('#afterFirstSelected').hide();
+                $('#viewSingleSpecsBtn').hide();
+                $('#startComparisonBtn').show();
             }
             
             function checkComparisonState() {
                 if (phone1 && !phone2) {
                     $('#comparisonResult').hide();
                 } else if (phone1 && phone2) {
-                    comparePhones();
+                    // Автоматическое сравнение не запускаем
                 } else {
                     hideAllSections();
                 }
@@ -1091,9 +1119,13 @@
                         </div>
                     </div>
                 `);
+                
+                $('#comparisonResult').hide();
             }
             
             function comparePhones() {
+                if (!phone1 || !phone2) return;
+                
                 $('#comparisonResult').html(`
                     <div style="text-align: center; padding: 50px;">
                         <div class="loading-spinner" style="width: 50px; height: 50px;"></div>
@@ -1122,6 +1154,8 @@
                         `);
                     }
                 });
+                
+                $('#singlePhoneSpecs').hide();
             }
             
             function displayComparisonResult(result) {
@@ -1280,4 +1314,4 @@
         });
     </script>
 </body>
-</html>
+                </html>
