@@ -275,7 +275,7 @@ def index():
                          stripe_public_key=STRIPE_PUBLIC_KEY,
                          paid_price=prices['paid'] / 100,
                          premium_price=prices['premium'] / 100,
-                         user=user_data)
+                         currentUser=user_data)
 
 @app.route('/contacts')
 def contacts_page():
@@ -294,7 +294,7 @@ def contacts_page():
                     'avatar_color': avatar_color
                 }
     
-    return render_template('contacts.html', user=user_data)
+    return render_template('contacts.html', currentUser=user_data)
 
 @app.route('/knowledge-base')
 def knowledge_base():
@@ -313,7 +313,7 @@ def knowledge_base():
                     'avatar_color': avatar_color
                 }
     
-    return render_template('knowledge-base.html', user=user_data)
+    return render_template('knowledge-base.html', currentUser=user_data)
 
 # ======================================
 # Роут для страницы проверки Apple IMEI
@@ -413,7 +413,7 @@ def apple_check():
         service_type=service_type,
         services_data=services_data,
         stripe_public_key=STRIPE_PUBLIC_KEY,
-        user=user_data
+        currentUser=user_data
     )
 
 # ======================================
@@ -528,7 +528,7 @@ def android_check():
         service_type=service_type,
         services_data=services_data,
         stripe_public_key=STRIPE_PUBLIC_KEY,
-        user=user_data
+        currentUser=user_data
     )
 
 # Инициализация StripePayment
@@ -594,15 +594,6 @@ def create_checkout_session():
                 if user and user.get('balance', 0) >= amount_usd:
                     # Списание средств с баланса
                     if stripe_payment.deduct_balance(user_id, amount_usd):
-                        # Создаем запись о платеже
-                        self.payments_collection.insert_one({
-                            'user_id': ObjectId(user_id),
-                            'amount': -amount_usd,
-                            'currency': 'usd',
-                            'type': 'imei_check',
-                            'timestamp': datetime.utcnow(),
-                            'description': f'Оплата проверки IMEI'
-                        })
                         # Создаем запись о проверке
                         session_id = f"balance_{ObjectId()}"
                         record = {
@@ -786,8 +777,12 @@ def payment_success():
         if client:
             checks_collection.insert_one(record)
         
-        # Перенаправляем на страницу сервиса с параметрами для отображения результата
-        return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
+        # Определяем тип устройства для перенаправления
+        apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
+        if service_type in apple_services:
+            return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
+        else:
+            return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
     
     except Exception as e:
         app.logger.error(f"Payment success error: {str(e)}")
@@ -942,7 +937,7 @@ def stripe_webhook():
     try:
         # Обработка вебхука через StripePayment
         stripe_payment.handle_webhook(payload, sig_header)
-        return jsonify({'status': 'success'})
+        return jsonify({'status': 'success'}), 200
     
     except ValueError as e:
         return jsonify({'error': 'არასწორი მონაცემები'}), 400
@@ -1376,7 +1371,7 @@ def payment_history():
     payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1))
     
     return render_template(
-        'accounts.html',
+        'user/accounts.html',
         user=user,
         payments=payments
     )
@@ -1474,7 +1469,6 @@ def show_register_form():
     return render_template('register.html', current_year=current_year)
 
 @auth_bp.route('/register', methods=['POST'])
-@csrf.exempt
 def register():
     data = request.form
     first_name = data.get('first_name')
