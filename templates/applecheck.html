@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <style>
-        /* Дополнительные стили для решения проблем */
+        /* Основные стили */
         #selected-service-container, 
         #payment-method-modal, 
         #spinner {
@@ -24,6 +24,455 @@
         .balance-sufficient { color: #28a745; }
         .balance-insufficient { color: #dc3545; }
         .balance-error { color: #ffc107; }
+
+        /* Стили для результатов */
+        .compact-results {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .result-grid-item {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .result-label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        
+        .result-value {
+            color: #212529;
+            word-break: break-word;
+        }
+        
+        .status-clean {
+            color: #28a745;
+        }
+        
+        .status-warning {
+            color: #dc3545;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .history-table th, .history-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .history-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        /* Анимации и прочие стили */
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.7;
+        }
+        
+        .gradient-1 {
+            background: radial-gradient(circle at 10% 20%, #ff758c, transparent 40%);
+        }
+        
+        .gradient-2 {
+            background: radial-gradient(circle at 90% 80%, #ff7eb3, transparent 40%);
+        }
+        
+        .logo-animated {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+        }
+        
+        .logo-ring {
+            position: absolute;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            border-top-color: #4a6bff;
+            animation: spin 2s linear infinite;
+        }
+        
+        .logo-ring:nth-child(1) {
+            width: 100%;
+            height: 100%;
+            border-top-color: #4a6bff;
+            animation-delay: 0.1s;
+        }
+        
+        .logo-ring:nth-child(2) {
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            border-top-color: #ff758c;
+            animation-delay: 0.2s;
+        }
+        
+        .logo-ring:nth-child(3) {
+            top: 20%;
+            left: 20%;
+            width: 60%;
+            height: 60%;
+            border-top-color: #7f00ff;
+            animation-delay: 0.3s;
+        }
+        
+        .logo-core {
+            position: absolute;
+            top: 30%;
+            left: 30%;
+            width: 40%;
+            height: 40%;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .logo-letter {
+            font-weight: bold;
+            color: #4a6bff;
+            font-size: 1.2rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .service-icon {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #4a6bff;
+        }
+        
+        .service-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .service-price {
+            font-weight: bold;
+            color: #4a6bff;
+            margin: 10px 0;
+            font-size: 1.2rem;
+        }
+        
+        .service-description {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .service-action {
+            color: #4a6bff;
+            font-weight: bold;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .selected-service-container {
+            margin-top: 30px;
+        }
+        
+        .btn-back {
+            background: none;
+            border: none;
+            color: #4a6bff;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .imei-form-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        
+        .form-header h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background: #4a6bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        
+        .btn-primary:hover {
+            background: #3a5bef;
+        }
+        
+        .result-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-header h2 {
+            margin: 0;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .card-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .payment-method-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .payment-method-content {
+            background: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            padding: 20px;
+        }
+        
+        .payment-method-header h2 {
+            margin-top: 0;
+        }
+        
+        .payment-method-options {
+            margin: 20px 0;
+        }
+        
+        .payment-option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .payment-option:hover {
+            border-color: #4a6bff;
+        }
+        
+        .payment-option i {
+            font-size: 1.5rem;
+            margin-right: 15px;
+            color: #4a6bff;
+        }
+        
+        .option-title {
+            font-weight: bold;
+        }
+        
+        .balance-info {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .payment-method-footer {
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .spinner-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4a6bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1.5rem;
+        }
+        
+        .mt-3 {
+            margin-top: 1rem;
+        }
+        
+        .fw-bold {
+            font-weight: bold;
+        }
+        
+        .display-4 {
+            font-size: 2.5rem;
+        }
+        
+        .lead {
+            font-size: 1.25rem;
+            font-weight: 300;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .section-title h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .section-title p {
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -31,7 +480,6 @@
     <div class="gradient-bg gradient-2"></div>
     
     <div class="main-content">
-        <!-- Added logo and site name -->
         <div class="text-center mb-4">
             <div class="logo-animated">
                 <div class="logo-ring"></div>
@@ -469,224 +917,101 @@
                 </div>
             `;
             
-            // Показать предупреждение, если данные были перепарсены
-            if (data.original_html) {
+            // Для бесплатной проверки - компактный формат
+            if (serviceType === 'free') {
                 resultsHTML += `
-                    <div class="warning-banner">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        ზოგიერთი მონაცემი შეიძლება არ იყოს ამოღებული
-                    </div>`;
-            }
-
-            // Отобразить необработанные данные сервера
-            if (data.server_response) {
-                resultsHTML += `
-                    <div class="raw-results">
-                        <h4>სერვერის სრული პასუხი:</h4>
-                        <pre>${data.server_response}</pre>
-                    </div>`;
-            } 
-            // Отобразить таблицу результатов
-            else if (data && Object.keys(data).length > 0) {
-                // Для бесплатной проверки - специальный формат
-                if (serviceType === 'free') {
-                    // Определяем ключевые параметры для красивого отображения
-                    const keyFields = {
-                        'brand': 'მწარმოებელი',
-                        'modelName': 'მოდელის სახელი',
-                        'model': 'მოდელი',
-                        'manufacture': 'წარმოების თარიღი',
-                        'state': 'მდგომარეობა',
-                        'activation_status': 'აქტივაციის სტატუსი',
-                        'fmi_status': 'FMI სტატუსი',
-                        'sim_lock': 'SIM ლოკი',
-                        'blacklist_status': 'შავი სია',
-                        'carrier': 'ოპერატორი',
-                        'warranty_status': 'გარანტია'
-                    };
-                    
-                    // Фильтруем только существующие поля
-                    const existingFields = Object.keys(keyFields).filter(field => data[field]);
-                    
-                    // Форматируем основные параметры
-                    resultsHTML += `
-                        <div class="free-check-results">
-                            <div class="result-card">
-                                <h3 class="card-title">ძირითადი მონაცემები</h3>
-                                <div class="card-body">
-                    `;
-                    
-                    // Добавляем отформатированные строки
-                    existingFields.forEach(field => {
-                        const value = data[field];
+                    <div class="compact-results">
+                        <div class="result-grid">
+                `;
+                
+                // Определяем порядок и формат отображения полей
+                const displayFields = [
+                    { key: 'brand', label: 'ბრენდი' },
+                    { key: 'model', label: 'მოდელი' },
+                    { key: 'modelName', label: 'მოდელის კოდი' },
+                    { key: 'imei', label: 'IMEI ნომერი' },
+                    { key: 'serial', label: 'სერიული ნომერი' },
+                    { key: 'manufacture_date', label: 'წარმოების თარიღი' },
+                    { key: 'activation_status', label: 'აქტივაციის სტატუსი' },
+                    { key: 'fmi_status', label: 'FMI სტატუსი' },
+                    { key: 'blacklist_status', label: 'შავი სიის სტატუსი' },
+                    { key: 'sim_lock', label: 'SIM ლოკი' },
+                    { key: 'carrier', label: 'ოპერატორი' },
+                    { key: 'warranty_status', label: 'გარანტიის სტატუსი' }
+                ];
+                
+                // Добавляем поля в сетку
+                displayFields.forEach(field => {
+                    if (data[field.key]) {
+                        const value = data[field.key];
                         let statusClass = '';
                         const valStr = String(value).toLowerCase();
                         
-                        if (valStr.includes('выключен') || 
-                            valStr.includes('не в списке') || 
-                            valStr.includes('чистый') || 
-                            valStr.includes('отсутствует') ||
-                            valStr.includes('unlocked')) {
+                        if (valStr.includes('off') || valStr.includes('clean') || valStr.includes('unlocked')) {
                             statusClass = 'status-clean';
-                        } else if (valStr.includes('включен') || 
-                                   valStr.includes('заблокирован') || 
-                                   valStr.includes('в списке') ||
-                                   valStr.includes('locked')) {
+                        } else if (valStr.includes('on') || valStr.includes('blacklisted') || valStr.includes('locked')) {
                             statusClass = 'status-warning';
                         }
                         
                         resultsHTML += `
-                            <div class="result-row">
-                                <span class="result-label">${keyFields[field]}:</span>
+                            <div class="result-grid-item">
+                                <span class="result-label">${field.label}:</span>
                                 <span class="result-value ${statusClass}">${value}</span>
                             </div>
                         `;
-                    });
-                    
-                    resultsHTML += `
-                                </div>
-                            </div>
-                    `;
-                    
-                    // Добавляем кнопку для просмотра всех параметров
-                    resultsHTML += `
-                        <div class="more-results">
-                            <button class="btn-toggle-details" onclick="toggleDetails(this)">
-                                <i class="fas fa-chevron-down"></i> სრული ინფორმაციის ნახვა
-                            </button>
-                            <div class="full-details">
-                                <h4>სრული შედეგები</h4>
-                                <table class="history-table">
-                                    <tr>
-                                        <th>პარამეტრი</th>
-                                        <th>მნიშვნელობა</th>
-                                    </tr>
-                    `;
-                    
-                    // Добавляем все параметры в таблицу
-                    for (const [key, value] of Object.entries(data)) {
-                        if (key === 'error' || key === 'html' || key === 'details' || key === 'original_html') continue;
-                        
-                        let statusClass = '';
-                        const valStr = String(value).toLowerCase();
-                        
-                        if (valStr.includes('выключен') || 
-                            valStr.includes('не в списке') || 
-                            valStr.includes('чистый') || 
-                            valStr.includes('отсутствует') ||
-                            valStr.includes('unlocked')) {
-                            statusClass = 'status-clean';
-                        } else if (valStr.includes('включен') || 
-                                   valStr.includes('заблокирован') || 
-                                   valStr.includes('в списке') ||
-                                   valStr.includes('locked')) {
-                            statusClass = 'status-warning';
-                        }
-                        
-                        // Пропускаем уже отображенные поля
-                        if (existingFields.includes(key)) continue;
-                        
-                        resultsHTML += `
-                            <tr>
-                                <td>${key}</td>
-                                <td class="${statusClass}">${value}</td>
-                            </tr>
-                        `;
                     }
-                    
-                    resultsHTML += `
-                                </table>
-                            </div>
+                });
+                
+                resultsHTML += `
                         </div>
                     </div>
-                    `;
-                } else {
-                    // Для платных проверок - обычная таблица
-                    resultsHTML += `
-                        <div class="table-container">
-                            <table class="history-table">
-                                <tr>
-                                    <th>პარამეტრი</th>
-                                    <th>მნიშვნელობა</th>
-                                </tr>
-                    `;
-                    
-                    for (const [key, value] of Object.entries(data)) {
-                        if (key === 'error' || key === 'html' || key === 'details' || key === 'original_html') continue;
-                        
-                        let statusClass = '';
-                        const valStr = String(value).toLowerCase();
-                        
-                        if (valStr.includes('выключен') || 
-                            valStr.includes('не в списке') || 
-                            valStr.includes('чистый') || 
-                            valStr.includes('отсутствует') ||
-                            valStr.includes('unlocked')) {
-                            statusClass = 'status-clean';
-                        } else if (valStr.includes('включен') || 
-                                   valStr.includes('заблокирован') || 
-                                   valStr.includes('в списке') ||
-                                   valStr.includes('locked')) {
-                            statusClass = 'status-warning';
-                        }
-                        
-                        resultsHTML += `
+                `;
+            } 
+            // Для платных проверок - обычная таблица
+            else if (data && Object.keys(data).length > 0) {
+                resultsHTML += `
+                    <div class="table-container">
+                        <table class="history-table">
                             <tr>
-                                <td>${key}</td>
-                                <td class="${statusClass}">${value}</td>
+                                <th>პარამეტრი</th>
+                                <th>მნიშვნელობა</th>
                             </tr>
-                        `;
+                `;
+                
+                for (const [key, value] of Object.entries(data)) {
+                    if (key === 'error' || key === 'html' || key === 'details') continue;
+                    
+                    let statusClass = '';
+                    const valStr = String(value).toLowerCase();
+                    
+                    if (valStr.includes('off') || valStr.includes('clean') || valStr.includes('unlocked')) {
+                        statusClass = 'status-clean';
+                    } else if (valStr.includes('on') || valStr.includes('blacklisted') || valStr.includes('locked')) {
+                        statusClass = 'status-warning';
                     }
                     
                     resultsHTML += `
-                            </table>
-                        </div>
+                        <tr>
+                            <td>${key}</td>
+                            <td class="${statusClass}">${value}</td>
+                        </tr>
                     `;
                 }
+                
+                resultsHTML += `
+                        </table>
+                    </div>
+                `;
             } else {
                 resultsHTML += `
                     <div class="error-card">
                         <h4>მონაცემების დამუშავება ვერ მოხერხდა</h4>
-                        <button class="btn-secondary" onclick="retryParse('${imei}')">
-                            ხელახლა ცდა
-                        </button>
                     </div>`;
             }
             
             resultContent.innerHTML = resultsHTML;
             document.getElementById('result-modal').style.display = 'flex';
         }
-        
-        // Функция повторного парсинга
-        function retryParse(imei) {
-            document.getElementById('spinner').style.display = 'flex';
-            fetch(`/reparse_imei?imei=${imei}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('spinner').style.display = 'none';
-                    displayResults(imei, currentServiceType, data);
-                })
-                .catch(error => {
-                    document.getElementById('spinner').style.display = 'none';
-                    const errorElement = document.getElementById('imei-error');
-                    errorElement.textContent = 'ხელახლა დამუშავების შეცდომა';
-                    errorElement.style.display = 'block';
-                });
-        }
-        
-        // Функция для показа/скрытия дополнительных деталей
-        function toggleDetails(button) {
-            const detailsContainer = button.parentElement.querySelector('.full-details');
-            const icon = button.querySelector('i');
-            
-            if (detailsContainer.style.display === 'none') {
-                detailsContainer.style.display = 'block';
-                button.innerHTML = '<i class="fas fa-chevron-up"></i> დეტალების დამალვა';
-            } else {
-                detailsContainer.style.display = 'none';
-                button.innerHTML = '<i class="fas fa-chevron-down"></i> სრული ინფორმაციის ნახვა';
-            }
-        }
     </script>
 </body>
-    </html>
+</html>
