@@ -49,6 +49,26 @@
         }
         
         .card-footer { padding: 20px; }
+        
+        /* Стили для ошибок */
+        .error-card {
+            background: var(--danger-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .error-card h4 {
+            margin-bottom: 15px;
+            color: var(--danger-color);
+        }
+        .error-details {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
@@ -578,7 +598,7 @@
                         const errorElement = document.getElementById('imei-error');
                         errorElement.textContent = data.error;
                         if (data.details) {
-                            errorElement.innerHTML += `<br><small>${data.details}</small>`;
+                            errorElement.innerHTML += `<div class="error-details">${data.details}</div>`;
                         }
                         errorElement.style.display = 'block';
                     } else {
@@ -615,6 +635,22 @@
         
         function displayResults(imei, serviceType, data) {
             const resultContent = document.getElementById('result-content');
+            
+            // Если есть ошибка, показываем ее
+            if (data.error) {
+                resultContent.innerHTML = `
+                    <div class="error-card">
+                        <h3 class="status-error">შეცდომა შემოწმების დროს</h3>
+                        <p>${data.error}</p>
+                        ${data.details ? `<div class="error-details">${data.details}</div>` : ''}
+                        <div class="result-actions">
+                            <button class="btn-primary" onclick="retryCheck()">სცადეთ ხელახლა</button>
+                        </div>
+                    </div>
+                `;
+                openModal('result-modal');
+                return;
+            }
             
             let resultsHTML = `
                 <div class="text-center mb-4">
@@ -840,12 +876,12 @@
             }
             
             // Добавляем кнопку повторной попытки в случае ошибки
-            if (data.error || (serviceType === 'free' && 
-                (data.model === 'N/A' || data.modelName === 'N/A'))) {
+            if (serviceType === 'free' && 
+                (data.model === 'N/A' || data.modelName === 'N/A')) {
                 
                 resultsHTML += `
                     <div class="error-card">
-                        <h4>${data.error || 'მოწყობილობის იდენტიფიკაცია ვერ მოხერხდა'}</h4>
+                        <h4>მოწყობილობის იდენტიფიკაცია ვერ მოხერხდა</h4>
                         <button class="btn-secondary" onclick="retryCheck()">
                             სცადეთ ხელახლა
                         </button>
