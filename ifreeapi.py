@@ -137,16 +137,27 @@ def parse_universal_response(response_content: str) -> dict:
     
     # Определение типа устройства
     brand = result.get('brand', '').lower()
-    if 'apple' in brand or 'iphone' in brand or 'ipad' in brand:
+    model = result.get('model', '').lower()
+    
+    # Проверяем, является ли устройство Apple
+    if ('apple' in brand or 
+        'iphone' in brand or 
+        'ipad' in brand or 
+        'macbook' in brand or
+        'iphone' in model or 
+        'ipad' in model or 
+        'mac' in model):
         result['device_type'] = 'Apple'
-    elif 'samsung' in brand or 'xiaomi' in brand or 'huawei' in brand:
+    # Проверяем Android устройства
+    elif ('samsung' in brand or 
+          'xiaomi' in brand or 
+          'huawei' in brand or 
+          'oppo' in brand or 
+          'motorola' in brand or 
+          'google' in brand or
+          'sm-' in model or 
+          'galaxy' in model):
         result['device_type'] = 'Android'
-    elif 'model' in result:
-        model = result['model'].lower()
-        if 'sm-' in model or 'galaxy' in model:
-            result['device_type'] = 'Android'
-        elif 'iphone' in model or 'ipad' in model:
-            result['device_type'] = 'Apple'
     else:
         result['device_type'] = 'Unknown'
     
@@ -209,13 +220,14 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 'modelname': parsed_data.get('modelname'),
                 'imei': parsed_data.get('imei'),
                 'status': parsed_data.get('status'),
-                'simblokireba': parsed_data.get('sim_lock'),
+                'sim_lock': parsed_data.get('sim_lock'),
                 'blacklist_status': parsed_data.get('blacklist_status'),
                 'fmi_status': parsed_data.get('fmi_status'),
                 'activation_status': parsed_data.get('activation_status'),
                 'carrier': parsed_data.get('carrier'),
                 'warranty_status': parsed_data.get('warranty_status'),
-                'device_type': parsed_data.get('device_type')
+                'device_type': parsed_data.get('device_type'),
+                'server_response': response.text  # Сохраняем сырой ответ для отладки
             }
     
     except requests.exceptions.RequestException as e:
