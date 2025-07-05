@@ -563,8 +563,44 @@
             } 
             // Отобразить таблицу результатов
             else if (data && Object.keys(data).length > 0) {
-                // Для бесплатной проверки - специальный формат
-                if (serviceType === 'free') {
+                // Для Android устройств - специальный формат
+                if (data.device_type === 'Android') {
+                    resultsHTML += `
+                        <div class="android-results">
+                            <div class="result-card">
+                                <h3 class="card-title">Android მოწყობილობა</h3>
+                                <div class="card-body">
+                                    <div class="result-row">
+                                        <span class="result-label">მწარმოებელი:</span>
+                                        <span class="result-value">${data.brand || 'N/A'}</span>
+                                    </div>
+                                    <div class="result-row">
+                                        <span class="result-label">მოდელი:</span>
+                                        <span class="result-value">${data.model || 'N/A'}</span>
+                                    </div>
+                                    <div class="result-row">
+                                        <span class="result-label">სტატუსი:</span>
+                                        <span class="result-value">${data.status || 'N/A'}</span>
+                                    </div>
+                                    <div class="result-row">
+                                        <span class="result-label">SIM ლოკი:</span>
+                                        <span class="result-value ${data.sim_lock && data.sim_lock.toLowerCase().includes('unlocked') ? 'status-clean' : 'status-warning'}">${data.sim_lock || 'N/A'}</span>
+                                    </div>
+                                    <div class="result-row">
+                                        <span class="result-label">FMI სტატუსი:</span>
+                                        <span class="result-value ${data.fmi_status && data.fmi_status.toLowerCase().includes('off') ? 'status-clean' : 'status-warning'}">${data.fmi_status || 'N/A'}</span>
+                                    </div>
+                                    <div class="result-row">
+                                        <span class="result-label">შავი სია:</span>
+                                        <span class="result-value ${data.blacklist_status && data.blacklist_status.toLowerCase().includes('clean') ? 'status-clean' : 'status-warning'}">${data.blacklist_status || 'N/A'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                // Для бесплатной проверки Apple - специальный формат
+                else if (serviceType === 'free') {
                     // Определяем ключевые параметры для красивого отображения
                     const keyFields = {
                         'brand': 'მწარმოებელი',
@@ -640,7 +676,7 @@
                     
                     // Добавляем все параметры в таблицу
                     for (const [key, value] of Object.entries(data)) {
-                        if (key === 'error' || key === 'html' || key === 'details' || key === 'original_html') continue;
+                        if (key === 'error' || key === 'html' || key === 'details' || key === 'original_html' || key === 'device_type') continue;
                         
                         let statusClass = '';
                         const valStr = String(value).toLowerCase();
@@ -739,6 +775,17 @@
                             სცადეთ ხელახლა
                         </button>
                     </div>`;
+            }
+            
+            // Добавляем кнопку ручного парсинга, если есть оригинальный HTML
+            if (data.original_html) {
+                resultsHTML += `
+                    <div class="reparse-section">
+                        <button class="btn-primary" onclick="retryParse('${imei}')">
+                            <i class="fas fa-sync-alt"></i> ხელით დამუშავება
+                        </button>
+                    </div>
+                `;
             }
             
             resultContent.innerHTML = resultsHTML;
