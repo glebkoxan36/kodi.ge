@@ -4,8 +4,8 @@ import requests
 import logging
 import time
 import threading
+import json
 from bs4 import BeautifulSoup
-import json  # Добавляем импорт json
 
 API_URL = os.getenv('API_URL', "https://api.ifreeicloud.co.uk")
 API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
@@ -47,52 +47,81 @@ def validate_imei(imei: str) -> bool:
     return bool(re.fullmatch(r"\d{15}", imei))
 
 def parse_universal_response(response_content: str) -> dict:
-    """Универсальный парсер с фильтрацией ключей"""
+    """Универсальный парсер с улучшенной обработкой данных"""
     result = {}
+    
+    # Список разрешенных ключей
+    allowed_keys = {
+        'model', 'modelname', 'brand', 'manufacturer', 'imei', 
+        'status', 'success', 'sim_lock', 'blacklist_status',
+        'fmi_status', 'activation_status', 'carrier', 'warranty_status',
+        'device_type', 'activation_status', 'carrier_name', 'product_type',
+        'device_name', 'serial_number', 'purchase_date', 'support_status',
+        'locked_status', 'find_my_iphone', 'sim_status', 'network_status'
+    }
     
     # Пытаемся распарсить как JSON
     try:
         data = json.loads(response_content)
+        
+        # Если это словарь, извлекаем данные
         if isinstance(data, dict):
-            # Фильтруем только нужные ключи
-            allowed_keys = {
-                'model', 'modelName', 'brand', 'manufacturer', 'imei', 
-                'status', 'success', 'sim_lock', 'blacklist_status',
-                'fmi_status', 'activation_status', 'carrier', 'warranty_status'
-            }
+            # Ищем вложенные данные в объекте 'response'
+            if 'response' in data and isinstance(data['response'], dict):
+                for key, value in data['response'].items():
+                    normalized_key = key.strip().lower().replace(' ', '_')
+                    if normalized_key in allowed_keys:
+                        result[normalized_key] = value
             
+            # Также обрабатываем корневой уровень
             for key, value in data.items():
-                # Нормализуем ключ
                 normalized_key = key.strip().lower().replace(' ', '_')
-                
-                # Фильтруем ключи
-                if normalized_key in allowed_keys:
+                if normalized_key in allowed_keys and normalized_key != 'response':
                     result[normalized_key] = value
-                # Специальная обработка для вложенных объектов
-                elif key == 'response' and isinstance(value, dict):
-                    for k, v in value.items():
-                        nk = k.strip().lower().replace(' ', '_')
-                        if nk in allowed_keys:
-                            result[nk] = v
+    except:
+        # Если не JSON - обрабатываем как текст
+        try:
+            lines = response_content.splitlines()
+            current_key = None
             
-            return result
-    except:
-        pass
-    
-    # Если не JSON - обрабатываем как текст
-    try:
-        lines = response_content.splitlines()
-        for line in lines:
-            if ':' in line:
-                key, value = line.split(':', 1)
-                key = key.strip().lower().replace(' ', '_')
-                value = value.strip()
+            for line in lines:
+                # Пропускаем пустые строки
+                line = line.strip()
+                if not line:
+                    continue
+                    
+                # Обрабатываем строки с разделителем табуляцией
+                if '\t' in line:
+                    parts = line.split('\t', 1)
+                    if len(parts) == 2:
+                        key, value = parts
+                        key = key.strip().lower().replace(' ', '_')
+                        value = value.strip()
+                        if key in allowed_keys:
+                            result[key] = value
+                            current_key = key
                 
-                # Фильтруем ключи
-                if key in allowed_keys:
-                    result[key] = value
-    except:
-        pass
+                # Обрабатываем строки с разделителем двоеточием
+                elif ':' in line:
+                    parts = line.split(':', 1)
+                    if len(parts) == 2:
+                        key, value = parts
+                        key = key.strip().lower().replace(' ', '_')
+                        value = value.strip()
+                        if key in allowed_keys:
+                            result[key] = value
+                            current_key = key
+                
+                # Обрабатываем многострочные значения
+                elif current_key:
+                    result[current_key] += " " + line.strip()
+        except Exception as e:
+            logging.error(f"Error parsing response: {str(e)}")
+            result['raw_response'] = response_content[:1000]  # Сохраняем часть ответа для диагностики
+    
+    # Если после обработки результат пустой, сохраняем сырой ответ
+    if not result:
+        result['raw_response'] = response_content[:1000] + '...' if len(response_content) > 1000 else response_content
     
     # Определение типа устройства по бренду
     brand = result.get('brand', '').lower()
@@ -101,7 +130,13 @@ def parse_universal_response(response_content: str) -> dict:
     elif brand:
         result['device_type'] = 'Android'
     else:
-        result['device_type'] = 'Unknown'
+        # Попробуем определить по другим признакам
+        if 'model' in result and ('iphone' in result['model'].lower() or 'ipad' in result['model'].lower()):
+            result['device_type'] = 'Apple'
+        elif 'model' in result and ('galaxy' in result['model'].lower() or 'pixel' in result['model'].lower()):
+            result['device_type'] = 'Android'
+        else:
+            result['device_type'] = 'Unknown'
 
     return result
 
@@ -113,17 +148,31 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 return {'error': f'Unknown service type: {service_type}'}
             
             service_code = SERVICE_TYPES[service_type]
-            data = {"service": service_code, "imei": imei, "key": API_KEY}
+            data = {
+                "service": service_code,
+                "imei": imei,
+                "key": API_KEY
+            }
             
-            time.sleep(1)  # Задержка перед запросом
+            # Задержка перед запросом
+            time.sleep(1)
+            
+            # Выполняем запрос
             response = requests.post(API_URL, data=data, timeout=30)
-            time.sleep(0.5)  # Задержка после запроса
             
+            # Задержка после запроса
+            time.sleep(0.5)
+            
+            # Обрабатываем ответ
             if response.status_code != 200:
                 return {
                     'error': f'Server error: {response.status_code}',
-                    'status_code': response.status_code
+                    'status_code': response.status_code,
+                    'raw_response': response.text[:2000] + '...' if len(response.text) > 2000 else response.text
                 }
+            
+            # Логируем сырой ответ для отладки
+            logging.debug(f"Raw API response for IMEI {imei}, service {service_type}: {response.text[:500]}")
             
             return parse_universal_response(response.text)
     
