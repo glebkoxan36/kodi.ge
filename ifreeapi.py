@@ -5,6 +5,7 @@ import logging
 import time
 import threading
 import json
+from collections import OrderedDict
 
 # Настройка логирования
 logging.basicConfig(
@@ -71,7 +72,9 @@ ERROR_MESSAGES = {
         'device_not_found': 'მოწყობილობის იდენტიფიკაცია ვერ მოხერხდა',
         'empty_response': 'API-მ ცარიელი პასუხი დააბრუნა',
         'max_retries_exceeded': 'მოთხოვნის გამეორების ლიმიტი ამოიწურა',
-        'incomplete_data': 'მოწყობილობის მონაცემები არასრულია'
+        'incomplete_data': 'მოწყობილობის მონაცემები არასრულია',
+        'payment_error': 'გადახდის პროცესში შეცდომა მოხდა',
+        'stripe_error': 'ბარათით გადახდის შეცდომა'
     },
     'free': {
         'limit_exceeded': 'უფასო შემოწმების ლიმიტი ამოიწურა',
@@ -96,7 +99,9 @@ API_ERRORS = {
     "Service not found": "unsupported_service",
     "Server Error": "server_error",
     "Request Timeout": "timeout",
-    "Device not found": "device_not_found"
+    "Device not found": "device_not_found",
+    "Payment required": "payment_required",
+    "Payment failed": "payment_failed"
 }
 
 # Словарь перевода ключей
@@ -125,8 +130,16 @@ KEY_TRANSLATIONS = {
     'warranty_expiry': 'გარანტიის ვადის გასვლის თარიღი',
     'locked_status': 'დაბლოკვის სტატუსი',
     'find_my_iphone': 'Find My iPhone სტატუსი',
-    'icloud_status': 'iCloud სტატუსი'
+    'icloud_status': 'iCloud სტატუსი',
+    'service': 'სერვისი',  # Будем удалять
+    'object': 'ობიექტი'    # Будем удалять
 }
+
+# Список технических полей для удаления
+TECHNICAL_FIELDS = [
+    'object', 'response', 'status', 'success', 'service', 
+    'key', 'api_key', 'request_id', 'session_id'
+]
 
 def validate_imei(imei: str) -> bool:
     """Проверяет валидность IMEI (15 цифр)"""
@@ -154,7 +167,7 @@ def parse_universal_response(response_content: str) -> dict:
     Извлекает только чистые данные устройства, скрывая технические детали.
     Возвращает ключи на грузинском языке.
     """
-    result = {}
+    result = OrderedDict()
     raw_response = response_content  # Сохраняем оригинальный ответ
     
     # Попытка парсинга JSON
@@ -165,16 +178,11 @@ def parse_universal_response(response_content: str) -> dict:
         if 'error' in data and data['error']:
             error_text = data['error'].strip()
             error_code = API_ERRORS.get(error_text, 'api_error')
-            return {
-                'error': get_error_message(error_code),
-                'details': error_text,
-                'server_response': raw_response
-            }
-        
-        # Удаление технических полей
-        for field in ['object', 'response', 'status', 'success']:
-            if field in data:
-                del data[field]
+            return OrderedDict([
+                ('error', get_error_message(error_code)),
+                ('details', error_text),
+                ('server_response', raw_response)
+            ])
         
         # Обработка объекта данных
         if 'object' in data and isinstance(data['object'], dict):
@@ -213,7 +221,7 @@ def parse_universal_response(response_content: str) -> dict:
                     continue
                     
                 # Фильтрация технических строк
-                if re.match(r'^(object|success|status|error)\s*:', line, re.I):
+                if re.match(r'^(object|success|status|error|service|key)\s*:', line, re.I):
                     continue
                     
                 if ':' in line:
@@ -257,12 +265,12 @@ def parse_universal_response(response_content: str) -> dict:
         result['device_type'] = 'Unknown'
     
     # Удаление технических полей из результата
-    for field in ['object', 'response', 'status', 'success']:
+    for field in TECHNICAL_FIELDS:
         if field in result:
             del result[field]
     
     # Перевод ключей
-    translated_result = {}
+    translated_result = OrderedDict()
     for key, value in result.items():
         new_key = KEY_TRANSLATIONS.get(key, key)
         translated_result[new_key] = value
@@ -279,24 +287,28 @@ def perform_api_check(imei: str, service_type: str) -> dict:
     """
     retries = 0
     last_response = None
+    last_exception = None
     
-    while retries <= MAX_RETRIES:
+    # Для платных сервисов делаем только 1 попытку
+    max_attempts = 1 if service_type != 'free' else MAX_RETRIES
+    
+    while retries <= max_attempts:
         try:
             # Проверка валидности IMEI
             if not validate_imei(imei):
                 logging.warning(f"Invalid IMEI: {imei} for service {service_type}")
-                return {
-                    'error': get_error_message('invalid_imei'),
-                    'service_type': service_type
-                }
+                return OrderedDict([
+                    ('error', get_error_message('invalid_imei')),
+                    ('service_type', service_type)
+                ])
             
             # Проверка поддерживаемого типа сервиса
             if service_type not in SERVICE_TYPES:
                 logging.error(f"Unsupported service: {service_type}")
-                return {
-                    'error': get_error_message('unsupported_service'),
-                    'details': f'Requested service: {service_type}'
-                }
+                return OrderedDict([
+                    ('error', get_error_message('unsupported_service')),
+                    ('details', f'Requested service: {service_type}')
+                ])
             
             with REQUEST_SEMAPHORE:
                 # Подготавливаем данные запроса
@@ -319,19 +331,28 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 if response.status_code != 200:
                     logging.error(f"API error: {response.status_code} for IMEI {imei}, service {service_type}")
                     
-                    # При 500 ошибке пробуем повторить
-                    if response.status_code >= 500 and retries < MAX_RETRIES:
+                    # Для платных сервисов сразу возвращаем ошибку
+                    if service_type != 'free':
+                        return OrderedDict([
+                            ('error', get_error_message('server_error')),
+                            ('status_code', response.status_code),
+                            ('service_type', service_type),
+                            ('server_response', response.text)
+                        ])
+                    
+                    # Для бесплатных сервисов пробуем повторить
+                    if response.status_code >= 500 and retries < max_attempts:
                         retries += 1
-                        logging.info(f"Retrying ({retries}/{MAX_RETRIES}) for IMEI {imei}")
+                        logging.info(f"Retrying ({retries}/{max_attempts}) for IMEI {imei}")
                         time.sleep(RETRY_DELAY)
                         continue
                     
-                    return {
-                        'error': get_error_message('server_error'),
-                        'status_code': response.status_code,
-                        'service_type': service_type,
-                        'server_response': response.text
-                    }
+                    return OrderedDict([
+                        ('error', get_error_message('server_error')),
+                        ('status_code', response.status_code),
+                        ('service_type', service_type),
+                        ('server_response', response.text)
+                    ])
                 
                 # Сохраняем последний ответ для анализа
                 last_response = response.text
@@ -339,17 +360,26 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 # Проверка на пустой ответ
                 if not last_response.strip():
                     logging.warning(f"Empty API response for IMEI: {imei}")
-                    if retries < MAX_RETRIES:
+                    
+                    # Для платных сервисов сразу возвращаем ошибку
+                    if service_type != 'free':
+                        return OrderedDict([
+                            ('error', get_error_message('empty_response', service_type)),
+                            ('service_type', service_type),
+                            ('server_response', last_response)
+                        ])
+                    
+                    if retries < max_attempts:
                         retries += 1
-                        logging.info(f"Retrying ({retries}/{MAX_RETRIES}) for empty response")
+                        logging.info(f"Retrying ({retries}/{max_attempts}) for empty response")
                         time.sleep(RETRY_DELAY)
                         continue
                     else:
-                        return {
-                            'error': get_error_message('empty_response', service_type),
-                            'service_type': service_type,
-                            'server_response': last_response
-                        }
+                        return OrderedDict([
+                            ('error', get_error_message('empty_response', service_type)),
+                            ('service_type', service_type),
+                            ('server_response', last_response)
+                        ])
                 
                 # Логируем факт запроса
                 logging.info(f"API check for IMEI {imei}, service {service_type}. Time: {request_time:.2f}s")
@@ -376,36 +406,46 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         
         except requests.exceptions.RequestException as e:
             logging.error(f"Network error for IMEI {imei}: {str(e)}")
+            last_exception = str(e)
             
-            if retries < MAX_RETRIES:
+            # Для платных сервисов сразу возвращаем ошибку
+            if service_type != 'free':
+                return OrderedDict([
+                    ('error', get_error_message('network_error')),
+                    ('details', last_exception),
+                    ('service_type', service_type)
+                ])
+            
+            if retries < max_attempts:
                 retries += 1
-                logging.info(f"Retrying ({retries}/{MAX_RETRIES}) after network error")
+                logging.info(f"Retrying ({retries}/{max_attempts}) after network error")
                 time.sleep(RETRY_DELAY)
                 continue
             else:
-                return {
-                    'error': get_error_message('network_error'),
-                    'details': str(e),
-                    'service_type': service_type
-                }
+                return OrderedDict([
+                    ('error', get_error_message('network_error')),
+                    ('details', last_exception),
+                    ('service_type', service_type)
+                ])
                 
         except Exception as e:
             logging.error(f"Unexpected error for IMEI {imei}: {str(e)}")
-            return {
-                'error': get_error_message('unknown_error'),
-                'details': str(e),
-                'service_type': service_type,
-                'server_response': last_response if last_response else "No response"
-            }
+            last_exception = str(e)
+            return OrderedDict([
+                ('error', get_error_message('unknown_error')),
+                ('details', last_exception),
+                ('service_type', service_type),
+                ('server_response', last_response if last_response else "No response")
+            ])
     
     # Если превышено количество попыток
     logging.error(f"Max retries exceeded for IMEI: {imei}")
-    return {
-        'error': get_error_message('max_retries_exceeded'),
-        'details': f'After {MAX_RETRIES} retries',
-        'service_type': service_type,
-        'server_response': last_response if last_response else "No response"
-    }
+    return OrderedDict([
+        ('error', get_error_message('max_retries_exceeded')),
+        ('details', f'After {max_attempts} retries'),
+        ('service_type', service_type),
+        ('server_response', last_response if last_response else "No response")
+    ])
 
 # Для обратной совместимости
 parse_free_html = parse_universal_response
