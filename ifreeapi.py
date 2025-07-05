@@ -19,6 +19,10 @@ logging.basicConfig(
 API_URL = os.getenv('API_URL', "https://api.ifreeicloud.co.uk")
 API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
 
+# Настройки повторных попыток
+MAX_RETRIES = 2
+RETRY_DELAY = 3  # секунды между попытками
+
 # Семафор для ограничения одновременных запросов
 REQUEST_SEMAPHORE = threading.Semaphore(3)
 
@@ -64,17 +68,22 @@ ERROR_MESSAGES = {
         'api_error': 'API შეცდომა',
         'unknown_error': 'უცნობი შეცდომა',
         'parsing_error': 'მონაცემების დამუშავების შეცდომა',
-        'device_not_found': 'მოწყობილობის იდენტიფიკაცია ვერ მოხერხდა'
+        'device_not_found': 'მოწყობილობის იდენტიფიკაცია ვერ მოხერხდა',
+        'empty_response': 'API-მ ცარიელი პასუხი დააბრუნა',
+        'max_retries_exceeded': 'მოთხოვნის გამეორების ლიმიტი ამოიწურა',
+        'incomplete_data': 'მოწყობილობის მონაცემები არასრულია'
     },
     'free': {
         'limit_exceeded': 'უფასო შემოწმების ლიმიტი ამოიწურა',
         'invalid_serial': 'არასწორი სერიული ნომერი',
-        'not_activated': 'მოწყობილობა არ არის აქტივირებული'
+        'not_activated': 'მოწყობილობა არ არის აქტივირებული',
+        'empty_response': 'უფასო მომსახურება დროებით მიუწვდომელია',
     },
     'paid': {
         'payment_required': 'გადახდა საჭიროა ამ მომსახურებისთვის',
         'payment_failed': 'გადახდა ვერ შესრულდა',
-        'already_checked': 'ამ IMEI-ით შემოწმება უკვე გაკეთებულია'
+        'already_checked': 'ამ IMEI-ით შემოწმება უკვე გაკეთებულია',
+        'empty_response': 'პასუხი ვერ მიიღწა, თანხა დაგიბრუნდებათ',
     }
 }
 
@@ -109,7 +118,14 @@ KEY_TRANSLATIONS = {
     'product_type': 'პროდუქტის ტიპი',
     'device_type': 'მოწყობილობის ტიპი',
     'manufacture': 'წარმოების თარიღი',
-    'state': 'მდგომარეობა'
+    'state': 'მდგომარეობა',
+    'network': 'ქსელი',
+    'purchase_date': 'შეძენის თარიღი',
+    'activation_date': 'აქტივაციის თარიღი',
+    'warranty_expiry': 'გარანტიის ვადის გასვლის თარიღი',
+    'locked_status': 'დაბლოკვის სტატუსი',
+    'find_my_iphone': 'Find My iPhone სტატუსი',
+    'icloud_status': 'iCloud სტატუსი'
 }
 
 def validate_imei(imei: str) -> bool:
@@ -139,6 +155,7 @@ def parse_universal_response(response_content: str) -> dict:
     Возвращает ключи на грузинском языке.
     """
     result = {}
+    raw_response = response_content  # Сохраняем оригинальный ответ
     
     # Попытка парсинга JSON
     try:
@@ -150,7 +167,8 @@ def parse_universal_response(response_content: str) -> dict:
             error_code = API_ERRORS.get(error_text, 'api_error')
             return {
                 'error': get_error_message(error_code),
-                'details': error_text
+                'details': error_text,
+                'server_response': raw_response
             }
         
         # Удаление технических полей
@@ -179,7 +197,9 @@ def parse_universal_response(response_content: str) -> dict:
         for key in ['model', 'model_name', 'modelName', 'brand', 'manufacturer', 
                     'imei', 'imei_number', 'sim_lock', 'blacklist_status', 
                     'fmi_status', 'activation_status', 'carrier', 'warranty_status', 
-                    'product_type', 'manufacture', 'state']:
+                    'product_type', 'manufacture', 'state', 'network', 'purchase_date',
+                    'activation_date', 'warranty_expiry', 'locked_status', 
+                    'find_my_iphone', 'icloud_status']:
             if key in data and key not in result:
                 result[key] = data[key]
                 
@@ -247,108 +267,145 @@ def parse_universal_response(response_content: str) -> dict:
         new_key = KEY_TRANSLATIONS.get(key, key)
         translated_result[new_key] = value
         
+    # Сохраняем оригинальный ответ
+    translated_result['server_response'] = raw_response
     return translated_result
 
 def perform_api_check(imei: str, service_type: str) -> dict:
     """
     Выполняет проверку IMEI через внешний API.
     Возвращает чистые данные устройства без технических деталей на грузинском языке.
+    Всегда показывает все полученные данные, даже если они неполные.
     """
-    try:
-        # Проверка валидности IMEI
-        if not validate_imei(imei):
-            logging.warning(f"Invalid IMEI: {imei} for service {service_type}")
-            return {
-                'error': get_error_message('invalid_imei'),
-                'service_type': service_type
-            }
-        
-        # Проверка поддерживаемого типа сервиса
-        if service_type not in SERVICE_TYPES:
-            logging.error(f"Unsupported service: {service_type}")
-            return {
-                'error': get_error_message('unsupported_service'),
-                'details': f'Requested service: {service_type}'
-            }
-        
-        with REQUEST_SEMAPHORE:
-            # Подготавливаем данные запроса
-            service_code = SERVICE_TYPES[service_type]
-            data = {
-                "service": service_code,
-                "imei": imei,
-                "key": API_KEY
-            }
-            
-            # Задержка перед запросом для стабильности API
-            time.sleep(1)
-            
-            # Выполняем запрос с таймаутом
-            start_time = time.time()
-            response = requests.post(API_URL, data=data, timeout=30)
-            request_time = time.time() - start_time
-            
-            # Обрабатываем HTTP ошибки
-            if response.status_code != 200:
-                logging.error(f"API error: {response.status_code} for IMEI {imei}, service {service_type}")
+    retries = 0
+    last_response = None
+    
+    while retries <= MAX_RETRIES:
+        try:
+            # Проверка валидности IMEI
+            if not validate_imei(imei):
+                logging.warning(f"Invalid IMEI: {imei} for service {service_type}")
                 return {
-                    'error': get_error_message('server_error'),
-                    'status_code': response.status_code,
+                    'error': get_error_message('invalid_imei'),
                     'service_type': service_type
                 }
             
-            # Логируем факт запроса
-            logging.info(f"API check for IMEI {imei}, service {service_type}. Time: {request_time:.2f}s")
-            
-            # Парсим ответ
-            parsed_data = parse_universal_response(response.text)
-            
-            # Добавляем IMEI для отслеживания
-            parsed_data['imei'] = imei
-            
-            # Фильтрация технических данных
-            final_data = {}
-            for key, value in parsed_data.items():
-                # Пропускаем технические строки
-                if isinstance(value, str) and any(
-                    p in value for p in [
-                        'object":{"model"',
-                        '"status":"Successful"',
-                        '"success":true',
-                        '"response":"Model:'
-                    ]
-                ):
-                    continue
-                final_data[key] = value
-            
-            # Проверка на пустой результат
-            if not final_data or len(final_data) < 3:
-                logging.warning(f"Empty response for IMEI: {imei}")
+            # Проверка поддерживаемого типа сервиса
+            if service_type not in SERVICE_TYPES:
+                logging.error(f"Unsupported service: {service_type}")
                 return {
-                    'error': get_error_message('device_not_found'),
-                    'service_type': service_type,
-                    'original_html': response.text
+                    'error': get_error_message('unsupported_service'),
+                    'details': f'Requested service: {service_type}'
                 }
             
-            # Сохраняем оригинальный ответ для отладки
-            final_data['server_response'] = response.text
+            with REQUEST_SEMAPHORE:
+                # Подготавливаем данные запроса
+                service_code = SERVICE_TYPES[service_type]
+                data = {
+                    "service": service_code,
+                    "imei": imei,
+                    "key": API_KEY
+                }
+                
+                # Задержка перед запросом для стабильности API
+                time.sleep(1)
+                
+                # Выполняем запрос с таймаутом
+                start_time = time.time()
+                response = requests.post(API_URL, data=data, timeout=30)
+                request_time = time.time() - start_time
+                
+                # Обрабатываем HTTP ошибки
+                if response.status_code != 200:
+                    logging.error(f"API error: {response.status_code} for IMEI {imei}, service {service_type}")
+                    
+                    # При 500 ошибке пробуем повторить
+                    if response.status_code >= 500 and retries < MAX_RETRIES:
+                        retries += 1
+                        logging.info(f"Retrying ({retries}/{MAX_RETRIES}) for IMEI {imei}")
+                        time.sleep(RETRY_DELAY)
+                        continue
+                    
+                    return {
+                        'error': get_error_message('server_error'),
+                        'status_code': response.status_code,
+                        'service_type': service_type,
+                        'server_response': response.text
+                    }
+                
+                # Сохраняем последний ответ для анализа
+                last_response = response.text
+                
+                # Проверка на пустой ответ
+                if not last_response.strip():
+                    logging.warning(f"Empty API response for IMEI: {imei}")
+                    if retries < MAX_RETRIES:
+                        retries += 1
+                        logging.info(f"Retrying ({retries}/{MAX_RETRIES}) for empty response")
+                        time.sleep(RETRY_DELAY)
+                        continue
+                    else:
+                        return {
+                            'error': get_error_message('empty_response', service_type),
+                            'service_type': service_type,
+                            'server_response': last_response
+                        }
+                
+                # Логируем факт запроса
+                logging.info(f"API check for IMEI {imei}, service {service_type}. Time: {request_time:.2f}s")
+                
+                # Парсим ответ
+                parsed_data = parse_universal_response(last_response)
+                
+                # Если в процессе парсинга возникла ошибка
+                if 'error' in parsed_data:
+                    return parsed_data
+                
+                # Добавляем IMEI для отслеживания
+                parsed_data['imei'] = imei
+                parsed_data['service_type'] = service_type
+                
+                # Проверка на минимальное количество данных
+                useful_keys = [k for k in parsed_data.keys() if k not in ['imei', 'server_response', 'service_type']]
+                if len(useful_keys) < 2:
+                    logging.warning(f"Incomplete data for IMEI: {imei}. Keys: {useful_keys}")
+                    parsed_data['warning'] = get_error_message('incomplete_data')
+                
+                # Всегда возвращаем все полученные данные
+                return parsed_data
+        
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Network error for IMEI {imei}: {str(e)}")
             
-            return final_data
+            if retries < MAX_RETRIES:
+                retries += 1
+                logging.info(f"Retrying ({retries}/{MAX_RETRIES}) after network error")
+                time.sleep(RETRY_DELAY)
+                continue
+            else:
+                return {
+                    'error': get_error_message('network_error'),
+                    'details': str(e),
+                    'service_type': service_type
+                }
+                
+        except Exception as e:
+            logging.error(f"Unexpected error for IMEI {imei}: {str(e)}")
+            return {
+                'error': get_error_message('unknown_error'),
+                'details': str(e),
+                'service_type': service_type,
+                'server_response': last_response if last_response else "No response"
+            }
     
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Network error for IMEI {imei}: {str(e)}")
-        return {
-            'error': get_error_message('network_error'),
-            'details': str(e),
-            'service_type': service_type
-        }
-    except Exception as e:
-        logging.error(f"Unexpected error for IMEI {imei}: {str(e)}")
-        return {
-            'error': get_error_message('unknown_error'),
-            'details': str(e),
-            'service_type': service_type
-        }
+    # Если превышено количество попыток
+    logging.error(f"Max retries exceeded for IMEI: {imei}")
+    return {
+        'error': get_error_message('max_retries_exceeded'),
+        'details': f'After {MAX_RETRIES} retries',
+        'service_type': service_type,
+        'server_response': last_response if last_response else "No response"
+    }
 
 # Для обратной совместимости
 parse_free_html = parse_universal_response
