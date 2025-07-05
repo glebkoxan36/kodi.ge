@@ -41,196 +41,72 @@ SERVICE_TYPES = {
     'google_pixel': 209
 }
 
-def validate_imei(imei: str) -> bool:
-    """Проверяет корректность формата IMEI с использованием алгоритма Луна"""
-    if len(imei) not in (14, 15) or not imei.isdigit():
-        return False
+def parse_universal_response(response_content: str) -> dict:
+    """Универсальный парсер для обработки любых ответов сервера"""
+    # Сначала пробуем распарсить как JSON
+    try:
+        import json
+        return json.loads(response_content)
+    except:
+        pass
     
-    # Для IMEI длиной 14 пропускаем проверку Луна
-    if len(imei) == 14:
-        return True
-    
-    # Алгоритм Луна для 15-значных IMEI
-    total = 0
-    for i, char in enumerate(imei[:14]):
-        digit = int(char)
-        if i % 2 == 1:  # Четные позиции (по индексу, начиная с 0)
-            digit *= 2
-            if digit > 9:
-                digit -= 9
-        total += digit
-    
-    check_digit = (10 - (total % 10)) % 10
-    return check_digit == int(imei[14])
-
-def parse_free_json(data: dict) -> dict:
-    """Парсит JSON-ответ бесплатной проверки IMEI для Android устройств"""
-    key_mapping = {
-        'brand': 'ბრენდი',
-        'model': 'მოდელი',
-        'modelName': 'მოდელის სახელი',
-        'manufacturer': 'მწარმოებელი',
-        'status': 'სტატუსი',
-        'activation_status': 'აქტივაციის სტატუსი',
-        'fmi_status': 'FMI სტატუსი',
-        'sim_lock': 'SIM ლოკი',
-        'blacklist_status': 'შავი სიის სტატუსი',
-        'carrier': 'ოპერატორი',
-        'warranty_status': 'გარანტიის სტატუსი',
-        'imei': 'IMEI ნომერი',
-        'serial': 'სერიული ნომერი',
-        'manufacture_date': 'წარმოების თარიღი',
-        'purchase_date': 'შეძენის თარიღი',
-        'activation_date': 'აქტივაციის თარიღი',
-        'purchase_country': 'შეძენის ქვეყანა',
-        'last_restore': 'ბოლო აღდგენა',
-        'factory_unlocked': 'ქარხნულად გახსნილი',
-        'refurbished': 'რემონტირებული',
-        'replaced': 'შეცვლილი',
-        'loaner': 'სესხით',
-        'applecare': 'AppleCare',
-        'blocked_status': 'ბლოკირების სტატუსი',
-        'restore_status': 'აღდგენის სტატუსი',
-        'next_tether_policy': 'შემდეგი პოლიტიკა',
-        'sim_lock_policy': 'SIM ლოკის პოლიტიკა',
-    }
-
-    result = {}
-    for key, value in data.items():
-        georgian_key = key_mapping.get(key, key)
-        result[georgian_key] = value
-
-    required_keys = ['imei', 'model', 'status']
-    for key in required_keys:
-        if key not in result:
-            result[key] = 'N/A'
-            
-    return result
-
-def parse_free_html(html_content: str) -> dict:
-    """Универсальный парсер HTML для бесплатной проверки"""
-    soup = BeautifulSoup(html_content, 'html.parser')
+    # Если не JSON - обрабатываем как HTML/текст
     result = {}
     
-    # 1. Парсинг всех таблиц
-    for table in soup.find_all('table'):
-        for row in table.find_all('tr'):
-            cols = row.find_all(['td', 'th'])
-            if len(cols) >= 2:
-                key = cols[0].get_text(strip=True).replace(':', '').lower()
-                value = cols[1].get_text(strip=True)
-                result[key] = value
-    
-    # 2. Парсинг списков (ul/ol)
-    for list_tag in soup.find_all(['ul', 'ol']):
-        for item in list_tag.find_all('li'):
-            text = item.get_text(strip=True)
-            if ':' in text:
-                key, value = text.split(':', 1)
-                key = key.strip().lower()
-                result[key] = value.strip()
-    
-    # 3. Парсинг пар ключ-значение в div/spans
-    for div in soup.find_all('div'):
-        if ':' in div.get_text():
-            parts = div.get_text(strip=True).split(':', 1)
-            if len(parts) == 2:
-                key = parts[0].strip().lower()
-                value = parts[1].strip()
-                result[key] = value
-                
-    # 4. Улучшенный поиск по регулярным выражениям
-    text = soup.get_text()
-    patterns = {
-        'model': r'(?i)model(?: number)?:\s*([^\n<]+)',
-        'status': r'(?i)status:\s*([^\n<]+)',
-        'imei': r'(?i)imei(?: number)?:\s*([^\n<]+)',
-        'serial': r'(?i)serial(?: number)?:\s*([^\n<]+)',
-        'brand': r'(?i)brand:\s*([^\n<]+)',
-        'manufacturer': r'(?i)manufacturer:\s*([^\n<]+)',
-        'activation_status': r'(?i)activation status:\s*([^\n<]+)',
-        'fmi_status': r'(?i)fmi status:\s*([^\n<]+)',
-        'sim_lock': r'(?i)sim lock:\s*([^\n<]+)',
-        'blacklist_status': r'(?i)blacklist status:\s*([^\n<]+)',
-        'carrier': r'(?i)carrier:\s*([^\n<]+)',
-        'warranty_status': r'(?i)warranty status:\s*([^\n<]+)',
-        'manufacture_date': r'(?i)manufacture date:\s*([^\n<]+)',
-        'purchase_date': r'(?i)purchase date:\s*([^\n<]+)',
-        'activation_date': r'(?i)activation date:\s*([^\n<]+)',
-        'purchase_country': r'(?i)purchase country:\s*([^\n<]+)',
-        'last_restore': r'(?i)last restore:\s*([^\n<]+)',
-        'factory_unlocked': r'(?i)factory unlocked:\s*([^\n<]+)',
-    }
-    
-    for key, pattern in patterns.items():
-        match = re.search(pattern, text)
-        if match and key not in result:
-            result[key] = match.group(1).strip()
-
-    # 5. Стандартизация ключей
-    key_mapping = {
-        'imei': 'imei',
-        'serial number': 'serial',
-        'model': 'model',
-        'status': 'status',
-        'activation status': 'activation_status',
-        'fmi status': 'fmi_status',
-        'sim lock': 'sim_lock',
-        'blacklist status': 'blacklist_status',
-        'carrier': 'carrier',
-        'warranty status': 'warranty_status',
-        'purchase date': 'purchase_date',
-        'activation date': 'activation_date',
-        'purchase country': 'purchase_country',
-        'last restore': 'last_restore',
-        'factory unlocked': 'factory_unlocked',
-        'refurbished': 'refurbished',
-        'replaced': 'replaced',
-        'loaner': 'loaner',
-        'applecare': 'applecare',
-        'blocked status': 'blocked_status',
-        'restore status': 'restore_status',
-        'next tether policy': 'next_tether_policy',
-        'sim lock policy': 'sim_lock_policy',
-        'mdm status': 'mdm_status',
-        'google account status': 'google_account_status',
-        'brand': 'brand',
-        'manufacturer': 'manufacturer'
-    }
-    
-    standardized_result = {}
-    for key, value in result.items():
-        # Удаляем лишние символы
-        clean_key = key.replace('_', ' ').strip()
+    # Попытка парсинга через BeautifulSoup
+    try:
+        soup = BeautifulSoup(response_content, 'html.parser')
         
-        # Ищем совпадение в маппинге
-        matched = False
-        for pattern, new_key in key_mapping.items():
-            if pattern in clean_key:
-                standardized_result[new_key] = value
-                matched = True
-                break
-                
-        if not matched:
-            standardized_result[clean_key] = value
-
-    # 6. Валидация обязательных полей
-    required_keys = ['imei', 'model', 'status']
-    for key in required_keys:
-        if key not in standardized_result:
-            logging.warning(f"Missing required key: {key}")
-            standardized_result[key] = 'N/A'
-            
-    # 7. Проверка полноты данных
-    if len(standardized_result) < 3:
-        logging.error("Insufficient data in free check response")
-        return {'error': 'მონაცემების არასაკმარისი რაოდენობა'}
+        # Парсинг таблиц
+        for table in soup.find_all('table'):
+            for row in table.find_all('tr'):
+                cols = row.find_all(['td', 'th'])
+                if len(cols) >= 2:
+                    key = cols[0].get_text(strip=True).replace(':', '')
+                    value = cols[1].get_text(strip=True)
+                    if key and value:
+                        result[key] = value
+        
+        # Парсинг списков
+        for list_tag in soup.find_all(['ul', 'ol']):
+            for item in list_tag.find_all('li'):
+                text = item.get_text(strip=True)
+                if ':' in text:
+                    key, value = text.split(':', 1)
+                    key = key.strip()
+                    value = value.strip()
+                    if key and value:
+                        result[key] = value
+        
+        # Парсинг div с ключ-значение
+        for div in soup.find_all('div'):
+            if ':' in div.get_text():
+                parts = div.get_text(strip=True).split(':', 1)
+                if len(parts) == 2:
+                    key = parts[0].strip()
+                    value = parts[1].strip()
+                    if key and value:
+                        result[key] = value
+    except:
+        pass
     
-    # 8. Сохраняем оригинальный HTML если ключевые данные не найдены
-    if any(standardized_result.get(k) == 'N/A' for k in ['model', 'status']):
-        standardized_result['original_html'] = html_content
-            
-    return standardized_result
+    # Если BeautifulSoup не нашел данных - парсим построчно
+    if not result:
+        lines = response_content.splitlines()
+        for line in lines:
+            line = line.strip()
+            if ':' in line:
+                key, value = line.split(':', 1)
+                key = key.strip()
+                value = value.strip()
+                if key and value:
+                    result[key] = value
+    
+    # Если вообще ничего не найдено - возвращаем исходный текст
+    if not result:
+        return {'raw_response': response_content}
+    
+    return result
 
 def perform_api_check(imei: str, service_type: str) -> dict:
     """Выполняет проверку IMEI через внешний API"""
@@ -239,9 +115,6 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             if service_type not in SERVICE_TYPES:
                 return {'error': f'შემოწმების უცნობი ტიპი: {service_type}'}
             
-            if not validate_imei(imei):
-                return {'error': 'IMEI-ის არასწორი ფორმატი. უნდა შედგებოდეს 14 ან 15 ციფრისგან.'}
-            
             service_code = SERVICE_TYPES[service_type]
             data = {
                 "service": service_code,
@@ -249,101 +122,25 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 "key": API_KEY
             }
             
-            attempts = 0
-            max_attempts = 3
-            delay = 2
+            # Задержка перед запросом
+            time.sleep(1)
             
-            while attempts < max_attempts:
-                try:
-                    time.sleep(1)  # Задержка перед запросом
-                    response = requests.post(API_URL, data=data, timeout=30)
-                    time.sleep(0.5)  # Задержка после запрос
-                    
-                    if response.status_code == 200:
-                        # Проверка на ненадежные ответы
-                        if service_type == 'free' and 'unable to identify' in response.text.lower():
-                            logging.warning(f"Unreliable response, attempt {attempts+1}")
-                            attempts += 1
-                            time.sleep(delay)
-                            delay *= 2
-                            continue
-                        break
-                    
-                    if response.status_code >= 500:
-                        raise Exception(f"Server error: {response.status_code}")
-                        
-                except Exception as e:
-                    attempts += 1
-                    if attempts < max_attempts:
-                        time.sleep(delay)
-                        delay *= 2
-                    else:
-                        return {
-                            'error': f'მოთხოვნა ვერ შესრულდა {max_attempts} ცდის შემდეგ',
-                            'details': str(e)
-                        }
-        
+            # Выполняем запрос
+            response = requests.post(API_URL, data=data, timeout=30)
+            
+            # Задержка после запроса
+            time.sleep(0.5)
+            
+            # Обрабатываем ответ
             if response.status_code != 200:
                 return {
                     'error': f'სერვერის შეცდომა: {response.status_code}',
-                    'details': response.text[:200] + '...' if len(response.text) > 200 else response.text
+                    'status_code': response.status_code,
+                    'raw_response': response.text[:2000] + '...' if len(response.text) > 2000 else response.text
                 }
             
-            # Для бесплатной проверки
-            if service_type == 'free':
-                # Сначала пробуем распарсить JSON
-                try:
-                    json_data = response.json()
-                    if isinstance(json_data, dict):
-                        # Обработка Android JSON-ответа
-                        if 'device_type' in json_data and json_data['device_type'] == 'Android':
-                            android_result = {
-                                'brand': json_data.get('manufacturer', 'N/A'),
-                                'model': json_data.get('model', 'N/A'),
-                                'status': json_data.get('status', 'N/A'),
-                                'imei': imei,
-                                'activation_status': json_data.get('activation_status', 'N/A'),
-                                'fmi_status': json_data.get('fmi_status', 'N/A'),
-                                'sim_lock': json_data.get('sim_lock', 'N/A'),
-                                'blacklist_status': json_data.get('blacklist_status', 'N/A'),
-                                'carrier': json_data.get('carrier', 'N/A'),
-                                'device_type': 'Android'
-                            }
-                            return android_result
-                        return parse_free_json(json_data)
-                except:
-                    pass
-                
-                # Если JSON не удался - парсим HTML
-                result = parse_free_html(response.text)
-                
-                # Дополнительная попытка извлечь данные
-                if result.get('model') == 'N/A' or result.get('status') == 'N/A':
-                    # Используем регулярки как последнюю надежду
-                    text = response.text.lower()
-                    if 'android' in text:
-                        result['device_type'] = 'Android'
-                        brand_match = re.search(r'brand:\s*([^\n<]+)', text)
-                        if brand_match:
-                            result['brand'] = brand_match.group(1).strip()
-                        model_match = re.search(r'model:\s*([^\n<]+)', text)
-                        if model_match:
-                            result['model'] = model_match.group(1).strip()
-                        status_match = re.search(r'status:\s*([^\n<]+)', text)
-                        if status_match:
-                            result['status'] = status_match.group(1).strip()
-                return result
-        
-            try:
-                json_data = response.json()
-                if not json_data.get('success'):
-                    error_msg = json_data.get('error', 'API-ის უცნობი შეცდომა')
-                    return {'error': f'შემოწმების შეცდომა: {error_msg}'}
-                    
-                return json_data.get('data', {})
-                
-            except ValueError:
-                return {'html_content': response.text}
+            # Всегда используем универсальный парсер
+            return parse_universal_response(response.text)
     
     except requests.exceptions.RequestException as e:
         return {'error': f'ქსელის შეცდომა: {str(e)}'}
