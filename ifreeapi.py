@@ -79,7 +79,8 @@ def parse_universal_response(response_content: str) -> dict:
         # Приоритет 3: корневые поля
         for key in ['model', 'model_name', 'modelName', 'brand', 'manufacturer', 
                     'imei', 'imei_number', 'status', 'success', 
-                    'sim_lock', 'blacklist_status', 'fmi_status']:
+                    'sim_lock', 'blacklist_status', 'fmi_status', 'activation_status',
+                    'carrier', 'warranty_status', 'product_type']:
             if key in data and key not in result:
                 result[key] = data[key]
         
@@ -161,7 +162,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             # Выполняем запрос
             response = requests.post(API_URL, data=data, timeout=30)
             
-            # Задержка после запроса
+            # Задержка после запрос
             time.sleep(0.5)
             
             # Обрабатываем ответ
@@ -180,6 +181,9 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             
             # Добавляем IMEI для отслеживания
             parsed_data['imei'] = imei
+            
+            # Добавляем сырой ответ для диагностики
+            parsed_data['raw_response'] = response.text[:1000] + '...' if len(response.text) > 1000 else response.text
             
             return parsed_data
     
