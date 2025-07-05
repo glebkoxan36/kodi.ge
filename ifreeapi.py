@@ -139,7 +139,35 @@ def parse_free_html(html_content: str) -> dict:
                 value = parts[1].strip()
                 result[key] = value
                 
-    # 4. Стандартизация ключей
+    # 4. Улучшенный поиск по регулярным выражениям
+    text = soup.get_text()
+    patterns = {
+        'model': r'(?i)model(?: number)?:\s*([^\n<]+)',
+        'status': r'(?i)status:\s*([^\n<]+)',
+        'imei': r'(?i)imei(?: number)?:\s*([^\n<]+)',
+        'serial': r'(?i)serial(?: number)?:\s*([^\n<]+)',
+        'brand': r'(?i)brand:\s*([^\n<]+)',
+        'manufacturer': r'(?i)manufacturer:\s*([^\n<]+)',
+        'activation_status': r'(?i)activation status:\s*([^\n<]+)',
+        'fmi_status': r'(?i)fmi status:\s*([^\n<]+)',
+        'sim_lock': r'(?i)sim lock:\s*([^\n<]+)',
+        'blacklist_status': r'(?i)blacklist status:\s*([^\n<]+)',
+        'carrier': r'(?i)carrier:\s*([^\n<]+)',
+        'warranty_status': r'(?i)warranty status:\s*([^\n<]+)',
+        'manufacture_date': r'(?i)manufacture date:\s*([^\n<]+)',
+        'purchase_date': r'(?i)purchase date:\s*([^\n<]+)',
+        'activation_date': r'(?i)activation date:\s*([^\n<]+)',
+        'purchase_country': r'(?i)purchase country:\s*([^\n<]+)',
+        'last_restore': r'(?i)last restore:\s*([^\n<]+)',
+        'factory_unlocked': r'(?i)factory unlocked:\s*([^\n<]+)',
+    }
+    
+    for key, pattern in patterns.items():
+        match = re.search(pattern, text)
+        if match and key not in result:
+            result[key] = match.group(1).strip()
+
+    # 5. Стандартизация ключей
     key_mapping = {
         'imei': 'imei',
         'serial number': 'serial',
@@ -165,7 +193,9 @@ def parse_free_html(html_content: str) -> dict:
         'next tether policy': 'next_tether_policy',
         'sim lock policy': 'sim_lock_policy',
         'mdm status': 'mdm_status',
-        'google account status': 'google_account_status'
+        'google account status': 'google_account_status',
+        'brand': 'brand',
+        'manufacturer': 'manufacturer'
     }
     
     standardized_result = {}
@@ -184,17 +214,21 @@ def parse_free_html(html_content: str) -> dict:
         if not matched:
             standardized_result[clean_key] = value
 
-    # 5. Валидация обязательных полей
+    # 6. Валидация обязательных полей
     required_keys = ['imei', 'model', 'status']
     for key in required_keys:
         if key not in standardized_result:
             logging.warning(f"Missing required key: {key}")
             standardized_result[key] = 'N/A'
             
-    # 6. Проверка полноты данных
+    # 7. Проверка полноты данных
     if len(standardized_result) < 3:
         logging.error("Insufficient data in free check response")
         return {'error': 'მონაცემების არასაკმარისი რაოდენობა'}
+    
+    # 8. Сохраняем оригинальный HTML если ключевые данные не найдены
+    if any(standardized_result.get(k) == 'N/A' for k in ['model', 'status']):
+        standardized_result['original_html'] = html_content
             
     return standardized_result
 
@@ -223,9 +257,16 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 try:
                     time.sleep(1)  # Задержка перед запросом
                     response = requests.post(API_URL, data=data, timeout=30)
-                    time.sleep(0.5)  # Задержка после запроса
+                    time.sleep(0.5)  # Задержка после запрос
                     
                     if response.status_code == 200:
+                        # Проверка на ненадежные ответы
+                        if service_type == 'free' and 'unable to identify' in response.text.lower():
+                            logging.warning(f"Unreliable response, attempt {attempts+1}")
+                            attempts += 1
+                            time.sleep(delay)
+                            delay *= 2
+                            continue
                         break
                     
                     if response.status_code >= 500:
@@ -250,14 +291,48 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             
             # Для бесплатной проверки
             if service_type == 'free':
+                # Сначала пробуем распарсить JSON
                 try:
                     json_data = response.json()
-                    if isinstance(json_data, dict) and 'status' in json_data:
+                    if isinstance(json_data, dict):
+                        # Обработка Android JSON-ответа
+                        if 'device_type' in json_data and json_data['device_type'] == 'Android':
+                            android_result = {
+                                'brand': json_data.get('manufacturer', 'N/A'),
+                                'model': json_data.get('model', 'N/A'),
+                                'status': json_data.get('status', 'N/A'),
+                                'imei': imei,
+                                'activation_status': json_data.get('activation_status', 'N/A'),
+                                'fmi_status': json_data.get('fmi_status', 'N/A'),
+                                'sim_lock': json_data.get('sim_lock', 'N/A'),
+                                'blacklist_status': json_data.get('blacklist_status', 'N/A'),
+                                'carrier': json_data.get('carrier', 'N/A'),
+                                'device_type': 'Android'
+                            }
+                            return android_result
                         return parse_free_json(json_data)
                 except:
                     pass
                 
-                return parse_free_html(response.text)
+                # Если JSON не удался - парсим HTML
+                result = parse_free_html(response.text)
+                
+                # Дополнительная попытка извлечь данные
+                if result.get('model') == 'N/A' or result.get('status') == 'N/A':
+                    # Используем регулярки как последнюю надежду
+                    text = response.text.lower()
+                    if 'android' in text:
+                        result['device_type'] = 'Android'
+                        brand_match = re.search(r'brand:\s*([^\n<]+)', text)
+                        if brand_match:
+                            result['brand'] = brand_match.group(1).strip()
+                        model_match = re.search(r'model:\s*([^\n<]+)', text)
+                        if model_match:
+                            result['model'] = model_match.group(1).strip()
+                        status_match = re.search(r'status:\s*([^\n<]+)', text)
+                        if status_match:
+                            result['status'] = status_match.group(1).strip()
+                return result
         
             try:
                 json_data = response.json()
