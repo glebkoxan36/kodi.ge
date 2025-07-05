@@ -7,10 +7,54 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta name="csrf-token" content="{{ csrf_token }}">
+    <style>
+        /* Блокировка прокрутки при открытых модальных окнах */
+        body.modal-open {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+        
+        /* Затемнение фона для модальных окон */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2999;
+            display: none;
+        }
+        
+        /* Центрирование и анимации для модальных окон */
+        .result-modal, 
+        .payment-method-modal, 
+        .payment-status-modal {
+            transition: 
+                opacity 0.3s ease, 
+                transform 0.3s ease;
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        
+        .status-error { color: var(--danger-color); }
+        .status-warning { color: var(--warning-color); }
+        .status-success { color: var(--success-color); }
+        
+        .result-actions { 
+            display: flex; 
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .card-footer { padding: 20px; }
+    </style>
 </head>
 <body>
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
+    <div class="modal-backdrop" id="modal-backdrop"></div>
     
     <div class="main-content">
         <div class="text-center mb-4">
@@ -26,7 +70,7 @@
             <p class="lead">Apple IMEI-ის შემოწმების სერვისი</p>
         </div>
         
-        <div class="section-title">
+        <div class="section-title text-center">
             <h1>Apple IMEI შემოწმება</h1>
             <p>აირჩიეთ შემოწმების ტიპი და შეიყვანეთ IMEI ან სერიული ნომერი</p>
         </div>
@@ -50,7 +94,7 @@
             </div>
             
             <div class="imei-form-container" id="imei-form-container">
-                <div class="form-header">
+                <div class="form-header text-center">
                     <h2>მოწყობილობის შემოწმება</h2>
                 </div>
                 <div class="form-body">
@@ -73,7 +117,7 @@
                 <button class="close-modal" id="close-modal">&times;</button>
             </div>
             <div class="card-body" id="result-content"></div>
-            <div class="card-footer" style="text-align: center; padding: 20px;">
+            <div class="card-footer">
                 <button class="btn-primary" onclick="window.location.href = '{{ url_for('apple_check') }}'">ახალი შემოწმების დაწყება</button>
             </div>
         </div>
@@ -153,6 +197,35 @@
         
         let currentImei = '';
         let currentServiceType = '';
+        
+        // Функции управления модальными окнами
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const backdrop = document.getElementById('modal-backdrop');
+            
+            document.body.classList.add('modal-open');
+            backdrop.style.display = 'block';
+            modal.style.display = 'flex';
+            
+            setTimeout(() => {
+                modal.style.opacity = '1';
+                modal.style.transform = 'translateY(0)';
+            }, 10);
+        }
+        
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const backdrop = document.getElementById('modal-backdrop');
+            
+            modal.style.opacity = '0';
+            modal.style.transform = 'translateY(-20px)';
+            
+            setTimeout(() => {
+                modal.style.display = 'none';
+                backdrop.style.display = 'none';
+                document.body.classList.remove('modal-open');
+            }, 300);
+        }
         
         document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('services-container');
@@ -235,7 +308,15 @@
             
             document.getElementById('check-btn').addEventListener('click', startCheck);
             document.getElementById('close-modal').addEventListener('click', function() {
-                document.getElementById('result-modal').style.display = 'none';
+                closeModal('result-modal');
+            });
+            
+            // Глобальный обработчик клика по подложке
+            document.getElementById('modal-backdrop').addEventListener('click', function() {
+                closeModal('result-modal');
+                closeModal('payment-method-modal');
+                closeModal('payment-success-modal');
+                closeModal('payment-error-modal');
             });
             
             // გადახდის მოდალის დამმუშავებლები
@@ -248,17 +329,17 @@
             });
             
             document.getElementById('cancel-payment').addEventListener('click', () => {
-                document.getElementById('payment-method-modal').style.display = 'none';
+                closeModal('payment-method-modal');
             });
             
             // Payment status modal handlers
             document.getElementById('retry-payment').addEventListener('click', () => {
-                document.getElementById('payment-error-modal').style.display = 'none';
+                closeModal('payment-error-modal');
                 processPayment(false);
             });
             
             document.getElementById('cancel-payment-action').addEventListener('click', () => {
-                document.getElementById('payment-error-modal').style.display = 'none';
+                closeModal('payment-error-modal');
             });
         }
         
@@ -355,7 +436,7 @@
                             `<span class="balance-insufficient">არასაკმარისი თანხა</span>`;
                     }
                     
-                    document.getElementById('payment-method-modal').style.display = 'flex';
+                    openModal('payment-method-modal');
                 }).catch(() => {
                     document.getElementById('balance-status').innerHTML = 
                         `<span class="balance-error">ბალანსის მონაცემები ვერ მოიძებნა</span>`;
@@ -377,7 +458,7 @@
         }
         
         function processPayment(useBalance) {
-            document.getElementById('payment-method-modal').style.display = 'none';
+            closeModal('payment-method-modal');
             document.getElementById('spinner').style.display = 'flex';
             
             fetch('/create-checkout-session', {
@@ -409,7 +490,7 @@
                 } else {
                     if (data.payment_method === 'balance') {
                         // Show success modal for balance payment
-                        document.getElementById('payment-success-modal').style.display = 'flex';
+                        openModal('payment-success-modal');
                         fetchResultForSession(data.id);
                     } else if (data.payment_method === 'stripe') {
                         stripe.redirectToCheckout({ sessionId: data.id })
@@ -417,7 +498,7 @@
                                 if (result.error) {
                                     document.getElementById('payment-error-message').textContent = 
                                         `Stripe შეცდომა: ${result.error.message}`;
-                                    document.getElementById('payment-error-modal').style.display = 'flex';
+                                    openModal('payment-error-modal');
                                 }
                             });
                     }
@@ -427,7 +508,7 @@
                 document.getElementById('spinner').style.display = 'none';
                 document.getElementById('payment-error-message').textContent = 
                     'გადახდის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.';
-                document.getElementById('payment-error-modal').style.display = 'flex';
+                openModal('payment-error-modal');
                 console.error('გადახდის შეცდომა:', error);
             });
         }
@@ -442,19 +523,19 @@
                 })
                 .then(data => {
                     document.getElementById('spinner').style.display = 'none';
-                    document.getElementById('payment-success-modal').style.display = 'none';
+                    closeModal('payment-success-modal');
                     
                     if (data.error) {
                         const errorElement = document.getElementById('imei-error');
                         errorElement.textContent = data.error;
                         errorElement.style.display = 'block';
                     } else {
-                        displayResults(currentImei, currentServiceType, data.result);
+                        displayResults(currentImei, currentServiceType, data);
                     }
                 })
                 .catch(error => {
                     document.getElementById('spinner').style.display = 'none';
-                    document.getElementById('payment-success-modal').style.display = 'none';
+                    closeModal('payment-success-modal');
                     const errorElement = document.getElementById('imei-error');
                     errorElement.textContent = 'შედეგის მიღების შეცდომა';
                     errorElement.style.display = 'block';
@@ -586,10 +667,13 @@
                     
                     // Добавляем специфические поля при их наличии
                     if (data.sim_lock !== undefined) {
+                        const lockStatus = data.sim_lock.toLowerCase();
+                        const lockClass = lockStatus.includes('unlocked') ? 'status-success' : 'status-warning';
+                        
                         resultsHTML += `
                                     <div class="result-row">
                                         <span class="result-label">SIM ლოკი:</span>
-                                        <span class="result-value ${data.sim_lock.toLowerCase().includes('unlocked') ? 'status-clean' : 'status-warning'}">
+                                        <span class="result-value ${lockClass}">
                                             ${data.sim_lock}
                                         </span>
                                     </div>
@@ -597,10 +681,13 @@
                     }
                     
                     if (data.blacklist_status !== undefined) {
+                        const blacklistStatus = data.blacklist_status.toLowerCase();
+                        const blacklistClass = blacklistStatus.includes('clean') ? 'status-success' : 'status-warning';
+                        
                         resultsHTML += `
                                     <div class="result-row">
                                         <span class="result-label">შავი სია:</span>
-                                        <span class="result-value ${data.blacklist_status.toLowerCase().includes('clean') ? 'status-clean' : 'status-warning'}">
+                                        <span class="result-value ${blacklistClass}">
                                             ${data.blacklist_status}
                                         </span>
                                     </div>
@@ -652,13 +739,17 @@
                             valStr.includes('off') ||
                             valStr.includes('active') ||
                             valStr.includes('valid')) {
-                            statusClass = 'status-clean';
+                            statusClass = 'status-success';
                         } else if (valStr.includes('locked') || 
                                    valStr.includes('blacklist') || 
                                    valStr.includes('on') ||
                                    valStr.includes('inactive') ||
                                    valStr.includes('expired')) {
                             statusClass = 'status-warning';
+                        } else if (valStr.includes('error') || 
+                                   valStr.includes('fail') || 
+                                   valStr.includes('invalid')) {
+                            statusClass = 'status-error';
                         }
                         
                         resultsHTML += `
@@ -707,13 +798,17 @@
                             valStr.includes('off') ||
                             valStr.includes('active') ||
                             valStr.includes('valid')) {
-                            statusClass = 'status-clean';
+                            statusClass = 'status-success';
                         } else if (valStr.includes('locked') || 
                                    valStr.includes('blacklist') || 
                                    valStr.includes('on') ||
                                    valStr.includes('inactive') ||
                                    valStr.includes('expired')) {
                             statusClass = 'status-warning';
+                        } else if (valStr.includes('error') || 
+                                   valStr.includes('fail') || 
+                                   valStr.includes('invalid')) {
+                            statusClass = 'status-error';
                         }
                         
                         // Пропускаем уже отображенные поля
@@ -760,7 +855,7 @@
             // Добавляем кнопку ручного парсинга, если есть оригинальный HTML
             if (data.original_html) {
                 resultsHTML += `
-                    <div class="reparse-section">
+                    <div class="reparse-section text-center" style="margin-top:20px;">
                         <button class="btn-primary" onclick="retryParse('${imei}')">
                             <i class="fas fa-sync-alt"></i> ხელით დამუშავება
                         </button>
@@ -769,7 +864,7 @@
             }
             
             resultContent.innerHTML = resultsHTML;
-            document.getElementById('result-modal').style.display = 'flex';
+            openModal('result-modal');
         }
         
         // Функция повторного парсинга
@@ -792,7 +887,7 @@
         // Функция для повторной проверки
         function retryCheck() {
             document.getElementById('spinner').style.display = 'flex';
-            document.getElementById('result-modal').style.display = 'none';
+            closeModal('result-modal');
             setTimeout(() => {
                 performCheck(currentImei, currentServiceType);
             }, 1000);
