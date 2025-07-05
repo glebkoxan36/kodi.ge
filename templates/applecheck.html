@@ -568,7 +568,7 @@
                     resultsHTML += `
                         <div class="android-results">
                             <div class="result-card">
-                                <h3 class="card-title">Android მოწყობილობა</h3>
+                                <h3 class="card-title">${data.brand || 'Android'} მოწყობილობა</h3>
                                 <div class="card-body">
                                     <div class="result-row">
                                         <span class="result-label">მწარმოებელი:</span>
@@ -582,18 +582,32 @@
                                         <span class="result-label">სტატუსი:</span>
                                         <span class="result-value">${data.status || 'N/A'}</span>
                                     </div>
+                    `;
+                    
+                    // Добавляем специфические поля при их наличии
+                    if (data.sim_lock !== undefined) {
+                        resultsHTML += `
                                     <div class="result-row">
                                         <span class="result-label">SIM ლოკი:</span>
-                                        <span class="result-value ${data.sim_lock && data.sim_lock.toLowerCase().includes('unlocked') ? 'status-clean' : 'status-warning'}">${data.sim_lock || 'N/A'}</span>
+                                        <span class="result-value ${data.sim_lock.toLowerCase().includes('unlocked') ? 'status-clean' : 'status-warning'}">
+                                            ${data.sim_lock}
+                                        </span>
                                     </div>
-                                    <div class="result-row">
-                                        <span class="result-label">FMI სტატუსი:</span>
-                                        <span class="result-value ${data.fmi_status && data.fmi_status.toLowerCase().includes('off') ? 'status-clean' : 'status-warning'}">${data.fmi_status || 'N/A'}</span>
-                                    </div>
+                        `;
+                    }
+                    
+                    if (data.blacklist_status !== undefined) {
+                        resultsHTML += `
                                     <div class="result-row">
                                         <span class="result-label">შავი სია:</span>
-                                        <span class="result-value ${data.blacklist_status && data.blacklist_status.toLowerCase().includes('clean') ? 'status-clean' : 'status-warning'}">${data.blacklist_status || 'N/A'}</span>
+                                        <span class="result-value ${data.blacklist_status.toLowerCase().includes('clean') ? 'status-clean' : 'status-warning'}">
+                                            ${data.blacklist_status}
+                                        </span>
                                     </div>
+                        `;
+                    }
+                    
+                    resultsHTML += `
                                 </div>
                             </div>
                         </div>
