@@ -1,3 +1,4 @@
+
 import os
 import re
 import requests
@@ -131,8 +132,8 @@ KEY_TRANSLATIONS = {
     'locked_status': 'დაბლოკვის სტატუსი',
     'find_my_iphone': 'Find My iPhone სტატუსი',
     'icloud_status': 'iCloud სტატუსი',
-    'service': 'სერვისი',  # Будем удалять
-    'object': 'ობიექტი'    # Будем удалять
+    'service': 'სერვისი',
+    'object': 'ობიექტი'
 }
 
 # Список технических полей для удаления
@@ -161,6 +162,49 @@ def get_error_message(error_code: str, service_type: str = 'common') -> str:
     # Возвращаем общее сообщение для неизвестных ошибок
     return common_errors['unknown_error']
 
+def filter_technical_fields(response_content: str) -> str:
+    """
+    Фильтрует технические поля из сырого ответа API.
+    Удаляет блоки 'object' и 'status' из JSON ответа.
+    """
+    if not response_content.strip():
+        return response_content
+
+    try:
+        data = json.loads(response_content)
+        if isinstance(data, dict):
+            # Удаляем технические поля
+            for field in ['object', 'status', 'success']:
+                if field in data:
+                    del data[field]
+            
+            # Форматируем оставшиеся данные
+            return json.dumps(data, ensure_ascii=False, indent=2)
+    except json.JSONDecodeError:
+        pass
+
+    # Для не-JSON ответов удаляем строки с технической информацией
+    lines = response_content.splitlines()
+    filtered_lines = []
+    skip_next = False
+    
+    for line in lines:
+        # Пропускаем строки, содержащие технические поля
+        if any(tech in line for tech in ['"object":', '"status":', '"success":']):
+            skip_next = True
+            continue
+        
+        # Пропускаем строки в блоке object
+        if skip_next and line.strip() in ['{', '}']:
+            continue
+        if skip_next and line.strip() == '},':
+            skip_next = False
+            continue
+            
+        filtered_lines.append(line)
+    
+    return "\n".join(filtered_lines)
+
 def parse_universal_response(response_content: str) -> dict:
     """
     Универсальный парсер для ответов API.
@@ -169,6 +213,9 @@ def parse_universal_response(response_content: str) -> dict:
     """
     result = OrderedDict()
     raw_response = response_content  # Сохраняем оригинальный ответ
+    
+    # Фильтруем технические поля для отображения
+    filtered_response = filter_technical_fields(raw_response)
     
     # Попытка парсинга JSON
     try:
@@ -181,7 +228,7 @@ def parse_universal_response(response_content: str) -> dict:
             return OrderedDict([
                 ('error', get_error_message(error_code)),
                 ('details', error_text),
-                ('server_response', raw_response)
+                ('server_response', filtered_response)
             ])
         
         # Обработка объекта данных
@@ -275,8 +322,8 @@ def parse_universal_response(response_content: str) -> dict:
         new_key = KEY_TRANSLATIONS.get(key, key)
         translated_result[new_key] = value
         
-    # Сохраняем оригинальный ответ
-    translated_result['server_response'] = raw_response
+    # Сохраняем фильтрованный ответ
+    translated_result['server_response'] = filtered_response
     return translated_result
 
 def perform_api_check(imei: str, service_type: str) -> dict:
@@ -337,7 +384,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                             ('error', get_error_message('server_error')),
                             ('status_code', response.status_code),
                             ('service_type', service_type),
-                            ('server_response', response.text)
+                            ('server_response', filter_technical_fields(response.text))
                         ])
                     
                     # Для бесплатных сервисов пробуем повторить
@@ -351,7 +398,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                         ('error', get_error_message('server_error')),
                         ('status_code', response.status_code),
                         ('service_type', service_type),
-                        ('server_response', response.text)
+                        ('server_response', filter_technical_fields(response.text))
                     ])
                 
                 # Сохраняем последний ответ для анализа
@@ -366,7 +413,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                         return OrderedDict([
                             ('error', get_error_message('empty_response', service_type)),
                             ('service_type', service_type),
-                            ('server_response', last_response)
+                            ('server_response', filter_technical_fields(last_response))
                         ])
                     
                     if retries < max_attempts:
@@ -378,7 +425,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                         return OrderedDict([
                             ('error', get_error_message('empty_response', service_type)),
                             ('service_type', service_type),
-                            ('server_response', last_response)
+                            ('server_response', filter_technical_fields(last_response))
                         ])
                 
                 # Логируем факт запроса
@@ -435,7 +482,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 ('error', get_error_message('unknown_error')),
                 ('details', last_exception),
                 ('service_type', service_type),
-                ('server_response', last_response if last_response else "No response")
+                ('server_response', filter_technical_fields(last_response) if last_response else "No response")
             ])
     
     # Если превышено количество попыток
@@ -444,7 +491,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         ('error', get_error_message('max_retries_exceeded')),
         ('details', f'After {max_attempts} retries'),
         ('service_type', service_type),
-        ('server_response', last_response if last_response else "No response")
+        ('server_response', filter_technical_fields(last_response) if last_response else "No response")
     ])
 
 # Для обратной совместимости
