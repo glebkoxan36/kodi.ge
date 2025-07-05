@@ -41,6 +41,10 @@ SERVICE_TYPES = {
     'google_pixel': 209
 }
 
+def validate_imei(imei: str) -> bool:
+    """Проверяет валидность IMEI (15 цифр)"""
+    return bool(re.fullmatch(r"\d{15}", imei))
+
 def parse_universal_response(response_content: str) -> dict:
     """Универсальный парсер для обработки любых ответов сервера"""
     # Сначала пробуем распарсить как JSON
@@ -107,6 +111,10 @@ def parse_universal_response(response_content: str) -> dict:
         return {'raw_response': response_content}
     
     return result
+
+def parse_free_html(html_content: str) -> dict:
+    """Специальный парсер для бесплатных отчетов Apple"""
+    return parse_universal_response(html_content)
 
 def perform_api_check(imei: str, service_type: str) -> dict:
     """Выполняет проверку IMEI через внешний API"""
