@@ -24,7 +24,7 @@ from flask_session import Session
 from bs4 import BeautifulSoup
 
 # Импорт модулей
-from ifreeapi import validate_imei, perform_api_check, parse_free_html, SERVICE_TYPES
+from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
 from stripepay import StripePayment
 from compare import compare_two_phones, generate_image_path
 
