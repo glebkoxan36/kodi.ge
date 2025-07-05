@@ -137,7 +137,7 @@ KEY_TRANSLATIONS = {
 
 # Список технических полей для удаления
 TECHNICAL_FIELDS = [
-    'object', 'response', 'status', 'success', 'service', 
+    'object', 'status', 'success', 'service', 
     'key', 'api_key', 'request_id', 'session_id'
 ]
 
@@ -163,32 +163,41 @@ def get_error_message(error_code: str, service_type: str = 'common') -> str:
 
 def filter_technical_fields(response_content: str) -> str:
     """
-    Фильтрует все технические поля из сырого ответа API.
-    Удаляет блоки 'object', 'status', 'success' и 'response' из JSON ответа.
+    Фильтрует технические поля, но сохраняет содержимое 'response'
+    Возвращает только содержимое поля 'response' или отфильтрованный JSON
     """
     if not response_content.strip():
         return response_content
 
     try:
         data = json.loads(response_content)
-        if isinstance(data, dict):
-            # Удаляем все технические поля
-            for field in TECHNICAL_FIELDS:
-                if field in data:
-                    del data[field]
+        
+        # Если есть поле 'response' и оно строка - возвращаем только его содержимое
+        if 'response' in data and isinstance(data['response'], str):
+            return data['response'].strip()
             
-            # Форматируем оставшиеся данные
-            return json.dumps(data, ensure_ascii=False, indent=2) if data else "{}"
+        # Удаляем технические поля
+        for field in TECHNICAL_FIELDS:
+            if field in data:
+                del data[field]
+                
+        # Форматируем оставшиеся данные
+        return json.dumps(data, ensure_ascii=False, indent=2)
     except json.JSONDecodeError:
         pass
 
-    # Для не-JSON ответов удаляем строки с технической информацией
+    # Для не-JSON ответов извлекаем содержимое response
+    response_match = re.search(r'"response":\s*"([^"]+)"', response_content)
+    if response_match:
+        return response_match.group(1).replace('\\n', '\n')
+        
+    # Или удаляем технические строки
     lines = response_content.splitlines()
     filtered_lines = []
     skip_next = False
     
     for line in lines:
-        # Пропускаем строки, содержащие технические поля
+        # Пропускаем строки с техническими полями
         if any(tech in line for tech in ['"object":', '"status":', '"success":', '"response":']):
             skip_next = True
             continue
