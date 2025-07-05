@@ -46,17 +46,25 @@ def validate_imei(imei: str) -> bool:
     return bool(re.fullmatch(r"\d{15}", imei))
 
 def parse_universal_response(response_content: str) -> dict:
-    """Универсальный парсер для обработки любых ответов сервера"""
+    """Универсальный парсер с нормализацией ключей и определением типа устройства"""
+    result = {}
+    
+    # Нормализация ключей: нижний регистр, замена пробелов и спецсимволов
+    def normalize_key(key: str) -> str:
+        return key.strip().lower().replace(' ', '_').replace('/', '_').replace('-', '_').replace('.', '')
+
     # Сначала пробуем распарсить как JSON
     try:
         import json
-        return json.loads(response_content)
+        json_data = json.loads(response_content)
+        if isinstance(json_data, dict):
+            for key, value in json_data.items():
+                result[normalize_key(key)] = value
+            return result
     except:
         pass
     
     # Если не JSON - обрабатываем как HTML/текст
-    result = {}
-    
     # Попытка парсинга через BeautifulSoup
     try:
         soup = BeautifulSoup(response_content, 'html.parser')
@@ -69,7 +77,7 @@ def parse_universal_response(response_content: str) -> dict:
                     key = cols[0].get_text(strip=True).replace(':', '')
                     value = cols[1].get_text(strip=True)
                     if key and value:
-                        result[key] = value
+                        result[normalize_key(key)] = value
         
         # Парсинг списков
         for list_tag in soup.find_all(['ul', 'ol']):
@@ -80,7 +88,7 @@ def parse_universal_response(response_content: str) -> dict:
                     key = key.strip()
                     value = value.strip()
                     if key and value:
-                        result[key] = value
+                        result[normalize_key(key)] = value
         
         # Парсинг div с ключ-значение
         for div in soup.find_all('div'):
@@ -90,7 +98,7 @@ def parse_universal_response(response_content: str) -> dict:
                     key = parts[0].strip()
                     value = parts[1].strip()
                     if key and value:
-                        result[key] = value
+                        result[normalize_key(key)] = value
     except:
         pass
     
@@ -104,17 +112,22 @@ def parse_universal_response(response_content: str) -> dict:
                 key = key.strip()
                 value = value.strip()
                 if key and value:
-                    result[key] = value
+                    result[normalize_key(key)] = value
     
     # Если вообще ничего не найдено - возвращаем исходный текст
     if not result:
-        return {'raw_response': response_content}
+        result['raw_response'] = response_content
     
-    return result
+    # Определение типа устройства по бренду
+    brand = result.get('brand', '').lower()
+    if 'apple' in brand or 'iphone' in brand or 'ipad' in brand:
+        result['device_type'] = 'Apple'
+    elif brand:
+        result['device_type'] = 'Android'
+    else:
+        result['device_type'] = 'Unknown'
 
-def parse_free_html(html_content: str) -> dict:
-    """Специальный парсер для бесплатных отчетов Apple"""
-    return parse_universal_response(html_content)
+    return result
 
 def perform_api_check(imei: str, service_type: str) -> dict:
     """Выполняет проверку IMEI через внешний API"""
