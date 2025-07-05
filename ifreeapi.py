@@ -7,7 +7,14 @@ import threading
 import json
 
 # Настройка логирования
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("api_check.log"),
+        logging.StreamHandler()
+    ]
+)
 
 API_URL = os.getenv('API_URL', "https://api.ifreeicloud.co.uk")
 API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
@@ -49,7 +56,10 @@ def validate_imei(imei: str) -> bool:
     return bool(re.fullmatch(r"\d{15}", imei))
 
 def parse_universal_response(response_content: str) -> dict:
-    """Универсальный парсер с приоритетом на структурированные данные"""
+    """
+    Универсальный парсер для ответов API.
+    Извлекает только чистые данные устройства, скрывая технические детали.
+    """
     result = {}
     
     # Попытка парсинга JSON
@@ -143,12 +153,20 @@ def parse_universal_response(response_content: str) -> dict:
     return result
 
 def perform_api_check(imei: str, service_type: str) -> dict:
-    """Выполняет проверку IMEI через внешний API"""
+    """
+    Выполняет проверку IMEI через внешний API.
+    Возвращает чистые данные устройства без технических деталей.
+    """
     try:
         with REQUEST_SEMAPHORE:
+            # Проверяем поддерживаемый тип сервиса
             if service_type not in SERVICE_TYPES:
-                return {'error': f'Unknown service type: {service_type}'}
+                return {
+                    'error': 'Unsupported service type',
+                    'details': f'Requested service: {service_type}'
+                }
             
+            # Подготавливаем данные запроса
             service_code = SERVICE_TYPES[service_type]
             data = {
                 "service": service_code,
@@ -156,25 +174,26 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 "key": API_KEY
             }
             
-            # Задержка перед запросом
+            # Задержка перед запросом для стабильности API
             time.sleep(1)
             
-            # Выполняем запрос
+            # Выполняем запрос с таймаутом
             response = requests.post(API_URL, data=data, timeout=30)
             
-            # Задержка после запрос
+            # Задержка после запроса
             time.sleep(0.5)
             
-            # Обрабатываем ответ
+            # Обрабатываем HTTP ошибки
             if response.status_code != 200:
+                logging.error(f"API error: {response.status_code} for IMEI {imei}")
                 return {
-                    'error': f'Server error: {response.status_code}',
+                    'error': 'API server error',
                     'status_code': response.status_code,
-                    'raw_response': response.text[:500] + '...' if len(response.text) > 500 else response.text
+                    'service_type': service_type
                 }
             
-            # Логируем сырой ответ для отладки
-            logging.info(f"Raw API response for IMEI {imei}, service {service_type}")
+            # Логируем факт запроса
+            logging.info(f"API check for IMEI {imei}, service {service_type}")
             
             # Парсим ответ
             parsed_data = parse_universal_response(response.text)
@@ -182,15 +201,35 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             # Добавляем IMEI для отслеживания
             parsed_data['imei'] = imei
             
-            # Добавляем сырой ответ для диагностики
-            parsed_data['raw_response'] = response.text[:1000] + '...' if len(response.text) > 1000 else response.text
-            
-            return parsed_data
+            # Возвращаем чистые данные
+            return {
+                'brand': parsed_data.get('brand'),
+                'manufacturer': parsed_data.get('manufacturer'),
+                'model': parsed_data.get('model'),
+                'modelname': parsed_data.get('modelname'),
+                'imei': parsed_data.get('imei'),
+                'status': parsed_data.get('status'),
+                'sim_lock': parsed_data.get('sim_lock'),
+                'blacklist_status': parsed_data.get('blacklist_status'),
+                'fmi_status': parsed_data.get('fmi_status'),
+                'activation_status': parsed_data.get('activation_status'),
+                'carrier': parsed_data.get('carrier'),
+                'warranty_status': parsed_data.get('warranty_status'),
+                'device_type': parsed_data.get('device_type')
+            }
     
     except requests.exceptions.RequestException as e:
-        return {'error': f'Network error: {str(e)}'}
+        logging.error(f"Network error: {str(e)}")
+        return {
+            'error': 'Network error',
+            'details': str(e)
+        }
     except Exception as e:
-        return {'error': f'Unexpected error: {str(e)}'}
+        logging.error(f"Unexpected error: {str(e)}")
+        return {
+            'error': 'Processing error',
+            'details': str(e)
+        }
 
 # Для обратной совместимости
 parse_free_html = parse_universal_response
