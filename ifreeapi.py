@@ -209,7 +209,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 'modelname': parsed_data.get('modelname'),
                 'imei': parsed_data.get('imei'),
                 'status': parsed_data.get('status'),
-                'sim_lock': parsed_data.get('sim_lock'),
+                'simblokireba': parsed_data.get('sim_lock'),
                 'blacklist_status': parsed_data.get('blacklist_status'),
                 'fmi_status': parsed_data.get('fmi_status'),
                 'activation_status': parsed_data.get('activation_status'),
