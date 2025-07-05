@@ -104,6 +104,25 @@ body {
   line-height: 1.6;
 }
 
+/* Блокировка прокрутки при открытых модальных окнах */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* Затемнение фона для модальных окон */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2999;
+  display: none;
+}
+
 /* ===== UTILITY CLASSES ===== */
 .text-info, .text-info * { color: var(--ffffff) !important; }
 .text-warning, .text-warning * { color: var(--warning-color) !important; }
@@ -112,6 +131,7 @@ body {
 .status-clean, .status-clean * { color: var(--success-color) !important; }
 .status-blacklisted, .status-blacklisted * { color: var(--danger-color) !important; }
 .status-warning, .status-warning * { color: var(--warning-color) !important; }
+.text-center { text-align: center; }
 
 /* ===== GRADIENT BACKGROUNDS ===== */
 .gradient-bg {
@@ -435,7 +455,8 @@ body {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 0;
+  left: 50%;
+  transform: translateX(-50%);
   width: 60px;
   height: 3px;
   background: var(--accent-color);
@@ -577,7 +598,9 @@ body {
 }
 
 /* ===== MODAL STYLES ===== */
-.result-modal {
+.result-modal,
+.payment-method-modal,
+.payment-status-modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -587,6 +610,13 @@ body {
   display: none;
   z-index: 3000;
   overflow: auto;
+  align-items: center;
+  justify-content: center;
+  transition: 
+    opacity 0.3s ease, 
+    transform 0.3s ease;
+  opacity: 0;
+  transform: translateY(-20px);
 }
 
 .modal-content {
@@ -598,6 +628,16 @@ body {
   max-width: 800px;
   position: relative;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.payment-method-content {
+  background: rgba(18, 26, 43, 0.95);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  overflow: hidden;
   backdrop-filter: blur(10px);
 }
 
@@ -635,6 +675,7 @@ body {
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
 }
 
 /* ===== SPINNER ===== */
@@ -857,15 +898,6 @@ body {
 .payment-method-modal,
 .result-modal {
   z-index: 10000 !important;
-}
-
-.payment-method-content {
-  background: rgba(18, 26, 43, 0.95);
-  border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
-  overflow: hidden;
-  backdrop-filter: blur(10px);
 }
 
 .payment-method-header {
@@ -1280,19 +1312,6 @@ body {
 }
 
 /* ===== PAYMENT STATUS MODALS ===== */
-.payment-status-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 3000;
-  align-items: center;
-  justify-content: center;
-}
-
 .payment-status-modal .modal-content {
   background: var(--card-bg);
   border-radius: 20px;
@@ -1814,3 +1833,18 @@ body {
   position: relative;
   z-index: 20;
 }
+
+/* Блокировка прокрутки и анимации модальных окон */
+.result-modal, 
+.payment-method-modal, 
+.payment-status-modal {
+  transition: 
+    opacity 0.3s ease, 
+    transform 0.3s ease;
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+.modal-content {
+  transition: all 0.3s ease;
+  }
