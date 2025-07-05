@@ -1,4 +1,3 @@
-
 import os
 import re
 import requests
@@ -164,8 +163,8 @@ def get_error_message(error_code: str, service_type: str = 'common') -> str:
 
 def filter_technical_fields(response_content: str) -> str:
     """
-    Фильтрует технические поля из сырого ответа API.
-    Удаляет блоки 'object' и 'status' из JSON ответа.
+    Фильтрует все технические поля из сырого ответа API.
+    Удаляет блоки 'object', 'status', 'success' и 'response' из JSON ответа.
     """
     if not response_content.strip():
         return response_content
@@ -173,13 +172,13 @@ def filter_technical_fields(response_content: str) -> str:
     try:
         data = json.loads(response_content)
         if isinstance(data, dict):
-            # Удаляем технические поля
-            for field in ['object', 'status', 'success']:
+            # Удаляем все технические поля
+            for field in TECHNICAL_FIELDS:
                 if field in data:
                     del data[field]
             
             # Форматируем оставшиеся данные
-            return json.dumps(data, ensure_ascii=False, indent=2)
+            return json.dumps(data, ensure_ascii=False, indent=2) if data else "{}"
     except json.JSONDecodeError:
         pass
 
@@ -190,7 +189,7 @@ def filter_technical_fields(response_content: str) -> str:
     
     for line in lines:
         # Пропускаем строки, содержащие технические поля
-        if any(tech in line for tech in ['"object":', '"status":', '"success":']):
+        if any(tech in line for tech in ['"object":', '"status":', '"success":', '"response":']):
             skip_next = True
             continue
         
@@ -268,7 +267,7 @@ def parse_universal_response(response_content: str) -> dict:
                     continue
                     
                 # Фильтрация технических строк
-                if re.match(r'^(object|success|status|error|service|key)\s*:', line, re.I):
+                if re.match(r'^(object|success|status|error|service|key|response)\s*:', line, re.I):
                     continue
                     
                 if ':' in line:
