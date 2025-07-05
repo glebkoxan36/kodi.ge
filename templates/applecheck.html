@@ -576,7 +576,7 @@
                                     </div>
                                     <div class="result-row">
                                         <span class="result-label">მოდელი:</span>
-                                        <span class="result-value">${data.model || 'N/A'}</span>
+                                        <span class="result-value">${data.model || data.modelName || 'N/A'}</span>
                                     </div>
                                     <div class="result-row">
                                         <span class="result-label">სტატუსი:</span>
@@ -613,9 +613,9 @@
                         </div>
                     `;
                 }
-                // Для бесплатной проверки Apple - специальный формат
-                else if (serviceType === 'free') {
-                    // Определяем ключевые параметры для красивого отображения
+                // Для Apple устройств
+                else {
+                    // Определяем ключевые параметры для отображения
                     const keyFields = {
                         'brand': 'მწარმოებელი',
                         'modelName': 'მოდელის სახელი',
@@ -637,7 +637,7 @@
                     resultsHTML += `
                         <div class="free-check-results">
                             <div class="result-card">
-                                <h3 class="card-title">ძირითადი მონაცემები</h3>
+                                <h3 class="card-title">სრული შედეგები</h3>
                                 <div class="card-body">
                     `;
                     
@@ -647,16 +647,17 @@
                         let statusClass = '';
                         const valStr = String(value).toLowerCase();
                         
-                        if (valStr.includes('выключен') || 
-                            valStr.includes('не в списке') || 
-                            valStr.includes('чистый') || 
-                            valStr.includes('отсутствует') ||
-                            valStr.includes('unlocked')) {
+                        if (valStr.includes('unlocked') || 
+                            valStr.includes('clean') || 
+                            valStr.includes('off') ||
+                            valStr.includes('active') ||
+                            valStr.includes('valid')) {
                             statusClass = 'status-clean';
-                        } else if (valStr.includes('включен') || 
-                                   valStr.includes('заблокирован') || 
-                                   valStr.includes('в списке') ||
-                                   valStr.includes('locked')) {
+                        } else if (valStr.includes('locked') || 
+                                   valStr.includes('blacklist') || 
+                                   valStr.includes('on') ||
+                                   valStr.includes('inactive') ||
+                                   valStr.includes('expired')) {
                             statusClass = 'status-warning';
                         }
                         
@@ -677,10 +678,10 @@
                     resultsHTML += `
                         <div class="more-results">
                             <button class="btn-toggle-details" onclick="toggleDetails(this)">
-                                <i class="fas fa-chevron-down"></i> სრული ინფორმაციის ნახვა
+                                <i class="fas fa-chevron-down"></i> ყველა მონაცემის ნახვა
                             </button>
-                            <div class="full-details">
-                                <h4>სრული შედეგები</h4>
+                            <div class="full-details" style="display:none;">
+                                <h4>ყველა მონაცემი</h4>
                                 <table class="history-table">
                                     <tr>
                                         <th>პარამეტრი</th>
@@ -690,21 +691,28 @@
                     
                     // Добавляем все параметры в таблицу
                     for (const [key, value] of Object.entries(data)) {
-                        if (key === 'error' || key === 'html' || key === 'details' || key === 'original_html' || key === 'device_type') continue;
+                        if (key === 'error' || 
+                            key === 'html' || 
+                            key === 'details' || 
+                            key === 'original_html' || 
+                            key === 'device_type' ||
+                            key === 'object' ||
+                            key === 'response') continue;
                         
                         let statusClass = '';
                         const valStr = String(value).toLowerCase();
                         
-                        if (valStr.includes('выключен') || 
-                            valStr.includes('не в списке') || 
-                            valStr.includes('чистый') || 
-                            valStr.includes('отсутствует') ||
-                            valStr.includes('unlocked')) {
+                        if (valStr.includes('unlocked') || 
+                            valStr.includes('clean') || 
+                            valStr.includes('off') ||
+                            valStr.includes('active') ||
+                            valStr.includes('valid')) {
                             statusClass = 'status-clean';
-                        } else if (valStr.includes('включен') || 
-                                   valStr.includes('заблокирован') || 
-                                   valStr.includes('в списке') ||
-                                   valStr.includes('locked')) {
+                        } else if (valStr.includes('locked') || 
+                                   valStr.includes('blacklist') || 
+                                   valStr.includes('on') ||
+                                   valStr.includes('inactive') ||
+                                   valStr.includes('expired')) {
                             statusClass = 'status-warning';
                         }
                         
@@ -724,48 +732,6 @@
                             </div>
                         </div>
                     </div>
-                    `;
-                } else {
-                    // Для платных проверок - обычная таблица
-                    resultsHTML += `
-                        <div class="table-container">
-                            <table class="history-table">
-                                <tr>
-                                    <th>პარამეტრი</th>
-                                    <th>მნიშვნელობა</th>
-                                </tr>
-                    `;
-                    
-                    for (const [key, value] of Object.entries(data)) {
-                        if (key === 'error' || key === 'html' || key === 'details' || key === 'original_html') continue;
-                        
-                        let statusClass = '';
-                        const valStr = String(value).toLowerCase();
-                        
-                        if (valStr.includes('выключен') || 
-                            valStr.includes('не в списке') || 
-                            valStr.includes('чистый') || 
-                            valStr.includes('отсутствует') ||
-                            valStr.includes('unlocked')) {
-                            statusClass = 'status-clean';
-                        } else if (valStr.includes('включен') || 
-                                   valStr.includes('заблокирован') || 
-                                   valStr.includes('в списке') ||
-                                   valStr.includes('locked')) {
-                            statusClass = 'status-warning';
-                        }
-                        
-                        resultsHTML += `
-                            <tr>
-                                <td>${key}</td>
-                                <td class="${statusClass}">${value}</td>
-                            </tr>
-                        `;
-                    }
-                    
-                    resultsHTML += `
-                            </table>
-                        </div>
                     `;
                 }
             } else {
@@ -842,7 +808,7 @@
                 button.innerHTML = '<i class="fas fa-chevron-up"></i> დეტალების დამალვა';
             } else {
                 detailsContainer.style.display = 'none';
-                button.innerHTML = '<i class="fas fa-chevron-down"></i> სრული ინფორმაციის ნახვა';
+                button.innerHTML = '<i class="fas fa-chevron-down"></i> ყველა მონაცემის ნახვა';
             }
         }
     </script>
