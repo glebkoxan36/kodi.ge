@@ -75,7 +75,7 @@ ERROR_MESSAGES = {
         'incomplete_data': 'მოწყობილობის მონაცემები არასრულია',
         'payment_error': 'გადახდის პროცესში შეცდომა მოხდა',
         'stripe_error': 'ბარათით გადახდის შეცდომა',
-        'android_device': 'Android მოწყობილობა - გთხოვთ გამოიყენოთ Android შემოწმების გვერდი'
+        'android_device': 'ამ გვერდზე შეგიძლიათ მხოლოდ Apple მოწყობილობების შემოწმება'
     },
     'free': {
         'limit_exceeded': 'უფასო შემოწმების ლიმიტი ამოიწურა',
@@ -439,7 +439,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                     if response.status_code >= 500 and retries < max_attempts:
                         retries += 1
                         logging.info(f"Retrying ({retries}/{max_attempts}) for IMEI {imei}")
-                        time.sleep(RETRY_DELAY);
+                        time.sleep(RETRY_DELAY)
                         continue
                     
                     return OrderedDict([
@@ -467,7 +467,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                     if retries < max_attempts:
                         retries += 1
                         logging.info(f"Retrying ({retries}/{max_attempts}) for empty response")
-                        time.sleep(RETRY_DELAY);
+                        time.sleep(RETRY_DELAY)
                         continue
                     else:
                         return OrderedDict([
@@ -485,6 +485,16 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 # Если в процессе парсинга возникла ошибка
                 if 'error' in parsed_data:
                     return parsed_data
+                
+                # Проверяем тип устройства - разрешаем только Apple
+                device_type = parsed_data.get('device_type', '').lower()
+                if device_type != 'apple':
+                    return OrderedDict([
+                        ('error', get_error_message('android_device')),
+                        ('details', f'Device type: {device_type} is not supported on this page'),
+                        ('device_type', device_type),
+                        ('server_response', parsed_data.get('server_response', ''))
+                    ])
                 
                 # Добавляем IMEI для отслеживания
                 parsed_data['imei'] = imei
@@ -514,7 +524,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             if retries < max_attempts:
                 retries += 1
                 logging.info(f"Retrying ({retries}/{max_attempts}) after network error")
-                time.sleep(RETRY_DELAY);
+                time.sleep(RETRY_DELAY)
                 continue
             else:
                 return OrderedDict([
