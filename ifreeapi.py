@@ -523,8 +523,10 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             
             if retries < max_attempts:
                 retries += 1
-                logging.info(f"Retrying ({retries}/{max_attempts}) after network error")
-                time.sleep(RETRY_DELAY)
+                # Увеличиваем задержку с каждой попыткой
+                current_delay = RETRY_DELAY * (retries + 1)
+                logging.info(f"Retrying ({retries}/{max_attempts}) after network error. Delay: {current_delay}s")
+                time.sleep(current_delay)
                 continue
             else:
                 return OrderedDict([
