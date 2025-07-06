@@ -69,6 +69,69 @@
             margin: 10px 0;
             font-size: 0.9em;
         }
+        
+        /* Android ошибка */
+        .android-error {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8d7da;
+            border-radius: 8px;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .android-error i {
+            font-size: 2.5rem;
+            color: #3ddc84;
+        }
+        
+        .android-error div {
+            flex: 1;
+        }
+        
+        .android-error a {
+            color: #0d6efd;
+            text-decoration: underline;
+        }
+        
+        /* Предупреждение о Android */
+        .android-warning {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .android-warning i {
+            color: #ffc107;
+            font-size: 1.5rem;
+        }
+        
+        .android-warning a {
+            color: #0d6efd;
+            text-decoration: underline;
+        }
+        
+        /* Адаптивное модальное окно */
+        .result-modal .modal-content {
+            max-height: 90vh;
+            overflow-y: auto;
+            width: 95%;
+            max-width: 800px;
+        }
+        
+        @media (max-width: 768px) {
+            .result-modal .modal-content {
+                width: 100%;
+                margin: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -93,6 +156,16 @@
         <div class="section-title text-center">
             <h1>Apple IMEI შემოწმება</h1>
             <p>აირჩიეთ შემოწმების ტიპი და შეიყვანეთ IMEI ან სერიული ნომერი</p>
+        </div>
+        
+        <!-- Android предупреждение -->
+        <div class="android-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>
+                <strong>ყურადღება!</strong> ეს გვერდი განკუთვნილია მხოლოდ Apple მოწყობილობების შემოწმებისთვის.
+                Android მოწყობილობებისთვის გთხოვთ გამოიყენოთ 
+                <a href="/android_check">Android IMEI შემოწმების სერვისი</a>
+            </p>
         </div>
         
         <div id="services-container" class="services-grid">
@@ -407,6 +480,24 @@
             const imei = document.getElementById('imei-input').value.trim();
             const errorElement = document.getElementById('imei-error');
             
+            // Проверка на Android устройство (первые цифры IMEI)
+            const isAndroid = /^35|^85|^86|^87|^89/.test(imei);
+            
+            if (isAndroid) {
+                errorElement.innerHTML = `
+                    <div class="android-error">
+                        <i class="fas fa-android"></i>
+                        <div>
+                            <strong>Android მოწყობილობა</strong><br>
+                            ამ გვერდზე შეგიძლიათ მხოლოდ Apple მოწყობილობების შემოწმება.<br>
+                            გთხოვთ გამოიყენოთ <a href="/android_check">Android შემოწმების გვერდი</a>
+                        </div>
+                    </div>
+                `;
+                errorElement.style.display = 'block';
+                return;
+            }
+            
             if (!imei) {
                 errorElement.textContent = 'გთხოვთ შეიყვანოთ IMEI ან სერიული ნომერი';
                 errorElement.style.display = 'block';
@@ -533,12 +624,31 @@
             });
         }
         
-        function fetchResultForSession(sessionId) {
+        function fetchResultForSession(sessionId, attempt = 1) {
+            const maxAttempts = 5;
+            const delay = 2000; // 2 seconds between attempts
+            
+            if (attempt > maxAttempts) {
+                document.getElementById('spinner').style.display = 'none';
+                closeModal('payment-success-modal');
+                const errorElement = document.getElementById('imei-error');
+                errorElement.textContent = 'შედეგის მიღება ვერ მოხერხდა. სცადეთ ხელახლა.';
+                errorElement.style.display = 'block';
+                return;
+            }
+            
             document.getElementById('spinner').style.display = 'flex';
             
             fetch('/get_check_result?session_id=' + sessionId)
                 .then(response => {
-                    if (!response.ok) throw new Error('ქსელის პასუხი არასწორია');
+                    if (!response.ok) {
+                        if (response.status === 404 && attempt <= maxAttempts) {
+                            // Result not ready yet, retry after delay
+                            setTimeout(() => fetchResultForSession(sessionId, attempt + 1), delay);
+                            return;
+                        }
+                        throw new Error('ქსელის პასუხი არასწორია');
+                    }
                     return response.json();
                 })
                 .then(data => {
@@ -554,12 +664,15 @@
                     }
                 })
                 .catch(error => {
-                    document.getElementById('spinner').style.display = 'none';
-                    closeModal('payment-success-modal');
-                    const errorElement = document.getElementById('imei-error');
-                    errorElement.textContent = 'შედეგის მიღების შეცდომა';
-                    errorElement.style.display = 'block';
-                    console.error('შედეგის მიღების შეცდომა:', error);
+                    if (error.message.includes('ქსელის')) {
+                        setTimeout(() => fetchResultForSession(sessionId, attempt + 1), delay);
+                    } else {
+                        document.getElementById('spinner').style.display = 'none';
+                        closeModal('payment-success-modal');
+                        const errorElement = document.getElementById('imei-error');
+                        errorElement.textContent = 'შედეგის მიღების შეცდომა';
+                        errorElement.style.display = 'block';
+                    }
                 });
         }
         
@@ -636,15 +749,15 @@
         function displayResults(imei, serviceType, data) {
             const resultContent = document.getElementById('result-content');
             
-            // Если есть ошибка, показываем ее
-            if (data.error) {
+            // Проверка типа устройства
+            if (data.device_type && data.device_type.toLowerCase() === 'android') {
                 resultContent.innerHTML = `
                     <div class="error-card">
-                        <h3 class="status-error">შეცდომა შემოწმების დროს</h3>
-                        <p>${data.error}</p>
-                        ${data.details ? `<div class="error-details">${data.details}</div>` : ''}
+                        <h3 class="status-error">Android მოწყობილობა</h3>
+                        <p>ამ გვერდზე შეგიძლიათ მხოლოდ Apple მოწყობილობების შემოწმება.</p>
+                        <p>თქვენი მოწყობილობა: ${data.brand || 'Unknown'} ${data.model || ''}</p>
                         <div class="result-actions">
-                            <button class="btn-primary" onclick="retryCheck()">სცადეთ ხელახლა</button>
+                            <a href="/android_check" class="btn-primary">გადასვლა Android შემოწმებაზე</a>
                         </div>
                     </div>
                 `;
