@@ -385,7 +385,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
     last_exception = None
     
     # Для платных сервисов делаем только 1 попытку
-    max_attempts = 1 if service_type != 'free' else MAX_RETRIES
+    max_attempts = MAX_RETRIES
     
     while retries <= max_attempts:
         try:
