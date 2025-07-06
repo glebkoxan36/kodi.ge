@@ -90,7 +90,7 @@ ERROR_MESSAGES = {
     }
 }
 
-# Соответствие ошибок API нашим кодам
+# Соответствие ошибок API нашим кოდებს
 API_ERRORS = {
     "Invalid IMEI": "invalid_imei",
     "Invalid Key": "invalid_key",
@@ -164,17 +164,43 @@ def get_error_message(error_code: str, service_type: str = 'common') -> str:
 def filter_technical_fields(response_content: str) -> str:
     """
     Фильтрует технические поля, но сохраняет содержимое 'response'
-    Возвращает только содержимое поля 'response' или отфильтрованный JSON
+    и переводит ключи на грузинский язык.
     """
     if not response_content.strip():
         return response_content
 
+    # Словарь перевода ключей
+    key_translations = {
+        "Model": "მოდელი",
+        "Model Name": "მოდელის სახელი",
+        "Brand": "ბრენდი",
+        "Manufacturer": "მწარმოებელი",
+        "IMEI Number": "IMEI ნომერი",
+        "Network": "ქსელი",
+        "Purchase Date": "შეძენის თარიღი",
+        "Activation Date": "აქტივაციის თარიღი",
+        "Warranty Expiry": "გარანტიის ვადის გასვლის თარიღი",
+        "Locked Status": "დაბლოკვის სტატუსი",
+        "Find My iPhone": "Find My iPhone სტატუსი",
+        "iCloud Status": "iCloud სტატუსი",
+        "SIM Lock": "SIM ლოკი",
+        "Blacklist Status": "შავი სიის სტატუსი",
+        "FMI Status": "FMI სტატუსი",
+        "Activation Status": "აქტივაციის სტატუსი",
+        "Carrier": "ოპერატორი",
+        "Warranty Status": "გარანტიის სტატუსი"
+    }
+
     try:
         data = json.loads(response_content)
         
-        # Если есть поле 'response' и оно строка - возвращаем только его содержимое
+        # Если есть поле 'response' и оно строка - переводим ключи в его содержимом
         if 'response' in data and isinstance(data['response'], str):
-            return data['response'].strip()
+            response_text = data['response'].strip()
+            # Применяем перевод ключей
+            for eng_key, geo_key in key_translations.items():
+                response_text = response_text.replace(f"{eng_key}:", f"{geo_key}:")
+            return response_text
             
         # Удаляем технические поля
         for field in TECHNICAL_FIELDS:
@@ -189,29 +215,17 @@ def filter_technical_fields(response_content: str) -> str:
     # Для не-JSON ответов извлекаем содержимое response
     response_match = re.search(r'"response":\s*"([^"]+)"', response_content)
     if response_match:
-        return response_match.group(1).replace('\\n', '\n')
+        response_text = response_match.group(1).replace('\\n', '\n')
+        # Применяем перевод ключей
+        for eng_key, geo_key in key_translations.items():
+            response_text = response_text.replace(f"{eng_key}:", f"{geo_key}:")
+        return response_text
         
-    # Или удаляем технические строки
-    lines = response_content.splitlines()
-    filtered_lines = []
-    skip_next = False
-    
-    for line in lines:
-        # Пропускаем строки с техническими полями
-        if any(tech in line for tech in ['"object":', '"status":', '"success":', '"response":']):
-            skip_next = True
-            continue
-        
-        # Пропускаем строки в блоке object
-        if skip_next and line.strip() in ['{', '}']:
-            continue
-        if skip_next and line.strip() == '},':
-            skip_next = False
-            continue
-            
-        filtered_lines.append(line)
-    
-    return "\n".join(filtered_lines)
+    # Для других текстовых ответов также применяем перевод
+    translated_text = response_content
+    for eng_key, geo_key in key_translations.items():
+        translated_text = translated_text.replace(f"{eng_key}:", f"{geo_key}:")
+    return translated_text
 
 def parse_universal_response(response_content: str) -> dict:
     """
