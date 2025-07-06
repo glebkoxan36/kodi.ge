@@ -187,72 +187,6 @@ def get_error_message(error_code: str, service_type: str = 'common') -> str:
     # Возвращаем общее сообщение для неизвестных ошибок
     return common_errors['unknown_error']
 
-def filter_technical_fields(response_content: str) -> str:
-    """
-    Фильтрует технические поля, но сохраняет содержимое 'response'
-    и переводит ключи на грузинский язык.
-    """
-    if not response_content.strip():
-        return response_content
-
-    # Словарь перевода ключей
-    key_translations = {
-        "Model": "მოდელი",
-        "Model Name": "მოდელის სახელი",
-        "Brand": "ბრენდი",
-        "Manufacturer": "მწარმოებელი",
-        "IMEI Number": "IMEI ნომერი",
-        "Network": "ქსელი",
-        "Purchase Date": "შეძენის თარიღი",
-        "Activation Date": "აქტივაციის თარიღი",
-        "Warranty Expiry": "გარანტიის ვადის გასვლის თარიღი",
-        "Locked Status": "დაბლოკვის სტატუსი",
-        "Find My iPhone": "Find My iPhone სტატუსი",
-        "iCloud Status": "iCloud სტატუსი",
-        "SIM Lock": "SIM ლოკი",
-        "Blacklist Status": "შავი სიის სტატუსი",
-        "FMI Status": "FMI სტატუსი",
-        "Activation Status": "აქტივაციის სტატუსი",
-        "Carrier": "ოპერატორი",
-        "Warranty Status": "გარანტიის სტატუსი"
-    }
-
-    try:
-        data = json.loads(response_content)
-        
-        # Если есть поле 'response' и оно строка - переводим ключи в его содержимом
-        if 'response' in data and isinstance(data['response'], str):
-            response_text = data['response'].strip()
-            # Применяем перевод ключей
-            for eng_key, geo_key in key_translations.items():
-                response_text = response_text.replace(f"{eng_key}:", f"{geo_key}:")
-            return response_text
-            
-        # Удаляем технические поля
-        for field in TECHNICAL_FIELDS:
-            if field in data:
-                del data[field]
-                
-        # Форматируем оставшиеся данные
-        return json.dumps(data, ensure_ascii=False, indent=2)
-    except json.JSONDecodeError:
-        pass
-
-    # Для не-JSON ответов извлекаем содержимое response
-    response_match = re.search(r'"response":\s*"([^"]+)"', response_content)
-    if response_match:
-        response_text = response_match.group(1).replace('\\n', '\n')
-        # Применяем перевод ключей
-        for eng_key, geo_key in key_translations.items():
-            response_text = response_text.replace(f"{eng_key}:", f"{geo_key}:")
-        return response_text
-        
-    # Для других текстовых ответов также применяем перевод
-    translated_text = response_content
-    for eng_key, geo_key in key_translations.items():
-        translated_text = translated_text.replace(f"{eng_key}:", f"{geo_key}:")
-    return translated_text
-
 def parse_universal_response(response_content: str) -> dict:
     """
     Универсальный парсер для ответов API.
@@ -261,9 +195,6 @@ def parse_universal_response(response_content: str) -> dict:
     """
     result = OrderedDict()
     raw_response = response_content  # Сохраняем оригинальный ответ
-    
-    # Фильтруем технические поля для отображения
-    filtered_response = filter_technical_fields(raw_response)
     
     # Попытка парсинга JSON
     try:
@@ -276,7 +207,7 @@ def parse_universal_response(response_content: str) -> dict:
             return OrderedDict([
                 ('error', get_error_message(error_code)),
                 ('details', error_text),
-                ('server_response', filtered_response)
+                ('server_response', raw_response)
             ])
         
         # Обработка объекта данных
@@ -300,7 +231,7 @@ def parse_universal_response(response_content: str) -> dict:
         for key in ['model', 'model_name', 'modelName', 'brand', 'manufacturer', 
                     'imei', 'imei_number', 'sim_lock', 'blacklist_status', 
                     'fmi_status', 'activation_status', 'carrier', 'warranty_status', 
-                    'product_type', 'manufacture', 'state', 'network', 'purchase_date',
+                    'product_type', 'device_type', 'manufacture', 'state', 'network', 'purchase_date',
                     'activation_date', 'warranty_expiry', 'locked_status', 
                     'find_my_iphone', 'icloud_status']:
             if key in data and key not in result:
@@ -370,8 +301,8 @@ def parse_universal_response(response_content: str) -> dict:
         new_key = KEY_TRANSLATIONS.get(key, key)
         translated_result[new_key] = value
         
-    # Сохраняем фильтрованный ответ
-    translated_result['server_response'] = filtered_response
+    # Сохраняем оригинальный ответ
+    translated_result['server_response'] = raw_response
     return translated_result
 
 def perform_api_check(imei: str, service_type: str) -> dict:
@@ -432,7 +363,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                             ('error', get_error_message('server_error')),
                             ('status_code', response.status_code),
                             ('service_type', service_type),
-                            ('server_response', filter_technical_fields(response.text))
+                            ('server_response', response.text)
                         ])
                     
                     # Для бесплатных сервисов пробуем повторить
@@ -446,7 +377,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                         ('error', get_error_message('server_error')),
                         ('status_code', response.status_code),
                         ('service_type', service_type),
-                        ('server_response', filter_technical_fields(response.text))
+                        ('server_response', response.text)
                     ])
                 
                 # Сохраняем последний ответ для анализа
@@ -461,7 +392,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                         return OrderedDict([
                             ('error', get_error_message('empty_response', service_type)),
                             ('service_type', service_type),
-                            ('server_response', filter_technical_fields(last_response))
+                            ('server_response', last_response)
                         ])
                     
                     if retries < max_attempts:
@@ -473,7 +404,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                         return OrderedDict([
                             ('error', get_error_message('empty_response', service_type)),
                             ('service_type', service_type),
-                            ('server_response', filter_technical_fields(last_response))
+                            ('server_response', last_response)
                         ])
                 
                 # Логируем факт запроса
@@ -493,7 +424,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                         ('error', get_error_message('android_device')),
                         ('details', f'Device type: {device_type} is not supported on this page'),
                         ('device_type', device_type),
-                        ('server_response', parsed_data.get('server_response', ''))
+                        ('server_response', last_response)
                     ])
                 
                 # Добавляем IMEI для отслеживания
@@ -542,7 +473,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 ('error', get_error_message('unknown_error')),
                 ('details', last_exception),
                 ('service_type', service_type),
-                ('server_response', filter_technical_fields(last_response) if last_response else "No response")
+                ('server_response', last_response if last_response else "No response")
             ])
     
     # Если превышено количество попыток
@@ -551,7 +482,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         ('error', get_error_message('max_retries_exceeded')),
         ('details', f'After {max_attempts} retries'),
         ('service_type', service_type),
-        ('server_response', filter_technical_fields(last_response) if last_response else "No response")
+        ('server_response', last_response if last_response else "No response")
     ])
 
 # Для обратной совместимости
