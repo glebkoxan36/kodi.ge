@@ -510,9 +510,36 @@
             // Блокируем кнопку
             checkBtn.disabled = true;
             
-            // უფასო შემოწმებისთვის
+            // Для бесплатной проверки
             if (serviceType === 'free') {
-                performCheck(imei, serviceType);
+                document.getElementById('spinner').style.display = 'flex';
+                
+                fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        imei: imei,
+                        service_type: serviceType
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    openModal('payment-success-modal');
+                    fetchResultForSession(data.id);
+                })
+                .catch(error => {
+                    document.getElementById('spinner').style.display = 'none';
+                    checkBtn.disabled = false;
+                    errorElement.textContent = error.message;
+                    errorElement.style.display = 'block';
+                });
                 return;
             }
             
@@ -629,6 +656,11 @@
             
             document.getElementById('spinner').style.display = 'flex';
             
+            // Определяем URL в зависимости от типа сессии
+            const url = sessionId.startsWith('free_') ? 
+                `/get_free_result?session_id=${sessionId}` : 
+                `/get_check_result?session_id=${sessionId}`;
+            
             // Создаем промис для таймаута
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => {
@@ -637,7 +669,7 @@
             });
             
             // Основной промис запроса
-            const fetchPromise = fetch('/get_check_result?session_id=' + sessionId)
+            const fetchPromise = fetch(url)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('ქსელის პასუხი არასწორია');
@@ -675,91 +707,6 @@
                         document.getElementById('check-btn').disabled = false;
                     }
                 });
-        }
-        
-        function performCheck(imei, serviceType) {
-            document.getElementById('spinner').style.display = 'flex';
-            const checkBtn = document.getElementById('check-btn');
-            
-            // Создаем контроллер для таймаута запроса
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 секунд таймаут
-            
-            // Имитация задержки минимум 1.5 секунды
-            const startTime = Date.now();
-            const minDelay = 1500;
-
-            fetch('/perform_check', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken(),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    imei: imei,
-                    service_type: serviceType
-                }),
-                signal: controller.signal
-            })
-            .then(response => {
-                clearTimeout(timeoutId);
-                if (!response.ok) throw new Error('ქსელის შეცდომა');
-                return response.json();
-            })
-            .then(data => {
-                // Гарантируем минимальную задержку
-                const elapsed = Date.now() - startTime;
-                const remainingDelay = Math.max(0, minDelay - elapsed);
-                
-                setTimeout(() => {
-                    document.getElementById('spinner').style.display = 'none';
-                    checkBtn.disabled = false;
-                    
-                    if (data.error) {
-                        const errorElement = document.getElementById('imei-error');
-                        errorElement.textContent = data.error;
-                        if (data.details) {
-                            errorElement.innerHTML += `<div class="error-details">${data.details}</div>`;
-                        }
-                        errorElement.style.display = 'block';
-                    } else {
-                        // Проверка на N/A значения
-                        const keyFields = ['model', 'modelName', 'brand'];
-                        const hasNA = keyFields.some(field => 
-                            data[field] && data[field].toUpperCase() === 'N/A'
-                        );
-                        
-                        if (hasNA) {
-                            data.error = 'მოწყობილობის იდენტიფიკაცია ვერ მოხერხდა. სცადეთ ხელახლა.';
-                            const errorElement = document.getElementById('imei-error');
-                            errorElement.innerHTML = data.error;
-                            errorElement.style.display = 'block';
-                        } else {
-                            displayResults(imei, serviceType, data);
-                        }
-                    }
-                }, remainingDelay);
-            })
-            .catch(error => {
-                clearTimeout(timeoutId);
-                const elapsed = Date.now() - startTime;
-                const remainingDelay = Math.max(0, minDelay - elapsed);
-                
-                setTimeout(() => {
-                    document.getElementById('spinner').style.display = 'none';
-                    checkBtn.disabled = false;
-                    const errorElement = document.getElementById('imei-error');
-                    
-                    if (error.name === 'AbortError') {
-                        errorElement.textContent = 'მოთხოვნის დამუშავების დრო ამოიწურა';
-                    } else {
-                        errorElement.textContent = 'ქსელის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.';
-                    }
-                    errorElement.style.display = 'block';
-                    console.error('შემოწმების შეცდომა:', error);
-                }, remainingDelay);
-            });
         }
         
         function displayResults(imei, serviceType, data) {
@@ -1021,4 +968,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
