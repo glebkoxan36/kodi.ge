@@ -46,7 +46,7 @@ Session(app)
 csrf = CSRFProtect(app)
 
 # Семафор для ограничения одновременных запросов
-REQUEST_SEMAPHORE = threading.Semaphore(3)  # Максимум 3 одновременных запроса
+REQUEST_SEMAPHORE = threading.BoundedSemaphore(3)  # Максимум 3 одновременных запроса
 
 # Функция для генерации цвета аватара
 def generate_avatar_color(name):
@@ -551,31 +551,6 @@ def create_checkout_session():
         if not validate_imei(imei):
             return jsonify({'error': 'არასწორი IMEI'}), 400
         
-        # Для бесплатной проверки
-        if service_type == 'free':
-            # Выполняем проверку
-            result = perform_api_check(imei, service_type)
-            
-            # Создаем запись в базе
-            session_id = f"free_{ObjectId()}"
-            record = {
-                'session_id': session_id,
-                'imei': imei,
-                'service_type': service_type,
-                'paid': False,
-                'timestamp': datetime.utcnow(),
-                'result': result
-            }
-            if 'user_id' in session:
-                record['user_id'] = ObjectId(session['user_id'])
-            if client:
-                checks_collection.insert_one(record)
-                
-            return jsonify({
-                'id': session_id,
-                'payment_method': 'free'
-            })
-        
         # Маппинг типов услуг на цены
         price_mapping = {
             'fmi': 'paid',
@@ -603,6 +578,10 @@ def create_checkout_session():
         prices = get_current_prices()
         price_key = price_mapping[service_type]
         amount = prices[price_key]  # в центах
+        
+        # Для бесплатной проверки не создаем сессию
+        if service_type == 'free':
+            return jsonify({'error': 'უფასო შემოწმება არ საჭიროებს გადახდამ'}), 400
         
         # Если пользователь авторизован и выбрал оплату с баланса
         if use_balance and 'user_id' in session:
@@ -668,24 +647,6 @@ def create_checkout_session():
     except Exception as e:
         app.logger.error(f"Error creating checkout session: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
-@app.route('/get_free_result')
-def get_free_result():
-    session_id = request.args.get('session_id')
-    if not session_id:
-        return jsonify({'error': 'სესიის ID არის მითითებული'}), 400
-    
-    if not client:
-        return jsonify({'error': 'Database unavailable'}), 500
-    
-    record = checks_collection.find_one({'session_id': session_id})
-    if not record:
-        return jsonify({'error': 'შედეგი ვერ მოიძებნა'}), 404
-    
-    return jsonify({
-        'imei': record['imei'],
-        'result': record['result']
-    })
 
 @app.route('/perform_balance_check', methods=['POST'])
 @csrf.exempt
@@ -866,14 +827,22 @@ def perform_check():
         imei = data.get('imei')
         service_type = data.get('service_type')
         
+        app.logger.info(f"Check started for IMEI: {imei}, service: {service_type}")
+        
         if not imei or not service_type:
             return jsonify({'error': 'არასაკმარისი პარამეტრები'}), 400
         
         if not validate_imei(imei):
             return jsonify({'error': 'IMEI-ის არასწორი ფორმატი'}), 400
         
-        # Выполняем проверку с использованием семафора
-        with REQUEST_SEMAPHORE:
+        # Пытаемся получить семафор с таймаутом
+        acquired = REQUEST_SEMAPHORE.acquire(timeout=15)
+        if not acquired:
+            app.logger.warning(f"Semaphore timeout for IMEI: {imei}")
+            return jsonify({'error': 'სისტემა დატვირთულია, გთხოვთ სცადოთ მოგვიანებით'}), 503
+        
+        try:
+            # Выполняем проверку
             time.sleep(1)  # Искусственная задержка перед запросом
             
             attempts = 0
@@ -906,46 +875,50 @@ def perform_check():
                             'details': str(e)
                         }), 500
         
-        if not result:
-            return jsonify({'error': 'API-დან ცარიელი პასუხი'}), 500
-        
-        if 'error' in result:
-            return jsonify(result), 400
-        
-        # Для сервисов, возвращающих HTML
-        if 'html_content' in result:
-            parsed_data = parse_free_html(result['html_content'])
+            if not result:
+                return jsonify({'error': 'API-დან ცარიელი პასუხი'}), 500
             
-            if parsed_data:
-                # Сохраняем оригинальный HTML как резерв
-                parsed_data['original_html'] = result['html_content'][:500] + '...' 
-                result = parsed_data
-            else:
-                # Fallback: возвращаем очищенный текст
-                soup = BeautifulSoup(result['html_content'], 'html.parser')
-                result = {'server_response': soup.get_text(separator='\n', strip=True)}
+            if 'error' in result:
+                return jsonify(result), 400
+            
+            # Для сервисов, возвращающих HTML
+            if 'html_content' in result:
+                parsed_data = parse_free_html(result['html_content'])
+                
+                if parsed_data:
+                    # Сохраняем оригинальный HTML как резерв
+                    parsed_data['original_html'] = result['html_content'][:500] + '...' 
+                    result = parsed_data
+                else:
+                    # Fallback: возвращаем очищенный текст
+                    soup = BeautifulSoup(result['html_content'], 'html.parser')
+                    result = {'server_response': soup.get_text(separator='\n', strip=True)}
+            
+            if service_type == 'free' and client:
+                record = {
+                    'imei': imei,
+                    'service_type': service_type,
+                    'paid': False,
+                    'timestamp': datetime.utcnow(),
+                    'result': result
+                }
+                if 'user_id' in session:
+                    record['user_id'] = ObjectId(session['user_id'])
+                checks_collection.insert_one(record)
+            
+            if result and 'error' not in result and client:
+                send_webhook_event('imei_check_completed', {
+                    'imei': imei,
+                    'service_type': service_type,
+                    'result': result,
+                    'timestamp': datetime.utcnow().isoformat()
+                })
+            
+            app.logger.info(f"Check completed for IMEI: {imei}")
+            return jsonify(result)
         
-        if service_type == 'free' and client:
-            record = {
-                'imei': imei,
-                'service_type': service_type,
-                'paid': False,
-                'timestamp': datetime.utcnow(),
-                'result': result
-            }
-            if 'user_id' in session:
-                record['user_id'] = ObjectId(session['user_id'])
-            checks_collection.insert_one(record)
-        
-        if result and 'error' not in result and client:
-            send_webhook_event('imei_check_completed', {
-                'imei': imei,
-                'service_type': service_type,
-                'result': result,
-                'timestamp': datetime.utcnow().isoformat()
-            })
-        
-        return jsonify(result)
+        finally:
+            REQUEST_SEMAPHORE.release()
     
     except Exception as e:
         app.logger.error(f'Check error: {str(e)}')
