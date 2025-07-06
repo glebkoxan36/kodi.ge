@@ -74,7 +74,8 @@ ERROR_MESSAGES = {
         'max_retries_exceeded': 'მოთხოვნის გამეორების ლიმიტი ამოიწურა',
         'incomplete_data': 'მოწყობილობის მონაცემები არასრულია',
         'payment_error': 'გადახდის პროცესში შეცდომა მოხდა',
-        'stripe_error': 'ბარათით გადახდის შეცდომა'
+        'stripe_error': 'ბარათით გადახდის შეცდომა',
+        'android_device': 'Android მოწყობილობა - გთხოვთ გამოიყენოთ Android შემოწმების გვერდი'
     },
     'free': {
         'limit_exceeded': 'უფასო შემოწმების ლიმიტი ამოიწურა',
@@ -90,7 +91,7 @@ ERROR_MESSAGES = {
     }
 }
 
-# Соответствие ошибок API нашим кოდებს
+# Соответствие ошибок API нашим кодам
 API_ERRORS = {
     "Invalid IMEI": "invalid_imei",
     "Invalid Key": "invalid_key",
@@ -354,6 +355,14 @@ def perform_api_check(imei: str, service_type: str) -> dict:
     Возвращает чистые данные устройства без технических деталей на грузинском языке.
     Всегда показывает все полученные данные, даже если они неполные.
     """
+    # Проверка первых цифр IMEI для Android
+    if re.match(r'^35|^85|^86|^87|^89', imei):
+        return OrderedDict([
+            ('error', get_error_message('android_device')),
+            ('device_type', 'Android'),
+            ('details', f'IMEI: {imei} არის Android მოწყობილობისთვის')
+        ])
+    
     retries = 0
     last_response = None
     last_exception = None
