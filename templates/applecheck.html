@@ -456,10 +456,10 @@
             // Разрешаем только цифры
             if (!/^\d+$/.test(imei)) return false;
             
-            // Проверяем длину (14 для Android, 15 для Apple)
+            // Проверяем длину (14 для серийных номеров, 15 для IMEI)
             if (imei.length !== 14 && imei.length !== 15) return false;
             
-            // Для 14-значных IMEI (Android) пропускаем проверку
+            // Для 14-значных серийных номеров пропускаем проверку
             if (imei.length === 14) return true;
             
             // Алгоритм Луна для 15-значных IMEI
@@ -479,24 +479,6 @@
         function startCheck() {
             const imei = document.getElementById('imei-input').value.trim();
             const errorElement = document.getElementById('imei-error');
-            
-            // Проверка на Android устройство (первые цифры IMEI)
-            const isAndroid = /^35|^85|^86|^87|^89/.test(imei);
-            
-            if (isAndroid) {
-                errorElement.innerHTML = `
-                    <div class="android-error">
-                        <i class="fas fa-android"></i>
-                        <div>
-                            <strong>Android მოწყობილობა</strong><br>
-                            ამ გვერდზე შეგიძლიათ მხოლოდ Apple მოწყობილობების შემოწმება.<br>
-                            გთხოვთ გამოიყენოთ <a href="/android_check">Android შემოწმების გვერდი</a>
-                        </div>
-                    </div>
-                `;
-                errorElement.style.display = 'block';
-                return;
-            }
             
             if (!imei) {
                 errorElement.textContent = 'გთხოვთ შეიყვანოთ IMEI ან სერიული ნომერი';
