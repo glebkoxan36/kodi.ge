@@ -479,6 +479,7 @@
         function startCheck() {
             const imei = document.getElementById('imei-input').value.trim();
             const errorElement = document.getElementById('imei-error');
+            const checkBtn = document.getElementById('check-btn');
             
             if (!imei) {
                 errorElement.textContent = 'გთხოვთ შეიყვანოთ IMEI ან სერიული ნომერი';
@@ -505,6 +506,9 @@
             
             currentImei = imei;
             currentServiceType = serviceType;
+            
+            // Блокируем кнопку
+            checkBtn.disabled = true;
             
             // უფასო შემოწმებისთვის
             if (serviceType === 'free') {
@@ -533,6 +537,8 @@
                 }).catch(() => {
                     document.getElementById('balance-status').innerHTML = 
                         `<span class="balance-error">ბალანსის მონაცემები ვერ მოიძებნა</span>`;
+                }).finally(() => {
+                    checkBtn.disabled = false;
                 });
             } else {
                 // არაავტორიზებული მომხმარებლებისთვის
@@ -617,6 +623,7 @@
                 const errorElement = document.getElementById('imei-error');
                 errorElement.textContent = 'შედეგის მიღება ვერ მოხერხდა. სცადეთ ხელახლა მოგვიანებით.';
                 errorElement.style.display = 'block';
+                document.getElementById('check-btn').disabled = false;
                 return;
             }
             
@@ -651,6 +658,7 @@
                     } else {
                         displayResults(currentImei, currentServiceType, data);
                     }
+                    document.getElementById('check-btn').disabled = false;
                 })
                 .catch(error => {
                     if (error.message === 'Request timeout' || error.message.includes('ქსელის')) {
@@ -664,12 +672,18 @@
                         const errorElement = document.getElementById('imei-error');
                         errorElement.textContent = 'შედეგის მიღების შეცდომა';
                         errorElement.style.display = 'block';
+                        document.getElementById('check-btn').disabled = false;
                     }
                 });
         }
         
         function performCheck(imei, serviceType) {
             document.getElementById('spinner').style.display = 'flex';
+            const checkBtn = document.getElementById('check-btn');
+            
+            // Создаем контроллер для таймаута запроса
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 секунд таймаут
             
             // Имитация задержки минимум 1.5 секунды
             const startTime = Date.now();
@@ -685,9 +699,11 @@
                 body: JSON.stringify({
                     imei: imei,
                     service_type: serviceType
-                })
+                }),
+                signal: controller.signal
             })
             .then(response => {
+                clearTimeout(timeoutId);
                 if (!response.ok) throw new Error('ქსელის შეცდომა');
                 return response.json();
             })
@@ -698,6 +714,7 @@
                 
                 setTimeout(() => {
                     document.getElementById('spinner').style.display = 'none';
+                    checkBtn.disabled = false;
                     
                     if (data.error) {
                         const errorElement = document.getElementById('imei-error');
@@ -725,13 +742,20 @@
                 }, remainingDelay);
             })
             .catch(error => {
+                clearTimeout(timeoutId);
                 const elapsed = Date.now() - startTime;
                 const remainingDelay = Math.max(0, minDelay - elapsed);
                 
                 setTimeout(() => {
                     document.getElementById('spinner').style.display = 'none';
+                    checkBtn.disabled = false;
                     const errorElement = document.getElementById('imei-error');
-                    errorElement.textContent = 'ქსელის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.';
+                    
+                    if (error.name === 'AbortError') {
+                        errorElement.textContent = 'მოთხოვნის დამუშავების დრო ამოიწურა';
+                    } else {
+                        errorElement.textContent = 'ქსელის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.';
+                    }
                     errorElement.style.display = 'block';
                     console.error('შემოწმების შეცდომა:', error);
                 }, remainingDelay);
@@ -954,14 +978,18 @@
         // Функция повторного парсинга
         function retryParse(imei) {
             document.getElementById('spinner').style.display = 'flex';
+            document.getElementById('check-btn').disabled = true;
+            
             fetch(`/reparse_imei?imei=${imei}`)
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('spinner').style.display = 'none';
+                    document.getElementById('check-btn').disabled = false;
                     displayResults(imei, currentServiceType, data);
                 })
                 .catch(error => {
                     document.getElementById('spinner').style.display = 'none';
+                    document.getElementById('check-btn').disabled = false;
                     const errorElement = document.getElementById('imei-error');
                     errorElement.textContent = 'ხელახლა დამუშავების შეცდომა';
                     errorElement.style.display = 'block';
@@ -971,6 +999,7 @@
         // Функция для повторной проверки
         function retryCheck() {
             document.getElementById('spinner').style.display = 'flex';
+            document.getElementById('check-btn').disabled = true;
             closeModal('result-modal');
             setTimeout(() => {
                 performCheck(currentImei, currentServiceType);
@@ -992,4 +1021,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
