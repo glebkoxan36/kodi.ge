@@ -300,7 +300,7 @@ def parse_universal_response(response_content: str) -> dict:
         for key in ['model', 'model_name', 'modelName', 'brand', 'manufacturer', 
                     'imei', 'imei_number', 'sim_lock', 'blacklist_status', 
                     'fmi_status', 'activation_status', 'carrier', 'warranty_status', 
-                    'product_type', 'manufacture', 'state', 'network', 'purchase_date',
+                    'product_type', 'device_type', 'manufacture', 'state', 'network', 'purchase_date',
                     'activation_date', 'warranty_expiry', 'locked_status', 
                     'find_my_iphone', 'icloud_status']:
             if key in data and key not in result:
@@ -386,6 +386,15 @@ def perform_api_check(imei: str, service_type: str) -> dict:
     
     # Для платных сервисов делаем только 1 попытку
     max_attempts = MAX_RETRIES
+    
+    # Проверка: если это сервис для Apple (страница applecheck) и IMEI не начинается с 01 или 35 (Apple), то возвращаем ошибку
+    if service_type in ['free', 'fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']:
+        if not (imei.startswith('01') or imei.startswith('35')):
+            return OrderedDict([
+                ('error', get_error_message('android_device')),
+                ('details', 'ეს გვერდი განკუთვნილია მხოლოდ Apple მოწყობილობებისთვის'),
+                ('device_type', 'Android')
+            ])
     
     while retries <= max_attempts:
         try:
