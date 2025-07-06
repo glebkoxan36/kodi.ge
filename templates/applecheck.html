@@ -607,32 +607,39 @@
         }
         
         function fetchResultForSession(sessionId, attempt = 1) {
-            const maxAttempts = 5;
+            const maxAttempts = 10;
             const delay = 2000; // 2 seconds between attempts
+            const timeoutDuration = 10000; // 10 seconds timeout
             
             if (attempt > maxAttempts) {
                 document.getElementById('spinner').style.display = 'none';
                 closeModal('payment-success-modal');
                 const errorElement = document.getElementById('imei-error');
-                errorElement.textContent = 'შედეგის მიღება ვერ მოხერხდა. სცადეთ ხელახლა.';
+                errorElement.textContent = 'შედეგის მიღება ვერ მოხერხდა. სცადეთ ხელახლა მოგვიანებით.';
                 errorElement.style.display = 'block';
                 return;
             }
             
             document.getElementById('spinner').style.display = 'flex';
             
-            fetch('/get_check_result?session_id=' + sessionId)
+            // Создаем промис для таймаута
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => {
+                    reject(new Error('Request timeout'));
+                }, timeoutDuration);
+            });
+            
+            // Основной промис запроса
+            const fetchPromise = fetch('/get_check_result?session_id=' + sessionId)
                 .then(response => {
                     if (!response.ok) {
-                        if (response.status === 404 && attempt <= maxAttempts) {
-                            // Result not ready yet, retry after delay
-                            setTimeout(() => fetchResultForSession(sessionId, attempt + 1), delay);
-                            return;
-                        }
                         throw new Error('ქსელის პასუხი არასწორია');
                     }
                     return response.json();
-                })
+                });
+            
+            // Используем Promise.race для обработки таймаута
+            Promise.race([fetchPromise, timeoutPromise])
                 .then(data => {
                     document.getElementById('spinner').style.display = 'none';
                     closeModal('payment-success-modal');
@@ -646,8 +653,11 @@
                     }
                 })
                 .catch(error => {
-                    if (error.message.includes('ქსელის')) {
-                        setTimeout(() => fetchResultForSession(sessionId, attempt + 1), delay);
+                    if (error.message === 'Request timeout' || error.message.includes('ქსელის')) {
+                        // Повторяем запрос через задержку
+                        setTimeout(() => {
+                            fetchResultForSession(sessionId, attempt + 1);
+                        }, delay);
                     } else {
                         document.getElementById('spinner').style.display = 'none';
                         closeModal('payment-success-modal');
