@@ -143,8 +143,33 @@ TECHNICAL_FIELDS = [
 ]
 
 def validate_imei(imei: str) -> bool:
-    """Проверяет валидность IMEI (15 цифр)"""
-    return bool(re.fullmatch(r"\d{15}", imei))
+    """Проверяет валидность IMEI (14 или 15 цифр) с алгоритмом Луна для 15-значных"""
+    # Проверка длины
+    if len(imei) not in (14, 15):
+        return False
+    
+    # Проверка, что все символы - цифры
+    if not imei.isdigit():
+        return False
+    
+    # Для 15-значных IMEI применяем алгоритм Луна
+    if len(imei) == 15:
+        total = 0
+        for i, char in enumerate(imei[:14]):
+            digit = int(char)
+            # Для четных позиций (начиная с 0 - нечетные в 1-based)
+            if i % 2 == 1:
+                digit *= 2
+                if digit > 9:
+                    digit -= 9
+            total += digit
+        
+        # Вычисление контрольной цифры
+        check_digit = (10 - (total % 10)) % 10
+        return check_digit == int(imei[14])
+    
+    # Для 14-значных (серийных номеров) просто возвращаем True
+    return True
 
 def get_error_message(error_code: str, service_type: str = 'common') -> str:
     """Возвращает локализованное сообщение об ошибке"""
@@ -355,14 +380,6 @@ def perform_api_check(imei: str, service_type: str) -> dict:
     Возвращает чистые данные устройства без технических деталей на грузинском языке.
     Всегда показывает все полученные данные, даже если они неполные.
     """
-    # Проверка первых цифр IMEI для Android
-    if re.match(r'^35|^85|^86|^87|^89', imei):
-        return OrderedDict([
-            ('error', get_error_message('android_device')),
-            ('device_type', 'Android'),
-            ('details', f'IMEI: {imei} არის Android მოწყობილობისთვის')
-        ])
-    
     retries = 0
     last_response = None
     last_exception = None
@@ -422,7 +439,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                     if response.status_code >= 500 and retries < max_attempts:
                         retries += 1
                         logging.info(f"Retrying ({retries}/{max_attempts}) for IMEI {imei}")
-                        time.sleep(RETRY_DELAY)
+                        time.sleep(RETRY_DELAY);
                         continue
                     
                     return OrderedDict([
@@ -450,7 +467,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                     if retries < max_attempts:
                         retries += 1
                         logging.info(f"Retrying ({retries}/{max_attempts}) for empty response")
-                        time.sleep(RETRY_DELAY)
+                        time.sleep(RETRY_DELAY);
                         continue
                     else:
                         return OrderedDict([
@@ -497,7 +514,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             if retries < max_attempts:
                 retries += 1
                 logging.info(f"Retrying ({retries}/{max_attempts}) after network error")
-                time.sleep(RETRY_DELAY)
+                time.sleep(RETRY_DELAY);
                 continue
             else:
                 return OrderedDict([
