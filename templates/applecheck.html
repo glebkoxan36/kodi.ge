@@ -731,11 +731,12 @@
         function displayResults(imei, serviceType, data) {
             const resultContent = document.getElementById('result-content');
             
-            // Проверка типа устройства
-            if (data.device_type && data.device_type.toLowerCase() === 'android') {
+            // Проверка типа устройства - разрешаем только Apple
+            const deviceType = (data.device_type || '').toLowerCase();
+            if (deviceType === 'android' || deviceType === 'unknown') {
                 resultContent.innerHTML = `
                     <div class="error-card">
-                        <h3 class="status-error">Android მოწყობილობა</h3>
+                        <h3 class="status-error">${deviceType === 'android' ? 'Android მოწყობილობა' : 'უცნობი მოწყობილობა'}</h3>
                         <p>ამ გვერდზე შეგიძლიათ მხოლოდ Apple მოწყობილობების შემოწმება.</p>
                         <p>თქვენი მოწყობილობა: ${data.brand || 'Unknown'} ${data.model || ''}</p>
                         <div class="result-actions">
@@ -747,6 +748,7 @@
                 return;
             }
             
+            // Если устройство Apple - показываем результаты
             let resultsHTML = `
                 <div class="text-center mb-4">
                     <i class="fas fa-check-circle text-success" style="font-size: 4rem; color: var(--success-color);"></i>
@@ -775,191 +777,132 @@
             } 
             // Отобразить таблицу результатов
             else if (data && Object.keys(data).length > 0) {
-                // Для Android устройств - специальный формат
-                if (data.device_type === 'Android') {
-                    resultsHTML += `
-                        <div class="android-results">
-                            <div class="result-card">
-                                <h3 class="card-title">${data.brand || 'Android'} მოწყობილობა</h3>
-                                <div class="card-body">
-                                    <div class="result-row">
-                                        <span class="result-label">მწარმოებელი:</span>
-                                        <span class="result-value">${data.brand || 'N/A'}</span>
-                                    </div>
-                                    <div class="result-row">
-                                        <span class="result-label">მოდელი:</span>
-                                        <span class="result-value">${data.model || data.modelName || 'N/A'}</span>
-                                    </div>
-                                    <div class="result-row">
-                                        <span class="result-label">სტატუსი:</span>
-                                        <span class="result-value">${data.status || 'N/A'}</span>
-                                    </div>
-                    `;
+                // Определяем ключевые параметры для отображения
+                const keyFields = {
+                    'brand': 'მწარმოებელი',
+                    'modelName': 'მოდელის სახელი',
+                    'model': 'მოდელი',
+                    'manufacture': 'წარმოების თარიღი',
+                    'state': 'მდგომარეობა',
+                    'activation_status': 'აქტივაციის სტატუსი',
+                    'fmi_status': 'FMI სტატუსი',
+                    'sim_lock': 'SIM ლოკი',
+                    'blacklist_status': 'შავი სია',
+                    'carrier': 'ოპერატორი',
+                    'warranty_status': 'გარანტია'
+                };
+                
+                // Фильтруем только существующие поля
+                const existingFields = Object.keys(keyFields).filter(field => data[field]);
+                
+                // Форматируем основные параметры
+                resultsHTML += `
+                    <div class="free-check-results">
+                        <div class="result-card">
+                            <h3 class="card-title">სრული შედეგები</h3>
+                            <div class="card-body">
+                `;
+                
+                // Добавляем отформатированные строки
+                existingFields.forEach(field => {
+                    const value = data[field];
+                    let statusClass = '';
+                    const valStr = String(value).toLowerCase();
                     
-                    // Добавляем специфические поля при их наличии
-                    if (data.sim_lock !== undefined) {
-                        const lockStatus = data.sim_lock.toLowerCase();
-                        const lockClass = lockStatus.includes('unlocked') ? 'status-success' : 'status-warning';
-                        
-                        resultsHTML += `
-                                    <div class="result-row">
-                                        <span class="result-label">SIM ლოკი:</span>
-                                        <span class="result-value ${lockClass}">
-                                            ${data.sim_lock}
-                                        </span>
-                                    </div>
-                        `;
+                    if (valStr.includes('unlocked') || 
+                        valStr.includes('clean') || 
+                        valStr.includes('off') ||
+                        valStr.includes('active') ||
+                        valStr.includes('valid')) {
+                        statusClass = 'status-success';
+                    } else if (valStr.includes('locked') || 
+                               valStr.includes('blacklist') || 
+                               valStr.includes('on') ||
+                               valStr.includes('inactive') ||
+                               valStr.includes('expired')) {
+                        statusClass = 'status-warning';
+                    } else if (valStr.includes('error') || 
+                               valStr.includes('fail') || 
+                               valStr.includes('invalid')) {
+                        statusClass = 'status-error';
                     }
                     
-                    if (data.blacklist_status !== undefined) {
-                        const blacklistStatus = data.blacklist_status.toLowerCase();
-                        const blacklistClass = blacklistStatus.includes('clean') ? 'status-success' : 'status-warning';
-                        
-                        resultsHTML += `
-                                    <div class="result-row">
-                                        <span class="result-label">შავი სია:</span>
-                                        <span class="result-value ${blacklistClass}">
-                                            ${data.blacklist_status}
-                                        </span>
-                                    </div>
-                        `;
-                    }
-                    
                     resultsHTML += `
-                                </div>
-                            </div>
+                        <div class="result-row">
+                            <span class="result-label">${keyFields[field]}:</span>
+                            <span class="result-value ${statusClass}">${value}</span>
                         </div>
                     `;
-                }
-                // Для Apple устройств
-                else {
-                    // Определяем ключевые параметры для отображения
-                    const keyFields = {
-                        'brand': 'მწარმოებელი',
-                        'modelName': 'მოდელის სახელი',
-                        'model': 'მოდელი',
-                        'manufacture': 'წარმოების თარიღი',
-                        'state': 'მდგომარეობა',
-                        'activation_status': 'აქტივაციის სტატუსი',
-                        'fmi_status': 'FMI სტატუსი',
-                        'sim_lock': 'SIM ლოკი',
-                        'blacklist_status': 'შავი სია',
-                        'carrier': 'ოპერატორი',
-                        'warranty_status': 'გარანტია'
-                    };
-                    
-                    // Фильтруем только существующие поля
-                    const existingFields = Object.keys(keyFields).filter(field => data[field]);
-                    
-                    // Форматируем основные параметры
-                    resultsHTML += `
-                        <div class="free-check-results">
-                            <div class="result-card">
-                                <h3 class="card-title">სრული შედეგები</h3>
-                                <div class="card-body">
-                    `;
-                    
-                    // Добавляем отформатированные строки
-                    existingFields.forEach(field => {
-                        const value = data[field];
-                        let statusClass = '';
-                        const valStr = String(value).toLowerCase();
-                        
-                        if (valStr.includes('unlocked') || 
-                            valStr.includes('clean') || 
-                            valStr.includes('off') ||
-                            valStr.includes('active') ||
-                            valStr.includes('valid')) {
-                            statusClass = 'status-success';
-                        } else if (valStr.includes('locked') || 
-                                   valStr.includes('blacklist') || 
-                                   valStr.includes('on') ||
-                                   valStr.includes('inactive') ||
-                                   valStr.includes('expired')) {
-                            statusClass = 'status-warning';
-                        } else if (valStr.includes('error') || 
-                                   valStr.includes('fail') || 
-                                   valStr.includes('invalid')) {
-                            statusClass = 'status-error';
-                        }
-                        
-                        resultsHTML += `
-                            <div class="result-row">
-                                <span class="result-label">${keyFields[field]}:</span>
-                                <span class="result-value ${statusClass}">${value}</span>
+                });
+                
+                resultsHTML += `
                             </div>
-                        `;
-                    });
+                        </div>
+                `;
+                
+                // Добавляем кнопку для просмотра всех параметров
+                resultsHTML += `
+                    <div class="more-results">
+                        <button class="btn-toggle-details" onclick="toggleDetails(this)">
+                            <i class="fas fa-chevron-down"></i> ყველა მონაცემის ნახვა
+                        </button>
+                        <div class="full-details" style="display:none;">
+                            <h4>ყველა მონაცემი</h4>
+                            <table class="history-table">
+                                <tr>
+                                    <th>პარამეტრი</th>
+                                    <th>მნიშვნელობა</th>
+                                </tr>
+                `;
+                
+                // Добавляем все параметры в таблицу
+                for (const [key, value] of Object.entries(data)) {
+                    if (key === 'error' || 
+                        key === 'html' || 
+                        key === 'details' || 
+                        key === 'original_html' || 
+                        key === 'device_type' ||
+                        key === 'object' ||
+                        key === 'response') continue;
                     
-                    resultsHTML += `
-                                </div>
-                            </div>
-                    `;
+                    let statusClass = '';
+                    const valStr = String(value).toLowerCase();
                     
-                    // Добавляем кнопку для просмотра всех параметров
-                    resultsHTML += `
-                        <div class="more-results">
-                            <button class="btn-toggle-details" onclick="toggleDetails(this)">
-                                <i class="fas fa-chevron-down"></i> ყველა მონაცემის ნახვა
-                            </button>
-                            <div class="full-details" style="display:none;">
-                                <h4>ყველა მონაცემი</h4>
-                                <table class="history-table">
-                                    <tr>
-                                        <th>პარამეტრი</th>
-                                        <th>მნიშვნელობა</th>
-                                    </tr>
-                    `;
-                    
-                    // Добавляем все параметры в таблицу
-                    for (const [key, value] of Object.entries(data)) {
-                        if (key === 'error' || 
-                            key === 'html' || 
-                            key === 'details' || 
-                            key === 'original_html' || 
-                            key === 'device_type' ||
-                            key === 'object' ||
-                            key === 'response') continue;
-                        
-                        let statusClass = '';
-                        const valStr = String(value).toLowerCase();
-                        
-                        if (valStr.includes('unlocked') || 
-                            valStr.includes('clean') || 
-                            valStr.includes('off') ||
-                            valStr.includes('active') ||
-                            valStr.includes('valid')) {
-                            statusClass = 'status-success';
-                        } else if (valStr.includes('locked') || 
-                                   valStr.includes('blacklist') || 
-                                   valStr.includes('on') ||
-                                   valStr.includes('inactive') ||
-                                   valStr.includes('expired')) {
-                            statusClass = 'status-warning';
-                        } else if (valStr.includes('error') || 
-                                   valStr.includes('fail') || 
-                                   valStr.includes('invalid')) {
-                            statusClass = 'status-error';
-                        }
-                        
-                        // Пропускаем уже отображенные поля
-                        if (existingFields.includes(key)) continue;
-                        
-                        resultsHTML += `
-                            <tr>
-                                <td>${key}</td>
-                                <td class="${statusClass}">${value}</td>
-                            </tr>
-                        `;
+                    if (valStr.includes('unlocked') || 
+                        valStr.includes('clean') || 
+                        valStr.includes('off') ||
+                        valStr.includes('active') ||
+                        valStr.includes('valid')) {
+                        statusClass = 'status-success';
+                    } else if (valStr.includes('locked') || 
+                               valStr.includes('blacklist') || 
+                               valStr.includes('on') ||
+                               valStr.includes('inactive') ||
+                               valStr.includes('expired')) {
+                        statusClass = 'status-warning';
+                    } else if (valStr.includes('error') || 
+                               valStr.includes('fail') || 
+                               valStr.includes('invalid')) {
+                        statusClass = 'status-error';
                     }
                     
+                    // Пропускаем уже отображенные поля
+                    if (existingFields.includes(key)) continue;
+                    
                     resultsHTML += `
-                                </table>
-                            </div>
+                        <tr>
+                            <td>${key}</td>
+                            <td class="${statusClass}">${value}</td>
+                        </tr>
+                    `;
+                }
+                
+                resultsHTML += `
+                            </table>
                         </div>
                     </div>
-                    `;
-                }
+                </div>
+                `;
             } else {
                 resultsHTML += `
                     <div class="error-card">
