@@ -107,25 +107,40 @@ API_ERRORS = {
 
 # Словарь перевода ключей
 KEY_TRANSLATIONS = {
-    'Model': 'მოდელი',
-    'Model Name': 'მოდელის სახელი',
-    'Brand': 'ბრენდი',
-    'Manufacturer': 'მწარმოებელი',
-    'IMEI Number': 'IMEI ნომერი',
-    'Network': 'ქსელი',
-    'Purchase Date': 'შეძენის თარიღი',
-    'Activation Date': 'აქტივაციის თარიღი',
-    'Warranty Expiry': 'გარანტიის ვადის გასვლის თარიღი',
-    'Locked Status': 'დაბლოკვის სტატუსი',
-    'Find My iPhone': 'Find My iPhone სტატუსი',
-    'iCloud Status': 'iCloud სტატუსი',
-    'SIM Lock': 'SIM ლოკი',
-    'Blacklist Status': 'შავი სიის სტატუსი',
-    'FMI Status': 'FMI სტატუსი',
-    'Activation Status': 'აქტივაციის სტატუსი',
-    'Carrier': 'ოპერატორი',
-    'Warranty Status': 'გარანტიის სტატუსი'
+    'model': 'მოდელი',
+    'model_name': 'მოდელის სახელი',
+    'modelName': 'მოდელის სახელი',
+    'brand': 'ბრენდი',
+    'manufacturer': 'მწარმოებელი',
+    'imei': 'IMEI',
+    'imei_number': 'IMEI ნომერი',
+    'status': 'სტატუსი',
+    'sim_lock': 'SIM ლოკი',
+    'blacklist_status': 'შავი სიის სტატუსი',
+    'fmi_status': 'FMI სტატუსი',
+    'activation_status': 'აქტივაციის სტატუსი',
+    'carrier': 'ოპერატორი',
+    'warranty_status': 'გარანტიის სტატუსი',
+    'product_type': 'პროდუქტის ტიპი',
+    'device_type': 'მოწყობილობის ტიპი',
+    'manufacture': 'წარმოების თარიღი',
+    'state': 'მდგომარეობა',
+    'network': 'ქსელი',
+    'purchase_date': 'შეძენის თარიღი',
+    'activation_date': 'აქტივაციის თარიღი',
+    'warranty_expiry': 'გარანტიის ვადის გასვლის თარიღი',
+    'locked_status': 'დაბლოკვის სტატუსი',
+    'find_my_iphone': 'Find My iPhone სტატუსი',
+    'icloud_status': 'iCloud სტატუსი',
+    'service': 'სერვისი',
+    'object': 'ობიექტი'
 }
+
+# Список технических полей для удаления
+TECHNICAL_FIELDS = [
+    'object', 'status', 'success', 'service', 
+    'key', 'api_key', 'request_id', 'session_id'
+]
 
 def validate_imei(imei: str) -> bool:
     """Проверяет валидность IMEI (14 или 15 цифр) с алгоритмом Луна для 15-значных"""
@@ -172,33 +187,192 @@ def get_error_message(error_code: str, service_type: str = 'common') -> str:
     # Возвращаем общее сообщение для неизвестных ошибок
     return common_errors['unknown_error']
 
-def parse_free_html(html_content: str) -> dict:
+def filter_technical_fields(response_content: str) -> str:
     """
-    Парсит HTML ответ для бесплатной проверки.
-    Возвращает словарь с данными устройства.
+    Фильтрует технические поля, но сохраняет содержимое 'response'
+    и переводит ключи на грузинский язык.
     """
-    result = {}
+    if not response_content.strip():
+        return response_content
+
+    # Словарь перевода ключей
+    key_translations = {
+        "Model": "მოდელი",
+        "Model Name": "მოდელის სახელი",
+        "Brand": "ბრენდი",
+        "Manufacturer": "მწარმოებელი",
+        "IMEI Number": "IMEI ნომერი",
+        "Network": "ქსელი",
+        "Purchase Date": "შეძენის თარიღი",
+        "Activation Date": "აქტივაციის თარიღი",
+        "Warranty Expiry": "გარანტიის ვადის გასვლის თარიღი",
+        "Locked Status": "დაბლოკვის სტატუსი",
+        "Find My iPhone": "Find My iPhone სტატუსი",
+        "iCloud Status": "iCloud სტატუსი",
+        "SIM Lock": "SIM ლოკი",
+        "Blacklist Status": "შავი სიის სტატუსი",
+        "FMI Status": "FMI სტატუსი",
+        "Activation Status": "აქტივაციის სტატუსი",
+        "Carrier": "ოპერატორი",
+        "Warranty Status": "გარანტიის სტატუსი"
+    }
+
     try:
-        # Извлекаем данные из текста ответа
-        lines = html_content.split('\n')
-        for line in lines:
-            if ':' in line:
-                key, value = line.split(':', 1)
-                key = key.strip()
-                value = value.strip()
+        data = json.loads(response_content)
+        
+        # Если есть поле 'response' и оно строка - переводим ключи в его содержимом
+        if 'response' in data and isinstance(data['response'], str):
+            response_text = data['response'].strip()
+            # Применяем перевод ключей
+            for eng_key, geo_key in key_translations.items():
+                response_text = response_text.replace(f"{eng_key}:", f"{geo_key}:")
+            return response_text
+            
+        # Удаляем технические поля
+        for field in TECHNICAL_FIELDS:
+            if field in data:
+                del data[field]
                 
-                # Применяем перевод ключей
-                translated_key = KEY_TRANSLATIONS.get(key, key)
-                result[translated_key] = value
-                
-                # Сохраняем оригинальный ключ для совместимости
-                result[key.replace(' ', '_').lower()] = value
-    except Exception as e:
-        logging.error(f"HTML parsing error: {str(e)}")
-        result['error'] = get_error_message('parsing_error')
-        result['details'] = str(e)
+        # Форматируем оставшиеся данные
+        return json.dumps(data, ensure_ascii=False, indent=2)
+    except json.JSONDecodeError:
+        pass
+
+    # Для не-JSON ответов извлекаем содержимое response
+    response_match = re.search(r'"response":\s*"([^"]+)"', response_content)
+    if response_match:
+        response_text = response_match.group(1).replace('\\n', '\n')
+        # Применяем перевод ключей
+        for eng_key, geo_key in key_translations.items():
+            response_text = response_text.replace(f"{eng_key}:", f"{geo_key}:")
+        return response_text
+        
+    # Для других текстовых ответов также применяем перевод
+    translated_text = response_content
+    for eng_key, geo_key in key_translations.items():
+        translated_text = translated_text.replace(f"{eng_key}:", f"{geo_key}:")
+    return translated_text
+
+def parse_universal_response(response_content: str) -> dict:
+    """
+    Универсальный парсер для ответов API.
+    Извлекает только чистые данные устройства, скрывая технические детали.
+    Возвращает ключи на грузинском языке.
+    """
+    result = OrderedDict()
+    raw_response = response_content  # Сохраняем оригинальный ответ
     
-    return result
+    # Фильтруем технические поля для отображения
+    filtered_response = filter_technical_fields(raw_response)
+    
+    # Попытка парсинга JSON
+    try:
+        data = json.loads(response_content)
+        
+        # Обработка ошибок API
+        if 'error' in data and data['error']:
+            error_text = data['error'].strip()
+            error_code = API_ERRORS.get(error_text, 'api_error')
+            return OrderedDict([
+                ('error', get_error_message(error_code)),
+                ('details', error_text),
+                ('server_response', filtered_response)
+            ])
+        
+        # Обработка объекта данных
+        if 'object' in data and isinstance(data['object'], dict):
+            for key, value in data['object'].items():
+                normalized_key = key.strip().lower().replace(' ', '_')
+                result[normalized_key] = value
+        
+        # Обработка строкового ответа
+        if 'response' in data and isinstance(data['response'], str):
+            lines = data['response'].splitlines()
+            for line in lines:
+                if ':' in line:
+                    key, value = line.split(':', 1)
+                    key = key.strip().lower().replace(' ', '_')
+                    value = value.strip()
+                    if key not in result:
+                        result[key] = value
+        
+        # Добавление основных полей
+        for key in ['model', 'model_name', 'modelName', 'brand', 'manufacturer', 
+                    'imei', 'imei_number', 'sim_lock', 'blacklist_status', 
+                    'fmi_status', 'activation_status', 'carrier', 'warranty_status', 
+                    'product_type', 'manufacture', 'state', 'network', 'purchase_date',
+                    'activation_date', 'warranty_expiry', 'locked_status', 
+                    'find_my_iphone', 'icloud_status']:
+            if key in data and key not in result:
+                result[key] = data[key]
+                
+    except json.JSONDecodeError:
+        # Обработка текстового формата
+        try:
+            lines = response_content.splitlines()
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                    
+                # Фильтрация технических строк
+                if re.match(r'^(object|success|status|error|service|key|response)\s*:', line, re.I):
+                    continue
+                    
+                if ':' in line:
+                    key, value = line.split(':', 1)
+                    key = key.strip().lower().replace(' ', '_')
+                    value = value.strip()
+                    result[key] = value
+                elif '\t' in line:
+                    key, value = line.split('\t', 1)
+                    key = key.strip().lower().replace(' ', '_')
+                    value = value.strip()
+                    result[key] = value
+        except Exception as e:
+            logging.error(f"Text parsing error: {str(e)}")
+            result['შეცდომა'] = f'Text parsing error: {str(e)}'
+    
+    # Определение типа устройства
+    brand = result.get('brand', '').lower()
+    model = result.get('model', '').lower()
+    
+    # Проверяем, является ли устройство Apple
+    if ('apple' in brand or 
+        'iphone' in brand or 
+        'ipad' in brand or 
+        'macbook' in brand or
+        'iphone' in model or 
+        'ipad' in model or 
+        'mac' in model):
+        result['device_type'] = 'Apple'
+    # Проверяем Android устройства
+    elif ('samsung' in brand or 
+          'xiaomi' in brand or 
+          'huawei' in brand or 
+          'oppo' in brand or 
+          'motorola' in brand or 
+          'google' in brand or
+          'sm-' in model or 
+          'galaxy' in model):
+        result['device_type'] = 'Android'
+    else:
+        result['device_type'] = 'Unknown'
+    
+    # Удаление технических полей из результата
+    for field in TECHNICAL_FIELDS:
+        if field in result:
+            del result[field]
+    
+    # Перевод ключей
+    translated_result = OrderedDict()
+    for key, value in result.items():
+        new_key = KEY_TRANSLATIONS.get(key, key)
+        translated_result[new_key] = value
+        
+    # Сохраняем фильтрованный ответ
+    translated_result['server_response'] = filtered_response
+    return translated_result
 
 def perform_api_check(imei: str, service_type: str) -> dict:
     """
@@ -213,32 +387,23 @@ def perform_api_check(imei: str, service_type: str) -> dict:
     # Для платных сервисов делаем только 1 попытку
     max_attempts = MAX_RETRIES
     
-    # Проверка: если это сервис для Apple (страница applecheck) и IMEI не начинается с 01 или 35 (Apple), то возвращаем ошибку
-    if service_type in ['free', 'fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']:
-        if not (imei.startswith('01') or imei.startswith('35')):
-            return {
-                'error': get_error_message('android_device'),
-                'details': 'ეს გვერდი განკუთვნილია მხოლოდ Apple მოწყობილობებისთვის',
-                'device_type': 'Android'
-            }
-    
     while retries <= max_attempts:
         try:
             # Проверка валидности IMEI
             if not validate_imei(imei):
                 logging.warning(f"Invalid IMEI: {imei} for service {service_type}")
-                return {
-                    'error': get_error_message('invalid_imei'),
-                    'service_type': service_type
-                }
+                return OrderedDict([
+                    ('error', get_error_message('invalid_imei')),
+                    ('service_type', service_type)
+                ])
             
             # Проверка поддерживаемого типа сервиса
             if service_type not in SERVICE_TYPES:
                 logging.error(f"Unsupported service: {service_type}")
-                return {
-                    'error': get_error_message('unsupported_service'),
-                    'details': f'Requested service: {service_type}'
-                }
+                return OrderedDict([
+                    ('error', get_error_message('unsupported_service')),
+                    ('details', f'Requested service: {service_type}')
+                ])
             
             with REQUEST_SEMAPHORE:
                 # Подготавливаем данные запроса
@@ -263,12 +428,12 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                     
                     # Для платных сервисов сразу возвращаем ошибку
                     if service_type != 'free':
-                        return {
-                            'error': get_error_message('server_error'),
-                            'status_code': response.status_code,
-                            'service_type': service_type,
-                            'server_response': response.text[:500] + '...'
-                        }
+                        return OrderedDict([
+                            ('error', get_error_message('server_error')),
+                            ('status_code', response.status_code),
+                            ('service_type', service_type),
+                            ('server_response', filter_technical_fields(response.text))
+                        ])
                     
                     # Для бесплатных сервисов пробуем повторить
                     if response.status_code >= 500 and retries < max_attempts:
@@ -277,12 +442,12 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                         time.sleep(RETRY_DELAY)
                         continue
                     
-                    return {
-                        'error': get_error_message('server_error'),
-                        'status_code': response.status_code,
-                        'service_type': service_type,
-                        'server_response': response.text[:500] + '...'
-                    }
+                    return OrderedDict([
+                        ('error', get_error_message('server_error')),
+                        ('status_code', response.status_code),
+                        ('service_type', service_type),
+                        ('server_response', filter_technical_fields(response.text))
+                    ])
                 
                 # Сохраняем последний ответ для анализа
                 last_response = response.text
@@ -293,11 +458,11 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                     
                     # Для платных сервисов сразу возвращаем ошибку
                     if service_type != 'free':
-                        return {
-                            'error': get_error_message('empty_response', service_type),
-                            'service_type': service_type,
-                            'server_response': 'Empty response'
-                        }
+                        return OrderedDict([
+                            ('error', get_error_message('empty_response', service_type)),
+                            ('service_type', service_type),
+                            ('server_response', filter_technical_fields(last_response))
+                        ])
                     
                     if retries < max_attempts:
                         retries += 1
@@ -305,26 +470,43 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                         time.sleep(RETRY_DELAY)
                         continue
                     else:
-                        return {
-                            'error': get_error_message('empty_response', service_type),
-                            'service_type': service_type,
-                            'server_response': 'Empty response after retries'
-                        }
+                        return OrderedDict([
+                            ('error', get_error_message('empty_response', service_type)),
+                            ('service_type', service_type),
+                            ('server_response', filter_technical_fields(last_response))
+                        ])
                 
                 # Логируем факт запроса
                 logging.info(f"API check for IMEI {imei}, service {service_type}. Time: {request_time:.2f}s")
                 
                 # Парсим ответ
-                if service_type == 'free':
-                    parsed_data = parse_free_html(last_response)
-                else:
-                    # Для платных сервисов просто возвращаем текст ответа
-                    parsed_data = {'server_response': last_response[:500] + '...'}
+                parsed_data = parse_universal_response(last_response)
+                
+                # Если в процессе парсинга возникла ошибка
+                if 'error' in parsed_data:
+                    return parsed_data
+                
+                # Проверяем тип устройства - разрешаем только Apple
+                device_type = parsed_data.get('device_type', '').lower()
+                if device_type != 'apple':
+                    return OrderedDict([
+                        ('error', get_error_message('android_device')),
+                        ('details', f'Device type: {device_type} is not supported on this page'),
+                        ('device_type', device_type),
+                        ('server_response', parsed_data.get('server_response', ''))
+                    ])
                 
                 # Добавляем IMEI для отслеживания
                 parsed_data['imei'] = imei
                 parsed_data['service_type'] = service_type
                 
+                # Проверка на минимальное количество данных
+                useful_keys = [k for k in parsed_data.keys() if k not in ['imei', 'server_response', 'service_type']]
+                if len(useful_keys) < 2:
+                    logging.warning(f"Incomplete data for IMEI: {imei}. Keys: {useful_keys}")
+                    parsed_data['warning'] = get_error_message('incomplete_data')
+                
+                # Всегда возвращаем все полученные данные
                 return parsed_data
         
         except requests.exceptions.RequestException as e:
@@ -333,11 +515,11 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             
             # Для платных сервисов сразу возвращаем ошибку
             if service_type != 'free':
-                return {
-                    'error': get_error_message('network_error'),
-                    'details': last_exception,
-                    'service_type': service_type
-                }
+                return OrderedDict([
+                    ('error', get_error_message('network_error')),
+                    ('details', last_exception),
+                    ('service_type', service_type)
+                ])
             
             if retries < max_attempts:
                 retries += 1
@@ -347,27 +529,30 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 time.sleep(current_delay)
                 continue
             else:
-                return {
-                    'error': get_error_message('network_error'),
-                    'details': last_exception,
-                    'service_type': service_type
-                }
+                return OrderedDict([
+                    ('error', get_error_message('network_error')),
+                    ('details', last_exception),
+                    ('service_type', service_type)
+                ])
                 
         except Exception as e:
             logging.error(f"Unexpected error for IMEI {imei}: {str(e)}")
             last_exception = str(e)
-            return {
-                'error': get_error_message('unknown_error'),
-                'details': last_exception,
-                'service_type': service_type,
-                'server_response': last_response[:500] + '...' if last_response else "No response"
-            }
+            return OrderedDict([
+                ('error', get_error_message('unknown_error')),
+                ('details', last_exception),
+                ('service_type', service_type),
+                ('server_response', filter_technical_fields(last_response) if last_response else "No response")
+            ])
     
     # Если превышено количество попыток
     logging.error(f"Max retries exceeded for IMEI: {imei}")
-    return {
-        'error': get_error_message('max_retries_exceeded'),
-        'details': f'After {max_attempts} retries',
-        'service_type': service_type,
-        'server_response': last_response[:500] + '...' if last_response else "No response"
-                      }
+    return OrderedDict([
+        ('error', get_error_message('max_retries_exceeded')),
+        ('details', f'After {max_attempts} retries'),
+        ('service_type', service_type),
+        ('server_response', filter_technical_fields(last_response) if last_response else "No response")
+    ])
+
+# Для обратной совместимости
+parse_free_html = parse_universal_response
