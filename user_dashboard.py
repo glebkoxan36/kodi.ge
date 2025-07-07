@@ -109,7 +109,7 @@ def settings():
     
     return render_template('user/settings.html', user=user)
 
-@user_bp.route('/history/comparisons')
+@user_bp.route('/history/comparisons',endpoint='history_comparisons')
 @login_required
 def history_comparisons():
     user_id = session['user_id']
@@ -144,7 +144,7 @@ def history_comparisons():
         total=total
     )
 
-@user_bp.route('/history/checks')
+@user_bp.route('/history/checks',endpoint='history_checks')
 @login_required
 def history_checks():
     user_id = session['user_id']
@@ -202,7 +202,7 @@ def check_details(check_id):
     
     return jsonify(check)
 
-@user_bp.route('/accounts')
+@user_bp.route('/accounts',endpoint='accounts')
 @login_required
 def accounts():
     user_id = session['user_id']
