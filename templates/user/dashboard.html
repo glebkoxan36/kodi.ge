@@ -547,7 +547,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">გადახდა წარმატებით დასრულდა</h3>
-                <button class="close-modal" onclick="closeModal()">
+                <button class="close-modal" onclick="closeModalAndReload()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -556,12 +556,8 @@
                     <i class="fas fa-check-circle fa-5x text-success"></i>
                 </div>
                 <h4>გმადლობთ გადახდისთვის!</h4>
-                <p>თქვენი ბალანსი შეივსო <span class="text-success fw-bold" id="successAmount">10.00 ₾</span>-ით</p>
-                <p>ახალი ბალანსი: <span class="text-success fw-bold" id="newBalance">35.50 ₾</span></p>
-                
-                <button class="btn btn-outline-light mt-3" onclick="closeModal()">
-                    <i class="fas fa-check me-2"></i>კარგი
-                </button>
+                <p>თქვენი ბალანსი მალე შეივსება <span class="text-success fw-bold" id="successAmount">10.00 ₾</span>-ით</p>
+                <p>გვერდი განახლდება ავტომატურად...</p>
             </div>
         </div>
     </div>
@@ -619,7 +615,6 @@
     
     <!-- Dashboard Script -->
     <script>
-        // Initialize Stripe with your public key
         const stripe = Stripe('{{ stripe_public_key }}');
         
         function showTopupModal() {
@@ -631,6 +626,13 @@
             document.getElementById('successModal').style.display = 'none';
         }
         
+        function closeModalAndReload() {
+            closeModal();
+            setTimeout(function() {
+                location.reload();
+            }, 3000);
+        }
+        
         async function initiatePayment() {
             const amount = parseFloat(document.getElementById('amount').value);
             
@@ -639,31 +641,26 @@
                 return;
             }
             
-            // Get selected payment method
-            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').id;
-            
             // Show loading spinner
             document.getElementById('spinner').style.display = 'flex';
             
             try {
                 // Send request to server to create payment session
-                const response = await fetch('/create-payment-session', {
+                const response = await fetch('/user/create-payment-session', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'  // Исправлено: убраны скобки
+                        'X-CSRFToken': '{{ csrf_token }}'
                     },
                     body: JSON.stringify({
-                        amount: amount * 100, // Convert to cents
-                        currency: 'gel',
-                        payment_method: paymentMethod
+                        amount: amount
                     })
                 });
                 
                 const data = await response.json();
                 
                 if (!response.ok) {
-                    throw new Error(data.error || 'Payment failed');
+                    throw new Error(data.error || 'გადახდა ვერ შესრულდა');
                 }
                 
                 // Redirect to Stripe Checkout
@@ -675,7 +672,7 @@
                     throw new Error(result.error.message);
                 }
             } catch (error) {
-                console.error('Payment error:', error);
+                console.error('გადახდის შეცდომა:', error);
                 alert(`გადახდის დროს მოხდა შეცდომა: ${error.message}`);
             } finally {
                 // Hide spinner
@@ -690,13 +687,15 @@
             
             if (paymentStatus === 'success') {
                 const amount = urlParams.get('amount') || '10.00';
-                const newBalance = urlParams.get('balance') || '35.50';
-                
                 document.getElementById('successAmount').textContent = `${amount} ₾`;
-                document.getElementById('newBalance').textContent = `${newBalance} ₾`;
                 document.getElementById('successModal').style.display = 'flex';
+                
+                // Reload page after 5 seconds
+                setTimeout(function() {
+                    location.reload();
+                }, 5000);
             }
         });
     </script>
 </body>
-                </html>
+</html>
