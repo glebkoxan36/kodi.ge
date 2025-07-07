@@ -326,6 +326,7 @@
     </div>
     
     <div class="main-content">
+          {% block content %}
         <!-- Added logo and site name like in index.html -->
         <div class="hero-section mb-5">
             <div class="text-center mb-4">
@@ -395,7 +396,7 @@
                     </div>
                 </div>
             </div>
-            
+            {% endblock %}
             <div class="col-md-6 mb-4">
                 <div class="card balance-card">
                     <div class="service-icon">
