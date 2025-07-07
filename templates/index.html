@@ -246,7 +246,7 @@
             <div class="user-name">
                 {% if currentUser %}
                     {{ currentUser.first_name }} {{ currentUser.last_name }}
-                    <div class="user-balance">ბალანსი: {{ currentUser.balance|floatformat:2 }}₾</div>
+                    <div class="user-balance">ბალანსი: {{ '%.2f' % currentUser.balance }}₾</div>
                 {% else %}
                     ლოგინი/რეგისტრაცია
                 {% endif %}
@@ -459,9 +459,9 @@
                         <h3 class="service-title">Android IMEI შემოწმება</h3>
                         <ul class="list-unstyled">
                             <li><i class="fas fa-check-circle me-2 text-success"></i> Samsung მოწყობილობები</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> Xiaomi და Redmi</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> Google Pixel</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> Huawei და Honor</li>
+                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> Xiaomi და Redmi</li>
+                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> Google Pixel</li>
+                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> Huawei და Honor</li>
                         </ul>
                         <a href="/androidcheck" class="service-action">
                             <i class="fas fa-arrow-right me-1"></i> შეამოწმეთ Android
@@ -477,10 +477,10 @@
                         </div>
                         <h3 class="service-title">ტელეფონების შედარება</h3>
                         <ul class="list-unstyled">
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> AI-ზე დაფუძნებული ანალიზი</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> მახასიათებლების შედარება</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> ფასის/ხარისხის თანაფარდობა</li>
-                            <li><i class="fas fa-check-circle me-2 text-success"></i> სრული ანგარიშის გენერირება</li>
+                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> AI-ზე დაფუძნებული ანალიზი</li>
+                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> მახასიათებლების შედარება</li>
+                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> ფასის/ხარისხის თანაფარდობა</li>
+                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> სრული ანგარიშის გენერირება</li>
                         </ul>
                         <a href="/compare" class="service-action">
                             <i class="fas fa-arrow-right me-1"></i> შეადარეთ ტელეფონები
@@ -608,4 +608,4 @@
         });
     </script>
 </body>
-                                                                                                         </html>
+                        </html>
