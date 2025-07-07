@@ -542,7 +542,7 @@
                                 <i class="fas fa-home"></i>
                                 <span>მთავარი</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/user/payment_history'; closeAllMobileMenus();">
+                            <div class="menu-item" onclick="window.location.href='/user/accounts; closeAllMobileMenus();">
                                 <i class="fas fa-wallet"></i>
                                 <span>ანგარიშები</span>
                             </div>
