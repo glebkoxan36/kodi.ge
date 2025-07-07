@@ -1,4 +1,3 @@
-// static/js/mobilemenu.js
 (function() {
     // Добавляем стили
     const style = document.createElement('style');
@@ -218,6 +217,7 @@
             max-width: 180px;
             margin: 0 auto;
             margin-top: 5px;
+            color: #00c6ff;
         }
         
         /* Увеличенные иконки с градиентом */
