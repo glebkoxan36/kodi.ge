@@ -49,11 +49,12 @@
                         <td>{{ check.timestamp }}</td>
                         <td>{{ check.imei[:2] + '***********' + check.imei[-2:] }}</td>
                         <td>
-                            {% if check.status == 'clean' %}
+                            {% set status_value = check.status | lower %}
+                            {% if status_value == 'clean' or status_value == 'სუფთა' %}
                                 <span class="badge bg-success">სუფთა</span>
-                            {% elif check.status == 'blacklisted' %}
+                            {% elif status_value == 'blacklisted' or status_value == 'შავ სიაშია' %}
                                 <span class="badge bg-danger">შავ სიაშია</span>
-                            {% elif check.status == 'warning' %}
+                            {% elif status_value == 'warning' or status_value == 'გაფრთხილება' %}
                                 <span class="badge bg-warning">გაფრთხილება</span>
                             {% else %}
                                 <span class="badge bg-secondary">{{ check.status }}</span>
@@ -144,7 +145,7 @@
         document.getElementById('loadingSpinner').style.display = 'block';
         document.getElementById('checkDetailsData').style.display = 'none';
         
-        // Fetch check details
+        // Fetch check details from the new endpoint
         fetch(`/user/check-details/${checkId}`)
             .then(response => response.json())
             .then(data => {
@@ -152,28 +153,26 @@
                 document.getElementById('loadingSpinner').style.display = 'none';
                 document.getElementById('checkDetailsData').style.display = 'block';
                 
-                // Create HTML for check details
-                const statusClass = {
-                    'clean': 'bg-success',
-                    'blacklisted': 'bg-danger',
-                    'warning': 'bg-warning'
-                }[data.status] || 'bg-secondary';
-                
-                const statusText = {
-                    'clean': 'სუფთა',
-                    'blacklisted': 'შავ სიაშია',
-                    'warning': 'გაფრთხილება'
-                }[data.status] || data.status;
+                // Determine status class based on status text
+                let statusClass = 'bg-secondary';
+                const statusText = data.status || 'Unknown';
+                if (statusText.includes('Clean') || statusText.includes('სუფთა')) {
+                    statusClass = 'bg-success';
+                } else if (statusText.includes('Blacklisted') || statusText.includes('შავ სიაში')) {
+                    statusClass = 'bg-danger';
+                } else if (statusText.includes('Warning') || statusText.includes('გაფრთხილება')) {
+                    statusClass = 'bg-warning';
+                }
                 
                 const html = `
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <h6>IMEI ნომერი:</h6>
-                            <p class="fs-5">${data.imei}</p>
+                            <p class="fs-5">${data.imei || 'არ არის მონაცემი'}</p>
                         </div>
                         <div class="col-md-6">
                             <h6>შემოწმების თარიღი:</h6>
-                            <p class="fs-5">${data.timestamp}</p>
+                            <p class="fs-5">${data.timestamp || 'არ არის მონაცემი'}</p>
                         </div>
                     </div>
                     
@@ -191,13 +190,8 @@
                     <div class="mb-3">
                         <h6>დამატებითი ინფორმაცია:</h6>
                         <div class="card bg-light p-3">
-                            <p>${data.additional_info || 'დამატებითი ინფორმაცია არ არის'}</p>
+                            <pre>${data.additional_info || 'დამატებითი ინფორმაცია არ არის'}</pre>
                         </div>
-                    </div>
-                    
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        ეს შემოწმება დაფიქსირდა თქვენს ანგარიშზე ${data.timestamp}
                     </div>
                 `;
                 
