@@ -293,7 +293,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('user.topup_balance') }}">
+                <a class="nav-link" href="{{ url_for('user.accounts') }}">
                     <i class="fas fa-wallet"></i>
                     <span>ანგარიშები</span>
                 </a>
@@ -326,7 +326,6 @@
     </div>
     
     <div class="main-content">
-          {% block content %}
         <!-- Added logo and site name like in index.html -->
         <div class="hero-section mb-5">
             <div class="text-center mb-4">
@@ -396,7 +395,7 @@
                     </div>
                 </div>
             </div>
-            {% endblock %}
+            
             <div class="col-md-6 mb-4">
                 <div class="card balance-card">
                     <div class="service-icon">
@@ -489,7 +488,7 @@
                     <i class="fas fa-credit-card me-2"></i>
                     გადახდების ისტორია
                 </div>
-                <a href="{{ url_for('user.payment_history') }}" class="view-all-link">ყველას ნახვა</a>
+                <a href="{{ url_for('user.accounts') }}" class="view-all-link">ყველას ნახვა</a>
             </div>
             <div class="card-body">
                 <table class="history-table">
@@ -643,7 +642,7 @@
                         <i class="fas fa-home"></i>
                         <span>მთავარი</span>
                     </div>
-                    <div class="menu-item" onclick="window.location.href='{{ url_for('user.topup_balance') }}'">
+                    <div class="menu-item" onclick="window.location.href='{{ url_for('user.accounts') }}'">
                         <i class="fas fa-wallet"></i>
                         <span>ანგარიშები</span>
                     </div>
@@ -715,8 +714,7 @@
                 const response = await fetch('/user/create-payment-session', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         amount: amount
@@ -764,4 +762,4 @@
         });
     </script>
 </body>
-            </html>
+    </html>
