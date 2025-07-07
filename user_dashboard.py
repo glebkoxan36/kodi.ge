@@ -204,8 +204,9 @@ def check_details(check_id):
     
     return jsonify(check)
 
-# Исправлено: удален endpoint параметр
+# Обновлено: добавлен алиас /payment_history
 @user_bp.route('/accounts')
+@user_bp.route('/payment_history')  # Алиас для обратной совместимости
 @login_required
 def accounts():
     user_id = session['user_id']
