@@ -30,7 +30,7 @@ a, a:hover, a:focus, a:active {
   text-decoration: none !important;
 }
 
-body, h1, h2, h3, h4, h5, h6, p, span, a, div {
+body, h1, h2, h3, h4, h5, h6, li, p, span, a, div {
   color: var(--text-color);
 }
 
