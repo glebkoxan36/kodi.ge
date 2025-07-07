@@ -35,7 +35,7 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 # Настройки сессии
 app.config.update(
     SESSION_TYPE='filesystem',
-    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SECURE=os.getenv('FLASK_ENV') == 'production',
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(days=7)
@@ -1455,10 +1455,13 @@ PHONE_REGEX = re.compile(r'^\+995\d{9}$')
 
 @auth_bp.route('/register', methods=['GET'])
 def show_register_form():
+    # Гарантируем создание сессии
+    session.permanent = True
     current_year = datetime.utcnow().year
     return render_template('register.html', current_year=current_year)
 
 @auth_bp.route('/register', methods=['POST'])
+@csrf.exempt
 def register():
     data = request.form
     first_name = data.get('first_name')
@@ -1679,6 +1682,8 @@ app.register_blueprint(auth_bp)
 @app.after_request
 def set_csrf_cookie(response):
     if request.path.startswith('/'):
+        # Убедитесь что сессия сохранена
+        session.modified = True
         response.set_cookie('csrf_token', generate_csrf())
     return response
 
