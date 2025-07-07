@@ -26,7 +26,7 @@
         
         <form id="registration-form">
             <!-- CSRF токен для защиты -->
-            <input type="hidden" name="csrf_token" id="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="csrf_token" id="csrf_token" value="{{ csrf_token() }}">
             
             <div class="form-group">
                 <label class="form-label" for="first_name">სახელი</label>
@@ -283,7 +283,8 @@
                 
                 const response = await fetch('/register', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    credentials: 'include'  // Важно для передачи кук
                 });
                 
                 const data = await response.json();
@@ -335,4 +336,4 @@
         });
     </script>
 </body>
-</html>
+    </html>
