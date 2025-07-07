@@ -591,150 +591,82 @@ def create_checkout_session():
         # Если пользователь авторизован и выбрал оплату с баланса
         if use_balance and 'user_id' in session:
             user_id = session['user_id']
-            # Проверяем достаточно ли средств
-            if client:
-                user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-                amount_usd = amount / 100  # Конвертация в доллары
-                
-                if user and user.get('balance', 0) >= amount_usd:
-                    # Списание средств с баланса
-                    if stripe_payment.deduct_balance(user_id, amount_usd, service_type, imei, idempotency_key):
-                        # Создаем запись о проверке
-                        session_id = f"balance_{ObjectId()}"
-                        record = {
-                            'session_id': session_id,
-                            'imei': imei,
-                            'service_type': service_type,
-                            'paid': True,
-                            'payment_status': 'succeeded',
-                            'payment_method': 'balance',
-                            'amount': amount_usd,
-                            'currency': 'usd',
-                            'timestamp': datetime.utcnow(),
-                            'user_id': ObjectId(user_id),
-                            'idempotency_key': idempotency_key
-                        }
-                        if client:
-                            checks_collection.insert_one(record)
-                        
-                        return jsonify({
-                            'id': session_id,
-                            'payment_method': 'balance'
-                        })
-                    else:
-                        return jsonify({'error': 'ბალანსიდან გადახდა ვერ მოხერხდა'}), 500
-                else:
-                    # Недостаточно средств, переходим к оплате картой
-                    use_balance = False
-        
-        # Если не используем баланс (неавторизован или недостаточно средств)
-        if not use_balance:
-            # Используем базовый URL из запроса
-            base_url = request.host_url.rstrip('/')
-            success_url = f"{base_url}/success?session_id={{CHECKOUT_SESSION_ID}}&imei={imei}&service_type={service_type}"
+            # Конвертируем сумму в лари (amount в центах, поэтому делим на 100, чтобы получить лари)
+            amount_gel = amount / 100.0
             
-            # Определяем cancel_url в зависимости от типа услуги
-            if service_type in ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']:
-                cancel_url = f"{base_url}/apple_check?type={service_type}"
-            else:
-                cancel_url = f"{base_url}/android_check?type={service_type}"
+            # Генерируем уникальный ключ идемпотентности
+            idempotency_key = f"bal_{user_id}_{imei}_{datetime.utcnow().timestamp()}"
             
-            # Добавляем idempotency key в метаданные
-            metadata = {
-                'imei': imei,
-                'service_type': service_type,
-                'idempotency_key': idempotency_key
-            }
-            if 'user_id' in session:
-                metadata['user_id'] = session['user_id']
-            
-            # Используем StripePayment для создания сессии
-            stripe_session = stripe_payment.create_checkout_session(
-                imei=imei,
+            # Пытаемся списать средства с баланса
+            if stripe_payment.deduct_balance(
+                user_id=user_id,
+                amount=amount_gel,
                 service_type=service_type,
-                amount=amount,
-                success_url=success_url,
-                cancel_url=cancel_url,
-                metadata=metadata,
+                imei=imei,
                 idempotency_key=idempotency_key
-            )
-            
-            return jsonify({'id': stripe_session.id, 'payment_method': 'stripe'})
+            ):
+                # Создаем запись о проверке в коллекции checks
+                record = {
+                    'session_id': idempotency_key,  # используем idempotency_key как session_id для балансовой операции
+                    'imei': imei,
+                    'service_type': service_type,
+                    'paid': True,
+                    'payment_status': 'succeeded',
+                    'payment_method': 'balance',
+                    'amount': amount_gel,
+                    'currency': 'gel',
+                    'timestamp': datetime.utcnow(),
+                    'user_id': ObjectId(user_id),
+                    'idempotency_key': idempotency_key,
+                    'status': 'pending_verification'  # ожидание выполнения проверки
+                }
+                if client:
+                    checks_collection.insert_one(record)
+                
+                return jsonify({
+                    'id': idempotency_key,
+                    'payment_method': 'balance'
+                })
+            else:
+                return jsonify({'error': 'ბალანსიდან გადახდა ვერ მოხერხდა'}), 500
+        
+        # Если не используем баланс (неавторизован или недостаточно средств), создаем сессию Stripe
+        base_url = request.host_url.rstrip('/')
+        success_url = f"{base_url}/success?session_id={{CHECKOUT_SESSION_ID}}&imei={imei}&service_type={service_type}"
+        
+        # Определяем cancel_url в зависимости от типа услуги
+        if service_type in ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']:
+            cancel_url = f"{base_url}/apple_check?type={service_type}"
+        else:
+            cancel_url = f"{base_url}/android_check?type={service_type}"
+        
+        # Метаданные для сессии
+        metadata = {
+            'imei': imei,
+            'service_type': service_type,
+            'idempotency_key': idempotency_key
+        }
+        if 'user_id' in session:
+            metadata['user_id'] = session['user_id']
+        
+        # Создаем сессию через StripePayment
+        stripe_session = stripe_payment.create_checkout_session(
+            imei=imei,
+            service_type=service_type,
+            amount=amount,  # в центах
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata=metadata,
+            idempotency_key=idempotency_key
+        )
+        
+        return jsonify({
+            'id': stripe_session.id,
+            'payment_method': 'stripe'
+        })
     
     except Exception as e:
         app.logger.error(f"Error creating checkout session: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/perform_balance_check', methods=['POST'])
-@csrf.exempt
-def perform_balance_check():
-    """Выполняет проверку при оплате с баланса с повторными попытками"""
-    try:
-        data = request.json
-        imei = data.get('imei')
-        service_type = data.get('service_type')
-        session_id = data.get('session_id')
-        
-        if not validate_imei(imei):
-            return jsonify({'error': 'არასწორი IMEI'}), 400
-        
-        # Выполняем проверку с использованием семафора
-        with REQUEST_SEMAPHORE:
-            time.sleep(1)  # Искусственная задержка перед запросом
-            
-            attempts = 0
-            max_attempts = 3
-            delay = 2  # seconds
-            result = None
-            
-            while attempts < max_attempts:
-                try:
-                    result = perform_api_check(imei, service_type)
-                    
-                    # Искусственная задержка для обработки ответа
-                    time.sleep(0.5)
-                    
-                    if result and 'error' not in result:
-                        break
-                    
-                    # Повторная попытка при ошибках сервера
-                    if result and 'error' in result and 'სერვერის' in result['error']:
-                        raise Exception(f"Server error: {result['error']}")
-                        
-                except Exception as e:
-                    attempts += 1
-                    if attempts < max_attempts:
-                        time.sleep(delay)
-                        delay *= 2  # Экспоненциальная задержка
-                    else:
-                        result = {
-                            'error': f'Request failed after {max_attempts} attempts',
-                            'details': str(e)
-                        }
-        
-        # Обновляем запись в базе в любом случае
-        if client:
-            update_data = {
-                'result': result,
-                'checked_at': datetime.utcnow()
-            }
-            if 'error' in result:
-                update_data['status'] = 'failed'
-            else:
-                update_data['status'] = 'completed'
-            
-            checks_collection.update_one(
-                {'session_id': session_id},
-                {'$set': update_data}
-            )
-        
-        if 'error' in result:
-            return jsonify(result), 400
-        
-        return jsonify(result)
-    
-    except Exception as e:
-        app.logger.error(f"Balance check error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/success')
@@ -746,81 +678,51 @@ def payment_success():
     if not session_id or not imei or not service_type:
         return render_template('error.html', error="არასაკმარისი პარამეტრები"), 400
     
-    try:
-        # Для Stripe получаем сессию
-        stripe_session = stripe.checkout.Session.retrieve(session_id)
-        
-        # Выполняем проверку с использованием семафора
-        with REQUEST_SEMAPHORE:
-            time.sleep(1)  # Искусственная задержка перед запросом
-            
-            attempts = 0
-            max_attempts = 3
-            delay = 2  # seconds
-            result = None
-            
-            while attempts < max_attempts:
-                try:
-                    result = perform_api_check(imei, service_type)
-                    
-                    # Искусственная задержка для обработки ответа
-                    time.sleep(0.5)
-                    
-                    if result and 'error' not in result:
-                        break
-                    
-                    # Повторная попытка при ошибках сервера
-                    if result and 'error' in result and 'სერვერის' in result['error']:
-                        raise Exception(f"Server error: {result['error']}")
-                        
-                except Exception as e:
-                    attempts += 1
-                    if attempts < max_attempts:
-                        time.sleep(delay)
-                        delay *= 2  # Экспоненциальная задержка
-                    else:
-                        result = {
-                            'error': f'შემოწმება ვერ მოხერხდა {max_attempts} ცდის შემდეგ',
-                            'details': str(e)
-                        }
-        
-        # Для сервисов, возвращающих HTML
-        if 'html_content' in result:
-            parsed_data = parse_free_html(result['html_content'])
-            if parsed_data:
-                result = parsed_data
-            else:
-                result = {'error': 'HTML პასუხის დამუშავება ვერ მოხერხდა'}
-        
-        record = {
-            'stripe_session_id': session_id,
-            'imei': imei,
-            'service_type': service_type,
-            'paid': True,
-            'payment_status': stripe_session.payment_status,
-            'amount': stripe_session.amount_total / 100,
-            'currency': stripe_session.currency,
-            'timestamp': datetime.utcnow(),
-            'result': result
-        }
-        if 'user_id' in session:
-            record['user_id'] = ObjectId(session['user_id'])
-        if client:
-            checks_collection.insert_one(record)
-        
-        if 'error' in result:
-            return render_template('error.html', error=result['error'])
-        
-        # Определяем тип устройства для перенаправления
+    # Если session_id начинается с "bal_", то это оплата с баланса
+    if session_id.startswith('bal_'):
+        # Для балансовой оплаты мы уже создали запись в checks_collection
+        # Теперь нужно выполнить проверку и обновить запись
+        # Но можно перенаправить сразу на страницу результатов, передав session_id
+        # Или отобразить результаты здесь?
+        # Пока просто перенаправляем на страницу проверки с параметрами
         apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
         if service_type in apple_services:
             return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
         else:
             return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
-    
-    except Exception as e:
-        app.logger.error(f"Payment success error: {str(e)}")
-        return render_template('error.html', error=str(e)), 500
+    else:
+        # Это оплата через Stripe
+        try:
+            # Получаем сессию Stripe
+            stripe_session = stripe.checkout.Session.retrieve(session_id)
+            
+            # Создаем запись о платеже в коллекции checks
+            record = {
+                'stripe_session_id': session_id,
+                'imei': imei,
+                'service_type': service_type,
+                'paid': True,
+                'payment_status': stripe_session.payment_status,
+                'amount': stripe_session.amount_total / 100,  # переводим в лари
+                'currency': stripe_session.currency,
+                'timestamp': datetime.utcnow(),
+                'status': 'pending_verification'  # ожидание выполнения проверки
+            }
+            if 'user_id' in session:
+                record['user_id'] = ObjectId(session['user_id'])
+            if client:
+                checks_collection.insert_one(record)
+            
+            # Перенаправляем на страницу проверки с параметрами
+            apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
+            if service_type in apple_services:
+                return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
+            else:
+                return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
+        
+        except Exception as e:
+            app.logger.error(f"Payment success error: {str(e)}")
+            return render_template('error.html', error=str(e)), 500
 
 @app.route('/get_check_result')
 def get_check_result():
