@@ -77,6 +77,9 @@ def dashboard():
     total_checks = checks_collection.count_documents({'user_id': user_id})
     total_comparisons = comparisons_collection.count_documents({'user_id': user_id})
     
+    # Generate avatar color
+    avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+    
     return render_template(
         'user/dashboard.html',
         user=user,
@@ -86,7 +89,7 @@ def dashboard():
         last_payments=payments,
         total_checks=total_checks,
         total_comparisons=total_comparisons,
-        generate_avatar_color=generate_avatar_color,
+        avatar_color=avatar_color,
         stripe_public_key=STRIPE_PUBLIC_KEY,
         csrf_token=generate_csrf()
     )
@@ -165,12 +168,25 @@ def history_checks():
     page = int(request.args.get('page', 1))
     per_page = 20
     
-    checks = list(checks_collection.find({'user_id': user_id})
+    # Get search parameters
+    search_query = request.args.get('search', '')
+    status_filter = request.args.get('status', 'all')
+    
+    # Build query
+    query = {'user_id': user_id}
+    
+    if search_query:
+        query['imei'] = {'$regex': search_query, '$options': 'i'}
+    
+    if status_filter != 'all':
+        query['status'] = status_filter
+    
+    checks = list(checks_collection.find(query)
         .sort('timestamp', -1)
         .skip((page - 1) * per_page)
         .limit(per_page))
     
-    total = checks_collection.count_documents({'user_id': user_id})
+    total = checks_collection.count_documents(query)
     
     for check in checks:
         check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M')
@@ -182,8 +198,24 @@ def history_checks():
         checks=checks,
         page=page,
         per_page=per_page,
-        total=total
+        total=total,
+        search_query=search_query,
+        status_filter=status_filter
     )
+
+@user_bp.route('/check-details/<check_id>')
+@login_required
+def check_details(check_id):
+    user_id = session['user_id']
+    check = checks_collection.find_one({'_id': ObjectId(check_id), 'user_id': user_id})
+    
+    if not check:
+        return jsonify({'error': 'Check not found'}), 404
+    
+    # Format timestamp
+    check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+    
+    return jsonify(check)
 
 @user_bp.route('/history/comparisons')
 @login_required
