@@ -22,7 +22,7 @@ comparisons_collection = db['comparisons']
 payments_collection = db['payments']
 refunds_collection = db['refunds']
 
-# Импорт платежного модуля (предполагается, что он существует)
+# Импорт платежного модуля
 from .stripepay import StripePayment
 
 stripe_payment = StripePayment(
@@ -212,8 +212,6 @@ def accounts():
         flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
     
-    balance = user.get('balance', 0.0)
-    
     payments = list(payments_collection.find({'user_id': user_id})
         .sort('timestamp', -1)
         .limit(20))
@@ -224,7 +222,6 @@ def accounts():
     return render_template(
         'user/accounts.html',
         user=user,
-        balance=balance,
         payments=payments
     )
 
@@ -257,31 +254,6 @@ def create_payment_session():
 def topup_success():
     flash('გადახდა წარმატებით დასრულდა! თქვენი ბალანსი განახლდება მალე.', 'success')
     return redirect(url_for('user.dashboard'))
-
-@user_bp.route('/topup', methods=['GET', 'POST'])
-@login_required
-def topup_balance():
-    if request.method == 'POST':
-        amount = float(request.form.get('amount'))
-        user_id = session['user_id']
-        
-        if amount < 1:
-            flash('მინიმალური თანხა: 1 ₾', 'danger')
-            return redirect(url_for('user.accounts'))
-        
-        try:
-            session_stripe = stripe_payment.create_topup_session(
-                user_id=user_id,
-                amount=amount,
-                success_url=url_for('user.topup_success', _external=True),
-                cancel_url=url_for('user.accounts', _external=True)
-            )
-            return redirect(session_stripe.url)
-        except Exception as e:
-            flash(f'შეცდომა: {str(e)}', 'danger')
-            return redirect(url_for('user.accounts'))
-    
-    return redirect(url_for('user.accounts'))
 
 @user_bp.route('/stripe-webhook', methods=['POST'])
 def stripe_webhook():
