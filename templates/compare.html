@@ -6,6 +6,7 @@
     <title>ტელეფონების შედარება</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        /* Все стили остаются без изменений */
         :root {
             --primary-color: #0a0e17;
             --secondary-color: #1a243c;
@@ -49,7 +50,6 @@
             padding: 0 10px;
         }
         
-        /* Стили для выбора режима */
         .mode-selection {
             display: flex;
             justify-content: center;
@@ -91,7 +91,6 @@
             color: var(--accent-color);
         }
         
-        /* Стили для селекторов телефонов */
         .phone-selectors {
             display: flex;
             flex-direction: column;
@@ -163,7 +162,6 @@
             text-overflow: ellipsis;
         }
         
-        /* Модальное окно */
         .result-modal {
             display: none;
             position: fixed;
@@ -317,7 +315,6 @@
             text-overflow: ellipsis;
         }
         
-        /* Секции результатов */
         .comparison-section {
             display: none;
             margin-top: 30px;
@@ -605,7 +602,6 @@
             display: none;
         }
         
-        /* Уведомления об ошибках */
         .notification {
             position: fixed;
             top: 20px;
@@ -632,7 +628,6 @@
             to { opacity: 0; }
         }
         
-        /* Адаптивные стили */
         @media (max-width: 768px) {
             .section-title {
                 font-size: 1.8rem;
@@ -952,12 +947,14 @@
                     $('.mode-selection').hide();
                     $('#singlePhoneModeContainer').show();
                     $('#compareModeContainer').hide();
+                    resetComparisonState();
                 });
                 
                 $('#compareModeBtn').on('click', function() {
                     $('.mode-selection').hide();
                     $('#compareModeContainer').show();
                     $('#singlePhoneModeContainer').hide();
+                    resetComparisonState();
                 });
                 
                 // Обработчики для кнопок выбора телефонов
@@ -974,6 +971,37 @@
                 
                 // Обработка ввода в поле поиска
                 $('#phoneSearchInput').on('keyup', handleSearchInput);
+            }
+            
+            function resetComparisonState() {
+                phone1 = null;
+                phone2 = null;
+                singlePhone = null;
+                
+                // Сбросить UI
+                $('#selectPhone1Btn').html(`
+                    <div class="phone-thumb-container">
+                        <div class="add-icon">+</div>
+                    </div>
+                    <div class="phone-info-text">
+                        <div class="phone-title">აირჩიეთ პირველი ტელეფონი</div>
+                        <div class="phone-subtitle">დააწკაპუნეთ შესადარებლად დასამატებლად</div>
+                    </div>
+                `);
+                
+                $('#selectPhone2Btn').html(`
+                    <div class="phone-thumb-container">
+                        <div class="add-icon">+</div>
+                    </div>
+                    <div class="phone-info-text">
+                        <div class="phone-title">აირჩიეთ მეორე ტელეფონი</div>
+                        <div class="phone-subtitle">დააწკაპუნეთ შესადარებლად დასამატებლად</div>
+                    </div>
+                `);
+                
+                $('#afterFirstSelected').hide();
+                $('#startComparisonBtn').hide();
+                $('#comparisonResult').hide();
             }
             
             // Обработчики событий
@@ -1191,7 +1219,7 @@
             }
             
             function showComparisonButton() {
-                $('#afterFirstSelected').hide();
+                $('#afterFirstSelected').show(); // Исправлено: не скрываем контейнер
                 $('#startComparisonBtn').show();
             }
             
@@ -1256,28 +1284,40 @@
                     </div>
                 `).show();
                 
-                // Исправленный запрос на сравнение
+                // Исправленный формат ID для MongoDB
+                const phone1Id = phone1._id.$oid ? phone1._id.$oid : phone1._id;
+                const phone2Id = phone2._id.$oid ? phone2._id.$oid : phone2._id;
+                
+                console.log("Sending compare request with IDs:", {
+                    phone1_id: phone1Id,
+                    phone2_id: phone2Id
+                });
+                
                 $.ajax({
                     url: '/api/compare',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({
-                        phone1_id: phone1._id.$oid || phone1._id, // Исправление для ObjectId
-                        phone2_id: phone2._id.$oid || phone2._id  // Исправление для ObjectId
+                        phone1_id: phone1Id,
+                        phone2_id: phone2Id
                     }),
                     success: function(result) {
+                        console.log("Comparison result:", result);
                         displayComparisonResult(result);
                     },
                     error: function(xhr) {
-                        let errorMsg = 'შედარების პროცესი ვერ მოხერხდა';
-                        
+                        let errorMsg = `შედარების პროცესი ვერ მოხერხდა (${xhr.status} ${xhr.statusText})`;
                         try {
                             const response = JSON.parse(xhr.responseText);
                             if (response.error) {
                                 errorMsg = response.error;
+                            } else if (response.message) {
+                                errorMsg = response.message;
                             }
-                        } catch (e) {}
-                        
+                        } catch (e) {
+                            errorMsg = xhr.responseText || errorMsg;
+                        }
+                        console.error("Comparison error:", errorMsg, xhr);
                         $('#comparisonResult').html(`
                             <div class="error-message" style="margin: 30px;">
                                 ${errorMsg}
@@ -1291,13 +1331,24 @@
             }
             
             function displayComparisonResult(result) {
-                const brand1 = getBrand(phone1);
-                const model1 = getModel(phone1);
-                const brand2 = getBrand(phone2);
-                const model2 = getModel(phone2);
+                // Проверка наличия необходимых данных
+                if (!result || !result.phone1 || !result.phone2) {
+                    $('#comparisonResult').html(`
+                        <div class="error-message" style="margin: 30px;">
+                            შედარების შედეგები არასწორია
+                            <button class="retry-btn" id="retryComparisonBtn">ხელახლა ცდა</button>
+                        </div>
+                    `);
+                    return;
+                }
                 
-                const winner = result.overall_winner === 'phone1' ? phone1 : phone2;
-                const loser = result.overall_winner === 'phone1' ? phone2 : phone1;
+                const brand1 = getBrand(result.phone1);
+                const model1 = getModel(result.phone1);
+                const brand2 = getBrand(result.phone2);
+                const model2 = getModel(result.phone2);
+                
+                const winner = result.overall_winner === 'phone1' ? result.phone1 : result.phone2;
+                const loser = result.overall_winner === 'phone1' ? result.phone2 : result.phone1;
                 
                 const winnerBrand = getBrand(winner);
                 const winnerModel = getModel(winner);
@@ -1455,4 +1506,4 @@
         });
     </script>
 </body>
-</html>
+    </html>
