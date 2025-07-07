@@ -29,31 +29,17 @@ GEORGIAN_LETTERS_REGEX = re.compile(r'^[\u10A0-\u10FF\s]+$')
 PASSWORD_REGEX = re.compile(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$')
 PHONE_REGEX = re.compile(r'^\+995\d{9}$')
 
-# Генерация CSRF токена
-def generate_csrf_token():
-    if 'csrf_token' not in session:
-        session['csrf_token'] = secrets.token_hex(16)
-    return session['csrf_token']
-
 @auth_bp.route('/register', methods=['GET'])
 def show_register_form():
+    # Гарантируем создание сессии
+    session.permanent = True
     current_year = datetime.utcnow().year
-    csrf_token = generate_csrf_token()
-    return render_template('register.html', csrf_token=csrf_token, current_year=current_year)
+    return render_template('register.html', current_year=current_year)
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.form
-    csrf_token = data.get('csrf_token')
     
-    # Проверка CSRF токена
-    if 'csrf_token' not in session or csrf_token != session['csrf_token']:
-        logger.warning("CSRF token validation failed")
-        return jsonify({
-            "success": False,
-            "errors": ["CSRF ტოკენი არასწორია ან ვადაგასულია. გთხოვთ განაახლეთ გვერდი."]
-        }), 400
-
     first_name = data.get('first_name')
     last_name = data.get('last_name')
     birth_day = data.get('birth_day')
@@ -120,13 +106,11 @@ def register():
     result = regular_users_collection.insert_one(user_data)
     logger.info(f"Registered new user: {username}")
     
-    # Очистка CSRF токена после успешной регистрации
-    session.pop('csrf_token', None)
-    
     # Автоматический вход после регистрации
     session['user_id'] = str(result.inserted_id)
     session['username'] = username
     session['role'] = 'user'
+    session.modified = True
     
     return jsonify({"success": True, "message": "რეგისტრაცია წარმატებით დასრულდა!"}), 201
 
@@ -198,6 +182,7 @@ def login():
         session['user_id'] = str(user['_id'])
         session['username'] = user['username']
         session['role'] = user['role']
+        session.modified = True
         logger.info(f"Successful login for: {user['username']} (Role: {user['role']})")
         
         # Определение URL для перенаправления
