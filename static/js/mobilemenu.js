@@ -66,14 +66,48 @@
         }
         
         .mobile-menu-modal .modal-content {
-            background: rgba(18, 26, 43, 0.95);
+            background: 
+                linear-gradient(135deg, rgba(10,14,23,0.95), rgba(26,33,56,0.95)),
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(0,198,255,0.1) 10px,
+                    rgba(0,198,255,0.1) 20px
+                );
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
-            box-shadow: 0 0 15px rgba(0, 198, 255, 0.3);
+            box-shadow: 
+                0 0 15px rgba(0, 198, 255, 0.3),
+                inset 0 0 20px rgba(0, 150, 200, 0.2);
             overflow: visible;
             position: relative;
             width: 100%;
             height: 100%;
+            z-index: 1;
+        }
+
+        /* Красивые линии для фона */
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00c6ff, transparent);
+            z-index: 2;
+        }
+        
+        .modal-content::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00c6ff, transparent);
+            z-index: 2;
         }
         
         .mobile-menu-modal .modal-body {
@@ -201,6 +235,7 @@
             min-height: auto;
             white-space: nowrap;
             line-height: 1.3;
+            color: white;
         }
         
         .user-balance {
@@ -228,11 +263,23 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+            text-shadow: 0 0 8px rgba(0, 198, 255, 0.3);
         }
         
-        /* Убираем подчеркивание у ссылок */
-        .menu-item a {
+        /* Убираем подчеркивание у всех ссылок */
+        .menu-item a,
+        .floating-avatar-info,
+        .user-balance,
+        .floating-avatar {
             text-decoration: none !important;
+            outline: none !important;
+        }
+        
+        /* Убираем подчеркивание при фокусе */
+        .menu-item a:focus,
+        .menu-item a:active {
+            text-decoration: none !important;
+            outline: none !important;
         }
         
         /* Убираем тень при наведении */
@@ -273,6 +320,7 @@
             min-height: 0;
             padding: 12px 8px;
             box-sizing: border-box;
+            color: white;
         }
         
         .menu-item:hover {
@@ -542,7 +590,7 @@
                                 <i class="fas fa-home"></i>
                                 <span>მთავარი</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/user/accounts; closeAllMobileMenus();">
+                            <div class="menu-item" onclick="window.location.href='/user/accounts'; closeAllMobileMenus();">
                                 <i class="fas fa-wallet"></i>
                                 <span>ანგარიშები</span>
                             </div>
