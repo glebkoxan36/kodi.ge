@@ -823,11 +823,18 @@ def perform_check():
                     soup = BeautifulSoup(result['html_content'], 'html.parser')
                     result = {'server_response': soup.get_text(separator='\n', strip=True)}
             
+            # Сохраняем результат для бесплатных проверок
             if service_type == 'free' and client:
+                # Извлекаем статус из результата
+                status = 'unknown'
+                if isinstance(result, dict):
+                    status = result.get('status') or result.get('სტატუსი', 'unknown')
+                
                 record = {
                     'imei': imei,
                     'service_type': service_type,
                     'paid': False,
+                    'status': status,   # сохраняем статус
                     'timestamp': datetime.utcnow(),
                     'result': result
                 }
@@ -1444,6 +1451,58 @@ def history_comparisons():
         per_page=per_page,
         total=total
     )
+
+# Новый роут для получения деталей проверки
+@user_bp.route('/check-details/<check_id>')
+@login_required
+def check_details(check_id):
+    """Возвращает детали проверки IMEI в формате JSON"""
+    try:
+        obj_id = ObjectId(check_id)
+    except:
+        return jsonify({'error': 'Invalid check ID'}), 400
+
+    user_id = ObjectId(session['user_id'])
+    check = checks_collection.find_one({'_id': obj_id, 'user_id': user_id})
+
+    if not check:
+        return jsonify({'error': 'Check not found'}), 404
+
+    # Определяем статус
+    status = check.get('status', 'unknown')
+    # Если в записи нет статуса, попробуем взять из результата
+    if status == 'unknown' and isinstance(check.get('result'), dict):
+        result = check.get('result')
+        status = result.get('status') or result.get('სტატუსი', 'unknown')
+
+    # Собираем детали
+    details = {
+        'imei': check.get('imei', ''),
+        'timestamp': check['timestamp'].strftime('%Y-%m-%d %H:%M'),
+        'status': status,
+        'device_info': '',
+        'additional_info': ''
+    }
+
+    result = check.get('result')
+    if isinstance(result, dict):
+        # Получаем модель
+        model = result.get('model') or result.get('მოდელი') or result.get('device_model') or ''
+        details['device_info'] = model
+
+        # Собираем дополнительные поля, исключая некоторые
+        excluded_keys = ['status', 'სტატუსი', 'model', 'მოდელი', 'server_response', 'service_type', 'imei', 'device_model']
+        additional_info_parts = []
+        for key, value in result.items():
+            if key not in excluded_keys:
+                additional_info_parts.append(f"{key}: {value}")
+
+        details['additional_info'] = '\n'.join(additional_info_parts) or 'დამატებითი ინფორმაცია არ არის'
+    else:
+        # Если результат не словарь, то выводим как есть
+        details['additional_info'] = str(result) or 'დამატებითი ინფორმაცია არ არის'
+
+    return jsonify(details)
 
 # ======================================
 # Authentication Blueprint
