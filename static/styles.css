@@ -1,8 +1,9 @@
-/* ===== VARIABLES ===== */
+/* ===== UPDATED VARIABLES ===== */
 :root {
-  --primary-color: #0d1525;
-  --secondary-color: #1d2a4a;
-  --accent-color: #00c6ff;
+  --primary-color: #0a1120;
+  --secondary-color: #1a2a5c;
+  --accent-color: #00e5ff;
+  --accent-color-2: #ff3d71;
   --text-color: #ffffff;
   --text-secondary: #ffffff;
   --card-bg: #121a2b;
@@ -15,6 +16,33 @@
   --ring-color-3: #00d68f;
   --google-color: #4285F4;
   --facebook-color: #3b5998;
+}
+
+/* ===== BASE STYLES ===== */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Remove link underlines globally */
+a, a:hover, a:focus, a:active {
+  text-decoration: none !important;
+}
+
+body, h1, h2, h3, h4, h5, h6, p, span, a, div {
+  color: var(--text-color);
+}
+
+body {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color), #0f1729);
+  background-size: 300% 300%;
+  animation: gradientShift 15s ease infinite;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-weight: 450;
+  line-height: 1.6;
 }
 
 /* ===== ANIMATIONS ===== */
@@ -81,48 +109,6 @@
   50% { transform: translateY(-10px); }
 }
 
-/* ===== BASE STYLES ===== */
-*, *::before, *::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* Уточненные глобальные стили текста */
-body, h1, h2, h3, h4, h5, h6, p, span, a, div {
-  color: var(--text-color);
-}
-
-body {
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color), #0f1729);
-  background-size: 300% 300%;
-  animation: gradientShift 15s ease infinite;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  min-height: 100vh;
-  overflow-x: hidden;
-  font-weight: 450;
-  line-height: 1.6;
-}
-
-/* Блокировка прокрутки при открытых модальных окнах */
-body.modal-open {
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
-}
-
-/* Затемнение фона для модальных окон */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 2999;
-  display: none;
-}
-
 /* ===== UTILITY CLASSES ===== */
 .text-info, .text-info * { color: var(--ffffff) !important; }
 .text-warning, .text-warning * { color: var(--warning-color) !important; }
@@ -143,7 +129,6 @@ body.modal-open {
   opacity: 0.25;
   z-index: 1;
   animation: gradientFloat 25s infinite alternate ease-in-out;
-  /* FIX: Prevent blocking input fields */
   pointer-events: none;
 }
 
@@ -154,7 +139,7 @@ body.modal-open {
 }
 
 .gradient-2 {
-  background: linear-gradient(135deg, var(--success-color), #00a86b);
+  background: linear-gradient(135deg, var(--accent-color-2), #ff0066);
   bottom: -200px;
   left: -200px;
   animation-duration: 30s;
@@ -176,12 +161,12 @@ body.modal-open {
   position: relative;
   width: 70px;
   height: 70px;
-  background: linear-gradient(135deg, var(--accent-color), #0066ff);
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-color-2));
   border-radius: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.7);
   overflow: hidden;
   z-index: 2;
   animation: logoFloat 4s ease-in-out infinite;
@@ -273,7 +258,6 @@ body.modal-open {
   margin-bottom: 20px;
   animation: fadeIn 0.8s ease-out;
   position: relative;
-  /* FIX: Ensure form elements are above gradients */
   z-index: 20;
 }
 
@@ -436,7 +420,6 @@ body.modal-open {
 .main-content {
   margin-left: 300px;
   padding: 30px;
-  /* FIX: Ensure content is above gradients */
   position: relative;
   z-index: 20;
 }
@@ -530,20 +513,39 @@ body.modal-open {
   text-align: center;
   transition: all 0.3s ease;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.2) !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1) !important;
   display: flex;
   flex-direction: column;
   height: 100%;
   backdrop-filter: blur(10px);
   z-index: 10;
   position: relative;
+  transform: translateY(0);
 }
 
 .service-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  background: var(--card-hover-bg);
+  transform: translateY(-10px) rotate(2deg);
+  box-shadow: 0 20px 30px rgba(0, 229, 255, 0.4) !important;
+  background: var(--card-hover-bg) !important;
+  border-color: rgba(0, 229, 255, 0.4) !important;
+}
+
+.service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.15), transparent);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 0;
+}
+
+.service-card:hover::before {
+  opacity: 1;
 }
 
 .service-card.selected {
@@ -586,15 +588,187 @@ body.modal-open {
   color: var(--accent-color);
   text-decoration: none;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: all 0.4s ease;
   margin-top: 15px;
   border: 1px solid rgba(0, 198, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  z-index: 2;
+  box-shadow: 0 4px 10px rgba(0, 229, 255, 0.3) !important;
+}
+
+.service-action::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: 0.5s;
+  z-index: -1;
+}
+
+.service-action:hover::before {
+  left: 100%;
 }
 
 .service-action:hover {
-  background: rgba(0, 198, 255, 0.25);
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2);
+  transform: translateX(10px);
+  box-shadow: 0 5px 15px rgba(0, 229, 255, 0.6) !important;
+}
+
+.service-icon i {
+  transition: all 0.5s ease;
+  display: inline-block;
+}
+
+.service-card:hover .service-icon i {
+  transform: scale(1.2) rotate(5deg);
+  filter: drop-shadow(0 5px 10px rgba(0, 229, 255, 0.7));
+}
+
+/* ===== UPDATED CAROUSEL ===== */
+.carousel {
+  position: relative;
+  max-width: 1200px;
+  margin: 30px auto;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  border-radius: 12px;
+  min-height: 300px; /* Reduced height */
+  background: #000;
+  aspect-ratio: 16/6; /* Rectangular format */
+}
+
+.carousel-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+}
+
+.slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide.active {
+  opacity: 1;
+  z-index: 1;
+}
+
+.slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Placeholder styles */
+.placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-align: center;
+  padding: 20px;
+}
+
+.placeholder-text {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin-top: 30px;
+  letter-spacing: 1px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: white;
+  animation: pulse 2s infinite;
+  padding: 15px 30px;
+  text-shadow: 0 0 15px rgba(0, 229, 255, 0.7);
+}
+
+/* Pulsation animation */
+@keyframes pulse {
+  0% {
+    opacity: 0.5;
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 20px rgba(0, 229, 255, 1);
+  }
+  100% {
+    opacity: 0.5;
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
+  }
+}
+
+/* ===== SOCIAL BUTTONS ===== */
+.social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 25px;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  position: relative;
+  overflow: hidden;
+  border: none;
+  color: white;
+  width: 220px;
+  margin: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.social-btn.google {
+  background: linear-gradient(135deg, #4285F4, #34A853);
+}
+
+.social-btn.facebook {
+  background: linear-gradient(135deg, #3b5998, #8b9dc3);
+}
+
+.social-btn:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.social-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: 0.5s;
+}
+
+.social-btn:hover::after {
+  left: 100%;
+}
+
+.social-btn i {
+  font-size: 1.5rem;
+  margin-right: 12px;
 }
 
 /* ===== MODAL STYLES ===== */
@@ -742,7 +916,6 @@ body.modal-open {
   margin-top: 20px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
-  /* FIX: Ensure form is above gradients */
   position: relative;
   z-index: 20;
 }
@@ -1489,109 +1662,6 @@ body.modal-open {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* ===== FIXES ===== */
-/* IMEI input fields */
-#imei-input {
-  background: rgba(255, 255, 255, 0.07) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 8px !important;
-  color: var(--text-color) !important;
-  padding: 14px 18px !important;
-  /* FIX: Ensure input is above gradients */
-  position: relative;
-  z-index: 20;
-}
-
-/* Service cards */
-.service-card {
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1) !important;
-  transition: all 0.3s ease !important;
-}
-
-.service-card:hover {
-  transform: translateY(-5px) !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
-  background: var(--card-hover-bg) !important;
-}
-
-/* Login page fixes */
-.social-auth .social-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.social-btn {
-  padding: 12px 0 !important;
-  width: 100% !important;
-  margin-bottom: 0 !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.social-btn.google {
-  background: var(--google-color) !important;
-}
-
-.social-btn.facebook {
-  background: var(--facebook-color) !important;
-}
-
-.social-btn i {
-  margin-right: 10px !important;
-  font-size: 1.2rem !important;
-}
-
-#forgot-password-modal {
-  display: none !important;
-  z-index: 2000 !important;
-}
-
-/* Compare page fixes */
-.phone-selector-inner {
-  transition: transform 0.6s !important;
-  transform-style: preserve-3d !important;
-}
-
-.phone-selector:hover .phone-selector-inner {
-  transform: rotateY(15deg) !important;
-}
-
-.phone-selector.selected .phone-selector-inner {
-  transform: rotateY(180deg) !important;
-}
-
-.phone-selector.selected:hover .phone-selector-inner {
-  transform: rotateY(165deg) !important;
-}
-
-#compareButton:not(:disabled):hover {
-  transform: translateY(-5px) !important;
-  box-shadow: 0 8px 25px rgba(0, 198, 255, 0.5) !important;
-}
-
-/* Form focus states */
-.form-control:focus {
-  border-color: var(--accent-color) !important;
-  box-shadow: 0 0 0 3px rgba(0, 198, 255, 0.2) !important;
-}
-
-/* Button states */
-.compare-btn:disabled {
-  opacity: 0.7 !important;
-  cursor: not-allowed !important;
-}
-
-/* Modal z-index fix */
-.payment-method-modal,
-.result-modal {
-  z-index: 10000 !important;
-}
-
 /* ===== RESPONSIVE STYLES ===== */
 @media (max-width: 1199px) {
   .sidebar {
@@ -1653,6 +1723,16 @@ body.modal-open {
   .logo-ring:nth-child(3) {
     width: 90px;
     height: 90px;
+  }
+
+  /* Carousel adjustments */
+  .carousel {
+    min-height: 250px;
+    max-width: 95%;
+  }
+  .placeholder-text {
+    font-size: 2rem;
+    padding: 10px 20px;
   }
 }
 
@@ -1769,6 +1849,15 @@ body.modal-open {
   .free-check-results .result-card {
     padding: 20px 15px;
   }
+
+  /* Carousel adjustments */
+  .carousel {
+    min-height: 200px;
+    max-width: 95%;
+  }
+  .placeholder-text {
+    font-size: 1.5rem;
+  }
 }
 
 @media (max-width: 576px) {
@@ -1820,6 +1909,15 @@ body.modal-open {
     padding: 10px 12px;
     font-size: 0.9rem;
   }
+
+  /* Carousel adjustments */
+  .carousel {
+    min-height: 150px;
+    max-width: 95%;
+  }
+  .placeholder-text {
+    font-size: 1.2rem;
+  }
 }
 
 /* ===== CRITICAL FIXES ===== */
@@ -1834,7 +1932,7 @@ body.modal-open {
   z-index: 20;
 }
 
-/* Блокировка прокрутки и анимации модальных окон */
+/* Block scrolling and modal animations */
 .result-modal, 
 .payment-method-modal, 
 .payment-status-modal {
@@ -1847,4 +1945,4 @@ body.modal-open {
 
 .modal-content {
   transition: all 0.3s ease;
-  }
+    }
