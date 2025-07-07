@@ -8,12 +8,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <style>
+        /* Блокировка прокрутки при открытых модальных окнах */
         body.modal-open {
             overflow: hidden;
             position: fixed;
             width: 100%;
         }
         
+        /* Затемнение фона для модальных окон */
         .modal-backdrop {
             position: fixed;
             top: 0;
@@ -25,6 +27,7 @@
             display: none;
         }
         
+        /* Центрирование и анимации для модальных окон */
         .result-modal, 
         .payment-method-modal, 
         .payment-status-modal {
@@ -47,6 +50,7 @@
         
         .card-footer { padding: 20px; }
         
+        /* Стили для ошибок */
         .error-card {
             background: var(--danger-bg);
             border-radius: 12px;
@@ -66,6 +70,7 @@
             font-size: 0.9em;
         }
         
+        /* Android ошибка */
         .android-error {
             display: flex;
             align-items: center;
@@ -90,6 +95,7 @@
             text-decoration: underline;
         }
         
+        /* Предупреждение о Android */
         .android-warning {
             display: flex;
             align-items: center;
@@ -112,6 +118,7 @@
             text-decoration: underline;
         }
         
+        /* Адаптивное модальное окно */
         .result-modal .modal-content {
             max-height: 90vh;
             overflow-y: auto;
@@ -151,6 +158,7 @@
             <p>აირჩიეთ შემოწმების ტიპი და შეიყვანეთ IMEI ან სერიული ნომერი</p>
         </div>
         
+        <!-- Android предупреждение -->
         <div class="android-warning">
             <i class="fas fa-exclamation-triangle"></i>
             <p>
@@ -161,6 +169,7 @@
         </div>
         
         <div id="services-container" class="services-grid">
+            <!-- JavaScript will generate service cards -->
         </div>
         
         <div id="selected-service-container" class="selected-service-container">
@@ -193,6 +202,7 @@
         </div>
     </div>
     
+    <!-- Results Modal -->
     <div class="result-modal" id="result-modal">
         <div class="modal-content">
             <div class="card-header">
@@ -206,6 +216,7 @@
         </div>
     </div>
     
+    <!-- Payment Method Modal -->
     <div class="payment-method-modal" id="payment-method-modal">
         <div class="payment-method-content">
             <div class="payment-method-header">
@@ -234,6 +245,7 @@
         </div>
     </div>
     
+    <!-- Payment Status Modals -->
     <div class="payment-status-modal" id="payment-success-modal">
         <div class="modal-content">
             <div class="status-icon success">
@@ -265,16 +277,21 @@
     
     <script src="https://js.stripe.com/v3/"></script>
     <script>
+        // Функция для получения CSRF-токена
         function getCSRFToken() {
             return document.querySelector('meta[name="csrf-token"]').content;
         }
         
+        // ინიციალიზაცია Stripe-ის გამოყენებით საჯარო გასაღების
         const stripe = Stripe('{{ stripe_public_key }}');
+        
+        // ვიყენებთ სერვერიდან მიღებულ მონაცემებს სტატიკური დეკლარაციის ნაცვლად
         const services = {{ services_data | tojson | safe }};
         
         let currentImei = '';
         let currentServiceType = '';
         
+        // Функции управления модальными окнами
         function openModal(modalId) {
             const modal = document.getElementById(modalId);
             const backdrop = document.getElementById('modal-backdrop');
@@ -306,18 +323,21 @@
         document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('services-container');
             
+            // ვამოწმებთ კონტეინერის არსებობას
             if (!container) {
                 console.error('სერვისების კონტეინერი ვერ მოიძებნა');
                 return;
             }
             
-            container.innerHTML = '';
+            container.innerHTML = ''; // ვასუფთავებთ კონტეინერს
             
+            // თუ სერვისები არ არის, ვაჩვენებთ შეტყობინებას
             if (!services || services.length === 0) {
                 container.innerHTML = '<p>სერვისები დროებით მიუწვდომელია</p>';
                 return;
             }
             
+            // ვქმნით სერვისების ბარათებს
             services.forEach(service => {
                 const card = document.createElement('div');
                 card.className = 'service-card';
@@ -341,10 +361,12 @@
             const imeiParam = urlParams.get('imei');
             const sessionParam = urlParams.get('session_id');
             
+            // URL-დან სერვისის ავტომატური არჩევა
             if (serviceParam && services.some(s => s.id === serviceParam)) {
                 selectService(serviceParam);
             }
             
+            // თუ IMEI და სესია არსებობს, ვაჩვენებთ შედეგს
             if (imeiParam && sessionParam) {
                 currentImei = imeiParam;
                 currentServiceType = serviceParam;
@@ -382,6 +404,7 @@
                 closeModal('result-modal');
             });
             
+            // Глобальный обработчик клика по подложке
             document.getElementById('modal-backdrop').addEventListener('click', function() {
                 closeModal('result-modal');
                 closeModal('payment-method-modal');
@@ -389,6 +412,7 @@
                 closeModal('payment-error-modal');
             });
             
+            // გადახდის მოდალის დამმუშავებლები
             document.getElementById('balance-option').addEventListener('click', () => {
                 processPayment(true);
             });
@@ -401,6 +425,7 @@
                 closeModal('payment-method-modal');
             });
             
+            // Payment status modal handlers
             document.getElementById('retry-payment').addEventListener('click', () => {
                 closeModal('payment-error-modal');
                 processPayment(false);
@@ -420,22 +445,28 @@
             document.getElementById('selected-service-description').textContent = service.description;
             document.getElementById('selected-service-container').style.display = 'block';
             
+            // Задержка для корректного фокуса
             setTimeout(() => {
                 document.getElementById('imei-input').focus();
             }, 100);
         }
         
+        // Функция проверки IMEI по алгоритму Луна
         function validateImei(imei) {
+            // Разрешаем только цифры и буквы
             if (!/^[\dA-Za-z]+$/.test(imei)) return false;
             
+            // Проверяем длину (14 для серийных номеров, 15 для IMEI)
             if (imei.length !== 14 && imei.length !== 15) return false;
             
+            // Для 14-значных серийных номеров пропускаем проверку
             if (imei.length === 14) return true;
             
+            // Алгоритм Луна для 15-значных IMEI
             let sum = 0;
             for (let i = 0; i < 14; i++) {
                 let digit = parseInt(imei[i]);
-                if (i % 2 === 1) {
+                if (i % 2 === 1) { // Четные позиции (по индексу, начиная с 0)
                     digit *= 2;
                     if (digit > 9) digit -= 9;
                 }
@@ -456,6 +487,7 @@
                 return;
             }
             
+            // Валидация IMEI
             if (!validateImei(imei)) {
                 errorElement.textContent = 'შეიყვანეთ სწორი IMEI ნომერი (14 ან 15 ციფრი)';
                 errorElement.style.display = 'block';
@@ -475,13 +507,16 @@
             currentImei = imei;
             currentServiceType = serviceType;
             
+            // Блокируем кнопку
             checkBtn.disabled = true;
             
+            // უფასო შემოწმებისთვის
             if (serviceType === 'free') {
                 performCheck(imei, serviceType);
                 return;
             }
             
+            // ავტორიზებული მომხმარებლებისთვის
             if ({{ 'true' if user else 'false' }}) {
                 fetchUserBalance().then(balance => {
                     const service = services.find(s => s.id === serviceType);
@@ -506,6 +541,7 @@
                     checkBtn.disabled = false;
                 });
             } else {
+                // არაავტორიზებული მომხმარებლებისთვის
                 processPayment(false);
             }
         }
@@ -552,6 +588,7 @@
                     errorElement.style.display = 'block';
                 } else {
                     if (data.payment_method === 'balance') {
+                        // Show success modal for balance payment
                         openModal('payment-success-modal');
                         fetchResultForSession(data.id);
                     } else if (data.payment_method === 'stripe') {
@@ -577,8 +614,8 @@
         
         function fetchResultForSession(sessionId, attempt = 1) {
             const maxAttempts = 10;
-            const delay = 2000;
-            const timeoutDuration = 10000;
+            const delay = 2000; // 2 seconds between attempts
+            const timeoutDuration = 10000; // 10 seconds timeout
             
             if (attempt > maxAttempts) {
                 document.getElementById('spinner').style.display = 'none';
@@ -592,12 +629,14 @@
             
             document.getElementById('spinner').style.display = 'flex';
             
+            // Создаем промис для таймаута
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => {
                     reject(new Error('Request timeout'));
                 }, timeoutDuration);
             });
             
+            // Основной промис запроса
             const fetchPromise = fetch('/get_check_result?session_id=' + sessionId)
                 .then(response => {
                     if (!response.ok) {
@@ -606,6 +645,7 @@
                     return response.json();
                 });
             
+            // Используем Promise.race для обработки таймаута
             Promise.race([fetchPromise, timeoutPromise])
                 .then(data => {
                     document.getElementById('spinner').style.display = 'none';
@@ -622,6 +662,7 @@
                 })
                 .catch(error => {
                     if (error.message === 'Request timeout' || error.message.includes('ქსელის')) {
+                        // Повторяем запрос через задержку
                         setTimeout(() => {
                             fetchResultForSession(sessionId, attempt + 1);
                         }, delay);
@@ -640,8 +681,11 @@
             document.getElementById('spinner').style.display = 'flex';
             const checkBtn = document.getElementById('check-btn');
             
+            // Создаем контроллер для таймаута запроса
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 секунд таймаут
+            
+            // Имитация задержки минимум 1.5 секунды
             const startTime = Date.now();
             const minDelay = 1500;
 
@@ -664,6 +708,7 @@
                 return response.json();
             })
             .then(data => {
+                // Гарантируем минимальную задержку
                 const elapsed = Date.now() - startTime;
                 const remainingDelay = Math.max(0, minDelay - elapsed);
                 
@@ -679,6 +724,7 @@
                         }
                         errorElement.style.display = 'block';
                     } else {
+                        // Проверка на N/A значения
                         const keyFields = ['model', 'modelName', 'brand'];
                         const hasNA = keyFields.some(field => 
                             data[field] && data[field].toUpperCase() === 'N/A'
@@ -719,6 +765,7 @@
         function displayResults(imei, serviceType, data) {
             const resultContent = document.getElementById('result-content');
             
+            // Проверка типа устройства - разрешаем только Apple
             const deviceType = (data.device_type || '').toLowerCase();
             if (deviceType === 'android' || deviceType === 'unknown') {
                 resultContent.innerHTML = `
@@ -735,6 +782,7 @@
                 return;
             }
             
+            // Если устройство Apple - показываем результаты
             let resultsHTML = `
                 <div class="text-center mb-4">
                     <i class="fas fa-check-circle text-success" style="font-size: 4rem; color: var(--success-color);"></i>
@@ -744,6 +792,7 @@
                 </div>
             `;
             
+            // Показать предупреждение, если данные были перепарсены
             if (data.original_html) {
                 resultsHTML += `
                     <div class="warning-banner">
@@ -752,6 +801,7 @@
                     </div>`;
             }
 
+            // Отобразить необработанные данные сервера
             if (data.server_response) {
                 resultsHTML += `
                     <div class="raw-results">
@@ -759,7 +809,9 @@
                         <pre>${data.server_response}</pre>
                     </div>`;
             } 
+            // Отобразить таблицу результатов
             else if (data && Object.keys(data).length > 0) {
+                // Определяем ключевые параметры для отображения
                 const keyFields = {
                     'brand': 'მწარმოებელი',
                     'modelName': 'მოდელის სახელი',
@@ -774,8 +826,10 @@
                     'warranty_status': 'გარანტია'
                 };
                 
+                // Фильтруем только существующие поля
                 const existingFields = Object.keys(keyFields).filter(field => data[field]);
                 
+                // Форматируем основные параметры
                 resultsHTML += `
                     <div class="free-check-results">
                         <div class="result-card">
@@ -783,6 +837,7 @@
                             <div class="card-body">
                 `;
                 
+                // Добавляем отформатированные строки
                 existingFields.forEach(field => {
                     const value = data[field];
                     let statusClass = '';
@@ -819,6 +874,7 @@
                         </div>
                 `;
                 
+                // Добавляем кнопку для просмотра всех параметров
                 resultsHTML += `
                     <div class="more-results">
                         <button class="btn-toggle-details" onclick="toggleDetails(this)">
@@ -833,6 +889,7 @@
                                 </tr>
                 `;
                 
+                // Добавляем все параметры в таблицу
                 for (const [key, value] of Object.entries(data)) {
                     if (key === 'error' || 
                         key === 'html' || 
@@ -863,6 +920,7 @@
                         statusClass = 'status-error';
                     }
                     
+                    // Пропускаем уже отображенные поля
                     if (existingFields.includes(key)) continue;
                     
                     resultsHTML += `
@@ -889,6 +947,7 @@
                     </div>`;
             }
             
+            // Добавляем кнопку повторной попытки в случае ошибки
             if (serviceType === 'free' && 
                 (data.model === 'N/A' || data.modelName === 'N/A')) {
                 
@@ -901,6 +960,7 @@
                     </div>`;
             }
             
+            // Добавляем кнопку ручного парсинга, если есть оригинальный HTML
             if (data.original_html) {
                 resultsHTML += `
                     <div class="reparse-section text-center" style="margin-top:20px;">
@@ -915,6 +975,7 @@
             openModal('result-modal');
         }
         
+        // Функция повторного парсинга
         function retryParse(imei) {
             document.getElementById('spinner').style.display = 'flex';
             document.getElementById('check-btn').disabled = true;
@@ -935,6 +996,7 @@
                 });
         }
         
+        // Функция для повторной проверки
         function retryCheck() {
             document.getElementById('spinner').style.display = 'flex';
             document.getElementById('check-btn').disabled = true;
@@ -944,6 +1006,7 @@
             }, 1000);
         }
         
+        // Функция для показа/скрытия дополнительных деталей
         function toggleDetails(button) {
             const detailsContainer = button.parentElement.querySelector('.full-details');
             const icon = button.querySelector('i');
