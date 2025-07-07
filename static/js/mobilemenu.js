@@ -475,6 +475,9 @@
     // Функция для генерации HTML пользователя
     function generateUserHTML() {
         if (window.currentUser && window.currentUser.first_name) {
+            // Форматируем баланс с помощью toFixed(2)
+            const formattedBalance = window.currentUser.balance.toFixed(2);
+            
             return `
                 <div class="floating-avatar" onclick="window.goToDashboard()">
                     <div class="avatar-placeholder" style="background-color: ${window.currentUser.avatar_color}">
@@ -486,7 +489,7 @@
                         ${window.currentUser.first_name} ${window.currentUser.last_name}
                     </div>
                     <div class="user-balance" onclick="window.goToDashboard()">
-                        ბალანსი: ${window.currentUser.balance.toFixed(2)}₾
+                        ბალანსი: ${formattedBalance}₾
                     </div>
                 </div>
             `;
