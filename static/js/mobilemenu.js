@@ -497,6 +497,17 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
+        /* Добавляем в конец существующих стилей */
+.menu-item .menu-icon-img {
+    display: block;
+    width: 32px;
+    height: 32px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 8px;
+    object-fit: contain;
+    object-position: center;
+}
         
         #mobileLoginRegister:hover {
             color: #00c6ff;
