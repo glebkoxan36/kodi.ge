@@ -2,8 +2,9 @@
 import re
 import os
 import logging
+import secrets
 from datetime import datetime, timedelta
-from flask import Blueprint, request, session, redirect, url_for, jsonify
+from flask import Blueprint, request, session, redirect, url_for, jsonify, render_template
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
@@ -28,14 +29,31 @@ GEORGIAN_LETTERS_REGEX = re.compile(r'^[\u10A0-\u10FF\s]+$')
 PASSWORD_REGEX = re.compile(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$')
 PHONE_REGEX = re.compile(r'^\+995\d{9}$')
 
+# Генерация CSRF токена
+def generate_csrf_token():
+    if 'csrf_token' not in session:
+        session['csrf_token'] = secrets.token_hex(16)
+    return session['csrf_token']
+
 @auth_bp.route('/register', methods=['GET'])
 def show_register_form():
     current_year = datetime.utcnow().year
-    return render_template('register.html', current_year=current_year)
+    csrf_token = generate_csrf_token()
+    return render_template('register.html', csrf_token=csrf_token, current_year=current_year)
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.form
+    csrf_token = data.get('csrf_token')
+    
+    # Проверка CSRF токена
+    if 'csrf_token' not in session or csrf_token != session['csrf_token']:
+        logger.warning("CSRF token validation failed")
+        return jsonify({
+            "success": False,
+            "errors": ["CSRF ტოკენი არასწორია ან ვადაგასულია. გთხოვთ განაახლეთ გვერდი."]
+        }), 400
+
     first_name = data.get('first_name')
     last_name = data.get('last_name')
     birth_day = data.get('birth_day')
@@ -51,33 +69,33 @@ def register():
     errors = []
     
     if not GEORGIAN_LETTERS_REGEX.match(first_name):
-        errors.append("Имя должно содержать только грузинские буквы")
+        errors.append("სახელი უნდა შეიცავდეს მხოლოდ ქართულ ასოებს")
     
     if not GEORGIAN_LETTERS_REGEX.match(last_name):
-        errors.append("Фамилия должна содержать только грузинские буквы")
+        errors.append("გვარი უნდა შეიცავდეს მხოლოდ ქართულ ასოებს")
     
     try:
         birth_date = datetime(int(birth_year), int(birth_month), int(birth_day))
         if birth_date > datetime.utcnow():
-            errors.append("Дата рождения не может быть в будущем")
+            errors.append("დაბადების თარიღი არ შეიძლება იყოს მომავალში")
     except (ValueError, TypeError):
-        errors.append("Некорректная дата рождения")
+        errors.append("არასწორი დაბადების თარიღი")
     
     if not PHONE_REGEX.match(phone):
-        errors.append("Некорректный формат телефона. Используйте +995XXXXXXXXX")
+        errors.append("ტელეფონის ნომრის არასწორი ფორმატი. გამოიყენეთ +995XXXXXXXXX")
     
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-        errors.append("Некорректный email адрес")
+        errors.append("ელ. ფოსტის არასწორი მისამართი")
     
     if not PASSWORD_REGEX.match(password):
-        errors.append("Пароль должен содержать минимум 12 символов, одну заглавную букву, одну строчную, одну цифру и один спецсимвол")
+        errors.append("პაროლი უნდა შეიცავდეს მინიმუმ 12 სიმბოლოს, ერთ დიდ ასოს, ერთ პატარა ასოს, ერთ ციფრს და ერთ სპეციალურ სიმბოლოს (@$!%*?&)")
     
     if password != confirm_password:
-        errors.append("Пароли не совпадают")
+        errors.append("პაროლები არ ემთხვევა ერთმანეთს")
     
     # Проверка уникальности данных
     if regular_users_collection.find_one({'$or': [{'username': username}, {'email': email}, {'phone': phone}]}):
-        errors.append("Пользователь с такими данными уже существует")
+        errors.append("მომხმარებელი ასეთი მონაცემებით უკვე არსებობს")
     
     if errors:
         return jsonify({"success": False, "errors": errors}), 400
@@ -102,12 +120,15 @@ def register():
     result = regular_users_collection.insert_one(user_data)
     logger.info(f"Registered new user: {username}")
     
+    # Очистка CSRF токена после успешной регистрации
+    session.pop('csrf_token', None)
+    
     # Автоматический вход после регистрации
     session['user_id'] = str(result.inserted_id)
     session['username'] = username
     session['role'] = 'user'
     
-    return jsonify({"success": True, "message": "Регистрация успешна!"}), 201
+    return jsonify({"success": True, "message": "რეგისტრაცია წარმატებით დასრულდა!"}), 201
 
 @auth_bp.route('/login', methods=['GET'])
 def show_login_form():
@@ -131,7 +152,7 @@ def login():
         remaining = int((failed_login['blocked_until'] - datetime.utcnow()).total_seconds() / 60)
         return jsonify({
             "success": False,
-            "error": f"Аккаунт временно заблокирован. Попробуйте через {remaining} минут"
+            "error": f"ანგარიში დროებით დაბლოკილია. სცადეთ {remaining} წუთის შემდეგ"
         }), 429
     
     # Поиск пользователя
@@ -222,11 +243,11 @@ def login():
         logger.warning(f"IP blocked: {ip_address} for 10 minutes")
         return jsonify({
             "success": False,
-            "error": "Слишком много попыток. Аккаунт заблокирован на 10 минут"
+            "error": "ძალიან ბევრი მცდელობა. ანგარიში დაბლოკილია 10 წუთის განმავლობაში"
         }), 429
     
     logger.warning(f"Failed login attempt for: {identifier} from IP: {ip_address}")
-    return jsonify({"success": False, "error": "Неверный логин или пароль"}), 401
+    return jsonify({"success": False, "error": "არასწორი მომხმარებლის სახელი ან პაროლი"}), 401
 
 @auth_bp.route('/logout')
 def logout():
