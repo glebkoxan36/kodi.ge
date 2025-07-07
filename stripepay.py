@@ -16,9 +16,11 @@ class StripePayment:
 
     def create_checkout_session(self, imei, service_type, amount, success_url, cancel_url, metadata=None, idempotency_key=None):
         try:
+            # Если metadata не передано, создаем пустой dict
             if metadata is None:
                 metadata = {}
                 
+            # Добавляем информацию о типе услуги
             metadata.update({
                 'imei': imei,
                 'service_type': service_type
@@ -28,9 +30,9 @@ class StripePayment:
                 payment_method_types=['card'],
                 line_items=[{
                     'price_data': {
-                        'currency': 'usd',
+                        'currency': 'gel',
                         'product_data': {
-                            'name': f'Device Check ({service_type.capitalize()})',
+                            'name': f'Apple IMEI Check ({service_type.capitalize()})',
                             'description': f'IMEI: {imei}',
                         },
                         'unit_amount': amount,
@@ -53,7 +55,7 @@ class StripePayment:
                 payment_method_types=['card'],
                 line_items=[{
                     'price_data': {
-                        'currency': 'usd',
+                        'currency': 'gel',
                         'product_data': {
                             'name': 'Balance Topup',
                             'description': f'User ID: {user_id}',
@@ -76,7 +78,9 @@ class StripePayment:
             raise
 
     def deduct_balance(self, user_id, amount, service_type, imei, idempotency_key):
+        """Атомарное списание средств с баланса с защитой от гонок"""
         try:
+            # Проверяем, не было ли уже списания с этим ключом идемпотентности
             existing_payment = self.payments_collection.find_one({
                 'idempotency_key': idempotency_key,
                 'type': 'imei_check'
@@ -86,6 +90,7 @@ class StripePayment:
                 current_app.logger.warning(f"Duplicate idempotency key: {idempotency_key}")
                 return False
                 
+            # Атомарное обновление баланса
             result = self.users_collection.update_one(
                 {
                     '_id': ObjectId(user_id),
@@ -101,10 +106,11 @@ class StripePayment:
                 current_app.logger.error(f"Balance deduction failed for user: {user_id}")
                 return False
             
+            # Создаем запись о платеже
             payment_data = {
                 'user_id': ObjectId(user_id),
                 'amount': -amount,
-                'currency': 'usd',
+                'currency': 'gel',
                 'type': 'imei_check',
                 'service_type': service_type,
                 'imei': imei,
@@ -115,6 +121,7 @@ class StripePayment:
             
             self.payments_collection.insert_one(payment_data)
             
+            # Запись в журнал аудита
             audit_log = {
                 'action': 'balance_deduction',
                 'user_id': ObjectId(user_id),
@@ -131,6 +138,7 @@ class StripePayment:
         except Exception as e:
             current_app.logger.error(f"Balance deduction error: {str(e)}")
             
+            # Запись об ошибке в журнал аудита
             audit_log = {
                 'action': 'balance_deduction',
                 'user_id': ObjectId(user_id),
@@ -146,7 +154,9 @@ class StripePayment:
             return False
 
     def create_refund(self, payment_id, amount, currency, reason, idempotency_key):
+        """Создание возврата средств"""
         try:
+            # Проверяем, не был ли уже выполнен возврат для этого платежа
             existing_refund = self.refunds_collection.find_one({
                 'payment_id': ObjectId(payment_id),
                 'idempotency_key': idempotency_key
@@ -159,6 +169,7 @@ class StripePayment:
                     'message': 'Refund already processed'
                 }
                 
+            # Получаем информацию о платеже
             payment = self.payments_collection.find_one({'_id': ObjectId(payment_id)})
             
             if not payment:
@@ -167,7 +178,9 @@ class StripePayment:
                     'message': 'Payment not found'
                 }
                 
+            # Проверяем метод оплаты
             if payment.get('payment_method') == 'balance':
+                # Возврат на баланс
                 result = self.users_collection.update_one(
                     {'_id': payment['user_id']},
                     {'$inc': {'balance': amount}}
@@ -179,6 +192,7 @@ class StripePayment:
                         'message': 'Failed to refund to balance'
                     }
             else:
+                # Возврат через Stripe
                 refund = stripe.Refund.create(
                     payment_intent=payment['stripe_payment_intent'],
                     amount=int(amount * 100),
@@ -193,6 +207,7 @@ class StripePayment:
                         'message': f'Stripe refund failed: {refund.failure_reason}'
                     }
             
+            # Создаем запись о возврате
             refund_data = {
                 'payment_id': ObjectId(payment_id),
                 'amount': amount,
@@ -205,6 +220,7 @@ class StripePayment:
             
             self.refunds_collection.insert_one(refund_data)
             
+            # Обновляем статус платежа
             self.payments_collection.update_one(
                 {'_id': ObjectId(payment_id)},
                 {'$set': {'refund_status': 'refunded'}}
@@ -218,6 +234,7 @@ class StripePayment:
         except Exception as e:
             current_app.logger.error(f"Refund processing error: {str(e)}")
             
+            # Запись об ошибке
             refund_data = {
                 'payment_id': ObjectId(payment_id),
                 'amount': amount,
@@ -237,6 +254,7 @@ class StripePayment:
             }
 
     def handle_webhook(self, payload, sig_header):
+        """Обрабатывает вебхуки от Stripe с проверкой подписи"""
         try:
             current_app.logger.info("Processing Stripe webhook...")
             
@@ -253,26 +271,31 @@ class StripePayment:
             
             current_app.logger.info(f"Webhook event: {event['type']}")
             
+            # Обработка события
             if event['type'] == 'checkout.session.completed':
                 session = event['data']['object']
                 metadata = session.get('metadata', {})
                 
+                # Пополнение баланса
                 if metadata.get('type') == 'balance_topup':
                     user_id = metadata.get('user_id')
                     amount = session['amount_total'] / 100
                     
                     current_app.logger.info(f"Balance topup: user={user_id}, amount={amount}")
                     
+                    # Проверяем существование пользователя
                     user = self.users_collection.find_one({'_id': ObjectId(user_id)})
                     if not user:
                         current_app.logger.error(f"User not found: {user_id}")
                         return event
                     
+                    # Обновление баланса
                     self.users_collection.update_one(
                         {'_id': ObjectId(user_id)},
                         {'$inc': {'balance': amount}}
                     )
                     
+                    # Запись о платеже
                     self.payments_collection.insert_one({
                         'user_id': ObjectId(user_id),
                         'amount': amount,
@@ -283,6 +306,7 @@ class StripePayment:
                         'status': 'completed'
                     })
                 
+                # Обычная оплата проверки
                 elif metadata.get('service_type'):
                     imei = metadata['imei']
                     service_type = metadata['service_type']
@@ -291,6 +315,7 @@ class StripePayment:
                     
                     current_app.logger.info(f"Payment received: imei={imei}, service={service_type}")
                     
+                    # Запись о платеже
                     payment_record = {
                         'stripe_session_id': session['id'],
                         'imei': imei,
@@ -303,11 +328,13 @@ class StripePayment:
                         'status': 'pending_verification'
                     }
                     
+                    # Добавляем user_id если есть
                     if 'user_id' in metadata:
                         payment_record['user_id'] = ObjectId(metadata['user_id'])
                     
                     self.payments_collection.insert_one(payment_record)
             
+            # Обновление статуса платежа
             elif event['type'] == 'checkout.session.async_payment_succeeded':
                 session = event['data']['object']
                 current_app.logger.info(f"Payment succeeded: {session['id']}")
@@ -332,15 +359,18 @@ class StripePayment:
                     }}
                 )
             
+            # Обработка возвратов
             elif event['type'] == 'charge.refunded':
                 charge = event['data']['object']
                 current_app.logger.info(f"Refund processed: {charge.id}")
                 
+                # Обновляем статус в базе данных
                 self.refunds_collection.update_one(
                     {'stripe_charge_id': charge.id},
                     {'$set': {'status': 'succeeded'}}
                 )
                 
+                # Если возврат связан с пополнением баланса, вычитаем сумму
                 if charge.metadata.get('type') == 'balance_topup':
                     user_id = charge.metadata.get('user_id')
                     amount = charge.amount_refunded / 100
