@@ -17,7 +17,7 @@ import stripe
 from functools import wraps
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
-from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError, DuplicateKeyError
 from urllib.parse import quote_plus
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_session import Session
@@ -121,7 +121,9 @@ def init_mongodb():
                 MONGODB_URI, 
                 serverSelectionTimeoutMS=5000,
                 connectTimeoutMS=10000,
-                socketTimeoutMS=15000
+                socketTimeoutMS=15000,
+                retryWrites=True,
+                w='majority'
             )
             # Проверка подключения
             client.admin.command('ismaster')
@@ -154,6 +156,7 @@ else:
     techspecs_collection = db['techspecs']
     phonebase_collection = db['phonebase']  # Коллекция для сравнения телефонов
     comparisons_collection = db['comparisons']  # Новая коллекция для истории сравнений
+    refunds_collection = db['refunds']  # Коллекция для возвратов платежей
 
 # Создаем администратора по умолчанию
 def init_admin_user():
@@ -536,7 +539,8 @@ stripe_payment = StripePayment(
     stripe_api_key=stripe.api_key,
     webhook_secret=STRIPE_WEBHOOK_SECRET,
     users_collection=regular_users_collection,
-    payments_collection=payments_collection
+    payments_collection=payments_collection,
+    refunds_collection=refunds_collection
 )
 
 @app.route('/create-checkout-session', methods=['POST'])
@@ -547,6 +551,7 @@ def create_checkout_session():
         imei = data.get('imei')
         service_type = data.get('service_type')
         use_balance = data.get('use_balance', False)
+        idempotency_key = data.get('idempotency_key', secrets.token_hex(16))
         
         if not validate_imei(imei):
             return jsonify({'error': 'არასწორი IMEI'}), 400
@@ -593,7 +598,7 @@ def create_checkout_session():
                 
                 if user and user.get('balance', 0) >= amount_usd:
                     # Списание средств с баланса
-                    if stripe_payment.deduct_balance(user_id, amount_usd):
+                    if stripe_payment.deduct_balance(user_id, amount_usd, service_type, imei, idempotency_key):
                         # Создаем запись о проверке
                         session_id = f"balance_{ObjectId()}"
                         record = {
@@ -606,7 +611,8 @@ def create_checkout_session():
                             'amount': amount_usd,
                             'currency': 'usd',
                             'timestamp': datetime.utcnow(),
-                            'user_id': ObjectId(user_id)
+                            'user_id': ObjectId(user_id),
+                            'idempotency_key': idempotency_key
                         }
                         if client:
                             checks_collection.insert_one(record)
@@ -633,13 +639,24 @@ def create_checkout_session():
             else:
                 cancel_url = f"{base_url}/android_check?type={service_type}"
             
+            # Добавляем idempotency key в метаданные
+            metadata = {
+                'imei': imei,
+                'service_type': service_type,
+                'idempotency_key': idempotency_key
+            }
+            if 'user_id' in session:
+                metadata['user_id'] = session['user_id']
+            
             # Используем StripePayment для создания сессии
             stripe_session = stripe_payment.create_checkout_session(
                 imei=imei,
                 service_type=service_type,
                 amount=amount,
                 success_url=success_url,
-                cancel_url=cancel_url
+                cancel_url=cancel_url,
+                metadata=metadata,
+                idempotency_key=idempotency_key
             )
             
             return jsonify({'id': stripe_session.id, 'payment_method': 'stripe'})
@@ -690,21 +707,29 @@ def perform_balance_check():
                         time.sleep(delay)
                         delay *= 2  # Экспоненциальная задержка
                     else:
-                        return jsonify({
+                        result = {
                             'error': f'Request failed after {max_attempts} attempts',
                             'details': str(e)
-                        }), 500
+                        }
         
-        if not result or 'error' in result:
-            error_msg = result.get('error', 'ამ IMEI-სთვის მონაცემები ხელმიუწვდომელია')
-            return jsonify({'error': error_msg}), 400
-        
-        # Обновляем запись в базе
+        # Обновляем запись в базе в любом случае
         if client:
+            update_data = {
+                'result': result,
+                'checked_at': datetime.utcnow()
+            }
+            if 'error' in result:
+                update_data['status'] = 'failed'
+            else:
+                update_data['status'] = 'completed'
+            
             checks_collection.update_one(
                 {'session_id': session_id},
-                {'$set': {'result': result}}
+                {'$set': update_data}
             )
+        
+        if 'error' in result:
+            return jsonify(result), 400
         
         return jsonify(result)
     
@@ -754,11 +779,10 @@ def payment_success():
                         time.sleep(delay)
                         delay *= 2  # Экспоненциальная задержка
                     else:
-                        return render_template('error.html', error=f"შემოწმება ვერ მოხერხდა {max_attempts} ცდის შემდეგ"), 500
-        
-        if not result or 'error' in result:
-            error_msg = result.get('error', 'ამ IMEI-სთვის მონაცემები ხელმიუწვდომელია')
-            return render_template('error.html', error=error_msg)
+                        result = {
+                            'error': f'შემოწმება ვერ მოხერხდა {max_attempts} ცდის შემდეგ',
+                            'details': str(e)
+                        }
         
         # Для сервисов, возвращающих HTML
         if 'html_content' in result:
@@ -783,6 +807,9 @@ def payment_success():
             record['user_id'] = ObjectId(session['user_id'])
         if client:
             checks_collection.insert_one(record)
+        
+        if 'error' in result:
+            return render_template('error.html', error=result['error'])
         
         # Определяем тип устройства для перенаправления
         apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
@@ -955,7 +982,7 @@ def stripe_webhook():
 
     try:
         # Обработка вебхука через StripePayment
-        stripe_payment.handle_webhook(payload, sig_header)
+        event = stripe_payment.handle_webhook(payload, sig_header)
         return jsonify({'status': 'success'}), 200
     
     except ValueError as e:
@@ -965,6 +992,45 @@ def stripe_webhook():
     except Exception as e:
         app.logger.error(f"Webhook processing error: {str(e)}")
         return jsonify({'error': 'სერვერული შეცდომა'}), 500
+
+@app.route('/refund_payment', methods=['POST'])
+@csrf.exempt
+@login_required
+def refund_payment():
+    try:
+        data = request.json
+        payment_id = data.get('payment_id')
+        amount = data.get('amount')
+        reason = data.get('reason', 'Customer request')
+        
+        if not payment_id or not amount:
+            return jsonify({'error': 'Missing required parameters'}), 400
+        
+        user_id = session['user_id']
+        
+        # Проверяем права пользователя на возврат
+        payment = payments_collection.find_one({
+            '_id': ObjectId(payment_id),
+            'user_id': ObjectId(user_id)
+        })
+        
+        if not payment:
+            return jsonify({'error': 'Payment not found or access denied'}), 404
+        
+        # Выполняем возврат через StripePayment
+        result = stripe_payment.create_refund(
+            payment_id=payment_id,
+            amount=amount,
+            currency=payment['currency'],
+            reason=reason,
+            idempotency_key=secrets.token_hex(16)
+        )
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        app.logger.error(f"Refund error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -1346,12 +1412,14 @@ def topup_balance():
             base_url = request.host_url.rstrip('/')
             success_url = f"{base_url}/user/topup/success"
             cancel_url = f"{base_url}/user/topup"
+            idempotency_key = secrets.token_hex(16)
             
             stripe_session = stripe_payment.create_topup_session(
                 user_id=str(session['user_id']),
                 amount=amount,
                 success_url=success_url,
-                cancel_url=cancel_url
+                cancel_url=cancel_url,
+                idempotency_key=idempotency_key
             )
             return redirect(stripe_session.url)
         except Exception as e:
@@ -1554,8 +1622,11 @@ def register():
     if not client:
         return jsonify({"success": False, "errors": ["Database unavailable"]}), 500
     
-    result = regular_users_collection.insert_one(user_data)
-    app.logger.info(f"Registered new user: {username}")
+    try:
+        result = regular_users_collection.insert_one(user_data)
+        app.logger.info(f"Registered new user: {username}")
+    except DuplicateKeyError:
+        return jsonify({"success": False, "errors": ["User already exists"]}), 400
     
     session['user_id'] = str(result.inserted_id)
     session['username'] = username
