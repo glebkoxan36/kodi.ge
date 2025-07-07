@@ -6,7 +6,6 @@
     <title>ტელეფონების შედარება</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
-        /* Весь CSS остаётся без изменений */
         :root {
             --primary-color: #0a0e17;
             --secondary-color: #1a243c;
@@ -50,6 +49,49 @@
             padding: 0 10px;
         }
         
+        /* Стили для выбора режима */
+        .mode-selection {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0 50px;
+            flex-wrap: wrap;
+        }
+        
+        .mode-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(0, 198, 255, 0.3);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 280px;
+            text-align: center;
+        }
+        
+        .mode-btn:hover {
+            background: rgba(0, 198, 255, 0.1);
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+            box-shadow: 0 10px 25px rgba(0, 198, 255, 0.2);
+        }
+        
+        .mode-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+        }
+        
+        .mode-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+        
+        /* Стили для селекторов телефонов */
         .phone-selectors {
             display: flex;
             flex-direction: column;
@@ -121,6 +163,7 @@
             text-overflow: ellipsis;
         }
         
+        /* Модальное окно */
         .result-modal {
             display: none;
             position: fixed;
@@ -274,6 +317,7 @@
             text-overflow: ellipsis;
         }
         
+        /* Секции результатов */
         .comparison-section {
             display: none;
             margin-top: 30px;
@@ -545,7 +589,6 @@
             font-size: 0.95rem;
         }
         
-        /* Вынесенный стиль для #fullSpecs */
         #fullSpecs {
             display: none;
             margin-top: 20px;
@@ -562,10 +605,49 @@
             display: none;
         }
         
+        /* Уведомления об ошибках */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 25px;
+            border-radius: 10px;
+            z-index: 2000;
+            animation: slideIn 0.3s, fadeOut 0.5s 4.5s forwards;
+        }
+        
+        .error-notification {
+            background: rgba(255, 107, 107, 0.9);
+            border: 1px solid var(--error-color);
+        }
+        
+        @keyframes slideIn {
+            from { top: -100px; opacity: 0; }
+            to { top: 20px; opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        /* Адаптивные стили */
         @media (max-width: 768px) {
             .section-title {
                 font-size: 1.8rem;
                 margin-bottom: 25px;
+            }
+            
+            .mode-selection {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+            
+            .mode-btn {
+                width: 100%;
+                max-width: 350px;
             }
             
             .phone-selector-btn {
@@ -695,87 +777,111 @@
     <div class="main-content">
         <h1 class="section-title">ტელეფონების შედარება</h1>
         
-        <div class="phone-selectors">
-            <button id="selectPhone1Btn" class="phone-selector-btn">
-                <div class="phone-thumb-container">
-                    <div class="add-icon">+</div>
-                </div>
-                <div class="phone-info-text">
-                    <div class="phone-title">აირჩიეთ პირველი ტელეფონი</div>
-                    <div class="phone-subtitle">დააწკაპუნეთ შესადარებლად დასამატებლად</div>
-                </div>
+        <!-- Выбор режима работы -->
+        <div class="mode-selection">
+            <button id="singleModeBtn" class="mode-btn">
+                <div class="mode-icon">📱</div>
+                <div class="mode-title">ტელეფონის მახასიათებლების ნახვა</div>
             </button>
+            <button id="compareModeBtn" class="mode-btn">
+                <div class="mode-icon">🔄</div>
+                <div class="mode-title">ორი ტელეფონის შედარება</div>
+            </button>
+        </div>
+        
+        <!-- Режим просмотра характеристик одного телефона -->
+        <div id="singlePhoneModeContainer" style="display: none;">
+            <div class="phone-selectors">
+                <button id="selectSinglePhoneBtn" class="phone-selector-btn">
+                    <div class="phone-thumb-container">
+                        <div class="add-icon">+</div>
+                    </div>
+                    <div class="phone-info-text">
+                        <div class="phone-title">აირჩიეთ ტელეფონი</div>
+                        <div class="phone-subtitle">დააწკაპუნეთ მახასიათებლების სანახავად</div>
+                    </div>
+                </button>
+            </div>
             
-            <div id="afterFirstSelected" style="display: none;">
-                <button id="viewSingleSpecsBtn" class="btn-primary">
-                    ტელეფონის მახასიათებლების ჩვენება
+            <div id="singlePhoneSpecs" class="comparison-section"></div>
+        </div>
+        
+        <!-- Режим сравнения двух телефонов -->
+        <div id="compareModeContainer" style="display: none;">
+            <div class="phone-selectors">
+                <button id="selectPhone1Btn" class="phone-selector-btn">
+                    <div class="phone-thumb-container">
+                        <div class="add-icon">+</div>
+                    </div>
+                    <div class="phone-info-text">
+                        <div class="phone-title">აირჩიეთ პირველი ტელეფონი</div>
+                        <div class="phone-subtitle">დააწკაპუნეთ შესადარებლად დასამატებლად</div>
+                    </div>
                 </button>
                 
-                <div id="secondSelectorContainer" class="second-selector-container" style="margin-top: 20px;">
-                    <button id="selectPhone2Btn" class="phone-selector-btn">
-                        <div class="phone-thumb-container">
-                            <div class="add-icon">+</div>
-                        </div>
-                        <div class="phone-info-text">
-                            <div class="phone-title">აირჩიეთ მეორე ტელეფონი</div>
-                            <div class="phone-subtitle">დააწკაპუნეთ შესადარებლად დასამატებლად</div>
-                        </div>
+                <div id="afterFirstSelected" style="display: none;">
+                    <div id="secondSelectorContainer" class="second-selector-container">
+                        <button id="selectPhone2Btn" class="phone-selector-btn">
+                            <div class="phone-thumb-container">
+                                <div class="add-icon">+</div>
+                            </div>
+                            <div class="phone-info-text">
+                                <div class="phone-title">აირჩიეთ მეორე ტელეფონი</div>
+                                <div class="phone-subtitle">დააწკაპუნეთ შესადარებლად დასამატებლად</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="startComparisonBtn" class="btn-primary start-comparison-btn">
+                        შედარების დაწყება
                     </button>
                 </div>
             </div>
             
-            <div class="action-buttons">
-                <button id="startComparisonBtn" class="btn-primary start-comparison-btn">
-                    შედარების დაწყება
-                </button>
-            </div>
-        </div>
-        
-        <div id="singlePhoneSpecs" class="comparison-section">
-            <!-- ერთი ტელეფონის მახასიათებლები -->
-        </div>
-        
-        <div id="comparisonResult" class="comparison-section">
-            <div class="winner-display">
-                <div id="phone1Card" class="phone-card">
-                    <img id="winnerImage" class="phone-thumb" src="" alt="გამარჯვებული">
-                    <h3 id="winnerName"></h3>
-                    <div class="phone-percentage winner-percentage"></div>
+            <div id="comparisonResult" class="comparison-section">
+                <div class="winner-display">
+                    <div id="phone1Card" class="phone-card">
+                        <img id="winnerImage" class="phone-thumb" src="" alt="გამარჯვებული">
+                        <h3 id="winnerName"></h3>
+                        <div class="phone-percentage winner-percentage"></div>
+                    </div>
+                    
+                    <div class="vs-circle">VS</div>
+                    
+                    <div id="phone2Card" class="phone-card">
+                        <img id="loserImage" class="phone-thumb" src="" alt="დამარცხებული">
+                        <h3 id="loserName"></h3>
+                        <div class="phone-percentage loser-percentage"></div>
+                    </div>
                 </div>
                 
-                <div class="vs-circle">VS</div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>ძირითადი უპირატესობები</h3>
+                    </div>
+                    <div class="card-body" id="winnerReason"></div>
+                </div>
                 
-                <div id="phone2Card" class="phone-card">
-                    <img id="loserImage" class="phone-thumb" src="" alt="დამარცხებული">
-                    <h3 id="loserName"></h3>
-                    <div class="phone-percentage loser-percentage"></div>
+                <button id="showFullSpecsBtn" class="btn-primary">ყველა მახასიათებლის ჩვენება</button>
+                
+                <div id="fullSpecs">
+                    <!-- ყველა მახასიათებელი -->
                 </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    <h3>ძირითადი უპირატესობები</h3>
+                
+                <div class="ai-analysis card">
+                    <div class="card-header">
+                        <h3>AI ანალიზი</h3>
+                    </div>
+                    <div class="card-body" id="aiAnalysisText"></div>
+                    <div class="ai-icon">AI</div>
                 </div>
-                <div class="card-body" id="winnerReason"></div>
-            </div>
-            
-            <button id="showFullSpecsBtn" class="btn-primary">ყველა მახასიათებლის ჩვენება</button>
-            
-            <div id="fullSpecs">
-                <!-- ყველა მახასიათებელი -->
-            </div>
-            
-            <div class="ai-analysis card">
-                <div class="card-header">
-                    <h3>AI ანალიზი</h3>
-                </div>
-                <div class="card-body" id="aiAnalysisText"></div>
-                <div class="ai-icon">AI</div>
             </div>
         </div>
     </div>
 
-    <!-- ტელეფონების ძიების მოდალური ფანჯარა -->
+    <!-- Модальное окно поиска телефонов -->
     <div id="phoneSearchModal" class="result-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -796,6 +902,7 @@
             let selectedTarget = null;
             let phone1 = null;
             let phone2 = null;
+            let singlePhone = null;
             
             // Вспомогательные функции для получения данных
             function getBrand(phone) {
@@ -840,10 +947,22 @@
             
             // Регистрация обработчиков событий
             function setupEventHandlers() {
-                // Обработчики для кнопок
-                $('#selectPhone1Btn, #selectPhone2Btn').on('click', handlePhoneSelectorClick);
+                // Обработчики для кнопок режимов
+                $('#singleModeBtn').on('click', function() {
+                    $('.mode-selection').hide();
+                    $('#singlePhoneModeContainer').show();
+                    $('#compareModeContainer').hide();
+                });
+                
+                $('#compareModeBtn').on('click', function() {
+                    $('.mode-selection').hide();
+                    $('#compareModeContainer').show();
+                    $('#singlePhoneModeContainer').hide();
+                });
+                
+                // Обработчики для кнопок выбора телефонов
+                $('#selectSinglePhoneBtn, #selectPhone1Btn, #selectPhone2Btn').on('click', handlePhoneSelectorClick);
                 $('.close-modal').on('click', closeModal);
-                $('#viewSingleSpecsBtn').on('click', handleViewSingleSpecs);
                 $('#showFullSpecsBtn').on('click', toggleFullSpecs);
                 $('#startComparisonBtn').on('click', comparePhones);
                 
@@ -860,7 +979,17 @@
             // Обработчики событий
             function handlePhoneSelectorClick() {
                 selectedTarget = $(this).attr('id').replace('Btn', '');
-                $('.modal-title').text('აირჩიეთ ტელეფონი ' + (selectedTarget === 'selectPhone1' ? 'პირველი' : 'მეორე'));
+                let modeText = '';
+                
+                if (selectedTarget === 'selectSinglePhone') {
+                    modeText = 'ტელეფონის';
+                } else if (selectedTarget === 'selectPhone1') {
+                    modeText = 'პირველი';
+                } else {
+                    modeText = 'მეორე';
+                }
+                
+                $('.modal-title').text('აირჩიეთ ' + modeText + ' ტელეფონი');
                 $('#phoneSearchModal').css('display', 'flex');
                 $('#phoneSearchInput').val('').focus();
                 $('#searchResults').html('');
@@ -917,12 +1046,6 @@
                 comparePhones();
             }
             
-            function handleViewSingleSpecs() {
-                if (phone1) {
-                    showSinglePhoneSpecs(phone1);
-                }
-            }
-            
             function toggleFullSpecs() {
                 $('#fullSpecs').slideToggle();
                 $(this).text(function(i, text) {
@@ -977,7 +1100,11 @@
                     success: function(phone) {
                         updatePhoneSelection(phone);
                         $('#phoneSearchModal').hide();
-                        checkComparisonState();
+                        
+                        // Для одиночного режима сразу показываем характеристики
+                        if (selectedTarget === 'selectSinglePhone') {
+                            showSinglePhoneSpecs(phone);
+                        }
                     },
                     error: function() {
                         showError(selectedTarget, 'ტელეფონის ინფორმაციის ჩატვირთვა ვერ მოხერხდა');
@@ -986,7 +1113,11 @@
             }
             
             function updatePhoneSelection(phone) {
-                if (selectedTarget === 'selectPhone1') {
+                if (selectedTarget === 'selectSinglePhone') {
+                    singlePhone = phone;
+                    updatePhoneDisplay(phone, '#selectSinglePhoneBtn');
+                } 
+                else if (selectedTarget === 'selectPhone1') {
                     phone1 = phone;
                     updatePhoneDisplay(phone, '#selectPhone1Btn');
                     showAfterFirstSelected();
@@ -1045,7 +1176,6 @@
                     border: '2px solid rgba(0, 198, 255, 0.5)'
                 });
                 
-                // Замена setTimeout со строкой на функцию
                 setTimeout(function() {
                     $(btnSelector).css({
                         transform: 'scale(1)',
@@ -1056,28 +1186,16 @@
             
             function showAfterFirstSelected() {
                 $('#afterFirstSelected').show();
-                $('#viewSingleSpecsBtn').show();
-                // Ключевое исправление: показываем контейнер для второго телефона
                 $('#secondSelectorContainer').show();
                 $('#startComparisonBtn').hide();
             }
             
             function showComparisonButton() {
                 $('#afterFirstSelected').hide();
-                $('#viewSingleSpecsBtn').hide();
                 $('#startComparisonBtn').show();
             }
             
-            function checkComparisonState() {
-                if (phone1 && !phone2) {
-                    $('#comparisonResult').hide();
-                } else if (phone1 && phone2) {
-                    // Автоматическое сравнение не запускаем
-                } else {
-                    hideAllSections();
-                }
-            }
-            
+            // Показать характеристики одного телефона
             function showSinglePhoneSpecs(phone) {
                 const brand = getBrand(phone);
                 const model = getModel(phone);
@@ -1126,7 +1244,10 @@
             }
             
             function comparePhones() {
-                if (!phone1 || !phone2) return;
+                if (!phone1 || !phone2) {
+                    showErrorNotification('გთხოვთ აირჩიოთ ორივე ტელეფონი შედარებისთვის');
+                    return;
+                }
                 
                 $('#comparisonResult').html(`
                     <div style="text-align: center; padding: 50px;">
@@ -1135,22 +1256,31 @@
                     </div>
                 `).show();
                 
-                // Отправка запроса на сравнение
+                // Исправленный запрос на сравнение
                 $.ajax({
                     url: '/api/compare',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({
-                        phone1_id: phone1._id,
-                        phone2_id: phone2._id
+                        phone1_id: phone1._id.$oid || phone1._id, // Исправление для ObjectId
+                        phone2_id: phone2._id.$oid || phone2._id  // Исправление для ObjectId
                     }),
                     success: function(result) {
                         displayComparisonResult(result);
                     },
                     error: function(xhr) {
+                        let errorMsg = 'შედარების პროცესი ვერ მოხერხდა';
+                        
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.error) {
+                                errorMsg = response.error;
+                            }
+                        } catch (e) {}
+                        
                         $('#comparisonResult').html(`
                             <div class="error-message" style="margin: 30px;">
-                                შედარების პროცესი ვერ მოხერხდა: ${xhr.responseText || 'Unknown error'}
+                                ${errorMsg}
                                 <button class="retry-btn" id="retryComparisonBtn">ხელახლა ცდა</button>
                             </div>
                         `);
@@ -1277,11 +1407,6 @@
                 $('#comparisonResult').show();
             }
             
-            function hideAllSections() {
-                $('#singlePhoneSpecs').hide();
-                $('#comparisonResult').hide();
-            }
-            
             function retryLoadPhone(target) {
                 const phoneId = target === 'selectPhone1' ? (phone1 && phone1._id) : (phone2 && phone2._id);
                 if (phoneId) {
@@ -1311,9 +1436,23 @@
                 }
             }
             
+            function showErrorNotification(message) {
+                const notification = $(`
+                    <div class="notification error-notification">
+                        ${message}
+                    </div>
+                `);
+                
+                $('body').append(notification);
+                
+                setTimeout(() => {
+                    notification.fadeOut(500, () => notification.remove());
+                }, 5000);
+            }
+            
             // Инициализация обработчиков событий
             setupEventHandlers();
         });
     </script>
 </body>
-    </html>
+</html>
