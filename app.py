@@ -1343,7 +1343,9 @@ def payment_methods():
     """Управление платежными методами"""
     return render_template('user/payment_methods.html')
 
-@user_bp.route('/payment_history')
+# Ключевое исправление: добавлен алиас для совместимости
+@user_bp.route('/accounts')
+@user_bp.route('/payment_history')  # Добавлен алиас для совместимости
 @login_required
 def payment_history():
     """История платежей"""
