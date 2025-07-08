@@ -2,13 +2,12 @@
 import re
 import os
 import logging
-import secrets
-from datetime import datetime, timedelta
-from flask import Blueprint, request, session, redirect, url_for, jsonify, flash, render_template
+import clerk
+from datetime import datetime
+from flask import Blueprint, request, session, redirect, url_for, flash, render_template
 from pymongo import MongoClient
-from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
-from clerk import Clerk  # Импортируем Clerk
+from urllib.parse import quote_plus
 
 # Создаем Blueprint для аутентификации
 auth_bp = Blueprint('auth', __name__)
@@ -22,14 +21,6 @@ MONGODB_URI = os.getenv('MONGODB_URI')
 client = MongoClient(MONGODB_URI)
 db = client['imei_checker']
 regular_users_collection = db['users']
-admin_users_collection = db['admin_users']
-failed_logins_collection = db['failed_logins']
-
-# Инициализация Clerk
-clerk_client = Clerk(
-    api_key=os.getenv('CLERK_SECRET_KEY'),
-    frontend_api=os.getenv('CLERK_FRONTEND_API')
-)
 
 @auth_bp.route('/register', methods=['GET'])
 def show_register_form():
@@ -44,20 +35,16 @@ def show_login_form():
 @auth_bp.route('/auth/google')
 def auth_google():
     """Перенаправление на аутентификацию Google через Clerk"""
-    redirect_url = clerk_client.oauth_url(
-        provider='google',
-        redirect_url=url_for('auth.auth_callback', _external=True)
-    )
-    return redirect(redirect_url)
+    frontend_api = os.getenv('CLERK_FRONTEND_API')
+    redirect_url = quote_plus(url_for('auth.auth_callback', _external=True))
+    return redirect(f"https://{frontend_api}.clerk.accounts.dev/oauth/google?redirect_url={redirect_url}")
 
 @auth_bp.route('/auth/facebook')
 def auth_facebook():
     """Перенаправление на аутентификацию Facebook через Clerk"""
-    redirect_url = clerk_client.oauth_url(
-        provider='facebook',
-        redirect_url=url_for('auth.auth_callback', _external=True)
-    )
-    return redirect(redirect_url)
+    frontend_api = os.getenv('CLERK_FRONTEND_API')
+    redirect_url = quote_plus(url_for('auth.auth_callback', _external=True))
+    return redirect(f"https://{frontend_api}.clerk.accounts.dev/oauth/facebook?redirect_url={redirect_url}")
 
 @auth_bp.route('/auth/callback')
 def auth_callback():
@@ -69,7 +56,7 @@ def auth_callback():
     
     try:
         # Проверка сессии Clerk
-        user_data = clerk_client.verify_session(session_token)
+        user_data = clerk.verify_session(session_token)
         
         # Поиск или создание пользователя
         user = regular_users_collection.find_one({'clerk_user_id': user_data['id']})
