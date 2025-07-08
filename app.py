@@ -22,7 +22,7 @@ from urllib.parse import quote_plus
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_session import Session
 from bs4 import BeautifulSoup
-from clerk import Clerk  # Добавлен импорт Clerk
+import clerk  # Исправленный импорт Clerk
 
 # Импорт модулей
 from ifreeapi import validate_imei, perform_api_check, SERVICE_TYPES
@@ -47,10 +47,8 @@ Session(app)
 csrf = CSRFProtect(app)
 
 # Инициализация Clerk
-clerk_client = Clerk(
-    api_key=os.getenv('CLERK_SECRET_KEY'),
-    frontend_api=os.getenv('CLERK_FRONTEND_API')
-)
+clerk.api_key = os.getenv('CLERK_SECRET_KEY')
+CLERK_FRONTEND_API = os.getenv('CLERK_FRONTEND_API')
 
 # Семафор для ограничения одновременных запросов
 REQUEST_SEMAPHORE = threading.BoundedSemaphore(3)  # Максимум 3 одновременных запроса
@@ -110,8 +108,6 @@ stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 MONGODB_URI = os.getenv('MONGODB_URI')
-CLERK_FRONTEND_API = os.getenv('CLERK_FRONTEND_API')
-CLERK_SECRET_KEY = os.getenv('CLERK_SECRET_KEY')
 
 # Данные для PHP API
 API_URL = "https://api.ifreeicloud.co.uk"
@@ -1520,37 +1516,33 @@ def check_details(check_id):
 
 auth_bp = Blueprint('auth', __name__)
 
-GEORGIAN_LETTERS_REGEX = re.compile(r'^[\u10A0-\u10FF\s]+$')
-PASSWORD_REGEX = re.compile(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$')
-PHONE_REGEX = re.compile(r'^\+995\d{9}$')
-
 @auth_bp.route('/register', methods=['GET'])
 def show_register_form():
-    # Перенаправление на Clerk для регистрации
+    """Перенаправление на страницу регистрации Clerk"""
     return redirect(f"https://{os.getenv('CLERK_FRONTEND_API')}.clerk.accounts.dev/sign-up")
 
 @auth_bp.route('/login', methods=['GET'])
 def show_login_form():
+    """Отображение страницы входа с кнопками социальных сетей"""
     return render_template('login.html', clerk_frontend_api=os.getenv('CLERK_FRONTEND_API'))
 
 @auth_bp.route('/auth/google')
 def auth_google():
-    redirect_url = clerk_client.oauth_url(
-        provider='google',
-        redirect_url=url_for('auth.auth_callback', _external=True)
-    )
-    return redirect(redirect_url)
+    """Перенаправление на аутентификацию Google через Clerk"""
+    frontend_api = os.getenv('CLERK_FRONTEND_API')
+    redirect_url = quote_plus(url_for('auth.auth_callback', _external=True))
+    return redirect(f"https://{frontend_api}.clerk.accounts.dev/oauth/google?redirect_url={redirect_url}")
 
 @auth_bp.route('/auth/facebook')
 def auth_facebook():
-    redirect_url = clerk_client.oauth_url(
-        provider='facebook',
-        redirect_url=url_for('auth.auth_callback', _external=True)
-    )
-    return redirect(redirect_url)
+    """Перенаправление на аутентификацию Facebook через Clerk"""
+    frontend_api = os.getenv('CLERK_FRONTEND_API')
+    redirect_url = quote_plus(url_for('auth.auth_callback', _external=True))
+    return redirect(f"https://{frontend_api}.clerk.accounts.dev/oauth/facebook?redirect_url={redirect_url}")
 
 @auth_bp.route('/auth/callback')
 def auth_callback():
+    """Обработка callback от Clerk после аутентификации"""
     session_token = request.args.get('__session')
     if not session_token:
         flash('Ошибка аутентификации', 'danger')
@@ -1558,11 +1550,12 @@ def auth_callback():
     
     try:
         # Проверка сессии Clerk
-        user_data = clerk_client.verify_session(session_token)
+        user_data = clerk.verify_session(session_token)
         
         # Поиск или создание пользователя
         user = regular_users_collection.find_one({'clerk_user_id': user_data['id']})
         if not user:
+            # Создаем нового пользователя
             email = user_data['email_addresses'][0]['email_address'] if user_data['email_addresses'] else None
             
             new_user = {
@@ -1587,12 +1580,13 @@ def auth_callback():
         return redirect(url_for('user.dashboard'))
     
     except Exception as e:
-        app.logger.error(f'Clerk auth error: {str(e)}')
+        logger.error(f'Clerk auth error: {str(e)}')
         flash('Ошибка аутентификации', 'danger')
         return redirect(url_for('auth.login'))
 
 @auth_bp.route('/logout')
 def logout():
+    """Выход из системы с перенаправлением на Clerk"""
     session.clear()
     return redirect(f"https://{os.getenv('CLERK_FRONTEND_API')}.clerk.accounts.dev/sign-out")
 
