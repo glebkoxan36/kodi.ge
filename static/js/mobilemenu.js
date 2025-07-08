@@ -313,7 +313,6 @@
             align-items: center;
             justify-content: center;
             border-radius: 15px;
-            /* ОБНОВЛЕНО: непрозрачный фон */
             background: linear-gradient(135deg, #1a2138, #0e1321);
             border: 1px solid rgba(0, 198, 255, 0.4);
             aspect-ratio: 1 / 1;
@@ -534,28 +533,28 @@
             height: 100%;
             z-index: 1;
             pointer-events: none;
+            overflow: hidden;
         }
         
         .circuit-path {
-            stroke: rgba(255, 255, 255, 0.5); /* Яркие белые линии */
-            stroke-width: 1.5px; /* Толще */
+            stroke: rgba(255, 255, 255, 0.4);
+            stroke-width: 1.2px;
             fill: none;
             z-index: 1;
-            stroke-linecap: round; /* Выпуклые окончания */
-            stroke-linejoin: miter; /* Острые углы */
-            filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7)); /* Эффект свечения */
+            stroke-linecap: round;
+            stroke-linejoin: miter;
         }
         
-        .energy-ball {
+        .energy-pulse {
             position: absolute;
-            width: 10px; /* Увеличен размер */
-            height: 10px;
-            border-radius: 50%;
-            background: #ffffff; /* Белый цвет */
-            box-shadow: 0 0 15px #ffffff, 0 0 30px rgba(255, 255, 255, 0.8); /* Яркое свечение */
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+            box-shadow: 0 0 8px white, 0 0 16px rgba(255, 255, 255, 0.8);
             z-index: 2;
-            opacity: 0.95;
-            transform: translate(-50%, -50%);
+            opacity: 0;
+            transform-origin: left center;
+            will-change: transform, opacity;
         }
     `;
     document.head.appendChild(style);
@@ -635,25 +634,14 @@
         svg.style.height = '100%';
         pathsContainer.appendChild(svg);
         
-        // Красиво расположенные пути микросхемы
+        // Оптимизированные пути микросхемы
         const paths = [
-            // Путь 1: Горизонтально-вертикальный
-            "M 0,20 L 40,20 40,80",
-            
-            // Путь 2: Диагональ с поворотом
-            "M 100,25 L 60,25 60,55 20,55",
-            
-            // Путь 3: Ступеньки
-            "M 0,75 L 30,75 30,45 70,45 70,15",
-            
-            // Путь 4: Зигзаг
-            "M 100,60 L 80,60 80,20 30,20",
-            
-            // Путь 5: Прямой угол
-            "M 0,35 L 60,35 60,75",
-            
-            // Путь 6: Треугольник
-            "M 100,85 L 70,85 70,50 100,50"
+            "M 10,10 L 40,10 40,40 90,40",
+            "M 90,20 L 60,20 60,60 20,60",
+            "M 20,80 L 50,80 50,50 80,50",
+            "M 80,70 L 50,70 50,30 20,30",
+            "M 30,20 L 30,50 70,50 70,80",
+            "M 70,30 L 40,30 40,70 10,70"
         ];
         
         // Создаем пути в SVG
@@ -664,24 +652,19 @@
             svg.appendChild(path);
         });
         
-        // Создаем контейнер для шариков
-        const ballsContainer = document.createElement('div');
-        ballsContainer.className = 'energy-balls';
-        pathsContainer.appendChild(ballsContainer);
-        
-        // Создаем шарики и анимируем их движение
+        // Создаем импульсы
         paths.forEach((d, i) => {
-            const ball = document.createElement('div');
-            ball.className = 'energy-ball';
-            ballsContainer.appendChild(ball);
+            const pulse = document.createElement('div');
+            pulse.className = 'energy-pulse';
+            pathsContainer.appendChild(pulse);
             
-            // Анимация движения шарика
-            animateBallAlongPath(ball, d, i);
+            // Запускаем анимацию импульса с задержкой
+            setTimeout(() => animatePulse(pulse, d), i * 300);
         });
     }
     
-    // Функция для анимации шарика вдоль пути
-    function animateBallAlongPath(ball, pathData, index) {
+    // Функция для анимации импульса
+    function animatePulse(pulse, pathData) {
         // Создаем временный SVG для вычисления позиций
         const svgNS = 'http://www.w3.org/2000/svg';
         const svg = document.createElementNS(svgNS, 'svg');
@@ -691,42 +674,58 @@
         document.body.appendChild(svg);
         
         const pathLength = path.getTotalLength();
-        const duration = 3500 + Math.random() * 1500;
-        const delay = index * 500;
+        const pulseWidth = 20;
+        const duration = 2000 + Math.random() * 1000;
         
         let startTime = null;
+        let animationId = null;
         
         const animate = (timestamp) => {
             if (!startTime) startTime = timestamp;
             const elapsed = timestamp - startTime;
-            const progress = (elapsed % duration) / duration;
+            const progress = Math.min(elapsed / duration, 1);
             
             // Вычисляем позицию на пути
             const point = path.getPointAtLength(progress * pathLength);
+            const nextPoint = path.getPointAtLength(
+                Math.min(progress * pathLength + 5, pathLength) // Небольшое смещение для вычисления угла
+            );
             
-            // Преобразуем координаты SVG в проценты
-            const xPercent = (point.x);
-            const yPercent = (point.y);
+            // Вычисляем угол наклона
+            const angle = Math.atan2(
+                nextPoint.y - point.y, 
+                nextPoint.x - point.x
+            ) * 180 / Math.PI;
             
-            // Позиционируем шарик
-            ball.style.left = `${xPercent}%`;
-            ball.style.top = `${yPercent}%`;
+            // Позиционируем импульс
+            pulse.style.width = `${pulseWidth}px`;
+            pulse.style.left = `${point.x}%`;
+            pulse.style.top = `${point.y}%`;
+            pulse.style.transform = `rotate(${angle}deg)`;
             
-            // Яркое свечение шарика
-            const pulse = 0.8 + Math.sin(elapsed / 200) * 0.2;
-            ball.style.transform = `translate(-50%, -50%) scale(${pulse})`;
+            // Эффект появления/исчезания
+            if (progress < 0.2) {
+                pulse.style.opacity = progress * 5;
+            } else if (progress > 0.8) {
+                pulse.style.opacity = (1 - progress) * 5;
+            } else {
+                pulse.style.opacity = 1;
+            }
             
-            // Яркость на поворотах
-            const segmentProgress = (progress * pathLength) % 25;
-            ball.style.opacity = segmentProgress < 2 || segmentProgress > 23 ? '0.8' : '1';
-            
-            requestAnimationFrame(animate);
+            if (progress < 1) {
+                animationId = requestAnimationFrame(animate);
+            } else {
+                // Перезапускаем анимацию
+                startTime = null;
+                animationId = requestAnimationFrame(animate);
+            }
         };
         
-        // Запускаем анимацию с задержкой
-        setTimeout(() => {
-            requestAnimationFrame(animate);
-        }, delay);
+        // Запускаем анимацию
+        animationId = requestAnimationFrame(animate);
+        
+        // Сохраняем ссылку для остановки
+        pulse._animationId = animationId;
         
         // Удаляем временный SVG
         setTimeout(() => {
@@ -1069,6 +1068,13 @@
     }
 
     window.closeAllMobileMenus = function() {
+        // Останавливаем все анимации при закрытии меню
+        document.querySelectorAll('.energy-pulse').forEach(pulse => {
+            if (pulse._animationId) {
+                cancelAnimationFrame(pulse._animationId);
+            }
+        });
+        
         closeMobileMenu();
         closeAppleSubmenu();
         closeAndroidSubmenu();
