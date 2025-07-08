@@ -521,27 +521,22 @@
         }
         
         /* НОВЫЕ СТИЛИ ДЛЯ ФОНА МИКРОСХЕМЫ И АНИМАЦИИ */
-        .circuit-lines {
+        .circuit-paths {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: 
-                linear-gradient(to right, rgba(0,198,255,0.05) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(0,198,255,0.05) 1px, transparent 1px);
-            background-size: 20px 20px;
             z-index: 1;
+            pointer-events: none;
         }
         
-        .energy-balls {
+        .circuit-path {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            pointer-events: none;
+            stroke: rgba(0, 198, 255, 0.15);
+            stroke-width: 1px;
+            fill: none;
+            z-index: 1;
         }
         
         .energy-ball {
@@ -554,56 +549,7 @@
             z-index: 2;
             opacity: 0.9;
             transform: translate(-50%, -50%);
-            animation-timing-function: linear;
-            animation-iteration-count: infinite;
         }
-        
-        /* Анимации для шариков */
-        @keyframes moveBall1 {
-            0% { top: 10%; left: 5%; }
-            25% { top: 10%; left: 40%; }
-            50% { top: 40%; left: 40%; }
-            75% { top: 40%; left: 80%; }
-            100% { top: 80%; left: 80%; }
-        }
-        
-        @keyframes moveBall2 {
-            0% { top: 90%; left: 90%; }
-            25% { top: 90%; left: 60%; }
-            50% { top: 60%; left: 60%; }
-            75% { top: 60%; left: 20%; }
-            100% { top: 20%; left: 20%; }
-        }
-        
-        @keyframes moveBall3 {
-            0% { top: 5%; left: 80%; }
-            25% { top: 5%; left: 50%; }
-            50% { top: 50%; left: 50%; }
-            75% { top: 50%; left: 10%; }
-            100% { top: 95%; left: 10%; }
-        }
-        
-        @keyframes moveBall4 {
-            0% { top: 95%; left: 10%; }
-            25% { top: 95%; left: 40%; }
-            50% { top: 40%; left: 40%; }
-            75% { top: 40%; left: 90%; }
-            100% { top: 5%; left: 90%; }
-        }
-        
-        @keyframes moveBall5 {
-            0% { top: 20%; left: 20%; }
-            25% { top: 20%; left: 50%; }
-            50% { top: 80%; left: 50%; }
-            75% { top: 80%; left: 80%; }
-            100% { top: 20%; left: 80%; }
-        }
-        
-        .ball-anim1 { animation-name: moveBall1; }
-        .ball-anim2 { animation-name: moveBall2; }
-        .ball-anim3 { animation-name: moveBall3; }
-        .ball-anim4 { animation-name: moveBall4; }
-        .ball-anim5 { animation-name: moveBall5; }
     `;
     document.head.appendChild(style);
 
@@ -663,36 +609,108 @@
         if (!content) return;
         
         // Удаляем старую анимацию, если есть
-        const existingLines = content.querySelector('.circuit-lines');
-        if (existingLines) existingLines.remove();
+        const existingPaths = content.querySelector('.circuit-paths');
+        if (existingPaths) existingPaths.remove();
         
-        const existingBalls = content.querySelector('.energy-balls');
-        if (existingBalls) existingBalls.remove();
+        // Создаем контейнер для путей
+        const pathsContainer = document.createElement('div');
+        pathsContainer.className = 'circuit-paths';
+        content.appendChild(pathsContainer);
         
-        // Создаем фон с линиями микросхемы
-        const circuitLines = document.createElement('div');
-        circuitLines.className = 'circuit-lines';
-        content.appendChild(circuitLines);
+        // Создаем SVG для путей
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 100 100');
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.style.position = 'absolute';
+        svg.style.top = '0';
+        svg.style.left = '0';
+        svg.style.width = '100%';
+        svg.style.height = '100%';
+        pathsContainer.appendChild(svg);
         
-        // Создаем контейнер для шариков энергии
-        const energyContainer = document.createElement('div');
-        energyContainer.className = 'energy-balls';
+        // Создаем изогнутые пути микросхемы
+        const paths = [
+            // Сложные изогнутые пути
+            'M 0,10 C 15,5 25,20 40,15 C 55,10 65,25 80,20 C 95,15 100,30 100,25',
+            'M 0,90 C 20,80 30,95 45,85 C 60,75 70,90 85,80 C 100,70 100,95 100,90',
+            'M 0,50 C 10,40 20,55 35,45 C 50,35 60,50 75,40 C 90,30 100,55 100,50',
+            'M 0,70 C 15,60 25,75 40,65 C 55,55 65,70 80,60 C 95,50 100,75 100,70',
+            'M 0,30 C 20,10 35,35 50,25 C 65,15 75,35 90,25 C 100,20 100,40 100,35',
+            'M 0,80 C 10,70 25,85 40,75 C 55,65 70,80 85,70 C 95,65 100,85 100,80'
+        ];
         
-        // Создаем 5 шариков с разными анимациями
-        for (let i = 0; i < 5; i++) {
+        // Создаем пути в SVG
+        paths.forEach((d, i) => {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('class', 'circuit-path');
+            svg.appendChild(path);
+        });
+        
+        // Создаем контейнер для шариков
+        const ballsContainer = document.createElement('div');
+        ballsContainer.className = 'energy-balls';
+        pathsContainer.appendChild(ballsContainer);
+        
+        // Создаем шарики и анимируем их движение
+        paths.forEach((d, i) => {
             const ball = document.createElement('div');
             ball.className = 'energy-ball';
-            const animClass = `ball-anim${Math.floor(Math.random() * 5) + 1}`;
-            ball.classList.add(animClass);
+            ballsContainer.appendChild(ball);
             
-            // Случайная длительность и задержка для разнообразия
-            ball.style.animationDuration = `${4 + Math.random() * 4}s`;
-            ball.style.animationDelay = `-${Math.random() * 5}s`;
-            
-            energyContainer.appendChild(ball);
-        }
+            // Анимация движения шарика
+            animateBallAlongPath(ball, d, i);
+        });
+    }
+    
+    // Функция для анимации шарика вдоль пути
+    function animateBallAlongPath(ball, pathData, index) {
+        // Создаем временный SVG для вычисления позиций
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        const path = document.createElementNS(svgNS, 'path');
+        path.setAttribute('d', pathData);
+        svg.appendChild(path);
+        document.body.appendChild(svg);
         
-        content.appendChild(energyContainer);
+        const pathLength = path.getTotalLength();
+        const duration = 3000 + Math.random() * 2000;
+        const delay = index * 500;
+        
+        let startTime = null;
+        
+        const animate = (timestamp) => {
+            if (!startTime) startTime = timestamp;
+            const elapsed = timestamp - startTime;
+            const progress = (elapsed % duration) / duration;
+            
+            // Вычисляем позицию на пути
+            const point = path.getPointAtLength(progress * pathLength);
+            
+            // Преобразуем координаты SVG в проценты
+            const xPercent = (point.x);
+            const yPercent = (point.y);
+            
+            // Позиционируем шарик
+            ball.style.left = `${xPercent}%`;
+            ball.style.top = `${yPercent}%`;
+            
+            // Пульсация шарика
+            const pulse = 0.8 + Math.sin(elapsed / 200) * 0.2;
+            ball.style.transform = `translate(-50%, -50%) scale(${pulse})`;
+            
+            requestAnimationFrame(animate);
+        };
+        
+        // Запускаем анимацию с задержкой
+        setTimeout(() => {
+            requestAnimationFrame(animate);
+        }, delay);
+        
+        // Удаляем временный SVG
+        setTimeout(() => {
+            document.body.removeChild(svg);
+        }, 100);
     }
 
     // Создаем HTML структуру мобильного меню
