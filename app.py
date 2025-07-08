@@ -1531,14 +1531,14 @@ def auth_google():
     """Перенаправление на аутентификацию Google через Clerk"""
     frontend_api = os.getenv('CLERK_FRONTEND_API')
     redirect_url = quote_plus(url_for('auth.auth_callback', _external=True))
-    return redirect(f"https://{frontend_api}.clerk.accounts.dev/oauth/google?redirect_url={redirect_url}")
+    return redirect(f"https://{frontend_api}.clerk.accounts.dev/sign-in#/oauth/google?redirect_url={redirect_url}")
 
 @auth_bp.route('/auth/facebook')
 def auth_facebook():
     """Перенаправление на аутентификацию Facebook через Clerk"""
     frontend_api = os.getenv('CLERK_FRONTEND_API')
     redirect_url = quote_plus(url_for('auth.auth_callback', _external=True))
-    return redirect(f"https://{frontend_api}.clerk.accounts.dev/oauth/facebook?redirect_url={redirect_url}")
+    return redirect(f"https://{frontend_api}.clerk.accounts.dev/sign-in#/oauth/facebook?redirect_url={redirect_url}")
 
 @auth_bp.route('/auth/callback')
 def auth_callback():
@@ -1580,7 +1580,7 @@ def auth_callback():
         return redirect(url_for('user.dashboard'))
     
     except Exception as e:
-        logger.error(f'Clerk auth error: {str(e)}')
+        app.logger.error(f'Clerk auth error: {str(e)}')
         flash('Ошибка аутентификации', 'danger')
         return redirect(url_for('auth.login'))
 
