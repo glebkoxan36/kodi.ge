@@ -313,13 +313,16 @@
             align-items: center;
             justify-content: center;
             border-radius: 15px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(0, 198, 255, 0.3);
+            /* ОБНОВЛЕНО: непрозрачный фон */
+            background: linear-gradient(135deg, #1a2138, #0e1321);
+            border: 1px solid rgba(0, 198, 255, 0.4);
             aspect-ratio: 1 / 1;
             text-align: center;
             transition: all 0.3s ease;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.3),
+                inset 0 0 10px rgba(0, 198, 255, 0.1);
             min-width: 0;
             min-height: 0;
             padding: 12px 8px;
@@ -330,10 +333,12 @@
         }
         
         .menu-item:hover {
-            background: rgba(0, 198, 255, 0.2);
+            background: linear-gradient(135deg, #223056, #121a33);
             transform: translateY(-7px);
             border-color: var(--accent-color);
-            box-shadow: none;
+            box-shadow: 
+                0 6px 16px rgba(0, 0, 0, 0.4),
+                inset 0 0 15px rgba(0, 198, 255, 0.2);
         }
         
         .menu-item span {
@@ -532,13 +537,13 @@
         }
         
         .circuit-path {
-            stroke: rgba(255, 255, 255, 0.4); /* Более белый цвет */
-            stroke-width: 1.2px; /* Увеличенная толщина */
+            stroke: rgba(255, 255, 255, 0.5); /* Яркие белые линии */
+            stroke-width: 1.5px; /* Толще */
             fill: none;
             z-index: 1;
             stroke-linecap: round; /* Выпуклые окончания */
             stroke-linejoin: miter; /* Острые углы */
-            filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.6)); /* Эффект свечения */
+            filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7)); /* Эффект свечения */
         }
         
         .energy-ball {
@@ -547,7 +552,7 @@
             height: 10px;
             border-radius: 50%;
             background: #ffffff; /* Белый цвет */
-            box-shadow: 0 0 12px #ffffff, 0 0 24px rgba(255, 255, 255, 0.8); /* Белое свечение */
+            box-shadow: 0 0 15px #ffffff, 0 0 30px rgba(255, 255, 255, 0.8); /* Яркое свечение */
             z-index: 2;
             opacity: 0.95;
             transform: translate(-50%, -50%);
@@ -630,25 +635,25 @@
         svg.style.height = '100%';
         pathsContainer.appendChild(svg);
         
-        // Создаем пути микросхемы с 1-3 резкими поворотами
+        // Красиво расположенные пути микросхемы
         const paths = [
-            // Путь 1: 1 угол
-            "M 0,15 L 40,15 40,85",
+            // Путь 1: Горизонтально-вертикальный
+            "M 0,20 L 40,20 40,80",
             
-            // Путь 2: 2 угла
+            // Путь 2: Диагональ с поворотом
             "M 100,25 L 60,25 60,55 20,55",
             
-            // Путь 3: 3 угла
+            // Путь 3: Ступеньки
             "M 0,75 L 30,75 30,45 70,45 70,15",
             
-            // Путь 4: 2 угла
+            // Путь 4: Зигзаг
             "M 100,60 L 80,60 80,20 30,20",
             
-            // Путь 5: 1 угол
+            // Путь 5: Прямой угол
             "M 0,35 L 60,35 60,75",
             
-            // Путь 6: 3 угла
-            "M 100,85 L 70,85 70,50 40,50 40,10"
+            // Путь 6: Треугольник
+            "M 100,85 L 70,85 70,50 100,50"
         ];
         
         // Создаем пути в SVG
