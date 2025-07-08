@@ -37,7 +37,7 @@ app.config.update(
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(days=7)
 Session(app)
-
+)
 # Инициализация CSRF защиты
 csrf = CSRFProtect(app)
 
