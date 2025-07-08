@@ -532,11 +532,12 @@
         }
         
         .circuit-path {
-            position: absolute;
-            stroke: rgba(0, 198, 255, 0.15);
-            stroke-width: 1px;
+            stroke: rgba(0, 198, 255, 0.12);
+            stroke-width: 0.8px;
             fill: none;
             z-index: 1;
+            stroke-linecap: square;
+            stroke-linejoin: bevel;
         }
         
         .energy-ball {
@@ -628,15 +629,25 @@
         svg.style.height = '100%';
         pathsContainer.appendChild(svg);
         
-        // Создаем изогнутые пути микросхемы
+        // Создаем пути микросхемы в стиле печатных плат
         const paths = [
-            // Сложные изогнутые пути
-            'M 0,10 C 15,5 25,20 40,15 C 55,10 65,25 80,20 C 95,15 100,30 100,25',
-            'M 0,90 C 20,80 30,95 45,85 C 60,75 70,90 85,80 C 100,70 100,95 100,90',
-            'M 0,50 C 10,40 20,55 35,45 C 50,35 60,50 75,40 C 90,30 100,55 100,50',
-            'M 0,70 C 15,60 25,75 40,65 C 55,55 65,70 80,60 C 95,50 100,75 100,70',
-            'M 0,30 C 20,10 35,35 50,25 C 65,15 75,35 90,25 C 100,20 100,40 100,35',
-            'M 0,80 C 10,70 25,85 40,75 C 55,65 70,80 85,70 C 95,65 100,85 100,80'
+            // Путь 1: Угловая трасса с переходами
+            "M 0,10 L 25,10 25,30 45,30 45,10 65,10 65,30 85,30 85,10 100,10",
+            
+            // Путь 2: Зигзагообразная дорожка
+            "M 0,90 L 20,90 20,70 40,70 40,90 60,90 60,70 80,70 80,90 100,90",
+            
+            // Путь 3: Диагональные переходы
+            "M 0,50 L 15,50 15,35 35,35 35,50 55,50 55,65 75,65 75,50 100,50",
+            
+            // Путь 4: Ступенчатая структура
+            "M 0,70 L 30,70 30,50 50,50 50,70 70,70 70,50 90,50 90,70 100,70",
+            
+            // Путь 5: Прямоугольная сетка
+            "M 0,30 L 20,30 20,45 40,45 40,60 60,60 60,45 80,45 80,30 100,30",
+            
+            // Путь 6: Сложный маршрут с диагоналями
+            "M 0,80 L 35,80 35,60 55,60 55,40 75,40 75,60 95,60 95,80 100,80"
         ];
         
         // Создаем пути в SVG
@@ -674,8 +685,8 @@
         document.body.appendChild(svg);
         
         const pathLength = path.getTotalLength();
-        const duration = 3000 + Math.random() * 2000;
-        const delay = index * 500;
+        const duration = 4000 + Math.random() * 2000;
+        const delay = index * 600;
         
         let startTime = null;
         
@@ -696,8 +707,12 @@
             ball.style.top = `${yPercent}%`;
             
             // Пульсация шарика
-            const pulse = 0.8 + Math.sin(elapsed / 200) * 0.2;
+            const pulse = 0.7 + Math.sin(elapsed / 300) * 0.3;
             ball.style.transform = `translate(-50%, -50%) scale(${pulse})`;
+            
+            // Эффект затухания на поворотах
+            const segmentProgress = (progress * pathLength) % 20;
+            ball.style.opacity = segmentProgress < 2 || segmentProgress > 18 ? '0.7' : '0.9';
             
             requestAnimationFrame(animate);
         };
