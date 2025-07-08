@@ -537,20 +537,20 @@
         }
         
         .circuit-path {
-            stroke: rgba(255, 255, 255, 0.4);
-            stroke-width: 1.2px;
+            stroke: rgba(0, 198, 255, 0.3); /* Более светлый и прозрачный цвет */
+            stroke-width: 0.8px;             /* Тоньше линии */
             fill: none;
             z-index: 1;
             stroke-linecap: round;
-            stroke-linejoin: miter;
+            stroke-dasharray: 2, 3;          /* Пунктирный стиль */
         }
         
         .energy-pulse {
             position: absolute;
-            height: 3px;
-            background: white;
-            border-radius: 2px;
-            box-shadow: 0 0 8px white, 0 0 16px rgba(255, 255, 255, 0.8);
+            height: 2px;                     /* Уменьшенная высота */
+            background: #00c6ff;              /* Основной акцентный цвет */
+            border-radius: 1px;
+            box-shadow: 0 0 10px #00c6ff, 0 0 20px rgba(0, 198, 255, 0.7); /* Усиленное свечение */
             z-index: 2;
             opacity: 0;
             transform-origin: left center;
@@ -634,14 +634,14 @@
         svg.style.height = '100%';
         pathsContainer.appendChild(svg);
         
-        // Оптимизированные пути микросхемы
+        // УПРОЩЕННЫЕ ПУТИ БЕЗ ПЕРЕСЕЧЕНИЙ
         const paths = [
-            "M 10,10 L 40,10 40,40 90,40",
-            "M 90,20 L 60,20 60,60 20,60",
-            "M 20,80 L 50,80 50,50 80,50",
-            "M 80,70 L 50,70 50,30 20,30",
-            "M 30,20 L 30,50 70,50 70,80",
-            "M 70,30 L 40,30 40,70 10,70"
+            "M 10,20 L 90,20",    // Горизонтальная линия 1
+            "M 20,10 L 20,90",    // Вертикальная линия 1
+            "M 30,30 L 70,70",    // Диагональ 1
+            "M 70,30 L 30,70",    // Диагональ 2
+            "M 50,10 L 50,90",    // Вертикальная линия 2
+            "M 10,80 L 90,80"     // Горизонтальная линия 2
         ];
         
         // Создаем пути в SVG
@@ -658,8 +658,8 @@
             pulse.className = 'energy-pulse';
             pathsContainer.appendChild(pulse);
             
-            // Запускаем анимацию импульса с задержкой
-            setTimeout(() => animatePulse(pulse, d), i * 300);
+            // Запускаем анимацию импульса с увеличенной задержкой
+            setTimeout(() => animatePulse(pulse, d), i * 500);
         });
     }
     
@@ -674,8 +674,8 @@
         document.body.appendChild(svg);
         
         const pathLength = path.getTotalLength();
-        const pulseWidth = 20;
-        const duration = 2000 + Math.random() * 1000;
+        const pulseWidth = 15;
+        const duration = 3000 + Math.random() * 2000; // Увеличенная длительность
         
         let startTime = null;
         let animationId = null;
