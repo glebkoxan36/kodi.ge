@@ -10,3 +10,4 @@ Flask-Session
 beautifulsoup4
 google-generativeai
 clerk-sdk-python
+PyJWT
