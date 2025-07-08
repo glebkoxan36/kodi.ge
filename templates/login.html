@@ -67,35 +67,14 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest"></script>
     <script>
-        // Инициализация Clerk
-        const frontendApi = "{{ clerk_frontend_api }}";
-        const clerk = new Clerk(frontendApi);
-        
         // Обработчики кнопок социальных сетей
         document.getElementById('google-btn').addEventListener('click', () => {
-            clerk.authenticateWithRedirect({
-                strategy: "oauth_google",
-                redirectUrl: "/auth/callback"
-            });
+            window.location.href = "/auth/google";
         });
         
         document.getElementById('facebook-btn').addEventListener('click', () => {
-            clerk.authenticateWithRedirect({
-                strategy: "oauth_facebook",
-                redirectUrl: "/auth/callback"
-            });
-        });
-        
-        // Загрузка Clerk
-        clerk.load().then(() => {
-            // Если пользователь уже вошел, перенаправить
-            if (clerk.user) {
-                window.location.href = '/user/dashboard';
-            }
-        }).catch(err => {
-            console.error('Clerk load error:', err);
+            window.location.href = "/auth/facebook";
         });
 
         // Управление модальным окном
