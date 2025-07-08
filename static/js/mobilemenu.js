@@ -67,7 +67,7 @@
         
         .mobile-menu-modal .modal-content {
             background: 
-                linear-gradient(135deg, rgba(10,14,23,0.95), rgba(26,33,56,0.95)),
+                linear-gradient(135deg, rgba(10,14,23,0.97), rgba(26,33,56,0.97)),
                 repeating-linear-gradient(
                     45deg,
                     transparent,
@@ -94,9 +94,10 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 2px;
+            height: 3px;
             background: linear-gradient(90deg, transparent, #00c6ff, transparent);
             z-index: 2;
+            opacity: 0.4;
         }
         
         .modal-content::after {
@@ -105,9 +106,10 @@
             bottom: 0;
             left: 0;
             right: 0;
-            height: 2px;
+            height: 3px;
             background: linear-gradient(90deg, transparent, #00c6ff, transparent);
             z-index: 2;
+            opacity: 0.4;
         }
         
         .mobile-menu-modal .modal-body {
@@ -118,6 +120,8 @@
             align-items: center;
             justify-content: center;
             height: 100%;
+            position: relative;
+            z-index: 3;
         }
         
         /* Кнопка закрытия */
@@ -321,6 +325,8 @@
             padding: 12px 8px;
             box-sizing: border-box;
             color: white;
+            position: relative;
+            z-index: 3;
         }
         
         .menu-item:hover {
@@ -497,22 +503,107 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        /* Добавляем в конец существующих стилей */
-.menu-item .menu-icon-img {
-    display: block;
-    width: 32px;
-    height: 32px;
-    margin-left: auto;
-    margin-right: auto;
-    margin-bottom: 8px;
-    object-fit: contain;
-    object-position: center;
-}
+        
+        .menu-item .menu-icon-img {
+            display: block;
+            width: 32px;
+            height: 32px;
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 8px;
+            object-fit: contain;
+            object-position: center;
+        }
         
         #mobileLoginRegister:hover {
             color: #00c6ff;
             transform: translateY(-2px);
         }
+        
+        /* НОВЫЕ СТИЛИ ДЛЯ ФОНА МИКРОСХЕМЫ И АНИМАЦИИ */
+        .circuit-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(to right, rgba(0,198,255,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0,198,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            z-index: 1;
+        }
+        
+        .energy-balls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+        
+        .energy-ball {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00c6ff;
+            box-shadow: 0 0 10px #00c6ff, 0 0 20px #00c6ff;
+            z-index: 2;
+            opacity: 0.9;
+            transform: translate(-50%, -50%);
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+        }
+        
+        /* Анимации для шариков */
+        @keyframes moveBall1 {
+            0% { top: 10%; left: 5%; }
+            25% { top: 10%; left: 40%; }
+            50% { top: 40%; left: 40%; }
+            75% { top: 40%; left: 80%; }
+            100% { top: 80%; left: 80%; }
+        }
+        
+        @keyframes moveBall2 {
+            0% { top: 90%; left: 90%; }
+            25% { top: 90%; left: 60%; }
+            50% { top: 60%; left: 60%; }
+            75% { top: 60%; left: 20%; }
+            100% { top: 20%; left: 20%; }
+        }
+        
+        @keyframes moveBall3 {
+            0% { top: 5%; left: 80%; }
+            25% { top: 5%; left: 50%; }
+            50% { top: 50%; left: 50%; }
+            75% { top: 50%; left: 10%; }
+            100% { top: 95%; left: 10%; }
+        }
+        
+        @keyframes moveBall4 {
+            0% { top: 95%; left: 10%; }
+            25% { top: 95%; left: 40%; }
+            50% { top: 40%; left: 40%; }
+            75% { top: 40%; left: 90%; }
+            100% { top: 5%; left: 90%; }
+        }
+        
+        @keyframes moveBall5 {
+            0% { top: 20%; left: 20%; }
+            25% { top: 20%; left: 50%; }
+            50% { top: 80%; left: 50%; }
+            75% { top: 80%; left: 80%; }
+            100% { top: 20%; left: 80%; }
+        }
+        
+        .ball-anim1 { animation-name: moveBall1; }
+        .ball-anim2 { animation-name: moveBall2; }
+        .ball-anim3 { animation-name: moveBall3; }
+        .ball-anim4 { animation-name: moveBall4; }
+        .ball-anim5 { animation-name: moveBall5; }
     `;
     document.head.appendChild(style);
 
@@ -564,6 +655,44 @@
                 </div>
             `;
         }
+    }
+
+    // Добавление анимации микросхемы
+    function initCircuitAnimation(modal) {
+        const content = modal.querySelector('.modal-content');
+        if (!content) return;
+        
+        // Удаляем старую анимацию, если есть
+        const existingLines = content.querySelector('.circuit-lines');
+        if (existingLines) existingLines.remove();
+        
+        const existingBalls = content.querySelector('.energy-balls');
+        if (existingBalls) existingBalls.remove();
+        
+        // Создаем фон с линиями микросхемы
+        const circuitLines = document.createElement('div');
+        circuitLines.className = 'circuit-lines';
+        content.appendChild(circuitLines);
+        
+        // Создаем контейнер для шариков энергии
+        const energyContainer = document.createElement('div');
+        energyContainer.className = 'energy-balls';
+        
+        // Создаем 5 шариков с разными анимациями
+        for (let i = 0; i < 5; i++) {
+            const ball = document.createElement('div');
+            ball.className = 'energy-ball';
+            const animClass = `ball-anim${Math.floor(Math.random() * 5) + 1}`;
+            ball.classList.add(animClass);
+            
+            // Случайная длительность и задержка для разнообразия
+            ball.style.animationDuration = `${4 + Math.random() * 4}s`;
+            ball.style.animationDelay = `-${Math.random() * 5}s`;
+            
+            energyContainer.appendChild(ball);
+        }
+        
+        content.appendChild(energyContainer);
     }
 
     // Создаем HTML структуру мобильного меню
@@ -626,6 +755,12 @@
                 </div>
             </div>
         `;
+        
+        // Инициализируем анимацию после добавления в DOM
+        setTimeout(() => {
+            const modal = document.getElementById('mobileMenuModal');
+            if (modal) initCircuitAnimation(modal);
+        }, 50);
     }
 
     function createMainMobileMenu(container, userHTML) {
@@ -791,6 +926,18 @@
                 </div>
             </div>
         `;
+        
+        // Инициализируем анимацию для всех модальных окон
+        setTimeout(() => {
+            const modal = document.getElementById('mobileMenuModal');
+            if (modal) initCircuitAnimation(modal);
+            
+            const appleModal = document.getElementById('appleSubmenuModal');
+            if (appleModal) initCircuitAnimation(appleModal);
+            
+            const androidModal = document.getElementById('androidSubmenuModal');
+            if (androidModal) initCircuitAnimation(androidModal);
+        }, 50);
     }
 
     // Mobile menu functions
