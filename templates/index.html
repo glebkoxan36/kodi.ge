@@ -546,7 +546,7 @@
                     // Форматируем результаты для Apple
                     resultsHTML = `
                         <div class="text-center mb-4">
-                            <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                            <i class="fas fa-check-circle text-success" style="font-size: 4rem; color: var(--success-color);"></i>
                             <h3 class="mt-3">შემოწმება დასრულებულია</h3>
                             <p>IMEI: <strong>${document.getElementById('free-imei-input').value.trim()}</strong></p>
                         </div>
@@ -577,21 +577,11 @@
                             let statusClass = '';
                             const valStr = String(value).toLowerCase();
                             
-                            if (valStr.includes('unlocked') || 
-                                valStr.includes('clean') || 
-                                valStr.includes('off') ||
-                                valStr.includes('active') ||
-                                valStr.includes('valid')) {
+                            if (valStr.includes('unlocked') || valStr.includes('clean') || valStr.includes('off') || valStr.includes('active') || valStr.includes('valid')) {
                                 statusClass = 'status-success';
-                            } else if (valStr.includes('locked') || 
-                                       valStr.includes('blacklist') || 
-                                       valStr.includes('on') ||
-                                       valStr.includes('inactive') ||
-                                       valStr.includes('expired')) {
+                            } else if (valStr.includes('locked') || valStr.includes('blacklist') || valStr.includes('on') || valStr.includes('inactive') || valStr.includes('expired')) {
                                 statusClass = 'status-warning';
-                            } else if (valStr.includes('error') || 
-                                       valStr.includes('fail') || 
-                                       valStr.includes('invalid')) {
+                            } else if (valStr.includes('error') || valStr.includes('fail') || valStr.includes('invalid')) {
                                 statusClass = 'status-error';
                             }
                             
@@ -604,6 +594,7 @@
                         }
                     });
 
+                    // Закрываем все теги (исправлено!)
                     resultsHTML += `
                                 </div>
                             </div>
@@ -699,4 +690,4 @@
         });
     </script>
 </body>
-    </html>
+</html>
