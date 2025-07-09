@@ -7,219 +7,232 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
+    
     <style>
-        /* Блокировка прокрутки при открытых модальных окнах */
-        body.modal-open {
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-        }
-        
-        /* Затемнение фона для модальных окон */
-        .modal-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 2999;
-            display: none;
-        }
-        
-        /* Центрирование и анимации для модальных окон */
-        .result-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 3000;
-            display: none;
-            transition: 
-                opacity 0.3s ease, 
-                transform 0.3s ease;
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        
+    /* Блокировка прокрутки при открытых модальных окнах */
+    body.modal-open {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+    }
+    
+    /* Затемнение фона для модальных окон */
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8); /* Увеличена прозрачность */
+        z-index: 2999;
+        display: none;
+    }
+    
+    /* Центрирование и анимации для модальных окон */
+    .result-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+        display: none;
+        transition: 
+            opacity 0.3s ease, 
+            transform 0.3s ease;
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    
+    .result-modal .modal-content {
+        background: rgba(18, 26, 43, 0.95); /* Основной фон карточек */
+        border-radius: 12px;
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5); /* Усиленная тень */
+        width: 95%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        color: #ffffff; /* Белый текст */
+        backdrop-filter: blur(10px); /* Размытие фона */
+        border: 1px solid rgba(0, 198, 255, 0.2); /* Акцентная граница */
+    }
+    
+    .result-modal .card-header {
+        background: rgba(0, 198, 255, 0.1); /* Градиентный акцент */
+        color: #00e5ff; /* Акцентный цвет текста */
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Разделитель */
+    }
+    
+    .result-modal .card-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+    
+    .result-modal .close-modal {
+        background: none;
+        border: none;
+        color: #ffffff; /* Белый цвет */
+        font-size: 1.8rem;
+        cursor: pointer;
+        padding: 5px;
+        transition: color 0.3s ease;
+    }
+    
+    .result-modal .close-modal:hover {
+        color: #00e5ff; /* Акцент при наведении */
+    }
+    
+    .result-modal .card-body {
+        padding: 20px;
+    }
+    
+    .result-modal .card-footer {
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .status-error { color: #ff3d71; } /* Цвет ошибки */
+    .status-warning { color: #ffaa00; } /* Цвет предупреждения */
+    .status-success { color: #00d68f; } /* Цвет успеха */
+    
+    .result-actions { 
+        display: flex; 
+        justify-content: center;
+        margin: 20px 0;
+    }
+    
+    .error-card {
+        background: rgba(255, 61, 113, 0.15); /* Полупрозрачный фон */
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 20px;
+        text-align: center;
+        border: 1px solid #ff3d71; /* Граница цвета ошибки */
+    }
+    .error-card h3 {
+        margin-bottom: 15px;
+        color: #ff3d71; /* Цвет заголовка ошибки */
+    }
+    .error-details {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 10px;
+        border-radius: 8px;
+        margin: 10px 0;
+        font-size: 0.9em;
+    }
+    
+    .free-check-results {
+        margin-top: 20px;
+    }
+    .result-card {
+        background: rgba(30, 30, 40, 0.7); /* Фон результатов */
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1); /* Светлая граница */
+    }
+    .result-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Разделитель */
+    }
+    .result-row:last-child {
+        border-bottom: none;
+    }
+    .result-label {
+        font-weight: bold;
+        color: rgba(255, 255, 255, 0.8); /* Полупрозрачный текст */
+    }
+    
+    /* Android ошибка */
+    .android-error {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        background: rgba(255, 61, 113, 0.15);
+        border-radius: 8px;
+        border-left: 4px solid #ff3d71; /* Акцентная граница */
+        margin-bottom: 20px;
+    }
+    
+    .android-error i {
+        font-size: 2.5rem;
+        color: #3ddc84;
+    }
+    
+    .android-error div {
+        flex: 1;
+    }
+    
+    .android-error a {
+        color: #00e5ff; /* Акцентная ссылка */
+        text-decoration: underline;
+    }
+    
+    /* Предупреждение о Android */
+    .android-warning {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 15px;
+        background: rgba(255, 170, 0, 0.15); /* Полупрозрачный фон */
+        border-radius: 8px;
+        border-left: 4px solid #ffaa00; /* Акцентная граница */
+    }
+    
+    .android-warning i {
+        color: #ffaa00;
+        font-size: 1.5rem;
+    }
+    
+    .android-warning a {
+        color: #00e5ff; /* Акцентная ссылка */
+        text-decoration: underline;
+    }
+    
+    /* Стили для блока с полным ответом сервера */
+    .result-card pre {
+        background: rgba(40, 40, 50, 0.5); /* Темный фон */
+        padding: 15px;
+        border-radius: 8px;
+        overflow-x: auto;
+        max-height: 300px;
+        font-size: 0.9em;
+        white-space: pre-wrap;
+        word-break: break-all;
+        border: 1px solid rgba(255, 255, 255, 0.1); /* Светлая граница */
+        margin-top: 15px;
+        color: #ffffff; /* Белый текст */
+    }
+    
+    @media (max-width: 768px) {
         .result-modal .modal-content {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            width: 95%;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
+            width: 100%;
+            margin: 10px;
         }
         
-        .result-modal .card-header {
-            background: var(--primary-color);
-            color: white;
-            border-top-left-radius: 12px;
-            border-top-right-radius: 12px;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .result-modal .card-header h2 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-        
-        .result-modal .close-modal {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.8rem;
-            cursor: pointer;
-            padding: 5px;
-        }
-        
-        .result-modal .card-body {
-            padding: 20px;
-        }
-        
-        .result-modal .card-footer {
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-        
-        .status-error { color: #dc3545; }
-        .status-warning { color: #ffc107; }
-        .status-success { color: #28a745; }
-        
-        .result-actions { 
-            display: flex; 
-            justify-content: center;
-            margin: 20px 0;
-        }
-        
-        .error-card {
-            background: #f8d7da;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            text-align: center;
-        }
-        .error-card h3 {
-            margin-bottom: 15px;
-            color: #dc3545;
-        }
-        .error-details {
-            background: rgba(255,255,255,0.1);
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-size: 0.9em;
-        }
-        
-        .free-check-results {
-            margin-top: 20px;
-        }
-        .result-card {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid #dee2e6;
-        }
         .result-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
+            flex-direction: column;
+            gap: 5px;
+            padding: 15px 0;
         }
-        .result-row:last-child {
-            border-bottom: none;
-        }
-        .result-label {
-            font-weight: bold;
-        }
-        
-        /* Android ошибка */
-        .android-error {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: #f8d7da;
-            border-radius: 8px;
-            border-left: 4px solid #dc3545;
-            margin-bottom: 20px;
-        }
-        
-        .android-error i {
-            font-size: 2.5rem;
-            color: #3ddc84;
-        }
-        
-        .android-error div {
-            flex: 1;
-        }
-        
-        .android-error a {
-            color: #0d6efd;
-            text-decoration: underline;
-        }
-        
-        /* Предупреждение о Android */
-        .android-warning {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 15px;
-            background: #fff3cd;
-            border-radius: 8px;
-            border-left: 4px solid #ffc107;
-        }
-        
-        .android-warning i {
-            color: #ffc107;
-            font-size: 1.5rem;
-        }
-        
-        .android-warning a {
-            color: #0d6efd;
-            text-decoration: underline;
-        }
-        
-        /* Стили для блока с полным ответом сервера */
-        .result-card pre {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            overflow-x: auto;
-            max-height: 300px;
-            font-size: 0.9em;
-            white-space: pre-wrap;
-            word-break: break-all;
-            border: 1px solid #dee2e6;
-            margin-top: 15px;
-        }
-        
-        @media (max-width: 768px) {
-            .result-modal .modal-content {
-                width: 100%;
-                margin: 10px;
-            }
-            
-            .result-row {
-                flex-direction: column;
-                gap: 5px;
-                padding: 15px 0;
-            }
-        }
+    }
     </style>
 </head>
 <body>
