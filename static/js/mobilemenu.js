@@ -65,10 +65,9 @@
             display: flex;
         }
         
+        /* ИСПРАВЛЕНИЕ #1: Убраны градиенты, оставлено только фоновое изображение */
         .mobile-menu-modal .modal-content {
-            background: 
-                linear-gradient(135deg, rgba(10,14,23,0.97), rgba(26,33,56,0.97)),
-                url('static/mobilemenu.png') no-repeat center center / cover;
+            background: url('static/mobilemenu.png') no-repeat center center / cover;
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
@@ -147,7 +146,7 @@
         
         .floating-avatar-container {
             position: absolute;
-            top: -40px; /* Опущено ниже */
+            top: -40px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
@@ -182,6 +181,14 @@
             overflow: hidden;
             margin: 0 auto;
             background: transparent !important;
+        }
+        
+        /* ИСПРАВЛЕНИЕ #2: Добавлена поддержка загруженных аватарок */
+        .avatar-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
         
         .avatar-placeholder {
@@ -237,8 +244,8 @@
         }
         
         .floating-avatar-info.not-logged-in {
-            text-shadow: 0 0 5px #00c6ff, 0 0 10px #00c6ff; /* Неоновая обводка */
-            margin-top: 10px; /* Опущено ниже */
+            text-shadow: 0 0 5px #00c6ff, 0 0 10px #00c6ff;
+            margin-top: 10px;
         }
         
         .user-balance {
@@ -460,7 +467,7 @@
                 height: 55vh;
             }
             .floating-avatar-container {
-                top: -40px; /* Опущено ниже */
+                top: -40px;
             }
             .floating-avatar {
                 width: 110px;
@@ -547,14 +554,20 @@
         
         if (userData.first_name && userData.last_name) {
             const formattedBalance = (userData.balance || 0).toFixed(2);
-            const initials = `${userData.first_name.charAt(0)}${userData.last_name.charAt(0)}`;
             const fullName = `${userData.first_name} ${userData.last_name}`;
+            
+            // ИСПРАВЛЕНИЕ #3: Поддержка загруженных аватарок
+            let avatarHTML;
+            if (userData.avatar_url) {
+                avatarHTML = `<img src="${userData.avatar_url}" alt="User Avatar" class="avatar-image">`;
+            } else {
+                const initials = `${userData.first_name.charAt(0)}${userData.last_name.charAt(0)}`;
+                avatarHTML = `<div class="avatar-placeholder" style="background-color: ${userData.avatar_color || '#1a2138'}">${initials}</div>`;
+            }
             
             return `
                 <div class="floating-avatar" onclick="window.goToDashboard()">
-                    <div class="avatar-placeholder" style="background-color: ${userData.avatar_color || '#1a2138'}">
-                        ${initials}
-                    </div>
+                    ${avatarHTML}
                 </div>
                 <div class="user-info-container">
                     <div class="floating-avatar-info" onclick="window.goToDashboard()">
