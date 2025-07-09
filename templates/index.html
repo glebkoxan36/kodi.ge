@@ -688,6 +688,16 @@
             return checkDigit === parseInt(imei[14]);
         }
 
+        // Функция для получения значения по альтернативным ключам
+        function getValue(data, keys) {
+            for (const key of keys) {
+                if (data[key] !== undefined && data[key] !== '') {
+                    return data[key];
+                }
+            }
+            return 'უცნობი';
+        }
+
         // Функция для отображения результатов
         function displayFreeResults(data) {
             const resultContent = document.getElementById('free-result-content');
@@ -703,22 +713,33 @@
                     </div>
                 `;
             } else {
+                // Извлечение данных с поддержкой мультиязычных ключей
+                const brand = getValue(data, [
+                    'brand', 'ბრენდი', 'manufacturer', 'მწარმოებელი'
+                ]);
+                
+                const model = getValue(data, [
+                    'model', 'მოდელი', 'device_model'
+                ]);
+                
+                const modelName = getValue(data, [
+                    'modelname', 'modelName', 'ModelName', 'მოდელის სახელი'
+                ]);
+                
+                const deviceType = getValue(data, [
+                    'device_type', 'type', 'მოწყობილობის ტიპი'
+                ]).toLowerCase();
+
                 // Определение типа устройства
-                const deviceType = (data.device_type || data.type || '').toLowerCase();
                 const isApple = deviceType.includes('apple') || 
                                deviceType.includes('iphone') || 
                                deviceType.includes('ipad') || 
-                               (data.brand || '').toLowerCase().includes('apple');
+                               brand.toLowerCase().includes('apple');
                 
                 const isAndroid = deviceType.includes('android') || 
-                                 (data.brand || '').toLowerCase().includes('samsung') || 
-                                 (data.brand || '').toLowerCase().includes('xiaomi') || 
-                                 (data.brand || '').toLowerCase().includes('huawei');
-
-                // Извлечение данных о модели и бренде
-                const model = data.model || data.modelName || data.ModelName || data.device_model || 'უცნობი';
-                const brand = data.brand || data.manufacturer || data.Brand || 'უცნობი';
-                const modelName = data.modelName || data.ModelName || model;
+                                 brand.toLowerCase().includes('samsung') || 
+                                 brand.toLowerCase().includes('xiaomi') || 
+                                 brand.toLowerCase().includes('huawei');
 
                 if (isAndroid) {
                     resultsHTML = `
@@ -748,26 +769,27 @@
                                 <div class="card-body">
                     `;
 
-                    // Ключевые поля для всех устройств
+                    // Обновленные ключи для полей
                     const keyFields = {
-                        'brand': 'მწარმოებელი',
-                        'modelName': 'მოდელის სახელი',
-                        'model': 'მოდელი',
-                        'manufacture': 'წარმოების თარიღი',
-                        'state': 'მდგომარეობა',
-                        'activation_status': 'აქტივაციის სტატუსი',
-                        'fmi_status': 'FMI სტატუსი',
-                        'sim_lock': 'SIM ლოკი',
-                        'blacklist_status': 'შავი სია',
-                        'carrier': 'ოპერატორი',
-                        'warranty_status': 'გარანტია',
-                        'network': 'ქსელი',
-                        'purchase_date': 'შეძენის თარიღი'
+                        'brand': ['ბრენდი', 'brand'],
+                        'modelName': ['მოდელის სახელი', 'modelname'],
+                        'model': ['მოდელი', 'model'],
+                        'manufacture': ['წარმოების თარიღი', 'manufacture_date'],
+                        'state': ['მდგომარეობა', 'state'],
+                        'activation_status': ['აქტივაციის სტატუსი', 'activation_status'],
+                        'fmi_status': ['FMI სტატუსი', 'fmi_status'],
+                        'sim_lock': ['SIM ლოკი', 'sim_lock'],
+                        'blacklist_status': ['შავი სია', 'blacklist_status'],
+                        'carrier': ['ოპერატორი', 'carrier'],
+                        'warranty_status': ['გარანტია', 'warranty_status'],
+                        'network': ['ქსელი', 'network'],
+                        'purchase_date': ['შეძენის თარიღი', 'purchase_date']
                     };
 
-                    Object.keys(keyFields).forEach(field => {
-                        if (data[field]) {
-                            const value = data[field];
+                    // Перебор всех полей
+                    for (const [fieldName, fieldKeys] of Object.entries(keyFields)) {
+                        const value = getValue(data, fieldKeys);
+                        if (value && value !== 'უცნობი') {
                             let statusClass = '';
                             const valStr = String(value).toLowerCase();
                             
@@ -784,14 +806,17 @@
                                 statusClass = 'status-error';
                             }
                             
+                            // Получаем отображаемое имя поля (первое в массиве)
+                            const displayName = fieldKeys[0];
+                            
                             resultsHTML += `
                                 <div class="result-row">
-                                    <span class="result-label">${keyFields[field]}:</span>
+                                    <span class="result-label">${displayName}:</span>
                                     <span class="result-value ${statusClass}">${value}</span>
                                 </div>
                             `;
                         }
-                    });
+                    }
 
                     resultsHTML += `
                                 </div>
