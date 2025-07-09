@@ -254,7 +254,7 @@
         
         /* Увеличенные иконки с градиентом */
         .menu-item i {
-            font-size: 32px !important;
+            font-size: 34px !important;
             margin-bottom: 8px;
             background: linear-gradient(135deg, #00c6ff, #0072ff);
             -webkit-background-clip: text;
@@ -284,15 +284,15 @@
             box-shadow: none !important;
         }
         
-        /* Уменьшенные ячейки сетки */
+        /* Увеличенные ячейки сетки */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
             gap: 12px;
             width: 100%;
-            max-width: 420px;
-            height: 420px;
+            max-width: 440px;
+            height: 440px;
             margin: 0 auto;
             background: transparent;
             box-sizing: border-box;
@@ -317,7 +317,7 @@
                 inset 0 0 10px rgba(0, 198, 255, 0.1);
             min-width: 0;
             min-height: 0;
-            padding: 10px 6px;
+            padding: 12px 8px;
             box-sizing: border-box;
             color: white;
             position: relative;
@@ -334,7 +334,7 @@
         }
         
         .menu-item span {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             line-height: 1.3;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -360,19 +360,19 @@
             
             .menu-grid {
                 gap: 10px;
-                max-width: 340px;
-                height: 340px;
+                max-width: 380px;
+                height: 380px;
                 margin-top: 120px;
             }
             .menu-item {
-                padding: 8px 5px;
+                padding: 10px 7px;
             }
             .menu-item i {
-                font-size: 30px !important;
+                font-size: 32px !important;
                 margin-bottom: 6px;
             }
             .menu-item span {
-                font-size: 0.65rem;
+                font-size: 0.7rem;
             }
             
             .user-info-container {
@@ -387,15 +387,15 @@
             
             .menu-grid {
                 gap: 8px;
-                max-width: 300px;
-                height: 300px;
+                max-width: 340px;
+                height: 340px;
                 margin-top: 110px;
             }
             .menu-item i {
-                font-size: 28px !important;
+                font-size: 30px !important;
             }
             .menu-item span {
-                font-size: 0.6rem;
+                font-size: 0.65rem;
             }
             
             .user-info-container {
@@ -410,15 +410,15 @@
             
             .menu-grid {
                 gap: 6px;
-                max-width: 280px;
-                height: 280px;
+                max-width: 300px;
+                height: 300px;
                 margin-top: 100px;
             }
             .menu-item i {
-                font-size: 26px !important;
+                font-size: 28px !important;
             }
             .menu-item span {
-                font-size: 0.55rem;
+                font-size: 0.6rem;
             }
             
             .user-info-container {
@@ -432,16 +432,16 @@
             }
             
             .menu-grid {
-                gap: 4px;
-                max-width: 260px;
-                height: 260px;
+                gap: 5px;
+                max-width: 280px;
+                height: 280px;
                 margin-top: 90px;
             }
             .menu-item i {
-                font-size: 24px !important;
+                font-size: 26px !important;
             }
             .menu-item span {
-                font-size: 0.5rem;
+                font-size: 0.55rem;
             }
             
             .user-info-container {
@@ -467,15 +467,15 @@
                 font-size: 1rem;
             }
             .menu-grid {
-                max-width: 380px;
-                height: 380px;
+                max-width: 420px;
+                height: 420px;
                 margin-top: 120px;
             }
             .menu-item i {
-                font-size: 32px !important;
+                font-size: 34px !important;
             }
             .menu-item span {
-                font-size: 0.75rem;
+                font-size: 0.8rem;
             }
             
             .user-info-container {
@@ -503,11 +503,11 @@
         
         .menu-item .menu-icon-img {
             display: block;
-            width: 28px;
-            height: 28px;
+            width: 30px;
+            height: 30px;
             margin-left: auto;
             margin-right: auto;
-            margin-bottom: 6px;
+            margin-bottom: 7px;
             object-fit: contain;
             object-position: center;
         }
@@ -532,11 +532,11 @@
         
         .firefly {
             position: absolute;
-            width: 4px;
-            height: 4px;
+            width: 5px;
+            height: 5px;
             border-radius: 50%;
             background: #00c6ff;
-            box-shadow: 0 0 8px #00c6ff, 0 0 12px rgba(0, 198, 255, 0.7);
+            box-shadow: 0 0 10px #00c6ff, 0 0 15px rgba(0, 198, 255, 0.7);
             z-index: 2;
             pointer-events: none;
             opacity: 0.8;
@@ -544,10 +544,14 @@
         
         .trail {
             position: absolute;
-            background: rgba(0, 198, 255, 0.3);
+            background: linear-gradient(90deg, 
+                rgba(0, 198, 255, 0.8), 
+                rgba(0, 198, 255, 0.3) 70%, 
+                rgba(0, 198, 255, 0));
+            height: 1px;
             pointer-events: none;
-            transform-origin: top left;
             z-index: 1;
+            transform-origin: left center;
         }
     `;
     document.head.appendChild(style);
@@ -618,8 +622,8 @@
         
         // Массив для активных огоньков
         const fireflies = [];
-        const maxFireflies = 8; // Увеличено количество огоньков
-        const trailInterval = 50; // ms
+        const maxFireflies = 12; // Больше огоньков
+        const trailInterval = 40; // Чаще следы
         
         // Функция создания нового огонька
         function createFirefly() {
@@ -632,25 +636,25 @@
             // Начальная позиция - верхняя часть меню
             const startX = Math.random() * 100;
             firefly.style.left = `${startX}%`;
-            firefly.style.top = '-10px';
+            firefly.style.top = '-5px';
             
             // Скорость движения
-            const speed = 0.5 + Math.random() * 0.5;
+            const speed = 0.7 + Math.random() * 0.5;
             const velocity = {
-                x: (Math.random() - 0.5) * 0.3,
+                x: (Math.random() - 0.5) * 0.4,
                 y: speed
             };
             
             // Цвет огонька
             const hue = 180 + Math.random() * 20 - 10;
             firefly.style.background = `hsl(${hue}, 100%, 70%)`;
-            firefly.style.boxShadow = `0 0 8px hsl(${hue}, 100%, 70%), 0 0 12px rgba(${hue}, 100%, 70%, 0.7)`;
+            firefly.style.boxShadow = `0 0 10px hsl(${hue}, 100%, 70%), 0 0 15px rgba(${hue}, 100%, 70%, 0.7)`;
             
             const fireflyObj = {
                 element: firefly,
-                position: { x: startX, y: -1 },
+                position: { x: startX, y: -0.5 },
                 velocity,
-                lastPosition: { x: startX, y: -1 },
+                lastPosition: { x: startX, y: -0.5 },
                 trailElements: [],
                 id: Date.now()
             };
@@ -674,32 +678,20 @@
             
             // Устанавливаем стили для линии
             trail.style.width = `${distance}%`;
-            trail.style.height = '1px';
             trail.style.left = `${firefly.lastPosition.x}%`;
             trail.style.top = `${firefly.lastPosition.y}%`;
             trail.style.transform = `rotate(${angle}deg)`;
             trail.style.opacity = 0.8;
-            trail.style.background = `linear-gradient(90deg, 
-                rgba(0, 198, 255, 0.7), 
-                rgba(0, 198, 255, 0.3) 70%, 
-                rgba(0, 198, 255, 0))`;
             
             container.appendChild(trail);
             firefly.trailElements.push(trail);
             
-            // Удаляем старые следы
-            if (firefly.trailElements.length > 5) {
-                const oldTrail = firefly.trailElements.shift();
-                if (oldTrail.parentNode) {
-                    oldTrail.parentNode.removeChild(oldTrail);
-                }
-            }
-            
             // Анимация исчезновения следа
             setTimeout(() => {
                 if (trail.parentNode) {
-                    trail.style.transition = 'opacity 0.5s ease-out';
+                    trail.style.transition = 'opacity 0.5s ease-out, width 0.5s ease-out';
                     trail.style.opacity = '0';
+                    trail.style.width = '0';
                     setTimeout(() => {
                         if (trail.parentNode) {
                             trail.parentNode.removeChild(trail);
@@ -724,22 +716,12 @@
                 firefly.position.x += firefly.velocity.x;
                 firefly.position.y += firefly.velocity.y;
                 
-                // Добавляем случайность в движение
-                firefly.velocity.x += (Math.random() - 0.5) * 0.05;
-                firefly.velocity.y += (Math.random() - 0.5) * 0.02;
-                
-                // Ограничение скорости
-                firefly.velocity.x = Math.max(-0.5, Math.min(0.5, firefly.velocity.x));
-                firefly.velocity.y = Math.max(0.3, Math.min(1.0, firefly.velocity.y));
-                
                 // Обновление позиции элемента
                 firefly.element.style.left = `${firefly.position.x}%`;
                 firefly.element.style.top = `${firefly.position.y}%`;
                 
                 // Создание следа
-                if (Math.random() > 0.3) {
-                    createTrail(firefly);
-                }
+                createTrail(firefly);
                 
                 // Удаление, если вышли за пределы
                 if (firefly.position.y > 100 || 
@@ -759,7 +741,7 @@
             });
             
             // Создание нового огонька при необходимости
-            if (fireflies.length < maxFireflies && Math.random() > 0.7) {
+            if (fireflies.length < maxFireflies && Math.random() > 0.6) {
                 createFirefly();
             }
             
@@ -767,8 +749,8 @@
         }
         
         // Запуск анимации
-        for (let i = 0; i < 4; i++) {
-            setTimeout(createFirefly, i * 300);
+        for (let i = 0; i < 8; i++) {
+            setTimeout(createFirefly, i * 200);
         }
         requestAnimationFrame(updateFireflies);
     }
