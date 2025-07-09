@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ka">
 <head>
@@ -6,69 +7,59 @@
     <title>Kodi.ge - IMEI Checker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="static/styles.css">
     <style>
-        /* Уникальные стили для блока бесплатной проверки */
-        #free-check-section {
-            background: linear-gradient(135deg, #ffffff 0%, #e6f2ff 100%);
-            border: 1px solid #cce5ff;
-        }
-        #free-check-section .card-header {
-            background: linear-gradient(135deg, #3a86ff 0%, #1e6bff 100%);
-        }
-        .feature-icon {
-            background-color: #e6f2ff;
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
+        /* Добавленные стили для результатов */
+        .status-error { color: #dc3545; }
+        .status-warning { color: #ffc107; }
+        .status-success { color: #28a745; }
+        
+        .result-actions { 
+            display: flex; 
             justify-content: center;
-            margin: 0 auto 15px;
+            margin: 20px 0;
         }
-        .features {
-            background: #f8fbff;
-            border-radius: 10px;
-            padding: 15px;
-            border-left: 4px solid #3a86ff;
-        }
-        .features i {
-            color: var(--success-color);
-        }
-
-        /* Уникальные стили для модального окна */
-        .free-result-card {
-            background: white;
+        
+        .error-card {
+            background: #f8d7da;
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-bottom: 15px;
-            overflow: hidden;
-        }
-        .free-result-card .card-body {
             padding: 20px;
+            margin-top: 20px;
+            text-align: center;
         }
-        .free-result-title {
-            font-size: 1.1rem;
+        .error-card h3 {
             margin-bottom: 15px;
-            color: var(--primary-color);
+            color: #dc3545;
+        }
+        .error-details {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+        
+        .free-check-results {
+            margin-top: 20px;
+        }
+        .result-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .result-row {
             display: flex;
-            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
         }
-        .free-result-title i {
-            margin-right: 10px;
-            font-size: 1.2rem;
+        .result-row:last-child {
+            border-bottom: none;
         }
-        .result-value {
-            font-weight: 500;
-        }
-        .result-status-success {
-            color: var(--success-color);
-        }
-        .result-status-warning {
-            color: var(--warning-color);
-        }
-        .result-status-error {
-            color: var(--danger-color);
+        .result-label {
+            font-weight: bold;
         }
     </style>
 </head>
@@ -294,52 +285,20 @@
             </div>
         </div>
         
-        <!-- Free IMEI Check Section - UPDATED -->
+        <!-- Free IMEI Check Section -->
         <div id="free-check-section" class="card mt-5">
             <div class="card-header">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-search me-3 fa-lg"></i>
-                    <h4 class="mb-0">უფასო IMEI შემოწმება</h4>
-                </div>
+                <i class="fas fa-check-circle me-2"></i>
+                უფასო IMEI შემოწმება
             </div>
             <div class="card-body">
-                <div class="feature-icon mb-3 text-center">
-                    <i class="fas fa-mobile-alt fa-3x text-primary"></i>
-                </div>
-                <p class="text-center fw-bold mb-3">
-                    შეამოწმეთ თქვენი Apple მოწყობილობა უფასოდ რეგისტრაციის გარეშე!
-                </p>
-                <div class="features mb-4">
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="fas fa-check-circle text-success me-2"></i>
-                        <span>გაიგეთ არის თუ არა ტელეფონი ორიგინალი</span>
-                    </div>
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="fas fa-check-circle text-success me-2"></i>
-                        <span>შეამოწმეთ სერვისის მუშაობა უფასოდ</span>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-check-circle text-success me-2"></i>
-                        <span>მიიღეთ ძირითადი ინფორმაცია მოწყობილობის შესახებ</span>
-                    </div>
-                </div>
-                
+                <p>შეამოწმეთ თქვენი Apple მოწყობილობა უფასოდ. შეიყვანეთ IMEI ან სერიული ნომერი.</p>
                 <div class="form-group">
-                    <label class="form-label fw-bold">შეიყვანეთ IMEI ან სერიული ნომერი:</label>
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="fas fa-barcode"></i>
-                        </span>
-                        <input type="text" class="form-control py-2" 
-                               id="free-imei-input" 
-                               placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
-                    </div>
-                    <div class="error-message mt-2" id="free-imei-error"></div>
+                    <label class="form-label">IMEI ან სერიული ნომერი:</label>
+                    <input type="text" class="form-control" id="free-imei-input" placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
+                    <div class="error-message" id="free-imei-error"></div>
                 </div>
-                <button class="btn btn-primary w-100 mt-3 py-2 fw-bold" 
-                        id="free-check-btn">
-                    <i class="fas fa-search me-2"></i>უფასო შემოწმება
-                </button>
+                <button class="btn-primary mt-3" id="free-check-btn">უფასო შემოწმება</button>
             </div>
         </div>
         
@@ -431,26 +390,17 @@
             </div>
         </div>
         
-        <!-- Free Check Results Modal - UPDATED -->
+        <!-- Free Check Results Modal -->
         <div class="modal-backdrop" id="free-modal-backdrop"></div>
         <div class="result-modal" id="free-result-modal">
             <div class="modal-content">
-                <div class="card-header bg-primary text-white position-relative">
-                    <h2 class="text-center mb-0">შემოწმების შედეგები</h2>
-                    <button class="close-modal position-absolute top-0 end-0 mt-2 me-3" 
-                            id="free-close-modal">&times;</button>
+                <div class="card-header">
+                    <h2>უფასო შემოწმების შედეგები</h2>
+                    <button class="close-modal" id="free-close-modal">&times;</button>
                 </div>
-                <div class="card-body p-0" id="free-result-content" 
-                     style="max-height: 70vh; overflow-y: auto;">
-                    <!-- Results will be inserted here -->
-                </div>
-                <div class="card-footer text-center py-3">
-                    <button class="btn btn-outline-primary mx-2" id="free-new-check">
-                        <i class="fas fa-redo me-1"></i>ახალი შემოწმება
-                    </button>
-                    <button class="btn btn-primary mx-2" id="detailed-check-btn">
-                        <i class="fas fa-file-alt me-1"></i>სრული ანგარიში
-                    </button>
+                <div class="card-body" id="free-result-content"></div>
+                <div class="card-footer">
+                    <button class="btn-primary" id="free-new-check">ახალი შემოწმება</button>
                 </div>
             </div>
         </div>
@@ -506,6 +456,7 @@
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="static/js/mobilemenu.js"></script>
     
     <script>
         // Глобальные функции навигации
@@ -526,7 +477,7 @@
             modal.style.display = 'flex';
             setTimeout(() => {
                 modal.style.opacity = '1';
-                modal.style.transform = 'translate(-50%, -50%)';
+                modal.style.transform = 'translateY(0)';
             }, 10);
         }
 
@@ -534,7 +485,7 @@
             const modal = document.getElementById('free-result-modal');
             const backdrop = document.getElementById('free-modal-backdrop');
             modal.style.opacity = '0';
-            modal.style.transform = 'translate(-50%, -50%) translateY(-20px)';
+            modal.style.transform = 'translateY(-20px)';
             setTimeout(() => {
                 modal.style.display = 'none';
                 backdrop.style.display = 'none';
@@ -570,107 +521,84 @@
         function displayFreeResults(data) {
             const resultContent = document.getElementById('free-result-content');
             let resultsHTML = '';
-            const imeiValue = document.getElementById('free-imei-input').value.trim();
 
             if (data.error) {
                 resultsHTML = `
-                    <div class="alert alert-danger m-4">
-                        <h3 class="text-center">${data.error}</h3>
-                        ${data.details ? `<div class="text-center mt-3">${data.details}</div>` : ''}
+                    <div class="error-card">
+                        <h3 class="status-error">${data.error}</h3>
+                        ${data.details ? `<div class="error-details">${data.details}</div>` : ''}
                     </div>
                 `;
             } else {
                 // Проверка на тип устройства
                 const deviceType = (data.device_type || '').toLowerCase();
-                
                 if (deviceType === 'android' || deviceType === 'unknown') {
                     resultsHTML = `
-                        <div class="alert alert-warning m-4">
-                            <h3 class="text-center">${deviceType === 'android' ? 'Android მოწყობილობა' : 'უცნობი მოწყობილობა'}</h3>
-                            <p class="text-center mt-3">ამ გვერდზე შეგიძლიათ მხოლოდ Apple მოწყობილობების შემოწმება.</p>
-                            <div class="text-center mt-4">
-                                <a href="/androidcheck" class="btn btn-success btn-lg">
-                                    <i class="fab fa-android me-2"></i>გადასვლა Android შემოწმებაზე
-                                </a>
+                        <div class="error-card">
+                            <h3 class="status-error">${deviceType === 'android' ? 'Android მოწყობილობა' : 'უცნობი მოწყობილობა'}</h3>
+                            <p>ამ გვერდზე შეგიძლიათ მხოლოდ Apple მოწყობილობების შემოწმება.</p>
+                            <p>თქვენი მოწყობილობა: ${data.brand || 'Unknown'} ${data.model || ''}</p>
+                            <div class="result-actions">
+                                <a href="/androidcheck" class="btn-primary">გადასვლა Android შემოწმებაზე</a>
                             </div>
                         </div>
                     `;
                 } else {
                     // Форматируем результаты для Apple
                     resultsHTML = `
-                        <div class="text-center p-4 bg-light">
-                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                            <h3 class="text-success">შემოწმება დასრულებულია!</h3>
-                            <p class="text-muted">IMEI: <strong>${imeiValue}</strong></p>
+                        <div class="text-center mb-4">
+                            <i class="fas fa-check-circle text-success" style="font-size: 4rem; color: var(--success-color);"></i>
+                            <h3 class="mt-3">შემოწმება დასრულებულია</h3>
+                            <p>IMEI: <strong>${document.getElementById('free-imei-input').value.trim()}</strong></p>
                         </div>
-                        <div class="p-4">
-                            <h4 class="text-center mb-4">მოწყობილობის ინფორმაცია</h4>
-                            <div class="row">
+                        <div class="free-check-results">
+                            <div class="result-card">
+                                <h3 class="card-title">სრული შედეგები</h3>
+                                <div class="card-body">
                     `;
 
-                    // Ключевые поля с переводами
+                    // Ключевые поля
                     const keyFields = {
-                        'მწარმოებელი': {value: data['მწარმოებელი'], icon: 'fas fa-apple'},
-                        'მოდელი': {value: data['მოდელი'], icon: 'fas fa-mobile'},
-                        'მოდელის სახელი': {value: data['მოდელის სახელი'], icon: 'fas fa-tag'},
-                        'წარმოების თარიღი': {value: data['წარმოების თარიღი'], icon: 'fas fa-calendar'},
-                        'აქტივაციის სტატუსი': {value: data['აქტივაციის სტატუსი'], icon: 'fas fa-power-off'},
-                        'FMI სტატუსი': {value: data['FMI სტატუსი'], icon: 'fas fa-cloud'},
-                        'SIM ლოკი': {value: data['SIM ლოკი'], icon: 'fas fa-sim-card'},
-                        'შავი სიის სტატუსი': {value: data['შავი სიის სტატუსი'], icon: 'fas fa-ban'},
-                        'ოპერატორი': {value: data['ოპერატორი'], icon: 'fas fa-tower-cell'},
-                        'გარანტიის სტატუსი': {value: data['გარანტიის სტატუსი'], icon: 'fas fa-shield-alt'}
+                        'brand': 'მწარმოებელი',
+                        'modelName': 'მოდელის სახელი',
+                        'model': 'მოდელი',
+                        'manufacture': 'წარმოების თარიღი',
+                        'state': 'მდგომარეობა',
+                        'activation_status': 'აქტივაციის სტატუსი',
+                        'fmi_status': 'FMI სტატუსი',
+                        'sim_lock': 'SIM ლოკი',
+                        'blacklist_status': 'შავი სია',
+                        'carrier': 'ოპერატორი',
+                        'warranty_status': 'გარანტია'
                     };
 
-                    // Генерация карточек с результатами
                     Object.keys(keyFields).forEach(field => {
-                        const fieldData = keyFields[field];
-                        if (fieldData.value) {
-                            const value = fieldData.value;
+                        if (data[field]) {
+                            const value = data[field];
                             let statusClass = '';
-                            
-                            // Определение класса в зависимости от статуса
                             const valStr = String(value).toLowerCase();
-                            if (valStr.includes('unlocked') || valStr.includes('clean') || 
-                                valStr.includes('off') || valStr.includes('active') || 
-                                valStr.includes('valid')) {
-                                statusClass = 'result-status-success';
-                            } else if (valStr.includes('locked') || valStr.includes('blacklist') || 
-                                       valStr.includes('on') || valStr.includes('inactive') || 
-                                       valStr.includes('expired')) {
-                                statusClass = 'result-status-warning';
-                            } else if (valStr.includes('error') || valStr.includes('fail') || 
-                                       valStr.includes('invalid')) {
-                                statusClass = 'result-status-error';
+                            
+                            if (valStr.includes('unlocked') || valStr.includes('clean') || valStr.includes('off') || valStr.includes('active') || valStr.includes('valid')) {
+                                statusClass = 'status-success';
+                            } else if (valStr.includes('locked') || valStr.includes('blacklist') || valStr.includes('on') || valStr.includes('inactive') || valStr.includes('expired')) {
+                                statusClass = 'status-warning';
+                            } else if (valStr.includes('error') || valStr.includes('fail') || valStr.includes('invalid')) {
+                                statusClass = 'status-error';
                             }
                             
                             resultsHTML += `
-                                <div class="col-md-6 mb-3">
-                                    <div class="free-result-card h-100">
-                                        <div class="card-body">
-                                            <div class="d-flex align-items-center">
-                                                <i class="${fieldData.icon} me-3 text-primary"></i>
-                                                <h5 class="free-result-title mb-0">${field}</h5>
-                                            </div>
-                                            <div class="mt-3">
-                                                <span class="result-value ${statusClass}">${value}</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div class="result-row">
+                                    <span class="result-label">${keyFields[field]}:</span>
+                                    <span class="result-value ${statusClass}">${value}</span>
                                 </div>
                             `;
                         }
                     });
 
-                    // Закрываем теги
+                    // Закрываем все теги (исправлено!)
                     resultsHTML += `
+                                </div>
                             </div>
-                        </div>
-                        <div class="alert alert-info m-4">
-                            <h5 class="text-center">გსურთ სრული ანგარიში?</h5>
-                            <p class="text-center mb-0">
-                                მიიღეთ დეტალური ინფორმაცია FMI, iCloud, შავი სიის და სხვა სტატუსების შესახებ
-                            </p>
                         </div>
                     `;
                 }
@@ -746,16 +674,6 @@
                 document.getElementById('free-imei-input').value = '';
             });
             
-            // Кнопка детальной проверки
-            document.getElementById('detailed-check-btn').addEventListener('click', function() {
-                const imei = document.getElementById('free-imei-input').value.trim();
-                if (imei) {
-                    window.location.href = `/applecheck?imei=${imei}&type=premium`;
-                } else {
-                    alert('გთხოვთ ჯერ შეავსოთ IMEI ველი');
-                }
-            });
-            
             // Initialize statistics counter
             setInterval(() => {
                 try {
@@ -770,24 +688,7 @@
                     console.warn('Error updating counters:', e);
                 }
             }, 5000);
-            
-            // Carousel functionality
-            const slides = document.querySelectorAll('.slide');
-            let currentSlide = 0;
-            
-            function showSlide(n) {
-                slides.forEach(slide => slide.classList.remove('active'));
-                slides[n].classList.add('active');
-            }
-            
-            function nextSlide() {
-                currentSlide = (currentSlide + 1) % slides.length;
-                showSlide(currentSlide);
-            }
-            
-            // Auto rotate slides every 5 seconds
-            setInterval(nextSlide, 5000);
         });
     </script>
 </body>
-                            </html>
+</html>
