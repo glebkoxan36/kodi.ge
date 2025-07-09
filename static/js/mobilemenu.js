@@ -153,7 +153,7 @@
         /* Подняли аватарку на 5px вверх */
         .floating-avatar-container {
             position: absolute;
-            top: -35px;
+            top: -40px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
