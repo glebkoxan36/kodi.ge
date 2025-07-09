@@ -65,9 +65,9 @@
             display: flex;
         }
         
-        /* ИСПРАВЛЕНИЕ #1: Убраны градиенты, оставлено только фоновое изображение */
+        /* Фон с исправленным растяжением */
         .mobile-menu-modal .modal-content {
-            background: url('static/mobilemenu.png') no-repeat center center / cover;
+            background: url('static/mobilemenu.png') no-repeat center top / cover;
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
@@ -144,9 +144,10 @@
             box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
         }
         
+        /* Подняли аватарку на 5px вверх */
         .floating-avatar-container {
             position: absolute;
-            top: -40px;
+            top: -35px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
@@ -183,7 +184,6 @@
             background: transparent !important;
         }
         
-        /* ИСПРАВЛЕНИЕ #2: Добавлена поддержка загруженных аватарок */
         .avatar-image {
             width: 100%;
             height: 100%;
@@ -200,7 +200,8 @@
             background: linear-gradient(135deg, #0a0e17, #1a2138);
             color: #ffffff;
             font-weight: bold;
-            font-size: 1.5rem;
+            /* Уменьшили размер надписи KODI.GE */
+            font-size: 1.2rem;
             text-align: center;
             padding: 10px;
             text-shadow: 0 0 12px rgba(0, 198, 255, 0.8);
@@ -467,7 +468,7 @@
                 height: 55vh;
             }
             .floating-avatar-container {
-                top: -40px;
+                top: -35px; /* Подняли аватарку */
             }
             .floating-avatar {
                 width: 110px;
@@ -536,7 +537,7 @@
     window.goToLogin = function() {
         closeAllMobileMenus();
         setTimeout(() => {
-            window.location.href = "login";
+            window.location.href = "/login";
         }, 100);
     }
 
@@ -556,7 +557,7 @@
             const formattedBalance = (userData.balance || 0).toFixed(2);
             const fullName = `${userData.first_name} ${userData.last_name}`;
             
-            // ИСПРАВЛЕНИЕ #3: Поддержка загруженных аватарок
+            // Поддержка загруженных аватарок
             let avatarHTML;
             if (userData.avatar_url) {
                 avatarHTML = `<img src="${userData.avatar_url}" alt="User Avatar" class="avatar-image">`;
