@@ -1,3 +1,4 @@
+<!-- login.html -->
 <!DOCTYPE html>
 <html lang="ka" class="auth-page">
 <head>
@@ -6,6 +7,35 @@
     <title>ავტორიზაცია</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
+    <style>
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+            color: #6c757d;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
     <div class="gradient-bg gradient-1"></div>
@@ -24,13 +54,44 @@
             <h2>ავტორიზაცია</h2>
         </div>
         
+        <form id="login-form">
+            <input type="hidden" name="csrf_token" id="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label class="form-label" for="identifier">
+                    მომხმარებელი ან ელ. ფოსტა
+                    <span class="tooltip">
+                        <i class="fas fa-info-circle"></i>
+                        <span class="tooltiptext">შეიყვანეთ თქვენი მომხმარებლის სახელი ან ელ.ფოსტა</span>
+                    </span>
+                </label>
+                <input type="text" class="form-control" id="identifier" name="identifier" 
+                       placeholder="შეიყვანეთ მომხმარებელი ან ელ.ფოსტა" required>
+                <div class="error-message" id="identifier_error"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">
+                    პაროლი
+                    <span class="tooltip">
+                        <i class="fas fa-info-circle"></i>
+                        <span class="tooltiptext">შეიყვანეთ თქვენი პაროლი</span>
+                    </span>
+                </label>
+                <input type="password" class="form-control" id="password" name="password" 
+                       placeholder="შეიყვანეთ პაროლი" required>
+                <div class="error-message" id="password_error"></div>
+            </div>
+            
+            <button type="submit" class="btn-primary">შესვლა</button>
+        </form>
+        
         <div class="social-auth">
+            <div class="social-divider">
+                <span>ან</span>
+            </div>
+            
             <div class="social-buttons">
-                <button type="button" class="social-btn google" id="google-btn">
-                    <i class="fab fa-google"></i>
-                    Google-ით შესვლა
-                </button>
-                
                 <button type="button" class="social-btn facebook" id="facebook-btn">
                     <i class="fab fa-facebook-f"></i>
                     Facebook-ით შესვლა
@@ -54,8 +115,15 @@
             
             <form id="forgot-password-form">
                 <div class="form-group">
-                    <label class="form-label" for="recovery-identifier">მომხმარებელი ან ელ. ფოსტა</label>
-                    <input type="text" class="form-control" id="recovery-identifier" name="identifier" required>
+                    <label class="form-label" for="recovery-identifier">
+                        მომხმარებელი ან ელ. ფოსტა
+                        <span class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltiptext">შეიყვანეთ თქვენი მომხმარებლის სახელი ან ელ.ფოსტა</span>
+                        </span>
+                    </label>
+                    <input type="text" class="form-control" id="recovery-identifier" name="identifier" 
+                           placeholder="შეიყვანეთ მომხმარებელი ან ელ.ფოსტა" required>
                     <div class="error-message" id="recovery-error"></div>
                 </div>
                 
@@ -68,11 +136,46 @@
     </div>
 
     <script>
-        // Обработчики кнопок социальных сетей
-        document.getElementById('google-btn').addEventListener('click', () => {
-            window.location.href = "/auth/google";
+        // Обработчик формы входа
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loginBtn = e.target.querySelector('.btn-primary');
+            const originalText = loginBtn.innerHTML;
+            
+            // Показать индикатор загрузки
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> შესვლა';
+            
+            try {
+                const formData = new FormData(e.target);
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    loginBtn.innerHTML = '<i class="fas fa-check"></i> წარმატებული შესვლა';
+                    loginBtn.style.background = 'var(--success-color)';
+                    
+                    setTimeout(() => {
+                        window.location.href = '/user/dashboard';
+                    }, 1500);
+                } else {
+                    loginBtn.innerHTML = originalText;
+                    document.getElementById('identifier_error').textContent = data.message || 'შეცდომა ავტორიზაციის დროს';
+                    document.getElementById('identifier_error').style.display = 'block';
+                }
+            } catch (error) {
+                loginBtn.innerHTML = originalText;
+                document.getElementById('identifier_error').textContent = 'სერვერული შეცდომა';
+                document.getElementById('identifier_error').style.display = 'block';
+            }
         });
         
+        // Обработчики кнопок социальных сетей
         document.getElementById('facebook-btn').addEventListener('click', () => {
             window.location.href = "/auth/facebook";
         });
@@ -121,13 +224,15 @@
                 return;
             }
             
-            // Имитация отправки запроса
-            const success = true;
+            const submitBtn = e.target.querySelector('.btn-primary');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             
-            if (success) {
+            try {
+                // Имитация отправки запроса
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
                 // Анимация успеха
-                const submitBtn = e.target.querySelector('.btn-primary');
-                const originalText = submitBtn.innerHTML;
                 submitBtn.innerHTML = '<i class="fas fa-check"></i> გაგზავნილია';
                 submitBtn.style.background = 'var(--success-color)';
                 
@@ -138,7 +243,8 @@
                     document.getElementById('forgot-password-form').reset();
                     alert('ინსტრუქციები პაროლის აღსადგენად გამოგზავნილია თქვენს ელ. ფოსტაზე!');
                 }, 1500);
-            } else {
+            } catch (error) {
+                submitBtn.innerHTML = originalText;
                 errorElement.textContent = 'მომხმარებელი არ მოიძებნა';
                 errorElement.style.display = 'block';
             }
