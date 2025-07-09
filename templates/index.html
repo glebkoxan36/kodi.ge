@@ -8,45 +8,475 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
     <style>
-        /* Добавленные стили для результатов */
-        .status-error { color: #dc3545; }
-        .status-warning { color: #ffc107; }
-        .status-success { color: #28a745; }
-        
-        .result-actions { 
-            display: flex; 
-            justify-content: center;
-            margin: 20px 0;
+        /* Gradient backgrounds */
+        .gradient-bg {
+            position: fixed;
+            width: 200vw;
+            height: 200vh;
+            background: radial-gradient(circle, rgba(58,134,255,0.15) 0%, rgba(255,255,255,0) 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+        .gradient-1 {
+            top: -100vh;
+            left: -50vw;
+            transform: rotate(30deg);
+        }
+        .gradient-2 {
+            top: -100vh;
+            right: -50vw;
+            transform: rotate(-30deg);
         }
         
-        .error-card {
-            background: #f8d7da;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
+        /* Mobile menu */
+        .mobile-menu-bottom {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: none;
+        }
+        .mobile-menu-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 20px 0;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 3px 0 15px rgba(0,0,0,0.2);
+        }
+        .sidebar-logo {
             text-align: center;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
         }
-        .error-card h3 {
-            margin-bottom: 15px;
-            color: #dc3545;
+        .logo-animated {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 15px;
         }
-        .error-details {
-            background: rgba(255,255,255,0.1);
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-size: 0.9em;
+        .logo-ring {
+            position: absolute;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            animation: pulse 3s infinite;
+        }
+        .logo-ring:nth-child(2) { animation-delay: 1s; }
+        .logo-ring:nth-child(3) { animation-delay: 2s; }
+        .logo-core {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-letter {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
         }
         
-        .free-check-results {
+        /* User profile */
+        .user-profile-section {
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 10px;
+            margin: 0 10px 20px;
+        }
+        .user-profile-section:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .user-avatar-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #4a6fcb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+        .user-name {
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        .user-balance {
+            background: rgba(255,255,255,0.1);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: inline-block;
+        }
+        
+        /* Navigation */
+        .nav-item {
+            margin-bottom: 5px;
+        }
+        .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 0 10px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+        .nav-link i {
+            width: 24px;
+            text-align: center;
+            margin-right: 10px;
+        }
+        .submenu {
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            margin: 5px 0 5px 30px;
+            padding: 5px 0;
+        }
+        .submenu .nav-link {
+            padding: 8px 15px;
+            font-size: 0.95rem;
+        }
+        
+        /* Main content */
+        .main-content {
+            margin-left: 280px;
+            padding: 30px;
+            background: white;
+            min-height: 100vh;
+        }
+        
+        /* Hero section */
+        .hero-section {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        .hero-section .logo-animated {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+        }
+        
+        /* Carousel */
+        .carousel {
+            max-width: 800px;
+            margin: 0 auto;
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .carousel-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        }
+        .slide.active {
+            opacity: 1;
+            z-index: 1;
+        }
+        .placeholder {
+            text-align: center;
+            color: white;
+            padding: 20px;
+        }
+        .placeholder .logo-animated {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 20px;
+        }
+        .placeholder-text {
+            font-size: 1.5rem;
+            font-weight: bold;
             margin-top: 20px;
         }
-        .result-card {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            padding: 20px;
+        
+        /* Cards */
+        .card {
+            border-radius: 15px;
+            overflow: hidden;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+        .card-header {
+            background: var(--primary-color);
+            color: white;
+            font-weight: bold;
+            padding: 15px 20px;
+            border: none;
+            font-size: 1.1rem;
+        }
+        .card-body {
+            padding: 25px;
+        }
+        
+        /* Services */
+        .section-title {
+            text-align: center;
+            margin: 40px 0 30px;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+        .service-card {
+            text-align: center;
+            padding: 25px 20px;
+            border-radius: 15px;
+            transition: all 0.3s;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .service-icon {
             margin-bottom: 20px;
+        }
+        .service-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        .service-card ul {
+            flex-grow: 1;
+            margin-bottom: 20px;
+        }
+        .service-card li {
+            padding: 8px 0;
+            text-align: left;
+        }
+        .service-action {
+            display: block;
+            padding: 10px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s;
+            margin-top: auto;
+        }
+        .service-action:hover {
+            background: #1a4fc4;
+            color: white;
+            text-decoration: none;
+        }
+        
+        /* Statistics */
+        .stat-card {
+            border-radius: 15px;
+            background: linear-gradient(135deg, #f6f9ff 0%, #e6f0ff 100%);
+            border: none;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        /* Footer */
+        footer {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+        footer h5 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        footer ul li {
+            margin-bottom: 10px;
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Free check section - UPDATED */
+        #free-check-section {
+            border: none;
+            background: linear-gradient(135deg, #ffffff 0%, #e6f2ff 100%);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid #cce5ff;
+        }
+        #free-check-section .card-header {
+            background: linear-gradient(135deg, #3a86ff 0%, #1e6bff 100%);
+        }
+        .feature-icon {
+            background-color: #e6f2ff;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+        }
+        .features {
+            background: #f8fbff;
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid #3a86ff;
+            margin-bottom: 20px;
+        }
+        .features i {
+            color: #28a745;
+        }
+        
+        /* Modals */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1050;
+            display: none;
+        }
+        .result-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) translateY(-20px);
+            width: 90%;
+            max-width: 800px;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1060;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .modal-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2rem;
+            color: white;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        /* Spinner */
+        .spinner-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(58,134,255,0.3);
+            border-radius: 50%;
+            border-top-color: #3a86ff;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Error message */
+        .error-message {
+            color: #dc3545;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        /* Results styles */
+        .result-card {
+            margin-bottom: 15px;
         }
         .result-row {
             display: flex;
@@ -54,11 +484,60 @@
             padding: 10px 0;
             border-bottom: 1px solid #eee;
         }
-        .result-row:last-child {
-            border-bottom: none;
+        .status-error { color: #dc3545; }
+        .status-warning { color: #ffc107; }
+        .status-success { color: #28a745; }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .mobile-menu-bottom {
+                display: block;
+            }
         }
-        .result-label {
-            font-weight: bold;
+        
+        /* NEW: Free check results styling */
+        .free-result-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        .free-result-card .card-body {
+            padding: 20px;
+        }
+        .free-result-title {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+        }
+        .free-result-title i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        .result-value {
+            font-weight: 500;
+        }
+        .result-status-success {
+            color: #28a745;
+        }
+        .result-status-warning {
+            color: #ffc107;
+        }
+        .result-status-error {
+            color: #dc3545;
         }
     </style>
 </head>
@@ -284,20 +763,52 @@
             </div>
         </div>
         
-        <!-- Free IMEI Check Section -->
-        <div id="free-check-section" class="card mt-5">
-            <div class="card-header">
-                <i class="fas fa-check-circle me-2"></i>
-                უფასო IMEI შემოწმება
-            </div>
-            <div class="card-body">
-                <p>შეამოწმეთ თქვენი Apple მოწყობილობა უფასოდ. შეიყვანეთ IMEI ან სერიული ნომერი.</p>
-                <div class="form-group">
-                    <label class="form-label">IMEI ან სერიული ნომერი:</label>
-                    <input type="text" class="form-control" id="free-imei-input" placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
-                    <div class="error-message" id="free-imei-error"></div>
+        <!-- Free IMEI Check Section - UPDATED -->
+        <div id="free-check-section" class="card mt-5 shadow-lg border-0">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-search me-3 fa-lg"></i>
+                    <h4 class="mb-0">უფასო IMEI შემოწმება</h4>
                 </div>
-                <button class="btn-primary mt-3" id="free-check-btn">უფასო შემოწმება</button>
+            </div>
+            <div class="card-body bg-light">
+                <div class="feature-icon mb-3 text-center">
+                    <i class="fas fa-mobile-alt fa-3x text-primary"></i>
+                </div>
+                <p class="text-center fw-bold mb-3">
+                    შეამოწმეთ თქვენი Apple მოწყობილობა უფასოდ რეგისტრაციის გარეშე!
+                </p>
+                <div class="features mb-4">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>გაიგეთ არის თუ არა ტელეფონი ორიგინალი</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>შეამოწმეთ სერვისის მუშაობა უფასოდ</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>მიიღეთ ძირითადი ინფორმაცია მოწყობილობის შესახებ</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label fw-bold">შეიყვანეთ IMEI ან სერიული ნომერი:</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-barcode"></i>
+                        </span>
+                        <input type="text" class="form-control py-2" 
+                               id="free-imei-input" 
+                               placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
+                    </div>
+                    <div class="error-message mt-2" id="free-imei-error"></div>
+                </div>
+                <button class="btn btn-primary w-100 mt-3 py-2 fw-bold" 
+                        id="free-check-btn">
+                    <i class="fas fa-search me-2"></i>უფასო შემოწმება
+                </button>
             </div>
         </div>
         
@@ -389,17 +900,26 @@
             </div>
         </div>
         
-        <!-- Free Check Results Modal -->
+        <!-- Free Check Results Modal - UPDATED -->
         <div class="modal-backdrop" id="free-modal-backdrop"></div>
         <div class="result-modal" id="free-result-modal">
             <div class="modal-content">
-                <div class="card-header">
-                    <h2>უფასო შემოწმების შედეგები</h2>
-                    <button class="close-modal" id="free-close-modal">&times;</button>
+                <div class="card-header bg-primary text-white position-relative">
+                    <h2 class="text-center mb-0">შემოწმების შედეგები</h2>
+                    <button class="close-modal position-absolute top-0 end-0 mt-2 me-3" 
+                            id="free-close-modal">&times;</button>
                 </div>
-                <div class="card-body" id="free-result-content"></div>
-                <div class="card-footer">
-                    <button class="btn-primary" id="free-new-check">ახალი შემოწმება</button>
+                <div class="card-body p-0" id="free-result-content" 
+                     style="max-height: 70vh; overflow-y: auto;">
+                    <!-- Results will be inserted here -->
+                </div>
+                <div class="card-footer text-center py-3">
+                    <button class="btn btn-outline-primary mx-2" id="free-new-check">
+                        <i class="fas fa-redo me-1"></i>ახალი შემოწმება
+                    </button>
+                    <button class="btn btn-primary mx-2" id="detailed-check-btn">
+                        <i class="fas fa-file-alt me-1"></i>სრული ანგარიში
+                    </button>
                 </div>
             </div>
         </div>
@@ -476,7 +996,7 @@
             modal.style.display = 'flex';
             setTimeout(() => {
                 modal.style.opacity = '1';
-                modal.style.transform = 'translateY(0)';
+                modal.style.transform = 'translate(-50%, -50%)';
             }, 10);
         }
 
@@ -484,7 +1004,7 @@
             const modal = document.getElementById('free-result-modal');
             const backdrop = document.getElementById('free-modal-backdrop');
             modal.style.opacity = '0';
-            modal.style.transform = 'translateY(-20px)';
+            modal.style.transform = 'translate(-50%, -50%) translateY(-20px)';
             setTimeout(() => {
                 modal.style.display = 'none';
                 backdrop.style.display = 'none';
@@ -520,84 +1040,107 @@
         function displayFreeResults(data) {
             const resultContent = document.getElementById('free-result-content');
             let resultsHTML = '';
+            const imeiValue = document.getElementById('free-imei-input').value.trim();
 
             if (data.error) {
                 resultsHTML = `
-                    <div class="error-card">
-                        <h3 class="status-error">${data.error}</h3>
-                        ${data.details ? `<div class="error-details">${data.details}</div>` : ''}
+                    <div class="alert alert-danger m-4">
+                        <h3 class="text-center">${data.error}</h3>
+                        ${data.details ? `<div class="text-center mt-3">${data.details}</div>` : ''}
                     </div>
                 `;
             } else {
                 // Проверка на тип устройства
                 const deviceType = (data.device_type || '').toLowerCase();
+                
                 if (deviceType === 'android' || deviceType === 'unknown') {
                     resultsHTML = `
-                        <div class="error-card">
-                            <h3 class="status-error">${deviceType === 'android' ? 'Android მოწყობილობა' : 'უცნობი მოწყობილობა'}</h3>
-                            <p>ამ გვერდზე შეგიძლიათ მხოლოდ Apple მოწყობილობების შემოწმება.</p>
-                            <p>თქვენი მოწყობილობა: ${data.brand || 'Unknown'} ${data.model || ''}</p>
-                            <div class="result-actions">
-                                <a href="/androidcheck" class="btn-primary">გადასვლა Android შემოწმებაზე</a>
+                        <div class="alert alert-warning m-4">
+                            <h3 class="text-center">${deviceType === 'android' ? 'Android მოწყობილობა' : 'უცნობი მოწყობილობა'}</h3>
+                            <p class="text-center mt-3">ამ გვერდზე შეგიძლიათ მხოლოდ Apple მოწყობილობების შემოწმება.</p>
+                            <div class="text-center mt-4">
+                                <a href="/androidcheck" class="btn btn-success btn-lg">
+                                    <i class="fab fa-android me-2"></i>გადასვლა Android შემოწმებაზე
+                                </a>
                             </div>
                         </div>
                     `;
                 } else {
                     // Форматируем результаты для Apple
                     resultsHTML = `
-                        <div class="text-center mb-4">
-                            <i class="fas fa-check-circle text-success" style="font-size: 4rem; color: var(--success-color);"></i>
-                            <h3 class="mt-3">შემოწმება დასრულებულია</h3>
-                            <p>IMEI: <strong>${document.getElementById('free-imei-input').value.trim()}</strong></p>
+                        <div class="text-center p-4 bg-light">
+                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                            <h3 class="text-success">შემოწმება დასრულებულია!</h3>
+                            <p class="text-muted">IMEI: <strong>${imeiValue}</strong></p>
                         </div>
-                        <div class="free-check-results">
-                            <div class="result-card">
-                                <h3 class="card-title">სრული შედეგები</h3>
-                                <div class="card-body">
+                        <div class="p-4">
+                            <h4 class="text-center mb-4">მოწყობილობის ინფორმაცია</h4>
+                            <div class="row">
                     `;
 
-                    // Ключевые поля
+                    // Ключевые поля с переводами
                     const keyFields = {
-                        'brand': 'მწარმოებელი',
-                        'modelName': 'მოდელის სახელი',
-                        'model': 'მოდელი',
-                        'manufacture': 'წარმოების თარიღი',
-                        'state': 'მდგომარეობა',
-                        'activation_status': 'აქტივაციის სტატუსი',
-                        'fmi_status': 'FMI სტატუსი',
-                        'sim_lock': 'SIM ლოკი',
-                        'blacklist_status': 'შავი სია',
-                        'carrier': 'ოპერატორი',
-                        'warranty_status': 'გარანტია'
+                        'მწარმოებელი': {value: data['მწარმოებელი'], icon: 'fas fa-apple'},
+                        'მოდელი': {value: data['მოდელი'], icon: 'fas fa-mobile'},
+                        'მოდელის სახელი': {value: data['მოდელის სახელი'], icon: 'fas fa-tag'},
+                        'წარმოების თარიღი': {value: data['წარმოების თარიღი'], icon: 'fas fa-calendar'},
+                        'აქტივაციის სტატუსი': {value: data['აქტივაციის სტატუსი'], icon: 'fas fa-power-off'},
+                        'FMI სტატუსი': {value: data['FMI სტატუსი'], icon: 'fas fa-cloud'},
+                        'SIM ლოკი': {value: data['SIM ლოკი'], icon: 'fas fa-sim-card'},
+                        'შავი სიის სტატუსი': {value: data['შავი სიის სტატუსი'], icon: 'fas fa-ban'},
+                        'ოპერატორი': {value: data['ოპერატორი'], icon: 'fas fa-tower-cell'},
+                        'გარანტიის სტატუსი': {value: data['გარანტიის სტატუსი'], icon: 'fas fa-shield-alt'}
                     };
 
+                    // Генерация карточек с результатами
                     Object.keys(keyFields).forEach(field => {
-                        if (data[field]) {
-                            const value = data[field];
+                        const fieldData = keyFields[field];
+                        if (fieldData.value) {
+                            const value = fieldData.value;
                             let statusClass = '';
-                            const valStr = String(value).toLowerCase();
                             
-                            if (valStr.includes('unlocked') || valStr.includes('clean') || valStr.includes('off') || valStr.includes('active') || valStr.includes('valid')) {
-                                statusClass = 'status-success';
-                            } else if (valStr.includes('locked') || valStr.includes('blacklist') || valStr.includes('on') || valStr.includes('inactive') || valStr.includes('expired')) {
-                                statusClass = 'status-warning';
-                            } else if (valStr.includes('error') || valStr.includes('fail') || valStr.includes('invalid')) {
-                                statusClass = 'status-error';
+                            // Определение класса в зависимости от статуса
+                            const valStr = String(value).toLowerCase();
+                            if (valStr.includes('unlocked') || valStr.includes('clean') || 
+                                valStr.includes('off') || valStr.includes('active') || 
+                                valStr.includes('valid')) {
+                                statusClass = 'result-status-success';
+                            } else if (valStr.includes('locked') || valStr.includes('blacklist') || 
+                                       valStr.includes('on') || valStr.includes('inactive') || 
+                                       valStr.includes('expired')) {
+                                statusClass = 'result-status-warning';
+                            } else if (valStr.includes('error') || valStr.includes('fail') || 
+                                       valStr.includes('invalid')) {
+                                statusClass = 'result-status-error';
                             }
                             
                             resultsHTML += `
-                                <div class="result-row">
-                                    <span class="result-label">${keyFields[field]}:</span>
-                                    <span class="result-value ${statusClass}">${value}</span>
+                                <div class="col-md-6 mb-3">
+                                    <div class="free-result-card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <i class="${fieldData.icon} me-3 text-primary"></i>
+                                                <h5 class="free-result-title mb-0">${field}</h5>
+                                            </div>
+                                            <div class="mt-3">
+                                                <span class="result-value ${statusClass}">${value}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             `;
                         }
                     });
 
-                    // Закрываем все теги (исправлено!)
+                    // Закрываем теги
                     resultsHTML += `
-                                </div>
                             </div>
+                        </div>
+                        <div class="alert alert-info m-4">
+                            <h5 class="text-center">გსურთ სრული ანგარიში?</h5>
+                            <p class="text-center mb-0">
+                                მიიღეთ დეტალური ინფორმაცია FMI, iCloud, შავი სიის და სხვა სტატუსების შესახებ
+                            </p>
                         </div>
                     `;
                 }
@@ -673,6 +1216,16 @@
                 document.getElementById('free-imei-input').value = '';
             });
             
+            // Кнопка детальной проверки
+            document.getElementById('detailed-check-btn').addEventListener('click', function() {
+                const imei = document.getElementById('free-imei-input').value.trim();
+                if (imei) {
+                    window.location.href = `/applecheck?imei=${imei}&type=premium`;
+                } else {
+                    alert('გთხოვთ ჯერ შეავსოთ IMEI ველი');
+                }
+            });
+            
             // Initialize statistics counter
             setInterval(() => {
                 try {
@@ -687,6 +1240,23 @@
                     console.warn('Error updating counters:', e);
                 }
             }, 5000);
+            
+            // Carousel functionality
+            const slides = document.querySelectorAll('.slide');
+            let currentSlide = 0;
+            
+            function showSlide(n) {
+                slides.forEach(slide => slide.classList.remove('active'));
+                slides[n].classList.add('active');
+            }
+            
+            function nextSlide() {
+                currentSlide = (currentSlide + 1) % slides.length;
+                showSlide(currentSlide);
+            }
+            
+            // Auto rotate slides every 5 seconds
+            setInterval(nextSlide, 5000);
         });
     </script>
 </body>
