@@ -68,7 +68,7 @@
         .mobile-menu-modal .modal-content {
             background: 
                 linear-gradient(135deg, rgba(10,14,23,0.97), rgba(26,33,56,0.97)),
-                url('static/menufon.jpg') no-repeat center center / cover;
+                url('static/mobilemenu.png') no-repeat center center / cover;
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
@@ -542,19 +542,23 @@
 
     // Функция для генерации HTML пользователя
     function generateUserHTML() {
-        if (window.currentUser && window.currentUser.first_name) {
-            // Форматируем баланс с помощью toFixed(2)
-            const formattedBalance = window.currentUser.balance.toFixed(2);
+        // Проверяем наличие данных пользователя
+        const userData = window.currentUser || {};
+        
+        if (userData.first_name && userData.last_name) {
+            const formattedBalance = (userData.balance || 0).toFixed(2);
+            const initials = `${userData.first_name.charAt(0)}${userData.last_name.charAt(0)}`;
+            const fullName = `${userData.first_name} ${userData.last_name}`;
             
             return `
                 <div class="floating-avatar" onclick="window.goToDashboard()">
-                    <div class="avatar-placeholder" style="background-color: ${window.currentUser.avatar_color}">
-                        ${window.currentUser.first_name.charAt(0)}${window.currentUser.last_name.charAt(0)}
+                    <div class="avatar-placeholder" style="background-color: ${userData.avatar_color || '#1a2138'}">
+                        ${initials}
                     </div>
                 </div>
                 <div class="user-info-container">
                     <div class="floating-avatar-info" onclick="window.goToDashboard()">
-                        ${window.currentUser.first_name} ${window.currentUser.last_name}
+                        ${fullName}
                     </div>
                     <div class="user-balance" onclick="window.goToDashboard()">
                         ბალანსი: ${formattedBalance}₾
