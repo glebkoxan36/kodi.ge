@@ -1,3 +1,4 @@
+<!-- register.html -->
 <!DOCTYPE html>
 <html lang="ka" class="auth-page">
 <head>
@@ -6,6 +7,46 @@
     <title>რეგისტრაცია</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
+    <style>
+        .date-input-container {
+            position: relative;
+        }
+        .datepicker-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            cursor: pointer;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+            color: #6c757d;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
     <div class="gradient-bg gradient-1"></div>
@@ -29,115 +70,68 @@
             <input type="hidden" name="csrf_token" id="csrf_token" value="{{ csrf_token() }}">
             
             <div class="form-group">
-                <label class="form-label" for="first_name">სახელი</label>
-                <input type="text" class="form-control" id="first_name" name="first_name" required>
+                <label class="form-label" for="first_name">
+                    სახელი
+                    <span class="tooltip">
+                        <i class="fas fa-info-circle"></i>
+                        <span class="tooltiptext">მხოლოდ ქართული ასოები (ა-ჰ)</span>
+                    </span>
+                </label>
+                <input type="text" class="form-control" id="first_name" name="first_name" 
+                       placeholder="შეიყვანეთ თქვენი სახელი" required>
                 <div class="error-message" id="first_name_error"></div>
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="last_name">გვარი</label>
-                <input type="text" class="form-control" id="last_name" name="last_name" required>
+                <label class="form-label" for="last_name">
+                    გვარი
+                    <span class="tooltip">
+                        <i class="fas fa-info-circle"></i>
+                        <span class="tooltiptext">მხოლოდ ქართული ასოები (ა-ჰ)</span>
+                    </span>
+                </label>
+                <input type="text" class="form-control" id="last_name" name="last_name" 
+                       placeholder="შეიყვანეთ თქვენი გვარი" required>
                 <div class="error-message" id="last_name_error"></div>
             </div>
             
             <div class="form-group">
-                <label class="form-label">დაბადების თარიღი</label>
-                <div class="birth-date-group">
-                    <select class="form-control" id="birth_day" name="birth_day" required>
-                        <option value="">დღე</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option value="11">11</option>
-                        <option value="12">12</option>
-                        <option value="13">13</option>
-                        <option value="14">14</option>
-                        <option value="15">15</option>
-                        <option value="16">16</option>
-                        <option value="17">17</option>
-                        <option value="18">18</option>
-                        <option value="19">19</option>
-                        <option value="20">20</option>
-                        <option value="21">21</option>
-                        <option value="22">22</option>
-                        <option value="23">23</option>
-                        <option value="24">24</option>
-                        <option value="25">25</option>
-                        <option value="26">26</option>
-                        <option value="27">27</option>
-                        <option value="28">28</option>
-                        <option value="29">29</option>
-                        <option value="30">30</option>
-                        <option value="31">31</option>
-                    </select>
-                    
-                    <select class="form-control" id="birth_month" name="birth_month" required>
-                        <option value="">თვე</option>
-                        <option value="1">იანვარი</option>
-                        <option value="2">თებერვალი</option>
-                        <option value="3">მარტი</option>
-                        <option value="4">აპრილი</option>
-                        <option value="5">მაისი</option>
-                        <option value="6">ივნისი</option>
-                        <option value="7">ივლისი</option>
-                        <option value="8">აგვისტო</option>
-                        <option value="9">სექტემბერი</option>
-                        <option value="10">ოქტომბერი</option>
-                        <option value="11">ნოემბერი</option>
-                        <option value="12">დეკემბერი</option>
-                    </select>
-                    
-                    <select class="form-control" id="birth_year" name="birth_year" required>
-                        <option value="">წელი</option>
-                        <option value="2005">2005</option>
-                        <option value="2004">2004</option>
-                        <option value="2003">2003</option>
-                        <option value="2002">2002</option>
-                        <option value="2001">2001</option>
-                        <option value="2000">2000</option>
-                        <option value="1999">1999</option>
-                        <option value="1998">1998</option>
-                        <option value="1997">1997</option>
-                        <option value="1996">1996</option>
-                        <option value="1995">1995</option>
-                        <option value="1994">1994</option>
-                        <option value="1993">1993</option>
-                        <option value="1992">1992</option>
-                        <option value="1991">1991</option>
-                        <option value="1990">1990</option>
-                    </select>
+                <label class="form-label" for="birth_date">დაბადების თარიღი</label>
+                <div class="date-input-container">
+                    <input type="text" class="form-control" id="birth_date" name="birth_date" 
+                           placeholder="დდ/თთ/წწწწ" readonly required>
+                    <span class="datepicker-toggle">
+                        <i class="fas fa-calendar-alt"></i>
+                    </span>
                 </div>
                 <div class="error-message" id="birth_date_error"></div>
             </div>
             
             <div class="form-group">
                 <label class="form-label" for="phone">ტელეფონის ნომერი</label>
-                <input type="tel" class="form-control" id="phone" name="phone" placeholder="+995XXXXXXXXX" required>
+                <input type="tel" class="form-control" id="phone" name="phone" 
+                       placeholder="+995XXXXXXXXX" required>
                 <div class="error-message" id="phone_error"></div>
             </div>
             
             <div class="form-group">
                 <label class="form-label" for="email">ელ. ფოსტა</label>
-                <input type="email" class="form-control" id="email" name="email" required>
+                <input type="email" class="form-control" id="email" name="email" 
+                       placeholder="შეიყვანეთ თქვენი ელ. ფოსტა" required>
                 <div class="error-message" id="email_error"></div>
             </div>
             
             <div class="form-group">
                 <label class="form-label" for="username">მომხმარებლის სახელი</label>
-                <input type="text" class="form-control" id="username" name="username" required>
+                <input type="text" class="form-control" id="username" name="username" 
+                       placeholder="შეიყვანეთ სასურველი მომხმარებლის სახელი" required>
                 <div class="error-message" id="username_error"></div>
             </div>
             
             <div class="form-group">
                 <label class="form-label" for="password">პაროლი</label>
-                <input type="password" class="form-control" id="password" name="password" required>
+                <input type="password" class="form-control" id="password" name="password" 
+                       placeholder="შეიყვანეთ პაროლი" required>
                 <div class="password-requirements">
                     პაროლი უნდა შეიცავდეს:
                     <ul>
@@ -153,7 +147,8 @@
             
             <div class="form-group">
                 <label class="form-label" for="confirm_password">გაიმეორეთ პაროლი</label>
-                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                       placeholder="გაიმეორეთ პაროლი" required>
                 <div class="error-message" id="confirm_password_error"></div>
             </div>
             
@@ -166,11 +161,6 @@
             </div>
             
             <div class="social-buttons">
-                <button type="button" class="social-btn google" id="google-btn">
-                    <i class="fab fa-google"></i>
-                    Google-ით რეგისტრაცია
-                </button>
-                
                 <button type="button" class="social-btn facebook" id="facebook-btn">
                     <i class="fab fa-facebook-f"></i>
                     Facebook-ით რეგისტრაცია
@@ -183,15 +173,148 @@
         </div>
     </div>
 
+    <div id="datepicker-modal" class="modal">
+        <div class="modal-content" style="max-width: 300px;">
+            <div class="modal-header">
+                <h3>აირჩიეთ თარიღი</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="datepicker"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" id="confirm-date">არჩევა</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Calendar generation
+        function generateCalendar(year, month) {
+            const calendar = document.getElementById('datepicker');
+            calendar.innerHTML = '';
+            
+            const header = document.createElement('div');
+            header.className = 'calendar-header';
+            
+            const prevBtn = document.createElement('button');
+            prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+            prevBtn.addEventListener('click', () => {
+                if (month === 0) {
+                    month = 11;
+                    year--;
+                } else {
+                    month--;
+                }
+                generateCalendar(year, month);
+            });
+            
+            const nextBtn = document.createElement('button');
+            nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            nextBtn.addEventListener('click', () => {
+                if (month === 11) {
+                    month = 0;
+                    year++;
+                } else {
+                    month++;
+                }
+                generateCalendar(year, month);
+            });
+            
+            const monthYear = document.createElement('span');
+            const months = ['იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი', 
+                          'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი'];
+            monthYear.textContent = `${months[month]} ${year}`;
+            
+            header.appendChild(prevBtn);
+            header.appendChild(monthYear);
+            header.appendChild(nextBtn);
+            calendar.appendChild(header);
+            
+            // Weekdays
+            const weekdays = ['ორ', 'სამ', 'ოთხ', 'ხუთ', 'პარ', 'შაბ', 'კვ'];
+            const weekdayRow = document.createElement('div');
+            weekdayRow.className = 'calendar-weekdays';
+            weekdays.forEach(day => {
+                const dayElem = document.createElement('div');
+                dayElem.textContent = day;
+                weekdayRow.appendChild(dayElem);
+            });
+            calendar.appendChild(weekdayRow);
+            
+            // Days
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysRow = document.createElement('div');
+            daysRow.className = 'calendar-days';
+            
+            // Empty cells
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'calendar-day empty';
+                daysRow.appendChild(emptyCell);
+            }
+            
+            // Actual days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.className = 'calendar-day';
+                dayCell.textContent = day;
+                dayCell.addEventListener('click', () => {
+                    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
+                    dayCell.classList.add('selected');
+                    selectedDate = new Date(year, month, day);
+                });
+                daysRow.appendChild(dayCell);
+            }
+            
+            calendar.appendChild(daysRow);
+        }
+        
+        let selectedDate = null;
+        
+        // Datepicker modal control
+        const dateModal = document.getElementById('datepicker-modal');
+        const dateInput = document.getElementById('birth_date');
+        const datepickerToggle = document.querySelector('.datepicker-toggle');
+        
+        dateInput.addEventListener('click', showDatePicker);
+        datepickerToggle.addEventListener('click', showDatePicker);
+        
+        function showDatePicker() {
+            const today = new Date();
+            generateCalendar(today.getFullYear(), today.getMonth());
+            dateModal.style.display = 'block';
+        }
+        
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', () => {
+                dateModal.style.display = 'none';
+            });
+        });
+        
+        document.getElementById('confirm-date').addEventListener('click', () => {
+            if (selectedDate) {
+                const day = String(selectedDate.getDate()).padStart(2, '0');
+                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const year = selectedDate.getFullYear();
+                dateInput.value = `${day}/${month}/${year}`;
+            }
+            dateModal.style.display = 'none';
+        });
+        
+        window.addEventListener('click', (e) => {
+            if (e.target === dateModal) {
+                dateModal.style.display = 'none';
+            }
+        });
+        
         // Функция валидации формы
         function validateForm() {
             let isValid = true;
             const firstName = document.getElementById('first_name');
             const lastName = document.getElementById('last_name');
-            const birthDay = document.getElementById('birth_day');
-            const birthMonth = document.getElementById('birth_month');
-            const birthYear = document.getElementById('birth_year');
+            const birthDate = document.getElementById('birth_date');
             const phone = document.getElementById('phone');
             const email = document.getElementById('email');
             const username = document.getElementById('username');
@@ -204,20 +327,27 @@
                 el.style.display = 'none';
             });
             
-            // Валидация имени
+            // Валидация имени (только грузинские буквы)
+            const georgianRegex = /^[\u10A0-\u10FF\s]+$/;
             if (!firstName.value.trim()) {
                 showError('first_name_error', 'გთხოვთ შეიყვანოთ თქვენი სახელი');
                 isValid = false;
+            } else if (!georgianRegex.test(firstName.value)) {
+                showError('first_name_error', 'გთხოვთ გამოიყენოთ მხოლოდ ქართული ასოები');
+                isValid = false;
             }
             
-            // Валидация фамилии
+            // Валидация фамилии (только грузинские буквы)
             if (!lastName.value.trim()) {
                 showError('last_name_error', 'გთხოვთ შეიყვანოთ თქვენი გვარი');
+                isValid = false;
+            } else if (!georgianRegex.test(lastName.value)) {
+                showError('last_name_error', 'გთხოვთ გამოიყენოთ მხოლოდ ქართული ასოები');
                 isValid = false;
             }
             
             // Валидация даты рождения
-            if (!birthDay.value || !birthMonth.value || !birthYear.value) {
+            if (!birthDate.value) {
                 showError('birth_date_error', 'გთხოვთ აირჩიოთ დაბადების თარიღი');
                 isValid = false;
             }
@@ -281,6 +411,13 @@
                 // Сбор данных формы
                 const formData = new FormData(e.target);
                 
+                // Convert birth date to YYYY-MM-DD format
+                const birthDateParts = formData.get('birth_date').split('/');
+                if (birthDateParts.length === 3) {
+                    const formattedDate = `${birthDateParts[2]}-${birthDateParts[1]}-${birthDateParts[0]}`;
+                    formData.set('birth_date', formattedDate);
+                }
+                
                 const response = await fetch('/register', {
                     method: 'POST',
                     body: formData,
@@ -316,10 +453,6 @@
         });
         
         // Обработчики кнопок социальных сетей
-        document.getElementById('google-btn').addEventListener('click', () => {
-            alert('Google-ით რეგისტრაცია ამჟამად მიუწვდომელია');
-        });
-        
         document.getElementById('facebook-btn').addEventListener('click', () => {
             alert('Facebook-ით რეგისტრაცია ამჟამად მიუწვდომელია');
         });
@@ -336,4 +469,4 @@
         });
     </script>
 </body>
-    </html>
+</html>
