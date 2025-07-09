@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ka">
 <head>
@@ -60,6 +59,43 @@
         }
         .result-label {
             font-weight: bold;
+        }
+        
+        /* New styles for the updated free check section */
+        .highlight-card {
+            background: linear-gradient(135deg, #ffffff 0%, #e6f2ff 100%);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid #cce5ff;
+        }
+        
+        .feature-icon {
+            background-color: #e6f2ff;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+        }
+        
+        .features {
+            background: #f8fbff;
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid #3a86ff;
+        }
+        
+        .result-modal {
+            max-width: 800px;
+            width: 90%;
+        }
+        
+        .modal-content {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
     </style>
 </head>
@@ -285,20 +321,52 @@
             </div>
         </div>
         
-        <!-- Free IMEI Check Section -->
-        <div id="free-check-section" class="card mt-5">
-            <div class="card-header">
-                <i class="fas fa-check-circle me-2"></i>
-                უფასო IMEI შემოწმება
-            </div>
-            <div class="card-body">
-                <p>შეამოწმეთ თქვენი Apple მოწყობილობა უფასოდ. შეიყვანეთ IMEI ან სერიული ნომერი.</p>
-                <div class="form-group">
-                    <label class="form-label">IMEI ან სერიული ნომერი:</label>
-                    <input type="text" class="form-control" id="free-imei-input" placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
-                    <div class="error-message" id="free-imei-error"></div>
+        <!-- Free IMEI Check Section - UPDATED -->
+        <div id="free-check-section" class="card mt-5 shadow-lg border-0">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-search me-3 fa-lg"></i>
+                    <h4 class="mb-0">უფასო IMEI შემოწმება</h4>
                 </div>
-                <button class="btn-primary mt-3" id="free-check-btn">უფასო შემოწმება</button>
+            </div>
+            <div class="card-body bg-light">
+                <div class="feature-icon mb-3 text-center">
+                    <i class="fas fa-mobile-alt fa-3x text-primary"></i>
+                </div>
+                <p class="text-center fw-bold mb-3">
+                    შეამოწმეთ თქვენი Apple მოწყობილობა უფასოდ რეგისტრაციის გარეშე!
+                </p>
+                <div class="features mb-4">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>გაიგეთ არის თუ არა ტელეფონი ორიგინალი</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>შეამოწმეთ სერვისის მუშაობა უფასოდ</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>მიიღეთ ძირითადი ინფორმაცია მოწყობილობის შესახებ</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label fw-bold">შეიყვანეთ IMEI ან სერიული ნომერი:</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-barcode"></i>
+                        </span>
+                        <input type="text" class="form-control py-2" 
+                               id="free-imei-input" 
+                               placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
+                    </div>
+                    <div class="error-message mt-2" id="free-imei-error"></div>
+                </div>
+                <button class="btn btn-primary w-100 mt-3 py-2 fw-bold" 
+                        id="free-check-btn">
+                    <i class="fas fa-search me-2"></i>უფასო შემოწმება
+                </button>
             </div>
         </div>
         
@@ -390,17 +458,26 @@
             </div>
         </div>
         
-        <!-- Free Check Results Modal -->
+        <!-- Free Check Results Modal - UPDATED -->
         <div class="modal-backdrop" id="free-modal-backdrop"></div>
         <div class="result-modal" id="free-result-modal">
             <div class="modal-content">
-                <div class="card-header">
-                    <h2>უფასო შემოწმების შედეგები</h2>
-                    <button class="close-modal" id="free-close-modal">&times;</button>
+                <div class="card-header bg-primary text-white position-relative">
+                    <h2 class="text-center mb-0">შემოწმების შედეგები</h2>
+                    <button class="close-modal position-absolute top-0 end-0 mt-2 me-3" 
+                            id="free-close-modal">&times;</button>
                 </div>
-                <div class="card-body" id="free-result-content"></div>
-                <div class="card-footer">
-                    <button class="btn-primary" id="free-new-check">ახალი შემოწმება</button>
+                <div class="card-body p-0" id="free-result-content" 
+                     style="max-height: 70vh; overflow-y: auto;">
+                    <!-- Results will be inserted here -->
+                </div>
+                <div class="card-footer text-center py-3">
+                    <button class="btn btn-outline-primary mx-2" id="free-new-check">
+                        <i class="fas fa-redo me-1"></i>ახალი შემოწმება
+                    </button>
+                    <button class="btn btn-primary mx-2" id="detailed-check-btn">
+                        <i class="fas fa-file-alt me-1"></i>სრული ანგარიში
+                    </button>
                 </div>
             </div>
         </div>
@@ -517,88 +594,111 @@
             return checkDigit === parseInt(imei[14]);
         }
 
-        // Функция для отображения результатов
+        // Обновленная функция отображения результатов
         function displayFreeResults(data) {
             const resultContent = document.getElementById('free-result-content');
             let resultsHTML = '';
 
             if (data.error) {
                 resultsHTML = `
-                    <div class="error-card">
-                        <h3 class="status-error">${data.error}</h3>
-                        ${data.details ? `<div class="error-details">${data.details}</div>` : ''}
+                    <div class="alert alert-danger m-4">
+                        <h3 class="text-center">${data.error}</h3>
+                        ${data.details ? `<div class="text-center mt-3">${data.details}</div>` : ''}
                     </div>
                 `;
             } else {
-                // Проверка на тип устройства
                 const deviceType = (data.device_type || '').toLowerCase();
+                const imeiValue = document.getElementById('free-imei-input').value.trim();
+                
                 if (deviceType === 'android' || deviceType === 'unknown') {
                     resultsHTML = `
-                        <div class="error-card">
-                            <h3 class="status-error">${deviceType === 'android' ? 'Android მოწყობილობა' : 'უცნობი მოწყობილობა'}</h3>
-                            <p>ამ გვერდზე შეგიძლიათ მხოლოდ Apple მოწყობილობების შემოწმება.</p>
-                            <p>თქვენი მოწყობილობა: ${data.brand || 'Unknown'} ${data.model || ''}</p>
-                            <div class="result-actions">
-                                <a href="/androidcheck" class="btn-primary">გადასვლა Android შემოწმებაზე</a>
+                        <div class="alert alert-warning m-4">
+                            <h3 class="text-center">${deviceType === 'android' ? 'Android მოწყობილობა' : 'უცნობი მოწყობილობა'}</h3>
+                            <p class="text-center mt-3">ამ გვერდზე შეგიძლიათ მხოლოდ Apple მოწყობილობების შემოწმება.</p>
+                            <div class="text-center mt-4">
+                                <a href="/androidcheck" class="btn btn-success btn-lg">
+                                    <i class="fab fa-android me-2"></i>გადასვლა Android შემოწმებაზე
+                                </a>
                             </div>
                         </div>
                     `;
                 } else {
-                    // Форматируем результаты для Apple
-                    resultsHTML = `
-                        <div class="text-center mb-4">
-                            <i class="fas fa-check-circle text-success" style="font-size: 4rem; color: var(--success-color);"></i>
-                            <h3 class="mt-3">შემოწმება დასრულებულია</h3>
-                            <p>IMEI: <strong>${document.getElementById('free-imei-input').value.trim()}</strong></p>
-                        </div>
-                        <div class="free-check-results">
-                            <div class="result-card">
-                                <h3 class="card-title">სრული შედეგები</h3>
-                                <div class="card-body">
-                    `;
-
-                    // Ключевые поля
-                    const keyFields = {
-                        'brand': 'მწარმოებელი',
-                        'modelName': 'მოდელის სახელი',
-                        'model': 'მოდელი',
-                        'manufacture': 'წარმოების თარიღი',
-                        'state': 'მდგომარეობა',
-                        'activation_status': 'აქტივაციის სტატუსი',
-                        'fmi_status': 'FMI სტატუსი',
-                        'sim_lock': 'SIM ლოკი',
-                        'blacklist_status': 'შავი სია',
-                        'carrier': 'ოპერატორი',
-                        'warranty_status': 'გარანტია'
+                    // Mapping between English keys and Georgian field names
+                    const fieldMap = {
+                        'brand': { name: 'მწარმოებელი', icon: 'fas fa-apple' },
+                        'model': { name: 'მოდელი', icon: 'fas fa-mobile' },
+                        'modelName': { name: 'მოდელის სახელი', icon: 'fas fa-tag' },
+                        'manufacture': { name: 'წარმოების თარიღი', icon: 'fas fa-calendar' },
+                        'state': { name: 'მდგომარეობა', icon: 'fas fa-info-circle' },
+                        'activation_status': { name: 'აქტივაციის სტატუსი', icon: 'fas fa-power-off' },
+                        'fmi_status': { name: 'FMI სტატუსი', icon: 'fas fa-cloud' },
+                        'sim_lock': { name: 'SIM ლოკი', icon: 'fas fa-sim-card' },
+                        'blacklist_status': { name: 'შავი სიის სტატუსი', icon: 'fas fa-ban' },
+                        'carrier': { name: 'ოპერატორი', icon: 'fas fa-tower-cell' },
+                        'warranty_status': { name: 'გარანტიის სტატუსი', icon: 'fas fa-shield-alt' }
                     };
 
-                    Object.keys(keyFields).forEach(field => {
-                        if (data[field]) {
-                            const value = data[field];
+                    // Форматируем результаты для Apple
+                    resultsHTML = `
+                        <div class="text-center p-4 bg-light">
+                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                            <h3 class="text-success">შემოწმება დასრულებულია!</h3>
+                            <p class="text-muted">IMEI: <strong>${imeiValue}</strong></p>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="text-center mb-4">მოწყობილობის ინფორმაცია</h4>
+                            <div class="row">
+                    `;
+
+                    // Generate result cards
+                    Object.keys(fieldMap).forEach(engKey => {
+                        if (data[engKey]) {
+                            const fieldInfo = fieldMap[engKey];
+                            const value = data[engKey];
                             let statusClass = '';
-                            const valStr = String(value).toLowerCase();
                             
-                            if (valStr.includes('unlocked') || valStr.includes('clean') || valStr.includes('off') || valStr.includes('active') || valStr.includes('valid')) {
-                                statusClass = 'status-success';
-                            } else if (valStr.includes('locked') || valStr.includes('blacklist') || valStr.includes('on') || valStr.includes('inactive') || valStr.includes('expired')) {
-                                statusClass = 'status-warning';
-                            } else if (valStr.includes('error') || valStr.includes('fail') || valStr.includes('invalid')) {
-                                statusClass = 'status-error';
+                            // Определение класса в зависимости от статуса
+                            const valStr = String(value).toLowerCase();
+                            if (valStr.includes('unlocked') || valStr.includes('clean') || 
+                                valStr.includes('off') || valStr.includes('active') || 
+                                valStr.includes('valid')) {
+                                statusClass = 'text-success';
+                            } else if (valStr.includes('locked') || valStr.includes('blacklist') || 
+                                    valStr.includes('on') || valStr.includes('inactive') || 
+                                    valStr.includes('expired')) {
+                                statusClass = 'text-warning';
+                            } else if (valStr.includes('error') || valStr.includes('fail') || 
+                                    valStr.includes('invalid')) {
+                                statusClass = 'text-danger';
                             }
                             
                             resultsHTML += `
-                                <div class="result-row">
-                                    <span class="result-label">${keyFields[field]}:</span>
-                                    <span class="result-value ${statusClass}">${value}</span>
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <i class="${fieldInfo.icon} fa-lg me-3 text-primary"></i>
+                                                <h5 class="card-title mb-0">${fieldInfo.name}</h5>
+                                            </div>
+                                            <div class="mt-3">
+                                                <span class="fw-bold ${statusClass}">${value}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             `;
                         }
                     });
 
-                    // Закрываем все теги (исправлено!)
+                    // Закрываем теги
                     resultsHTML += `
-                                </div>
                             </div>
+                        </div>
+                        <div class="alert alert-info m-4">
+                            <h5 class="text-center">გსურთ სრული ანგარიში?</h5>
+                            <p class="text-center mb-0">
+                                მიიღეთ დეტალური ინფორმაცია FMI, iCloud, შავი სიის და სხვა სტატუსების შესახებ
+                            </p>
                         </div>
                     `;
                 }
@@ -672,6 +772,12 @@
             document.getElementById('free-new-check').addEventListener('click', function() {
                 closeFreeModal();
                 document.getElementById('free-imei-input').value = '';
+            });
+            
+            // Кнопка "სრული ანგარიში" в модальном окне
+            document.getElementById('detailed-check-btn').addEventListener('click', function() {
+                const imei = document.getElementById('free-imei-input').value.trim();
+                window.location.href = `/applecheck?imei=${imei}&type=premium`;
             });
             
             // Initialize statistics counter
