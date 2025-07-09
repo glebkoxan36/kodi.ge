@@ -5,6 +5,9 @@ from bson import ObjectId
 from datetime import datetime
 import re
 
+# Используем импортированную коллекцию из db.py
+from db import regular_users_collection
+
 auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -61,13 +64,10 @@ def register():
             return jsonify(success=False, errors=['პაროლი უნდა შეიცავდეს მინიმუმ ერთ სპეციალურ სიმბოლოს (@$!%*?&)'])
         
         # Проверка уникальности email и username
-        db = current_app.config['db']
-        users_collection = db['users']
-        
-        if users_collection.find_one({'email': email}):
+        if regular_users_collection.find_one({'email': email}):
             return jsonify(success=False, errors=['მომხმარებელი ამ ელ. ფოსტით უკვე არსებობს'])
         
-        if users_collection.find_one({'username': username}):
+        if regular_users_collection.find_one({'username': username}):
             return jsonify(success=False, errors=['მომხმარებელი ამ სახელით უკვე არსებობს'])
         
         # Преобразование даты рождения
@@ -94,7 +94,7 @@ def register():
         }
         
         # Сохранение в базу данных
-        user_id = users_collection.insert_one(user).inserted_id
+        user_id = regular_users_collection.insert_one(user).inserted_id
         
         # Автоматический вход после регистрации
         session['user_id'] = str(user_id)
@@ -113,11 +113,8 @@ def login():
         if not identifier or not password:
             return jsonify(success=False, message='გთხოვთ შეავსოთ ყველა ველი')
         
-        db = current_app.config['db']
-        users_collection = db['users']
-        
         # Поиск пользователя по email или username
-        user = users_collection.find_one({
+        user = regular_users_collection.find_one({
             '$or': [
                 {'email': identifier},
                 {'username': identifier}
