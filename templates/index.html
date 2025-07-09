@@ -6,8 +6,24 @@
     <title>Kodi.ge - IMEI Checker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="static/styles.css">
     <style>
+        :root {
+            --primary-color: #3a86ff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --light-bg: #f8f9fa;
+            --card-bg: #ffffff;
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
         /* Gradient backgrounds */
         .gradient-bg {
             position: fixed;
@@ -181,7 +197,6 @@
         .main-content {
             margin-left: 280px;
             padding: 30px;
-            background: white;
             min-height: 100vh;
         }
         
@@ -253,6 +268,7 @@
             border: none;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05);
             margin-bottom: 25px;
+            background: var(--card-bg);
         }
         .card-header {
             background: var(--primary-color);
@@ -292,6 +308,7 @@
             height: 100%;
             display: flex;
             flex-direction: column;
+            background: var(--card-bg);
         }
         .service-card:hover {
             transform: translateY(-5px);
@@ -366,12 +383,9 @@
             100% { transform: scale(1); opacity: 1; }
         }
         
-        /* Free check section - UPDATED */
+        /* Free check section */
         #free-check-section {
-            border: none;
             background: linear-gradient(135deg, #ffffff 0%, #e6f2ff 100%);
-            border-radius: 15px;
-            overflow: hidden;
             border: 1px solid #cce5ff;
         }
         #free-check-section .card-header {
@@ -392,10 +406,9 @@
             border-radius: 10px;
             padding: 15px;
             border-left: 4px solid #3a86ff;
-            margin-bottom: 20px;
         }
         .features i {
-            color: #28a745;
+            color: var(--success-color);
         }
         
         /* Modals */
@@ -469,7 +482,7 @@
         
         /* Error message */
         .error-message {
-            color: #dc3545;
+            color: var(--danger-color);
             font-size: 0.9rem;
             display: none;
         }
@@ -484,9 +497,9 @@
             padding: 10px 0;
             border-bottom: 1px solid #eee;
         }
-        .status-error { color: #dc3545; }
-        .status-warning { color: #ffc107; }
-        .status-success { color: #28a745; }
+        .status-error { color: var(--danger-color); }
+        .status-warning { color: var(--warning-color); }
+        .status-success { color: var(--success-color); }
         
         /* Responsive */
         @media (max-width: 992px) {
@@ -505,7 +518,7 @@
             }
         }
         
-        /* NEW: Free check results styling */
+        /* Free check results styling */
         .free-result-card {
             background: white;
             border-radius: 12px;
@@ -531,13 +544,13 @@
             font-weight: 500;
         }
         .result-status-success {
-            color: #28a745;
+            color: var(--success-color);
         }
         .result-status-warning {
-            color: #ffc107;
+            color: var(--warning-color);
         }
         .result-status-error {
-            color: #dc3545;
+            color: var(--danger-color);
         }
     </style>
 </head>
@@ -764,14 +777,14 @@
         </div>
         
         <!-- Free IMEI Check Section - UPDATED -->
-        <div id="free-check-section" class="card mt-5 shadow-lg border-0">
-            <div class="card-header bg-primary text-white">
+        <div id="free-check-section" class="card mt-5">
+            <div class="card-header">
                 <div class="d-flex align-items-center">
                     <i class="fas fa-search me-3 fa-lg"></i>
                     <h4 class="mb-0">უფასო IMEI შემოწმება</h4>
                 </div>
             </div>
-            <div class="card-body bg-light">
+            <div class="card-body">
                 <div class="feature-icon mb-3 text-center">
                     <i class="fas fa-mobile-alt fa-3x text-primary"></i>
                 </div>
@@ -975,7 +988,6 @@
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="static/js/mobilemenu.js"></script>
     
     <script>
         // Глобальные функции навигации
@@ -1260,4 +1272,4 @@
         });
     </script>
 </body>
-</html>
+                        </html>
