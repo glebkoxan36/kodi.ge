@@ -65,9 +65,10 @@
             display: flex;
         }
         
-        /* Фон с исправленным растяжением */
+        /* ФИКС РАСТЯНУТОГО ИЗОБРАЖЕНИЯ */
         .mobile-menu-modal .modal-content {
-            background: url('static/mobilemenu.jpg') no-repeat center top / cover background-size: 100% auto;
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                         url('static/mobilemenu.jpg') no-repeat center center / cover;
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
@@ -78,6 +79,11 @@
             width: 100%;
             height: 100%;
             z-index: 1;
+            
+            /* Гарантия правильного отображения */
+            background-attachment: scroll;
+            background-origin: border-box;
+            background-clip: border-box;
         }
 
         /* Красивые линии для фона */
