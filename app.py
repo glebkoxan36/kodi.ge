@@ -10,7 +10,7 @@ import time
 import threading
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, Blueprint
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app
 from flask_cors import CORS
 from pymongo import MongoClient
 import stripe
@@ -22,8 +22,6 @@ from urllib.parse import quote_plus
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_session import Session
 from bs4 import BeautifulSoup
-import clerk
-import jwt
 
 class StripePayment:
     def __init__(self, stripe_api_key, webhook_secret, users_collection, payments_collection, refunds_collection):
@@ -400,24 +398,8 @@ Session(app)
 # Инициализация CSRF защиты
 csrf = CSRFProtect(app)
 
-# Конфигурация Clerk
-CLERK_FRONTEND_API = "useful-bullfrog-88"
-CLERK_BACKEND_API = "https://api.clerk.com"
-CLERK_JWKS_URL = "https://useful-bullfrog-88.clerk.accounts.dev/.well-known/jwks.json"
-CLERK_PUBLIC_KEY = """
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwrB9umt67Q0Wj/NunGnz
-dUeccWEMhhwodweBF0V0D5OmMNXwc0VtnqdyfZAVzeP2+ChBKFX2iRS4t39/fxP4
-5DD2f628KXIbRq9nv3Y9hE9NnqHcTLKuZI7Emb3HQTBGuqOqZMj20bT1tzei7N5o
-TrJa5Md1nhzpRBHoDrOjBdZioacc4dvMD/hemjhIN/DvPDr8BQSxREK95lNGDfIy
-dIP2h7KOUQuWvM8Hx03bnfxu89a+Rj2MONWzmH6unY7wbSoSNhzz41zZ1DGEcvVK
-4+8LjFjNwlYANVrzBjxWKXFkBldGBuGjqlEsZ44N9K4G5Ti7F4G45rVVtI0Ml6Ce
-kwIDAQAB
------END PUBLIC KEY-----
-""".strip()
-
-# Семафор для ограничения одновременных запросов
-REQUEST_SEMAPHORE = threading.BoundedSemaphore(3)  # Максимум 3 одновременных запроса
+# Семафор для ограничения запросов
+REQUEST_SEMAPHORE = threading.BoundedSemaphore(3)
 
 # Функция для генерации цвета аватара
 def generate_avatar_color(name):
@@ -443,8 +425,7 @@ def inject_user_data():
         user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
         if user:
             avatar_color = generate_avatar_color(
-                user.get('first_name', '') + ' ' + user.get('last_name', '')
-            )
+                user.get('first_name', '') + ' ' + user.get('last_name', ''))
             return {
                 'currentUser': {
                     'first_name': user.get('first_name', ''),
@@ -478,7 +459,6 @@ MONGODB_URI = os.getenv('MONGODB_URI')
 # Данные для PHP API
 API_URL = "https://api.ifreeicloud.co.uk"
 API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 PLACEHOLDER = '/static/placeholder.jpg'
 
 # MongoDB - безопасная инициализация
@@ -1369,17 +1349,6 @@ def health_check():
         status['services']['external_api'] = f'ERROR: {str(e)}'
         status['status'] = 'ERROR'
     
-    # Проверка Gemini API
-    try:
-        import google.generativeai as genai
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content("Ping", generation_config=genai.types.GenerationConfig(max_output_tokens=1))
-        status['services']['gemini_api'] = 'OK'
-    except Exception as e:
-        status['services']['gemini_api'] = f'ERROR: {str(e)}'
-        status['status'] = 'ERROR'
-    
     return jsonify(status), 200 if status['status'] == 'OK' else 500
 
 # ======================================
@@ -1882,115 +1851,155 @@ def check_details(check_id):
 
 auth_bp = Blueprint('auth', __name__)
 
-@auth_bp.route('/register', methods=['GET'])
-def show_register_form():
-    """Перенаправление на страницу регистрации Clerk"""
-    return redirect(f"https://{CLERK_FRONTEND_API}.clerk.accounts.dev/sign-up")
-
-@auth_bp.route('/login', methods=['GET'])
-def show_login_form():
-    """Отображение страницы входа с кнопками социальных сетей"""
-    return render_template('login.html')
-
-def verify_session_token(session_token):
-    """Проверка токена сессии Clerk с использованием публичного ключа"""
-    try:
-        # Декодируем токен без проверки подписи для получения заголовка
-        header = jwt.get_unverified_header(session_token)
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        # Получение данных формы
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        birth_day = request.form.get('birth_day')
+        birth_month = request.form.get('birth_month')
+        birth_year = request.form.get('birth_year')
+        phone = request.form.get('phone')
+        email = request.form.get('email')
+        username = request.form.get('username')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
         
-        # Проверяем алгоритм
-        if header.get('alg') != 'RS256':
-            app.logger.error("Invalid algorithm in JWT token")
-            return None
+        # Проверка заполненности полей
+        if not all([first_name, last_name, birth_day, birth_month, birth_year, 
+                   phone, email, username, password, confirm_password]):
+            flash('გთხოვთ შეავსოთ ყველა ველი', 'danger')
+            return redirect(url_for('auth.register'))
         
-        # Декодируем токен с использованием публичного ключа
-        decoded = jwt.decode(
-            session_token,
-            CLERK_PUBLIC_KEY,
-            algorithms=["RS256"],
-            audience=CLERK_FRONTEND_API,
-            issuer=f"https://{CLERK_FRONTEND_API}.clerk.accounts.dev"
-        )
-        return decoded
-    except jwt.ExpiredSignatureError:
-        app.logger.error("Session token expired")
-        return None
-    except jwt.InvalidTokenError as e:
-        app.logger.error(f"Invalid session token: {str(e)}")
-        return None
-    except Exception as e:
-        app.logger.error(f"Error verifying session token: {str(e)}")
-        return None
-
-@auth_bp.route('/auth/google')
-def auth_google():
-    """Перенаправление на аутентификацию Google через Clerk"""
-    redirect_url = quote_plus(url_for('auth.auth_callback', _external=True))
-    return redirect(f"https://{CLERK_FRONTEND_API}.clerk.accounts.dev/oauth/google?redirect_url={redirect_url}")
-
-@auth_bp.route('/auth/facebook')
-def auth_facebook():
-    """Перенаправление на аутентификацию Facebook через Clerk"""
-    redirect_url = quote_plus(url_for('auth.auth_callback', _external=True))
-    return redirect(f"https://{CLERK_FRONTEND_API}.clerk.accounts.dev/oauth/facebook?redirect_url={redirect_url}")
-
-@auth_bp.route('/auth/callback')
-def auth_callback():
-    """Обработка callback от Clerk после аутентификации"""
-    session_token = request.args.get('__session')
-    if not session_token:
-        app.logger.error("Session token is missing in callback")
-        flash('Ошибка аутентификации: отсутствует токен сессии', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    try:
-        # Проверка сессии Clerk
-        user_data = verify_session_token(session_token)
+        # Проверка совпадения паролей
+        if password != confirm_password:
+            flash('პაროლები არ ემთხვევა', 'danger')
+            return redirect(url_for('auth.register'))
         
-        if not user_data:
-            app.logger.error("Invalid session token")
-            flash('Ошибка аутентификации: недействительный токен', 'danger')
-            return redirect(url_for('auth.login'))
+        # Валидация email
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            flash('ელ. ფოსტის არასწორი ფორმატი', 'danger')
+            return redirect(url_for('auth.register'))
         
-        app.logger.info(f"Verified user data: {user_data}")
+        # Валидация телефона
+        if not re.match(r'^\+995\d{9}$', phone):
+            flash('ტელეფონის ნომერი უნდა იყოს ფორმატით +995XXXXXXXXX', 'danger')
+            return redirect(url_for('auth.register'))
         
-        # Поиск или создание пользователя
-        user = regular_users_collection.find_one({'clerk_user_id': user_data['sub']})
-        if not user:
-            # Создаем нового пользователя
-            email = user_data.get('email')
-            
-            new_user = {
-                'clerk_user_id': user_data['sub'],
-                'first_name': user_data.get('given_name', ''),
-                'last_name': user_data.get('family_name', ''),
-                'email': email,
-                'role': 'user',
-                'balance': 0.0,
-                'created_at': datetime.utcnow()
-            }
-            result = regular_users_collection.insert_one(new_user)
-            user_id = result.inserted_id
-        else:
-            user_id = user['_id']
+        # Проверка длины логина
+        if len(username) < 4:
+            flash('მომხმარებლის სახელი უნდა შედგებოდეს მინიმუმ 4 სიმბოლოსგან', 'danger')
+            return redirect(url_for('auth.register'))
         
-        # Установка сессии
+        # Проверка сложности пароля
+        if len(password) < 12:
+            flash('პაროლი უნდა შედგებოდეს მინიმუმ 12 სიმბოლოსგან', 'danger')
+            return redirect(url_for('auth.register'))
+        if not re.search(r'[A-Z]', password):
+            flash('პაროლი უნდა შეიცავდეს მინიმუმ ერთ დიდ ასოს', 'danger')
+            return redirect(url_for('auth.register'))
+        if not re.search(r'[a-z]', password):
+            flash('პაროლი უნდა შეიცავდეს მინიმუმ ერთ პატარა ასოს', 'danger')
+            return redirect(url_for('auth.register'))
+        if not re.search(r'[0-9]', password):
+            flash('პაროლი უნდა შეიცავდეს მინიმუმ ერთ ციფრს', 'danger')
+            return redirect(url_for('auth.register'))
+        if not re.search(r'[@$!%*?&]', password):
+            flash('პაროლი უნდა შეიცავდეს მინიმუმ ერთ სპეციალურ სიმბოლოს (@$!%*?&)', 'danger')
+            return redirect(url_for('auth.register'))
+        
+        # Проверка уникальности email и username
+        if not client:
+            flash('Database unavailable', 'danger')
+            return redirect(url_for('auth.register'))
+        
+        if regular_users_collection.find_one({'email': email}):
+            flash('მომხმარებელი ამ ელ. ფოსტით უკვე არსებობს', 'danger')
+            return redirect(url_for('auth.register'))
+        
+        if regular_users_collection.find_one({'username': username}):
+            flash('მომხმარებელი ამ სახელით უკვე არსებობს', 'danger')
+            return redirect(url_for('auth.register'))
+        
+        # Создание пользователя
+        hashed_password = generate_password_hash(password)
+        birth_date = datetime(int(birth_year), int(birth_month), int(birth_day))
+        
+        user = {
+            'first_name': first_name,
+            'last_name': last_name,
+            'birth_date': birth_date,
+            'phone': phone,
+            'email': email,
+            'username': username,
+            'password': hashed_password,
+            'balance': 0.0,
+            'role': 'user',
+            'created_at': datetime.utcnow(),
+            'updated_at': datetime.utcnow()
+        }
+        
+        # Сохранение в базу данных
+        try:
+            user_id = regular_users_collection.insert_one(user).inserted_id
+        except Exception as e:
+            flash(f'შეცდომა მონაცემთა ბაზაში: {str(e)}', 'danger')
+            return redirect(url_for('auth.register'))
+        
+        # Автоматический вход после регистрации
         session['user_id'] = str(user_id)
         session['role'] = 'user'
-        session.modified = True
         
+        flash('რეგისტრაცია წარმატებით დასრულდა!', 'success')
         return redirect(url_for('user.dashboard'))
     
-    except Exception as e:
-        app.logger.error(f'Clerk auth error: {str(e)}', exc_info=True)
-        flash('Ошибка аутентификации', 'danger')
-        return redirect(url_for('auth.login'))
+    return render_template('register.html')
+
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        identifier = request.form.get('identifier')
+        password = request.form.get('password')
+        
+        if not identifier or not password:
+            flash('გთხოვთ შეავსოთ ყველა ველი', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        if not client:
+            flash('Database unavailable', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        # Поиск пользователя по email или username
+        user = regular_users_collection.find_one({
+            '$or': [
+                {'email': identifier},
+                {'username': identifier}
+            ]
+        })
+        
+        if not user:
+            flash('მომხმარებლის სახელი ან პაროლი არასწორია', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        if not check_password_hash(user['password'], password):
+            flash('მომხმარებლის სახელი ან პაროლი არასწორია', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        # Успешная аутентификация
+        session['user_id'] = str(user['_id'])
+        session['role'] = user.get('role', 'user')
+        
+        flash('წარმატებული შესვლა!', 'success')
+        return redirect(url_for('user.dashboard'))
+    
+    return render_template('login.html')
 
 @auth_bp.route('/logout')
 def logout():
-    """Выход из системы с перенаправлением на Clerk"""
     session.clear()
-    return redirect(f"https://{CLERK_FRONTEND_API}.clerk.accounts.dev/sign-out")
+    flash('თქვენ გამოხვედით სისტემიდან', 'success')
+    return redirect(url_for('auth.login'))
 
 # ======================================
 # Регистрация блюпринтов
