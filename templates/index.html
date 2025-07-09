@@ -7,6 +7,142 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
+    <style>
+        /* Free Check Modal Styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2999;
+            display: none;
+        }
+        
+        .result-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+        
+        .result-modal .modal-content {
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            transition: 
+                opacity 0.3s ease, 
+                transform 0.3s ease;
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        
+        .result-modal .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .result-modal .card-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        
+        .result-modal .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+        
+        .result-modal .card-body {
+            padding: 20px;
+        }
+        
+        .result-modal .card-footer {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+        }
+        
+        .spinner-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .spinner {
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 5px solid var(--primary-color);
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-error { color: var(--danger-color); }
+        .status-warning { color: var(--warning-color); }
+        .status-success { color: var(--success-color); }
+        
+        .error-message {
+            display: none;
+            color: var(--danger-color);
+            margin-top: 5px;
+        }
+        
+        .error-card {
+            background: var(--danger-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .error-details {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+        
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .result-label {
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <!-- Gradient background elements -->
@@ -197,6 +333,7 @@
                     </div>
                 </div>
             </div>
+        </div>
         
         <!-- About Section -->
         <div id="about" class="card">
@@ -226,6 +363,23 @@
                     <li>გაიგოთ მოწყობილობის სტატუსი (ქულდებაში, მოპარული, უკანონო)</li>
                     <li>გაიგოთ ტელეფონის მოდელი და სერიული ნომერი</li>
                 </ul>
+            </div>
+        </div>
+        
+        <!-- Free IMEI Check Section -->
+        <div id="free-check-section" class="card mt-5">
+            <div class="card-header">
+                <i class="fas fa-check-circle me-2"></i>
+                უფასო IMEI შემოწმება
+            </div>
+            <div class="card-body">
+                <p>შეამოწმეთ თქვენი Apple მოწყობილობა უფასოდ. შეიყვანეთ IMEI ან სერიული ნომერი.</p>
+                <div class="form-group">
+                    <label class="form-label">IMEI ან სერიული ნომერი:</label>
+                    <input type="text" class="form-control" id="free-imei-input" placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
+                    <div class="error-message" id="free-imei-error"></div>
+                </div>
+                <button class="btn-primary mt-3" id="free-check-btn">უფასო შემოწმება</button>
             </div>
         </div>
         
@@ -261,9 +415,9 @@
                         <h3 class="service-title">Android IMEI შემოწმება</h3>
                         <ul class="list-unstyled">
                             <li><i class="fas fa-check-circle me-2 text-success"></i> Samsung მოწყობილობები</li>
-                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> Xiaomi და Redmi</li>
-                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> Google Pixel</li>
-                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> Huawei და Honor</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> Xiaomi და Redmi</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> Google Pixel</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> Huawei და Honor</li>
                         </ul>
                         <a href="/androidcheck" class="service-action">
                             <i class="fas fa-arrow-right me-1"></i> შეამოწმეთ Android
@@ -279,10 +433,10 @@
                         </div>
                         <h3 class="service-title">ტელეფონების შედარება</h3>
                         <ul class="list-unstyled">
-                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> AI-ზე დაფუძნებული ანალიზი</li>
-                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> მახასიათებლების შედარება</li>
-                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> ფასის/ხარისხის თანაფარდობა</li>
-                            <li><i class="fas fa-check-circle me-2 text_SUCCESS"></i> სრული ანგარიშის გენერირება</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> AI-ზე დაფუძნებული ანალიზი</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> მახასიათებლების შედარება</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> ფასის/ხარისხის თანაფარდობა</li>
+                            <li><i class="fas fa-check-circle me-2 text-success"></i> სრული ანგარიშის გენერირება</li>
                         </ul>
                         <a href="/compare" class="service-action">
                             <i class="fas fa-arrow-right me-1"></i> შეადარეთ ტელეფონები
@@ -315,6 +469,25 @@
                     <div class="stat-label">შემოწმება თვეში</div>
                 </div>
             </div>
+        </div>
+        
+        <!-- Free Check Results Modal -->
+        <div class="modal-backdrop" id="free-modal-backdrop"></div>
+        <div class="result-modal" id="free-result-modal">
+            <div class="modal-content">
+                <div class="card-header">
+                    <h2>უფასო შემოწმების შედეგები</h2>
+                    <button class="close-modal" id="free-close-modal">&times;</button>
+                </div>
+                <div class="card-body" id="free-result-content"></div>
+                <div class="card-footer">
+                    <button class="btn-primary" id="free-new-check">ახალი შემოწმება</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="spinner-container" id="free-check-spinner">
+            <div class="spinner"></div>
         </div>
         
         <!-- Footer -->
@@ -363,37 +536,213 @@
         window.goToDashboard = function() {
             window.location.href = "/user/dashboard";
         }
-    </script>
-    
-    <!-- Скрипт для новой карусели -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const slides = document.querySelectorAll('.slide');
-            let currentSlide = 0;
-            
-            // Функция для переключения слайдов
-            function nextSlide() {
-                slides[currentSlide].classList.remove('active');
-                currentSlide = (currentSlide + 1) % slides.length;
-                slides[currentSlide].classList.add('active');
+        
+        // Функции управления модальными окнами для бесплатной проверки
+        function openFreeModal() {
+            const modal = document.getElementById('free-result-modal');
+            const backdrop = document.getElementById('free-modal-backdrop');
+            document.body.classList.add('modal-open');
+            backdrop.style.display = 'block';
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.style.opacity = '1';
+                modal.style.transform = 'translateY(0)';
+            }, 10);
+        }
+
+        function closeFreeModal() {
+            const modal = document.getElementById('free-result-modal');
+            const backdrop = document.getElementById('free-modal-backdrop');
+            modal.style.opacity = '0';
+            modal.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                modal.style.display = 'none';
+                backdrop.style.display = 'none';
+                document.body.classList.remove('modal-open');
+            }, 300);
+        }
+
+        // Функция для получения CSRF токена
+        function getCSRFToken() {
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            return meta ? meta.content : '';
+        }
+
+        // Валидация IMEI
+        function validateImei(imei) {
+            if (!/^[\dA-Za-z]+$/.test(imei)) return false;
+            if (imei.length !== 14 && imei.length !== 15) return false;
+            if (imei.length === 14) return true;
+            let sum = 0;
+            for (let i = 0; i < 14; i++) {
+                let digit = parseInt(imei[i]);
+                if (i % 2 === 1) {
+                    digit *= 2;
+                    if (digit > 9) digit -= 9;
+                }
+                sum += digit;
             }
+            const checkDigit = (10 - (sum % 10)) % 10;
+            return checkDigit === parseInt(imei[14]);
+        }
+
+        // Функция для отображения результатов
+        function displayFreeResults(data) {
+            const resultContent = document.getElementById('free-result-content');
+            let resultsHTML = '';
+
+            if (data.error) {
+                resultsHTML = `
+                    <div class="error-card">
+                        <h3 class="status-error">${data.error}</h3>
+                        ${data.details ? `<div class="error-details">${data.details}</div>` : ''}
+                    </div>
+                `;
+            } else {
+                // Проверка на тип устройства
+                const deviceType = (data.device_type || '').toLowerCase();
+                if (deviceType === 'android' || deviceType === 'unknown') {
+                    resultsHTML = `
+                        <div class="error-card">
+                            <h3 class="status-error">${deviceType === 'android' ? 'Android მოწყობილობა' : 'უცნობი მოწყობილობა'}</h3>
+                            <p>ამ გვერდზე შეგიძლიათ მხოლოდ Apple მოწყობილობების შემოწმება.</p>
+                            <p>თქვენი მოწყობილობა: ${data.brand || 'Unknown'} ${data.model || ''}</p>
+                            <div class="result-actions">
+                                <a href="/android_check" class="btn-primary">გადასვლა Android შემოწმებაზე</a>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Форматируем результаты для Apple
+                    resultsHTML = `
+                        <div class="text-center mb-4">
+                            <i class="fas fa-check-circle text-success" style="font-size: 4rem; color: var(--success-color);"></i>
+                            <h3 class="mt-3">შემოწმება დასრულებულია</h3>
+                            <p>IMEI: <strong>${document.getElementById('free-imei-input').value.trim()}</strong></p>
+                        </div>
+                        <div class="free-check-results">
+                            <div class="result-card">
+                                <h3 class="card-title">სრული შედეგები</h3>
+                                <div class="card-body">
+                    `;
+
+                    // Ключевые поля
+                    const keyFields = {
+                        'brand': 'მწარმოებელი',
+                        'modelName': 'მოდელის სახელი',
+                        'model': 'მოდელი',
+                        'manufacture': 'წარმოების თარიღი',
+                        'state': 'მდგომარეობა',
+                        'activation_status': 'აქტივაციის სტატუსი',
+                        'fmi_status': 'FMI სტატუსი',
+                        'sim_lock': 'SIM ლოკი',
+                        'blacklist_status': 'შავი სია',
+                        'carrier': 'ოპერატორი',
+                        'warranty_status': 'გარანტია'
+                    };
+
+                    Object.keys(keyFields).forEach(field => {
+                        if (data[field]) {
+                            const value = data[field];
+                            let statusClass = '';
+                            const valStr = String(value).toLowerCase();
+                            
+                            if (valStr.includes('unlocked') || valStr.includes('clean') || valStr.includes('off') || valStr.includes('active') || valStr.includes('valid')) {
+                                statusClass = 'status-success';
+                            } else if (valStr.includes('locked') || valStr.includes('blacklist') || valStr.includes('on') || valStr.includes('inactive') || valStr.includes('expired')) {
+                                statusClass = 'status-warning';
+                            } else if (valStr.includes('error') || valStr.includes('fail') || valStr.includes('invalid')) {
+                                statusClass = 'status-error';
+                            }
+                            
+                            resultsHTML += `
+                                <div class="result-row">
+                                    <span class="result-label">${keyFields[field]}:</span>
+                                    <span class="result-value ${statusClass}">${value}</span>
+                                </div>
+                            `;
+                        }
+                    });
+
+                    resultsHTML += `
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            resultContent.innerHTML = resultsHTML;
+            openFreeModal();
+        }
+
+        // Функция для выполнения проверки
+        function performFreeCheck() {
+            const imeiInput = document.getElementById('free-imei-input');
+            const imei = imeiInput.value.trim();
+            const errorElement = document.getElementById('free-imei-error');
+            const spinner = document.getElementById('free-check-spinner');
+
+            // Валидация
+            if (!imei) {
+                errorElement.textContent = 'გთხოვთ შეიყვანოთ IMEI ან სერიული ნომერი';
+                errorElement.style.display = 'block';
+                return;
+            }
+
+            if (!validateImei(imei)) {
+                errorElement.textContent = 'შეიყვანეთ სწორი IMEI ნომერი (14 ან 15 ციფრი)';
+                errorElement.style.display = 'block';
+                return;
+            }
+
+            errorElement.style.display = 'none';
+            spinner.style.display = 'flex';
+
+            // Отправка запроса
+            fetch('/perform_check', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    imei: imei,
+                    service_type: 'free'
+                })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('ქსელის პასუხი არასწორია');
+                return response.json();
+            })
+            .then(data => {
+                spinner.style.display = 'none';
+                displayFreeResults(data);
+            })
+            .catch(error => {
+                spinner.style.display = 'none';
+                errorElement.textContent = 'შეცდომა: ' + error.message;
+                errorElement.style.display = 'block';
+            });
+        }
+
+        // Обработчики событий после загрузки DOM
+        document.addEventListener('DOMContentLoaded', function() {
+            // Кнопка бесплатной проверки
+            document.getElementById('free-check-btn').addEventListener('click', performFreeCheck);
+
+            // Закрыть модальное окно
+            document.getElementById('free-close-modal').addEventListener('click', closeFreeModal);
+            document.getElementById('free-modal-backdrop').addEventListener('click', closeFreeModal);
+
+            // Кнопка "ახალი შემოწმება" в модальном окне
+            document.getElementById('free-new-check').addEventListener('click', function() {
+                closeFreeModal();
+                document.getElementById('free-imei-input').value = '';
+            });
             
-            // Запуск автоматической смены слайдов
-            setInterval(nextSlide, 5000);
-        });
-    </script>
-    
-    <script>
-        window.currentUser = {% if currentUser %}
-            {{ currentUser|tojson|safe }}
-        {% else %}
-            null
-        {% endif %};
-    </script>
-    
-    <script>
-        // Initialize statistics counter
-        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize statistics counter
             setInterval(() => {
                 try {
                     const daily = document.getElementById('daily-checks');
