@@ -166,8 +166,8 @@
         }
         
         .floating-avatar {
-            width: 110px;
-            height: 110px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             object-fit: cover;
             position: relative;
@@ -204,8 +204,8 @@
             flex-direction: column;
             align-items: center;
             gap: 5px;
-            margin-bottom: 20px;
-            margin-top: 25px;
+            margin-bottom: 15px;
+            margin-top: 20px;
         }
         
         .floating-avatar-info {
@@ -254,8 +254,8 @@
         
         /* Увеличенные иконки с градиентом */
         .menu-item i {
-            font-size: 38px !important;
-            margin-bottom: 10px;
+            font-size: 32px !important;
+            margin-bottom: 8px;
             background: linear-gradient(135deg, #00c6ff, #0072ff);
             -webkit-background-clip: text;
             background-clip: text;
@@ -284,20 +284,20 @@
             box-shadow: none !important;
         }
         
-        /* Увеличенные ячейки сетки */
+        /* Уменьшенные ячейки сетки */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
-            gap: 15px;
+            gap: 12px;
             width: 100%;
-            max-width: 460px;
-            height: 460px;
+            max-width: 420px;
+            height: 420px;
             margin: 0 auto;
             background: transparent;
             box-sizing: border-box;
             padding: 0;
-            margin-top: 150px;
+            margin-top: 130px;
         }
         
         .menu-item {
@@ -317,7 +317,7 @@
                 inset 0 0 10px rgba(0, 198, 255, 0.1);
             min-width: 0;
             min-height: 0;
-            padding: 12px 8px;
+            padding: 10px 6px;
             box-sizing: border-box;
             color: white;
             position: relative;
@@ -334,7 +334,7 @@
         }
         
         .menu-item span {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             line-height: 1.3;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -359,24 +359,24 @@
             }
             
             .menu-grid {
-                gap: 12px;
-                max-width: 380px;
-                height: 380px;
-                margin-top: 140px;
+                gap: 10px;
+                max-width: 340px;
+                height: 340px;
+                margin-top: 120px;
             }
             .menu-item {
-                padding: 10px 6px;
+                padding: 8px 5px;
             }
             .menu-item i {
-                font-size: 38px !important;
-                margin-bottom: 8px;
+                font-size: 30px !important;
+                margin-bottom: 6px;
             }
             .menu-item span {
-                font-size: 0.7rem;
+                font-size: 0.65rem;
             }
             
             .user-info-container {
-                margin-top: 20px;
+                margin-top: 15px;
             }
         }
         
@@ -386,20 +386,20 @@
             }
             
             .menu-grid {
-                gap: 10px;
-                max-width: 340px;
-                height: 340px;
-                margin-top: 130px;
+                gap: 8px;
+                max-width: 300px;
+                height: 300px;
+                margin-top: 110px;
             }
             .menu-item i {
-                font-size: 38px !important;
+                font-size: 28px !important;
             }
             .menu-item span {
-                font-size: 0.65rem;
+                font-size: 0.6rem;
             }
             
             .user-info-container {
-                margin-top: 18px;
+                margin-top: 12px;
             }
         }
         
@@ -409,20 +409,20 @@
             }
             
             .menu-grid {
-                gap: 8px;
-                max-width: 310px;
-                height: 310px;
-                margin-top: 120px;
+                gap: 6px;
+                max-width: 280px;
+                height: 280px;
+                margin-top: 100px;
             }
             .menu-item i {
-                font-size: 38px !important;
+                font-size: 26px !important;
             }
             .menu-item span {
-                font-size: 0.6rem;
+                font-size: 0.55rem;
             }
             
             .user-info-container {
-                margin-top: 16px;
+                margin-top: 10px;
             }
         }
         
@@ -432,20 +432,20 @@
             }
             
             .menu-grid {
-                gap: 6px;
-                max-width: 280px;
-                height: 280px;
-                margin-top: 110px;
+                gap: 4px;
+                max-width: 260px;
+                height: 260px;
+                margin-top: 90px;
             }
             .menu-item i {
-                font-size: 38px !important;
+                font-size: 24px !important;
             }
             .menu-item span {
-                font-size: 0.55rem;
+                font-size: 0.5rem;
             }
             
             .user-info-container {
-                margin-top: 14px;
+                margin-top: 8px;
             }
         }
         
@@ -457,8 +457,8 @@
                 top: -50px;
             }
             .floating-avatar {
-                width: 120px;
-                height: 120px;
+                width: 110px;
+                height: 110px;
             }
             .floating-avatar-info {
                 font-size: 1.1rem;
@@ -467,19 +467,19 @@
                 font-size: 1rem;
             }
             .menu-grid {
-                max-width: 500px;
-                height: 500px;
-                margin-top: 140px;
+                max-width: 380px;
+                height: 380px;
+                margin-top: 120px;
             }
             .menu-item i {
-                font-size: 38px !important;
+                font-size: 32px !important;
             }
             .menu-item span {
-                font-size: 0.8rem;
+                font-size: 0.75rem;
             }
             
             .user-info-container {
-                margin-top: 30px;
+                margin-top: 25px;
             }
         }
         
@@ -503,11 +503,11 @@
         
         .menu-item .menu-icon-img {
             display: block;
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             margin-left: auto;
             margin-right: auto;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             object-fit: contain;
             object-position: center;
         }
@@ -532,11 +532,11 @@
         
         .firefly {
             position: absolute;
-            width: 5px;
-            height: 5px;
+            width: 4px;
+            height: 4px;
             border-radius: 50%;
             background: #00c6ff;
-            box-shadow: 0 0 10px #00c6ff, 0 0 15px rgba(0, 198, 255, 0.7);
+            box-shadow: 0 0 8px #00c6ff, 0 0 12px rgba(0, 198, 255, 0.7);
             z-index: 2;
             pointer-events: none;
             opacity: 0.8;
@@ -544,21 +544,10 @@
         
         .trail {
             position: absolute;
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: rgba(0, 198, 255, 0.4);
-            box-shadow: 0 0 5px rgba(0, 198, 255, 0.5);
+            background: rgba(0, 198, 255, 0.3);
             pointer-events: none;
-            opacity: 0.7;
-            animation: trailFade 0.8s forwards;
-        }
-        
-        @keyframes trailFade {
-            to {
-                opacity: 0;
-                transform: scale(0.1);
-            }
+            transform-origin: top left;
+            z-index: 1;
         }
     `;
     document.head.appendChild(style);
@@ -629,9 +618,8 @@
         
         // Массив для активных огоньков
         const fireflies = [];
-        const maxFireflies = 3;
-        const trailInterval = 80; // ms
-        const speedFactor = 0.5;
+        const maxFireflies = 8; // Увеличено количество огоньков
+        const trailInterval = 50; // ms
         
         // Функция создания нового огонька
         function createFirefly() {
@@ -646,23 +634,24 @@
             firefly.style.left = `${startX}%`;
             firefly.style.top = '-10px';
             
-            // Направление движения
-            const angle = (Math.random() * 20 - 10) * Math.PI / 180;
+            // Скорость движения
+            const speed = 0.5 + Math.random() * 0.5;
             const velocity = {
-                x: Math.sin(angle) * speedFactor,
-                y: Math.cos(angle) * speedFactor
+                x: (Math.random() - 0.5) * 0.3,
+                y: speed
             };
             
             // Цвет огонька
             const hue = 180 + Math.random() * 20 - 10;
             firefly.style.background = `hsl(${hue}, 100%, 70%)`;
-            firefly.style.boxShadow = `0 0 10px hsl(${hue}, 100%, 70%), 0 0 15px rgba(${hue}, 100%, 70%, 0.7)`;
+            firefly.style.boxShadow = `0 0 8px hsl(${hue}, 100%, 70%), 0 0 12px rgba(${hue}, 100%, 70%, 0.7)`;
             
             const fireflyObj = {
                 element: firefly,
                 position: { x: startX, y: -1 },
                 velocity,
-                lastTrailTime: 0,
+                lastPosition: { x: startX, y: -1 },
+                trailElements: [],
                 id: Date.now()
             };
             
@@ -671,57 +660,106 @@
         }
         
         // Функция создания следа
-        function createTrail(x, y, color) {
+        function createTrail(firefly) {
             const trail = document.createElement('div');
             trail.className = 'trail';
-            trail.style.left = `${x}%`;
-            trail.style.top = `${y}%`;
-            trail.style.background = color;
-            container.appendChild(trail);
             
-            // Автоматическое удаление после анимации
-            setTimeout(() => {
-                if (trail.parentNode) {
-                    trail.parentNode.removeChild(trail);
-                }
-            }, 800);
-        }
-        
-        // Функция обновления позиций
-        function updateFireflies(timestamp) {
-            for (let i = fireflies.length - 1; i >= 0; i--) {
-                const f = fireflies[i];
-                
-                // Обновление позиции
-                f.position.x += f.velocity.x;
-                f.position.y += f.velocity.y;
-                
-                f.element.style.left = `${f.position.x}%`;
-                f.element.style.top = `${f.position.y}%`;
-                
-                // Создание следа
-                if (timestamp - f.lastTrailTime > trailInterval) {
-                    createTrail(
-                        f.position.x, 
-                        f.position.y, 
-                        `hsla(180, 100%, 70%, ${0.6 - (f.position.y / 100)})`
-                    );
-                    f.lastTrailTime = timestamp;
-                }
-                
-                // Удаление, если вышли за пределы
-                if (f.position.y > 100 || 
-                    f.position.x < -10 || 
-                    f.position.x > 110) {
-                    if (f.element.parentNode) {
-                        f.element.parentNode.removeChild(f.element);
-                    }
-                    fireflies.splice(i, 1);
+            // Рассчитываем расстояние между текущей и предыдущей позицией
+            const dx = firefly.position.x - firefly.lastPosition.x;
+            const dy = firefly.position.y - firefly.lastPosition.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Рассчитываем угол наклона линии
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            // Устанавливаем стили для линии
+            trail.style.width = `${distance}%`;
+            trail.style.height = '1px';
+            trail.style.left = `${firefly.lastPosition.x}%`;
+            trail.style.top = `${firefly.lastPosition.y}%`;
+            trail.style.transform = `rotate(${angle}deg)`;
+            trail.style.opacity = 0.8;
+            trail.style.background = `linear-gradient(90deg, 
+                rgba(0, 198, 255, 0.7), 
+                rgba(0, 198, 255, 0.3) 70%, 
+                rgba(0, 198, 255, 0))`;
+            
+            container.appendChild(trail);
+            firefly.trailElements.push(trail);
+            
+            // Удаляем старые следы
+            if (firefly.trailElements.length > 5) {
+                const oldTrail = firefly.trailElements.shift();
+                if (oldTrail.parentNode) {
+                    oldTrail.parentNode.removeChild(oldTrail);
                 }
             }
             
+            // Анимация исчезновения следа
+            setTimeout(() => {
+                if (trail.parentNode) {
+                    trail.style.transition = 'opacity 0.5s ease-out';
+                    trail.style.opacity = '0';
+                    setTimeout(() => {
+                        if (trail.parentNode) {
+                            trail.parentNode.removeChild(trail);
+                        }
+                        // Удаляем из массива
+                        const index = firefly.trailElements.indexOf(trail);
+                        if (index !== -1) {
+                            firefly.trailElements.splice(index, 1);
+                        }
+                    }, 500);
+                }
+            }, 300);
+        }
+        
+        // Функция обновления позиций
+        function updateFireflies() {
+            fireflies.forEach((firefly, index) => {
+                // Сохраняем предыдущую позицию для создания следа
+                firefly.lastPosition = { ...firefly.position };
+                
+                // Обновление позиции
+                firefly.position.x += firefly.velocity.x;
+                firefly.position.y += firefly.velocity.y;
+                
+                // Добавляем случайность в движение
+                firefly.velocity.x += (Math.random() - 0.5) * 0.05;
+                firefly.velocity.y += (Math.random() - 0.5) * 0.02;
+                
+                // Ограничение скорости
+                firefly.velocity.x = Math.max(-0.5, Math.min(0.5, firefly.velocity.x));
+                firefly.velocity.y = Math.max(0.3, Math.min(1.0, firefly.velocity.y));
+                
+                // Обновление позиции элемента
+                firefly.element.style.left = `${firefly.position.x}%`;
+                firefly.element.style.top = `${firefly.position.y}%`;
+                
+                // Создание следа
+                if (Math.random() > 0.3) {
+                    createTrail(firefly);
+                }
+                
+                // Удаление, если вышли за пределы
+                if (firefly.position.y > 100 || 
+                    firefly.position.x < -10 || 
+                    firefly.position.x > 110) {
+                    if (firefly.element.parentNode) {
+                        firefly.element.parentNode.removeChild(firefly.element);
+                    }
+                    // Удаляем все следы
+                    firefly.trailElements.forEach(trail => {
+                        if (trail.parentNode) {
+                            trail.parentNode.removeChild(trail);
+                        }
+                    });
+                    fireflies.splice(index, 1);
+                }
+            });
+            
             // Создание нового огонька при необходимости
-            if (fireflies.length < maxFireflies && Math.random() > 0.8) {
+            if (fireflies.length < maxFireflies && Math.random() > 0.7) {
                 createFirefly();
             }
             
@@ -729,6 +767,9 @@
         }
         
         // Запуск анимации
+        for (let i = 0; i < 4; i++) {
+            setTimeout(createFirefly, i * 300);
+        }
         requestAnimationFrame(updateFireflies);
     }
 
