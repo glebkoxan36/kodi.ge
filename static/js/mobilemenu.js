@@ -67,7 +67,8 @@
         
         .mobile-menu-modal .modal-content {
             background: 
-                linear-gradient(135deg, rgba(10,14,23,0.97), rgba(26,33,56,0.97));
+                linear-gradient(135deg, rgba(10,14,23,0.97), rgba(26,33,56,0.97)),
+                url('static/menufon.jpg') no-repeat center center / cover;
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
@@ -146,7 +147,7 @@
         
         .floating-avatar-container {
             position: absolute;
-            top: -50px;
+            top: -40px; /* Опущено ниже */
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
@@ -233,6 +234,11 @@
             white-space: nowrap;
             line-height: 1.3;
             color: white;
+        }
+        
+        .floating-avatar-info.not-logged-in {
+            text-shadow: 0 0 5px #00c6ff, 0 0 10px #00c6ff; /* Неоновая обводка */
+            margin-top: 10px; /* Опущено ниже */
         }
         
         .user-balance {
@@ -454,7 +460,7 @@
                 height: 55vh;
             }
             .floating-avatar-container {
-                top: -50px;
+                top: -40px; /* Опущено ниже */
             }
             .floating-avatar {
                 width: 110px;
@@ -516,43 +522,6 @@
             color: #00c6ff;
             transform: translateY(-2px);
         }
-        
-        /* НОВЫЕ СТИЛИ ДЛЯ ЭФФЕКТА ОГОНЬКОВ */
-        .firefly-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            pointer-events: none;
-            overflow: hidden;
-            border-radius: 30px 30px 0 0;
-        }
-        
-        .firefly {
-            position: absolute;
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: #00c6ff;
-            box-shadow: 0 0 10px #00c6ff, 0 0 15px rgba(0, 198, 255, 0.7);
-            z-index: 2;
-            pointer-events: none;
-            opacity: 0.8;
-        }
-        
-        .trail {
-            position: absolute;
-            background: linear-gradient(90deg, 
-                rgba(0, 198, 255, 0.8), 
-                rgba(0, 198, 255, 0.3) 70%, 
-                rgba(0, 198, 255, 0));
-            height: 1px;
-            pointer-events: none;
-            z-index: 1;
-            transform-origin: left center;
-        }
     `;
     document.head.appendChild(style);
 
@@ -598,161 +567,12 @@
                     <div class="avatar-placeholder">KODI.GE</div>
                 </div>
                 <div class="user-info-container">
-                    <div class="floating-avatar-info" onclick="window.goToLogin()">
+                    <div class="floating-avatar-info not-logged-in" onclick="window.goToLogin()">
                         ლოგინი|რეგისტრაცია
                     </div>
                 </div>
             `;
         }
-    }
-
-    // Добавление анимации огоньков
-    function initFireflyAnimation(modal) {
-        const content = modal.querySelector('.modal-content');
-        if (!content) return;
-        
-        // Удаляем старую анимацию, если есть
-        const existingContainer = content.querySelector('.firefly-container');
-        if (existingContainer) existingContainer.remove();
-        
-        // Создаем контейнер для огоньков
-        const container = document.createElement('div');
-        container.className = 'firefly-container';
-        content.appendChild(container);
-        
-        // Массив для активных огоньков
-        const fireflies = [];
-        const maxFireflies = 12; // Больше огоньков
-        const trailInterval = 40; // Чаще следы
-        
-        // Функция создания нового огонька
-        function createFirefly() {
-            if (fireflies.length >= maxFireflies) return;
-            
-            const firefly = document.createElement('div');
-            firefly.className = 'firefly';
-            container.appendChild(firefly);
-            
-            // Начальная позиция - верхняя часть меню
-            const startX = Math.random() * 100;
-            firefly.style.left = `${startX}%`;
-            firefly.style.top = '-5px';
-            
-            // Скорость движения
-            const speed = 0.7 + Math.random() * 0.5;
-            const velocity = {
-                x: (Math.random() - 0.5) * 0.4,
-                y: speed
-            };
-            
-            // Цвет огонька
-            const hue = 180 + Math.random() * 20 - 10;
-            firefly.style.background = `hsl(${hue}, 100%, 70%)`;
-            firefly.style.boxShadow = `0 0 10px hsl(${hue}, 100%, 70%), 0 0 15px rgba(${hue}, 100%, 70%, 0.7)`;
-            
-            const fireflyObj = {
-                element: firefly,
-                position: { x: startX, y: -0.5 },
-                velocity,
-                lastPosition: { x: startX, y: -0.5 },
-                trailElements: [],
-                id: Date.now()
-            };
-            
-            fireflies.push(fireflyObj);
-            return fireflyObj;
-        }
-        
-        // Функция создания следа
-        function createTrail(firefly) {
-            const trail = document.createElement('div');
-            trail.className = 'trail';
-            
-            // Рассчитываем расстояние между текущей и предыдущей позицией
-            const dx = firefly.position.x - firefly.lastPosition.x;
-            const dy = firefly.position.y - firefly.lastPosition.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            // Рассчитываем угол наклона линии
-            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-            
-            // Устанавливаем стили для линии
-            trail.style.width = `${distance}%`;
-            trail.style.left = `${firefly.lastPosition.x}%`;
-            trail.style.top = `${firefly.lastPosition.y}%`;
-            trail.style.transform = `rotate(${angle}deg)`;
-            trail.style.opacity = 0.8;
-            
-            container.appendChild(trail);
-            firefly.trailElements.push(trail);
-            
-            // Анимация исчезновения следа
-            setTimeout(() => {
-                if (trail.parentNode) {
-                    trail.style.transition = 'opacity 0.5s ease-out, width 0.5s ease-out';
-                    trail.style.opacity = '0';
-                    trail.style.width = '0';
-                    setTimeout(() => {
-                        if (trail.parentNode) {
-                            trail.parentNode.removeChild(trail);
-                        }
-                        // Удаляем из массива
-                        const index = firefly.trailElements.indexOf(trail);
-                        if (index !== -1) {
-                            firefly.trailElements.splice(index, 1);
-                        }
-                    }, 500);
-                }
-            }, 300);
-        }
-        
-        // Функция обновления позиций
-        function updateFireflies() {
-            fireflies.forEach((firefly, index) => {
-                // Сохраняем предыдущую позицию для создания следа
-                firefly.lastPosition = { ...firefly.position };
-                
-                // Обновление позиции
-                firefly.position.x += firefly.velocity.x;
-                firefly.position.y += firefly.velocity.y;
-                
-                // Обновление позиции элемента
-                firefly.element.style.left = `${firefly.position.x}%`;
-                firefly.element.style.top = `${firefly.position.y}%`;
-                
-                // Создание следа
-                createTrail(firefly);
-                
-                // Удаление, если вышли за пределы
-                if (firefly.position.y > 100 || 
-                    firefly.position.x < -10 || 
-                    firefly.position.x > 110) {
-                    if (firefly.element.parentNode) {
-                        firefly.element.parentNode.removeChild(firefly.element);
-                    }
-                    // Удаляем все следы
-                    firefly.trailElements.forEach(trail => {
-                        if (trail.parentNode) {
-                            trail.parentNode.removeChild(trail);
-                        }
-                    });
-                    fireflies.splice(index, 1);
-                }
-            });
-            
-            // Создание нового огонька при необходимости
-            if (fireflies.length < maxFireflies && Math.random() > 0.6) {
-                createFirefly();
-            }
-            
-            requestAnimationFrame(updateFireflies);
-        }
-        
-        // Запуск анимации
-        for (let i = 0; i < 8; i++) {
-            setTimeout(createFirefly, i * 200);
-        }
-        requestAnimationFrame(updateFireflies);
     }
 
     // Создаем HTML структуру мобильного меню
@@ -815,12 +635,6 @@
                 </div>
             </div>
         `;
-        
-        // Инициализируем анимацию после добавления в DOM
-        setTimeout(() => {
-            const modal = document.getElementById('mobileMenuModal');
-            if (modal) initFireflyAnimation(modal);
-        }, 50);
     }
 
     function createMainMobileMenu(container, userHTML) {
@@ -986,18 +800,6 @@
                 </div>
             </div>
         `;
-        
-        // Инициализируем анимацию для всех модальных окон
-        setTimeout(() => {
-            const modal = document.getElementById('mobileMenuModal');
-            if (modal) initFireflyAnimation(modal);
-            
-            const appleModal = document.getElementById('appleSubmenuModal');
-            if (appleModal) initFireflyAnimation(appleModal);
-            
-            const androidModal = document.getElementById('androidSubmenuModal');
-            if (androidModal) initFireflyAnimation(androidModal);
-        }, 50);
     }
 
     // Mobile menu functions
