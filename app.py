@@ -128,6 +128,32 @@ def get_current_prices():
         return DEFAULT_PRICES
 
 # ======================================
+# Декораторы
+# ======================================
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
+            return redirect(url_for('auth.login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('auth.login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated
+
+# ======================================
+# Основные маршруты приложения
+# ======================================
+@app.route('/')
+def index():
+    # ... (остальной код)
+# ======================================
 # Основные маршруты приложения
 # ======================================
 
