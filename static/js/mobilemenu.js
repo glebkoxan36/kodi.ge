@@ -67,14 +67,7 @@
         
         .mobile-menu-modal .modal-content {
             background: 
-                linear-gradient(135deg, rgba(10,14,23,0.97), rgba(26,33,56,0.97)),
-                repeating-linear-gradient(
-                    45deg,
-                    transparent,
-                    transparent 10px,
-                    rgba(0,198,255,0.1) 10px,
-                    rgba(0,198,255,0.1) 20px
-                );
+                linear-gradient(135deg, rgba(10,14,23,0.97), rgba(26,33,56,0.97));
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
@@ -524,8 +517,8 @@
             transform: translateY(-2px);
         }
         
-        /* НОВЫЕ СТИЛИ ДЛЯ ФОНА МИКРОСХЕМЫ И АНИМАЦИИ */
-        .circuit-paths {
+        /* НОВЫЕ СТИЛИ ДЛЯ ЭФФЕКТА ОГОНЬКОВ */
+        .firefly-container {
             position: absolute;
             top: 0;
             left: 0;
@@ -534,27 +527,38 @@
             z-index: 1;
             pointer-events: none;
             overflow: hidden;
+            border-radius: 30px 30px 0 0;
         }
         
-        .circuit-path {
-            stroke: rgba(0, 198, 255, 0.3); /* Более светлый и прозрачный цвет */
-            stroke-width: 0.8px;             /* Тоньше линии */
-            fill: none;
-            z-index: 1;
-            stroke-linecap: round;
-            stroke-dasharray: 2, 3;          /* Пунктирный стиль */
-        }
-        
-        .energy-pulse {
+        .firefly {
             position: absolute;
-            height: 2px;                     /* Уменьшенная высота */
-            background: #00c6ff;              /* Основной акцентный цвет */
-            border-radius: 1px;
-            box-shadow: 0 0 10px #00c6ff, 0 0 20px rgba(0, 198, 255, 0.7); /* Усиленное свечение */
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #00c6ff;
+            box-shadow: 0 0 10px #00c6ff, 0 0 15px rgba(0, 198, 255, 0.7);
             z-index: 2;
-            opacity: 0;
-            transform-origin: left center;
-            will-change: transform, opacity;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        
+        .trail {
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: rgba(0, 198, 255, 0.4);
+            box-shadow: 0 0 5px rgba(0, 198, 255, 0.5);
+            pointer-events: none;
+            opacity: 0.7;
+            animation: trailFade 0.8s forwards;
+        }
+        
+        @keyframes trailFade {
+            to {
+                opacity: 0;
+                transform: scale(0.1);
+            }
         }
     `;
     document.head.appendChild(style);
@@ -609,128 +613,123 @@
         }
     }
 
-    // Добавление анимации микросхемы
-    function initCircuitAnimation(modal) {
+    // Добавление анимации огоньков
+    function initFireflyAnimation(modal) {
         const content = modal.querySelector('.modal-content');
         if (!content) return;
         
         // Удаляем старую анимацию, если есть
-        const existingPaths = content.querySelector('.circuit-paths');
-        if (existingPaths) existingPaths.remove();
+        const existingContainer = content.querySelector('.firefly-container');
+        if (existingContainer) existingContainer.remove();
         
-        // Создаем контейнер для путей
-        const pathsContainer = document.createElement('div');
-        pathsContainer.className = 'circuit-paths';
-        content.appendChild(pathsContainer);
+        // Создаем контейнер для огоньков
+        const container = document.createElement('div');
+        container.className = 'firefly-container';
+        content.appendChild(container);
         
-        // Создаем SVG для путей
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 100 100');
-        svg.setAttribute('preserveAspectRatio', 'none');
-        svg.style.position = 'absolute';
-        svg.style.top = '0';
-        svg.style.left = '0';
-        svg.style.width = '100%';
-        svg.style.height = '100%';
-        pathsContainer.appendChild(svg);
+        // Массив для активных огоньков
+        const fireflies = [];
+        const maxFireflies = 3;
+        const trailInterval = 80; // ms
+        const speedFactor = 0.5;
         
-        // УПРОЩЕННЫЕ ПУТИ БЕЗ ПЕРЕСЕЧЕНИЙ
-        const paths = [
-            "M 10,20 L 90,20",    // Горизонтальная линия 1
-            "M 20,10 L 20,90",    // Вертикальная линия 1
-            "M 30,30 L 70,70",    // Диагональ 1
-            "M 70,30 L 30,70",    // Диагональ 2
-            "M 50,10 L 50,90",    // Вертикальная линия 2
-            "M 10,80 L 90,80"     // Горизонтальная линия 2
-        ];
-        
-        // Создаем пути в SVG
-        paths.forEach((d, i) => {
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', d);
-            path.setAttribute('class', 'circuit-path');
-            svg.appendChild(path);
-        });
-        
-        // Создаем импульсы
-        paths.forEach((d, i) => {
-            const pulse = document.createElement('div');
-            pulse.className = 'energy-pulse';
-            pathsContainer.appendChild(pulse);
+        // Функция создания нового огонька
+        function createFirefly() {
+            if (fireflies.length >= maxFireflies) return;
             
-            // Запускаем анимацию импульса с увеличенной задержкой
-            setTimeout(() => animatePulse(pulse, d), i * 500);
-        });
-    }
-    
-    // Функция для анимации импульса
-    function animatePulse(pulse, pathData) {
-        // Создаем временный SVG для вычисления позиций
-        const svgNS = 'http://www.w3.org/2000/svg';
-        const svg = document.createElementNS(svgNS, 'svg');
-        const path = document.createElementNS(svgNS, 'path');
-        path.setAttribute('d', pathData);
-        svg.appendChild(path);
-        document.body.appendChild(svg);
+            const firefly = document.createElement('div');
+            firefly.className = 'firefly';
+            container.appendChild(firefly);
+            
+            // Начальная позиция - верхняя часть меню
+            const startX = Math.random() * 100;
+            firefly.style.left = `${startX}%`;
+            firefly.style.top = '-10px';
+            
+            // Направление движения
+            const angle = (Math.random() * 20 - 10) * Math.PI / 180;
+            const velocity = {
+                x: Math.sin(angle) * speedFactor,
+                y: Math.cos(angle) * speedFactor
+            };
+            
+            // Цвет огонька
+            const hue = 180 + Math.random() * 20 - 10;
+            firefly.style.background = `hsl(${hue}, 100%, 70%)`;
+            firefly.style.boxShadow = `0 0 10px hsl(${hue}, 100%, 70%), 0 0 15px rgba(${hue}, 100%, 70%, 0.7)`;
+            
+            const fireflyObj = {
+                element: firefly,
+                position: { x: startX, y: -1 },
+                velocity,
+                lastTrailTime: 0,
+                id: Date.now()
+            };
+            
+            fireflies.push(fireflyObj);
+            return fireflyObj;
+        }
         
-        const pathLength = path.getTotalLength();
-        const pulseWidth = 15;
-        const duration = 3000 + Math.random() * 2000; // Увеличенная длительность
+        // Функция создания следа
+        function createTrail(x, y, color) {
+            const trail = document.createElement('div');
+            trail.className = 'trail';
+            trail.style.left = `${x}%`;
+            trail.style.top = `${y}%`;
+            trail.style.background = color;
+            container.appendChild(trail);
+            
+            // Автоматическое удаление после анимации
+            setTimeout(() => {
+                if (trail.parentNode) {
+                    trail.parentNode.removeChild(trail);
+                }
+            }, 800);
+        }
         
-        let startTime = null;
-        let animationId = null;
-        
-        const animate = (timestamp) => {
-            if (!startTime) startTime = timestamp;
-            const elapsed = timestamp - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            // Вычисляем позицию на пути
-            const point = path.getPointAtLength(progress * pathLength);
-            const nextPoint = path.getPointAtLength(
-                Math.min(progress * pathLength + 5, pathLength) // Небольшое смещение для вычисления угла
-            );
-            
-            // Вычисляем угол наклона
-            const angle = Math.atan2(
-                nextPoint.y - point.y, 
-                nextPoint.x - point.x
-            ) * 180 / Math.PI;
-            
-            // Позиционируем импульс
-            pulse.style.width = `${pulseWidth}px`;
-            pulse.style.left = `${point.x}%`;
-            pulse.style.top = `${point.y}%`;
-            pulse.style.transform = `rotate(${angle}deg)`;
-            
-            // Эффект появления/исчезания
-            if (progress < 0.2) {
-                pulse.style.opacity = progress * 5;
-            } else if (progress > 0.8) {
-                pulse.style.opacity = (1 - progress) * 5;
-            } else {
-                pulse.style.opacity = 1;
+        // Функция обновления позиций
+        function updateFireflies(timestamp) {
+            for (let i = fireflies.length - 1; i >= 0; i--) {
+                const f = fireflies[i];
+                
+                // Обновление позиции
+                f.position.x += f.velocity.x;
+                f.position.y += f.velocity.y;
+                
+                f.element.style.left = `${f.position.x}%`;
+                f.element.style.top = `${f.position.y}%`;
+                
+                // Создание следа
+                if (timestamp - f.lastTrailTime > trailInterval) {
+                    createTrail(
+                        f.position.x, 
+                        f.position.y, 
+                        `hsla(180, 100%, 70%, ${0.6 - (f.position.y / 100)})`
+                    );
+                    f.lastTrailTime = timestamp;
+                }
+                
+                // Удаление, если вышли за пределы
+                if (f.position.y > 100 || 
+                    f.position.x < -10 || 
+                    f.position.x > 110) {
+                    if (f.element.parentNode) {
+                        f.element.parentNode.removeChild(f.element);
+                    }
+                    fireflies.splice(i, 1);
+                }
             }
             
-            if (progress < 1) {
-                animationId = requestAnimationFrame(animate);
-            } else {
-                // Перезапускаем анимацию
-                startTime = null;
-                animationId = requestAnimationFrame(animate);
+            // Создание нового огонька при необходимости
+            if (fireflies.length < maxFireflies && Math.random() > 0.8) {
+                createFirefly();
             }
-        };
+            
+            requestAnimationFrame(updateFireflies);
+        }
         
-        // Запускаем анимацию
-        animationId = requestAnimationFrame(animate);
-        
-        // Сохраняем ссылку для остановки
-        pulse._animationId = animationId;
-        
-        // Удаляем временный SVG
-        setTimeout(() => {
-            document.body.removeChild(svg);
-        }, 100);
+        // Запуск анимации
+        requestAnimationFrame(updateFireflies);
     }
 
     // Создаем HTML структуру мобильного меню
@@ -797,7 +796,7 @@
         // Инициализируем анимацию после добавления в DOM
         setTimeout(() => {
             const modal = document.getElementById('mobileMenuModal');
-            if (modal) initCircuitAnimation(modal);
+            if (modal) initFireflyAnimation(modal);
         }, 50);
     }
 
@@ -968,13 +967,13 @@
         // Инициализируем анимацию для всех модальных окон
         setTimeout(() => {
             const modal = document.getElementById('mobileMenuModal');
-            if (modal) initCircuitAnimation(modal);
+            if (modal) initFireflyAnimation(modal);
             
             const appleModal = document.getElementById('appleSubmenuModal');
-            if (appleModal) initCircuitAnimation(appleModal);
+            if (appleModal) initFireflyAnimation(appleModal);
             
             const androidModal = document.getElementById('androidSubmenuModal');
-            if (androidModal) initCircuitAnimation(androidModal);
+            if (androidModal) initFireflyAnimation(androidModal);
         }, 50);
     }
 
@@ -1068,13 +1067,6 @@
     }
 
     window.closeAllMobileMenus = function() {
-        // Останавливаем все анимации при закрытии меню
-        document.querySelectorAll('.energy-pulse').forEach(pulse => {
-            if (pulse._animationId) {
-                cancelAnimationFrame(pulse._animationId);
-            }
-        });
-        
         closeMobileMenu();
         closeAppleSubmenu();
         closeAndroidSubmenu();
