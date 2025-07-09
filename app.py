@@ -10,376 +10,21 @@ import time
 import threading
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, Blueprint
 from flask_cors import CORS
-from pymongo import MongoClient
 import stripe
 from functools import wraps
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
-from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError, DuplicateKeyError
-from urllib.parse import quote_plus
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_session import Session
 from bs4 import BeautifulSoup
 
-class StripePayment:
-    def __init__(self, stripe_api_key, webhook_secret, users_collection, payments_collection, refunds_collection):
-        self.stripe_api_key = stripe_api_key
-        self.webhook_secret = webhook_secret
-        self.users_collection = users_collection
-        self.payments_collection = payments_collection
-        self.refunds_collection = refunds_collection
-        stripe.api_key = stripe_api_key
-
-    def create_checkout_session(self, imei, service_type, amount, success_url, cancel_url, metadata=None, idempotency_key=None):
-        try:
-            if metadata is None:
-                metadata = {}
-                
-            metadata.update({
-                'imei': imei,
-                'service_type': service_type
-            })
-            
-            return stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=[{
-                    'price_data': {
-                        'currency': 'gel',
-                        'product_data': {
-                            'name': f'IMEI Check ({service_type.capitalize()})',
-                            'description': f'IMEI: {imei}',
-                        },
-                        'unit_amount': amount,
-                    },
-                    'quantity': 1,
-                }],
-                mode='payment',
-                metadata=metadata,
-                success_url=success_url,
-                cancel_url=cancel_url,
-                idempotency_key=idempotency_key
-            )
-        except Exception as e:
-            current_app.logger.error(f"Stripe session error: {str(e)}")
-            raise
-
-    def create_topup_session(self, user_id, amount, success_url, cancel_url, idempotency_key=None):
-        try:
-            return stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=[{
-                    'price_data': {
-                        'currency': 'gel',
-                        'product_data': {
-                            'name': 'Balance Topup',
-                            'description': f'User ID: {user_id}',
-                        },
-                        'unit_amount': int(amount * 100),
-                    },
-                    'quantity': 1,
-                }],
-                mode='payment',
-                metadata={
-                    'user_id': user_id,
-                    'type': 'balance_topup'
-                },
-                success_url=success_url,
-                cancel_url=cancel_url,
-                idempotency_key=idempotency_key
-            )
-        except Exception as e:
-            current_app.logger.error(f"Topup session error: {str(e)}")
-            raise
-
-    def deduct_balance(self, user_id, amount, service_type, imei, idempotency_key):
-        try:
-            existing_payment = self.payments_collection.find_one({
-                'idempotency_key': idempotency_key,
-                'type': 'imei_check'
-            })
-            
-            if existing_payment:
-                current_app.logger.warning(f"Duplicate idempotency key: {idempotency_key}")
-                return False
-                
-            result = self.users_collection.update_one(
-                {
-                    '_id': ObjectId(user_id),
-                    'balance': {'$gte': amount}
-                },
-                {
-                    '$inc': {'balance': -amount},
-                    '$set': {'last_updated': datetime.utcnow()}
-                }
-            )
-            
-            if result.modified_count == 0:
-                current_app.logger.error(f"Balance deduction failed for user: {user_id}")
-                return False
-            
-            payment_data = {
-                'user_id': ObjectId(user_id),
-                'amount': -amount,
-                'currency': 'gel',
-                'type': 'imei_check',
-                'service_type': service_type,
-                'imei': imei,
-                'timestamp': datetime.utcnow(),
-                'status': 'completed',
-                'idempotency_key': idempotency_key
-            }
-            
-            self.payments_collection.insert_one(payment_data)
-            
-            audit_log = {
-                'action': 'balance_deduction',
-                'user_id': ObjectId(user_id),
-                'amount': amount,
-                'service_type': service_type,
-                'imei': imei,
-                'timestamp': datetime.utcnow(),
-                'status': 'success'
-            }
-            self.payments_collection.insert_one(audit_log)
-            
-            return True
-            
-        except Exception as e:
-            current_app.logger.error(f"Balance deduction error: {str(e)}")
-            
-            audit_log = {
-                'action': 'balance_deduction',
-                'user_id': ObjectId(user_id),
-                'amount': amount,
-                'service_type': service_type,
-                'imei': imei,
-                'timestamp': datetime.utcnow(),
-                'status': 'failed',
-                'error': str(e)
-            }
-            self.payments_collection.insert_one(audit_log)
-            
-            return False
-
-    def create_refund(self, payment_id, amount, currency, reason, idempotency_key):
-        try:
-            existing_refund = self.refunds_collection.find_one({
-                'payment_id': ObjectId(payment_id),
-                'idempotency_key': idempotency_key
-            })
-            
-            if existing_refund:
-                current_app.logger.warning(f"Duplicate refund attempt: {idempotency_key}")
-                return {
-                    'status': 'error',
-                    'message': 'Refund already processed'
-                }
-                
-            payment = self.payments_collection.find_one({'_id': ObjectId(payment_id)})
-            
-            if not payment:
-                return {
-                    'status': 'error',
-                    'message': 'Payment not found'
-                }
-                
-            if payment.get('payment_method') == 'balance':
-                result = self.users_collection.update_one(
-                    {'_id': payment['user_id']},
-                    {'$inc': {'balance': amount}}
-                )
-                
-                if result.modified_count == 0:
-                    return {
-                        'status': 'error',
-                        'message': 'Failed to refund to balance'
-                    }
-            else:
-                refund = stripe.Refund.create(
-                    payment_intent=payment['stripe_payment_intent'],
-                    amount=int(amount * 100),
-                    currency=currency,
-                    reason=reason,
-                    idempotency_key=idempotency_key
-                )
-                
-                if refund.status != 'succeeded':
-                    return {
-                        'status': 'error',
-                        'message': f'Stripe refund failed: {refund.failure_reason}'
-                    }
-            
-            refund_data = {
-                'payment_id': ObjectId(payment_id),
-                'amount': amount,
-                'currency': currency,
-                'reason': reason,
-                'status': 'completed',
-                'timestamp': datetime.utcnow(),
-                'idempotency_key': idempotency_key
-            }
-            
-            self.refunds_collection.insert_one(refund_data)
-            
-            self.payments_collection.update_one(
-                {'_id': ObjectId(payment_id)},
-                {'$set': {'refund_status': 'refunded'}}
-            )
-            
-            return {
-                'status': 'success',
-                'message': 'Refund processed successfully'
-            }
-            
-        except Exception as e:
-            current_app.logger.error(f"Refund processing error: {str(e)}")
-            
-            refund_data = {
-                'payment_id': ObjectId(payment_id),
-                'amount': amount,
-                'currency': currency,
-                'reason': reason,
-                'status': 'failed',
-                'error': str(e),
-                'timestamp': datetime.utcnow(),
-                'idempotency_key': idempotency_key
-            }
-            
-            self.refunds_collection.insert_one(refund_data)
-            
-            return {
-                'status': 'error',
-                'message': str(e)
-            }
-
-    def handle_webhook(self, payload, sig_header):
-        try:
-            current_app.logger.info("Processing Stripe webhook...")
-            
-            if not sig_header:
-                current_app.logger.error("Missing Stripe-Signature header")
-                raise ValueError("Missing signature header")
-            
-            event = stripe.Webhook.construct_event(
-                payload,
-                sig_header,
-                self.webhook_secret,
-                tolerance=300
-            )
-            
-            current_app.logger.info(f"Webhook event: {event['type']}")
-            
-            if event['type'] == 'checkout.session.completed':
-                session = event['data']['object']
-                metadata = session.get('metadata', {})
-                
-                if metadata.get('type') == 'balance_topup':
-                    user_id = metadata.get('user_id')
-                    amount = session['amount_total'] / 100
-                    
-                    current_app.logger.info(f"Balance topup: user={user_id}, amount={amount}")
-                    
-                    user = self.users_collection.find_one({'_id': ObjectId(user_id)})
-                    if not user:
-                        current_app.logger.error(f"User not found: {user_id}")
-                        return event
-                    
-                    self.users_collection.update_one(
-                        {'_id': ObjectId(user_id)},
-                        {'$inc': {'balance': amount}}
-                    )
-                    
-                    self.payments_collection.insert_one({
-                        'user_id': ObjectId(user_id),
-                        'amount': amount,
-                        'currency': session['currency'],
-                        'stripe_session_id': session['id'],
-                        'timestamp': datetime.utcnow(),
-                        'type': 'topup',
-                        'status': 'completed'
-                    })
-                
-                elif metadata.get('service_type'):
-                    imei = metadata['imei']
-                    service_type = metadata['service_type']
-                    amount = session['amount_total'] / 100
-                    currency = session['currency']
-                    
-                    current_app.logger.info(f"Payment received: imei={imei}, service={service_type}")
-                    
-                    payment_record = {
-                        'stripe_session_id': session['id'],
-                        'imei': imei,
-                        'service_type': service_type,
-                        'amount': amount,
-                        'currency': currency,
-                        'payment_status': session.get('payment_status', 'pending'),
-                        'timestamp': datetime.utcnow(),
-                        'type': 'imei_check',
-                        'status': 'pending_verification'
-                    }
-                    
-                    if 'user_id' in metadata:
-                        payment_record['user_id'] = ObjectId(metadata['user_id'])
-                    
-                    self.payments_collection.insert_one(payment_record)
-            
-            elif event['type'] == 'checkout.session.async_payment_succeeded':
-                session = event['data']['object']
-                current_app.logger.info(f"Payment succeeded: {session['id']}")
-                
-                self.payments_collection.update_one(
-                    {'stripe_session_id': session['id']},
-                    {'$set': {
-                        'payment_status': 'succeeded',
-                        'status': 'pending_verification'
-                    }}
-                )
-            
-            elif event['type'] == 'checkout.session.async_payment_failed':
-                session = event['data']['object']
-                current_app.logger.warning(f"Payment failed: {session['id']}")
-                
-                self.payments_collection.update_one(
-                    {'stripe_session_id': session['id']},
-                    {'$set': {
-                        'payment_status': 'failed',
-                        'status': 'failed'
-                    }}
-                )
-            
-            elif event['type'] == 'charge.refunded':
-                charge = event['data']['object']
-                current_app.logger.info(f"Refund processed: {charge.id}")
-                
-                self.refunds_collection.update_one(
-                    {'stripe_charge_id': charge.id},
-                    {'$set': {'status': 'succeeded'}}
-                )
-                
-                if charge.metadata.get('type') == 'balance_topup':
-                    user_id = charge.metadata.get('user_id')
-                    amount = charge.amount_refunded / 100
-                    
-                    if user_id:
-                        self.users_collection.update_one(
-                            {'_id': ObjectId(user_id)},
-                            {'$inc': {'balance': -amount}}
-                        )
-            
-            return event
-        
-        except ValueError as e:
-            current_app.logger.error(f"Webhook value error: {str(e)}")
-            raise e
-        except stripe.error.SignatureVerificationError as e:
-            current_app.logger.error(f"Webhook signature error: {str(e)}")
-            raise e
-        except Exception as e:
-            current_app.logger.error(f"Webhook processing error: {str(e)}")
-            raise e
+# Импорт модулей
+from auth import auth_bp
+from ifreeapi import validate_imei, perform_api_check, parse_free_html
+from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, comparisons_collection, phonebase_collection, prices_collection
+from stripepay import StripePayment
 
 app = Flask(__name__)
 CORS(app)
@@ -454,99 +99,20 @@ app.logger.addHandler(log_handler)
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
-MONGODB_URI = os.getenv('MONGODB_URI')
 
 # Данные для PHP API
 API_URL = "https://api.ifreeicloud.co.uk"
 API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
 PLACEHOLDER = '/static/placeholder.jpg'
 
-# MongoDB - безопасная инициализация
-def init_mongodb():
-    max_retries = 5
-    retry_delay = 3  # seconds
-    
-    for attempt in range(max_retries):
-        try:
-            client = MongoClient(
-                MONGODB_URI, 
-                serverSelectionTimeoutMS=5000,
-                connectTimeoutMS=10000,
-                socketTimeoutMS=15000,
-                retryWrites=True,
-                w='majority'
-            )
-            # Проверка подключения
-            client.admin.command('ismaster')
-            app.logger.info("Successfully connected to MongoDB")
-            return client
-        except (ConnectionFailure, ServerSelectionTimeoutError) as e:
-            app.logger.warning(f"MongoDB connection attempt {attempt+1}/{max_retries} failed: {str(e)}")
-            if attempt < max_retries - 1:
-                time.sleep(retry_delay)
-    
-    app.logger.error("Could not connect to MongoDB after multiple attempts")
-    return None
-
-client = init_mongodb()
-if client is None:
-    app.logger.critical("Fatal error: MongoDB connection failed")
-else:
-    db = client['imei_checker']
-    checks_collection = db['results']
-    prices_collection = db['prices']
-    phones_collection = db['phones']
-    parser_logs_collection = db['parser_logs']
-    admin_users_collection = db['admin_users']
-    regular_users_collection = db['users']
-    audit_logs_collection = db['audit_logs']
-    api_keys_collection = db['api_keys']
-    webhooks_collection = db['webhooks']
-    payments_collection = db['payments']
-    failed_logins_collection = db['failed_logins']
-    techspecs_collection = db['techspecs']
-    phonebase_collection = db['phonebase']  # Коллекция для сравнения телефонов
-    comparisons_collection = db['comparisons']  # Новая коллекция для истории сравнений
-    refunds_collection = db['refunds']  # Коллекция для возвратов платежей
-
-# Создаем администратора по умолчанию
-def init_admin_user():
-    try:
-        if client and not admin_users_collection.find_one({'username': 'admin'}):
-            admin_password = os.getenv('ADMIN_PASSWORD', 'securepassword')
-            admin_users_collection.insert_one({
-                'username': 'admin',
-                'password': generate_password_hash(admin_password),
-                'role': 'superadmin',
-                'created_at': datetime.utcnow()
-            })
-            app.logger.info("Default admin user created")
-    except Exception as e:
-        app.logger.error(f"Error creating admin user: {str(e)}")
-
-# Инициализация цен
-DEFAULT_PRICES = {
-    'paid': 499,
-    'premium': 999
-}
-
-def init_prices():
-    try:
-        if client and prices_collection.count_documents({}) == 0:
-            prices_collection.insert_one({
-                'type': 'current',
-                'prices': DEFAULT_PRICES,
-                'created_at': datetime.utcnow(),
-                'updated_at': datetime.utcnow()
-            })
-            app.logger.info("Default prices initialized")
-    except Exception as e:
-        app.logger.error(f"Error initializing prices: {str(e)}")
-
-# Вызов функций инициализации
-if client:
-    init_admin_user()
-    init_prices()
+# Инициализация StripePayment
+stripe_payment = StripePayment(
+    stripe_api_key=stripe.api_key,
+    webhook_secret=STRIPE_WEBHOOK_SECRET,
+    users_collection=regular_users_collection,
+    payments_collection=payments_collection,
+    refunds_collection=refunds_collection
+)
 
 def get_current_prices():
     if not client:
@@ -560,48 +126,6 @@ def get_current_prices():
     except Exception as e:
         app.logger.error(f"Error getting prices: {str(e)}")
         return DEFAULT_PRICES
-
-# ======================================
-# Аудит и логирование
-# ======================================
-
-def log_audit_event(action, details, user_id=None, username=None):
-    """Логирование действий администратора"""
-    if not client:
-        return
-        
-    event = {
-        'action': action,
-        'details': details,
-        'user_id': user_id,
-        'username': username,
-        'timestamp': datetime.utcnow(),
-        'ip_address': request.remote_addr
-    }
-    try:
-        audit_logs_collection.insert_one(event)
-    except Exception as e:
-        app.logger.error(f"Audit log error: {str(e)}")
-
-# ======================================
-# Декораторы
-# ======================================
-
-def admin_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
-            return redirect(url_for('auth.login', next=request.url))
-        return f(*args, **kwargs)
-    return decorated
-
-def login_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('auth.login', next=request.url))
-        return f(*args, **kwargs)
-    return decorated
 
 # ======================================
 # Основные маршруты приложения
@@ -885,15 +409,6 @@ def android_check():
         stripe_public_key=STRIPE_PUBLIC_KEY,
         currentUser=user_data
     )
-
-# Инициализация StripePayment
-stripe_payment = StripePayment(
-    stripe_api_key=stripe.api_key,
-    webhook_secret=STRIPE_WEBHOOK_SECRET,
-    users_collection=regular_users_collection,
-    payments_collection=payments_collection,
-    refunds_collection=refunds_collection
-)
 
 @app.route('/create-checkout-session', methods=['POST'])
 @csrf.exempt
@@ -1193,14 +708,6 @@ def perform_check():
                 if 'user_id' in session:
                     record['user_id'] = ObjectId(session['user_id'])
                 checks_collection.insert_one(record)
-            
-            if result and 'error' not in result and client:
-                send_webhook_event('imei_check_completed', {
-                    'imei': imei,
-                    'service_type': service_type,
-                    'result': result,
-                    'timestamp': datetime.utcnow().isoformat()
-                })
             
             app.logger.info(f"Check completed for IMEI: {imei}")
             return jsonify(result)
@@ -1516,11 +1023,6 @@ def api_phone_details():
     try:
         phone = phonebase_collection.find_one({'_id': ObjectId(phone_id)})
         if phone:
-            # Генерируем путь к изображению
-            phone['image_url'] = generate_image_path(
-                phone.get('Бренд', ''), 
-                phone.get('Модель', '')
-            )
             # Преобразование ObjectId в строку
             phone['_id'] = str(phone['_id'])
             return jsonify(phone)
@@ -1546,10 +1048,6 @@ def api_compare_phones():
     
     if not phone1 or not phone2:
         return jsonify({'error': 'Phone not found'}), 404
-    
-    # Генерируем пути к изображениям
-    phone1['image_url'] = generate_image_path(phone1.get('Бренд', ''), phone1.get('Модель', ''))
-    phone2['image_url'] = generate_image_path(phone2.get('Бренд', ''), phone2.get('Модель', ''))
     
     comparison_result = compare_two_phones(phone1, phone2)
     
@@ -1846,162 +1344,6 @@ def check_details(check_id):
     return jsonify(details)
 
 # ======================================
-# Authentication Blueprint
-# ======================================
-
-auth_bp = Blueprint('auth', __name__)
-
-@auth_bp.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        # Получение данных формы
-        first_name = request.form.get('first_name')
-        last_name = request.form.get('last_name')
-        birth_day = request.form.get('birth_day')
-        birth_month = request.form.get('birth_month')
-        birth_year = request.form.get('birth_year')
-        phone = request.form.get('phone')
-        email = request.form.get('email')
-        username = request.form.get('username')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        
-        # Проверка заполненности полей
-        if not all([first_name, last_name, birth_day, birth_month, birth_year, 
-                   phone, email, username, password, confirm_password]):
-            flash('გთხოვთ შეავსოთ ყველა ველი', 'danger')
-            return redirect(url_for('auth.register'))
-        
-        # Проверка совпадения паролей
-        if password != confirm_password:
-            flash('პაროლები არ ემთხვევა', 'danger')
-            return redirect(url_for('auth.register'))
-        
-        # Валидация email
-        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-            flash('ელ. ფოსტის არასწორი ფორმატი', 'danger')
-            return redirect(url_for('auth.register'))
-        
-        # Валидация телефона
-        if not re.match(r'^\+995\d{9}$', phone):
-            flash('ტელეფონის ნომერი უნდა იყოს ფორმატით +995XXXXXXXXX', 'danger')
-            return redirect(url_for('auth.register'))
-        
-        # Проверка длины логина
-        if len(username) < 4:
-            flash('მომხმარებლის სახელი უნდა შედგებოდეს მინიმუმ 4 სიმბოლოსგან', 'danger')
-            return redirect(url_for('auth.register'))
-        
-        # Проверка сложности пароля
-        if len(password) < 12:
-            flash('პაროლი უნდა შედგებოდეს მინიმუმ 12 სიმბოლოსგან', 'danger')
-            return redirect(url_for('auth.register'))
-        if not re.search(r'[A-Z]', password):
-            flash('პაროლი უნდა შეიცავდეს მინიმუმ ერთ დიდ ასოს', 'danger')
-            return redirect(url_for('auth.register'))
-        if not re.search(r'[a-z]', password):
-            flash('პაროლი უნდა შეიცავდეს მინიმუმ ერთ პატარა ასოს', 'danger')
-            return redirect(url_for('auth.register'))
-        if not re.search(r'[0-9]', password):
-            flash('პაროლი უნდა შეიცავდეს მინიმუმ ერთ ციფრს', 'danger')
-            return redirect(url_for('auth.register'))
-        if not re.search(r'[@$!%*?&]', password):
-            flash('პაროლი უნდა შეიცავდეს მინიმუმ ერთ სპეციალურ სიმბოლოს (@$!%*?&)', 'danger')
-            return redirect(url_for('auth.register'))
-        
-        # Проверка уникальности email и username
-        if not client:
-            flash('Database unavailable', 'danger')
-            return redirect(url_for('auth.register'))
-        
-        if regular_users_collection.find_one({'email': email}):
-            flash('მომხმარებელი ამ ელ. ფოსტით უკვე არსებობს', 'danger')
-            return redirect(url_for('auth.register'))
-        
-        if regular_users_collection.find_one({'username': username}):
-            flash('მომხმარებელი ამ სახელით უკვე არსებობს', 'danger')
-            return redirect(url_for('auth.register'))
-        
-        # Создание пользователя
-        hashed_password = generate_password_hash(password)
-        birth_date = datetime(int(birth_year), int(birth_month), int(birth_day))
-        
-        user = {
-            'first_name': first_name,
-            'last_name': last_name,
-            'birth_date': birth_date,
-            'phone': phone,
-            'email': email,
-            'username': username,
-            'password': hashed_password,
-            'balance': 0.0,
-            'role': 'user',
-            'created_at': datetime.utcnow(),
-            'updated_at': datetime.utcnow()
-        }
-        
-        # Сохранение в базу данных
-        try:
-            user_id = regular_users_collection.insert_one(user).inserted_id
-        except Exception as e:
-            flash(f'შეცდომა მონაცემთა ბაზაში: {str(e)}', 'danger')
-            return redirect(url_for('auth.register'))
-        
-        # Автоматический вход после регистрации
-        session['user_id'] = str(user_id)
-        session['role'] = 'user'
-        
-        flash('რეგისტრაცია წარმატებით დასრულდა!', 'success')
-        return redirect(url_for('user.dashboard'))
-    
-    return render_template('register.html')
-
-@auth_bp.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        identifier = request.form.get('identifier')
-        password = request.form.get('password')
-        
-        if not identifier or not password:
-            flash('გთხოვთ შეავსოთ ყველა ველი', 'danger')
-            return redirect(url_for('auth.login'))
-        
-        if not client:
-            flash('Database unavailable', 'danger')
-            return redirect(url_for('auth.login'))
-        
-        # Поиск пользователя по email или username
-        user = regular_users_collection.find_one({
-            '$or': [
-                {'email': identifier},
-                {'username': identifier}
-            ]
-        })
-        
-        if not user:
-            flash('მომხმარებლის სახელი ან პაროლი არასწორია', 'danger')
-            return redirect(url_for('auth.login'))
-        
-        if not check_password_hash(user['password'], password):
-            flash('მომხმარებლის სახელი ან პაროლი არასწორია', 'danger')
-            return redirect(url_for('auth.login'))
-        
-        # Успешная аутентификация
-        session['user_id'] = str(user['_id'])
-        session['role'] = user.get('role', 'user')
-        
-        flash('წარმატებული შესვლა!', 'success')
-        return redirect(url_for('user.dashboard'))
-    
-    return render_template('login.html')
-
-@auth_bp.route('/logout')
-def logout():
-    session.clear()
-    flash('თქვენ გამოხვედით სისტემიდან', 'success')
-    return redirect(url_for('auth.login'))
-
-# ======================================
 # Регистрация блюпринтов
 # ======================================
 
@@ -2012,9 +1354,10 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 def admin_dashboard():
     return "Admin Dashboard"
 
-app.register_blueprint(admin_bp)
-app.register_blueprint(user_bp)
+# Регистрация блюпринтов
 app.register_blueprint(auth_bp)
+app.register_blueprint(user_bp)
+app.register_blueprint(admin_bp)
 
 # Установка CSRF-куки для AJAX
 @app.after_request
