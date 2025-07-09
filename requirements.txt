@@ -8,6 +8,4 @@ gunicorn==21.2.0
 Flask-WTF==1.2.1
 Flask-Session
 beautifulsoup4
-google-generativeai
-clerk-sdk-python
-PyJWT
+
