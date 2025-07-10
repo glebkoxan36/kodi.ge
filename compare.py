@@ -369,10 +369,7 @@ def convert_objectids(obj):
     if isinstance(obj, dict):
         return {key: convert_objectids(value) for key, value in obj.items()}
     return obj
-
-# API Endpoint
-@app.route('/api/compare', methods=['POST'])
-def api_compare():
+    
     start_time = time.time()
     data = request.get_json()
     
