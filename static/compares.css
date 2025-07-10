@@ -3,13 +3,13 @@
 .mode-switcher {
   display: flex;
   justify-content: center;
-  gap: 15px;
+  gap: 8px;
   margin-top: 20px;
   margin-bottom: 30px;
 }
 
 .mode-btn {
-  padding: 12px 25px;
+  padding: 15px 30px;
   border-radius: 30px;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -18,9 +18,10 @@
   color: rgba(255, 255, 255, 0.8);
   display: flex;
   align-items: center;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  min-width: 180px;
 }
 
 .mode-btn.active {
@@ -309,6 +310,8 @@
   border: 1px solid rgba(0, 198, 255, 0.2);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   animation: fadeIn 0.5s ease;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .specs-header {
@@ -339,6 +342,7 @@
   font-size: 1.8rem;
   font-weight: 700;
   margin-bottom: 5px;
+  word-break: break-word;
 }
 
 .back-btn {
@@ -423,6 +427,7 @@
   text-align: right;
   padding-left: 15px;
   flex: 1;
+  word-break: break-word;
 }
 
 /* ===== COMPARE CONTAINER ===== */
@@ -434,6 +439,8 @@
   border: 1px solid rgba(0, 198, 255, 0.2);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   animation: fadeIn 0.5s ease;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .compare-header {
@@ -443,11 +450,14 @@
   padding: 15px 0;
   margin-bottom: 30px;
   border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
 }
 
 .compare-phone {
   text-align: center;
   width: 45%;
+  min-width: 200px;
+  margin-bottom: 20px;
 }
 
 .compare-phone img {
@@ -465,6 +475,7 @@
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 5px;
+  word-break: break-word;
 }
 
 .vs-badge {
@@ -479,11 +490,15 @@
   font-size: 1.3rem;
   color: var(--accent-color);
   box-shadow: 0 0 0 8px rgba(0, 198, 255, 0.1);
+  flex-shrink: 0;
+  margin: 0 10px;
 }
 
 .compare-table {
   overflow-x: auto;
   margin-top: 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .compare-table table {
@@ -499,11 +514,14 @@
   font-weight: 600;
   color: var(--accent-color);
   border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  left: 0;
 }
 
 .compare-table td {
   padding: 12px 15px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  min-width: 150px;
 }
 
 .compare-table tr:nth-child(even) {
@@ -536,6 +554,14 @@
   background: var(--danger-color);
 }
 
+.group-header .group-title {
+  background: rgba(0, 198, 255, 0.25);
+  font-weight: 700;
+  padding: 12px 15px;
+  color: var(--accent-color);
+  border-left: 4px solid var(--accent-color);
+}
+
 /* ===== ANIMATIONS ===== */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
@@ -557,6 +583,14 @@
 }
 
 /* ===== RESPONSIVE STYLES ===== */
+@media (max-width: 1200px) {
+  .mode-btn {
+    padding: 12px 20px;
+    font-size: 1.1rem;
+    min-width: 160px;
+  }
+}
+
 @media (max-width: 992px) {
   .phone-grid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -568,12 +602,28 @@
   
   .compare-header {
     flex-direction: column;
-    gap: 30px;
+    gap: 20px;
+    align-items: center;
   }
   
   .vs-badge {
     margin: 15px 0;
     transform: rotate(90deg);
+  }
+  
+  .compare-phone {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .specs-phone img {
+    width: 160px;
+    height: 160px;
+  }
+  
+  .compare-phone img {
+    width: 140px;
+    height: 140px;
   }
 }
 
@@ -581,6 +631,12 @@
   .mode-switcher {
     flex-direction: column;
     gap: 10px;
+    align-items: center;
+  }
+  
+  .mode-btn {
+    width: 100%;
+    max-width: 300px;
   }
   
   .phone-grid {
@@ -605,6 +661,19 @@
   .compare-table td {
     padding: 10px 12px;
     font-size: 0.95rem;
+  }
+  
+  .spec-group {
+    margin-bottom: 15px;
+  }
+  
+  .group-header {
+    padding: 12px 15px;
+    font-size: 1.1rem;
+  }
+  
+  .specs-container, .compare-container {
+    padding: 20px;
   }
 }
 
@@ -633,4 +702,59 @@
   .compare-controls {
     flex-direction: column;
   }
-                   }
+  
+  .phone-preview {
+    min-height: 150px;
+  }
+  
+  .phone-thumb-sm {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .phone-info strong {
+    font-size: 1rem;
+  }
+  
+  .compare-header {
+    padding: 10px 0;
+  }
+  
+  .vs-badge {
+    width: 50px;
+    height: 50px;
+    font-size: 1.1rem;
+  }
+  
+  #compareTitle1, #compareTitle2 {
+    font-size: 1.2rem;
+  }
+  
+  .compare-table {
+    border-radius: 8px;
+  }
+  
+  .compare-table table {
+    min-width: 600px;
+  }
+  
+  .select-phone-btn {
+    padding: 8px 12px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .mode-btn {
+    padding: 10px 15px;
+    font-size: 1rem;
+  }
+  
+  .phone-card img {
+    height: 180px;
+  }
+  
+  .specs-header {
+    flex-wrap: wrap;
+  }
+  }
