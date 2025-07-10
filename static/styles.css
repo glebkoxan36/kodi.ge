@@ -22,27 +22,29 @@
   --secondary-dark: #152450;
 }
 
-/* ===== BASE STYLES ===== */
+/* ===== BASE STYLES WITH IMPROVED ADAPTATION ===== */
 *, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* Remove link underlines globally */
+/* Убираем подчеркивания у ссылок */
 a, a:hover, a:focus, a:active {
   text-decoration: none !important;
 }
 
-body, h1, h2, h3, h4, h5, h6, li, p ,placeholder, span, a, div {
+/* Базовые стили текста */
+body, h1, h2, h3, h4, h5, h6, li, p, placeholder, span, a, div {
   color: var(--text-color);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Основные стили страницы */
 body {
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color), #0f1729);
   background-size: 300% 300%;
   animation: gradientShift 15s ease infinite;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
   font-weight: 450;
@@ -50,7 +52,7 @@ body {
   position: relative;
 }
 
-/* ===== ANIMATIONS ===== */
+/* ===== KEYFRAME ANIMATIONS ===== */
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -662,7 +664,6 @@ body {
   box-shadow: 0 8px 25px rgba(0,0,0,0.3);
   border-radius: 12px;
   min-height: 350px; /* Increased height */
-  background: #000;
   aspect-ratio: 16/7; /* Wider format */
 }
 
@@ -798,7 +799,7 @@ body {
   margin-right: 12px;
 }
 
-/* ===== MODAL STYLES ===== */
+/* ===== FIXED MODAL STYLES ===== */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -834,8 +835,8 @@ body {
 .modal-content {
   background: rgba(18, 26, 43, 0.95);
   border-radius: 12px;
-  margin: 2% auto;
-  padding: 25px;
+  margin: 5% auto; /* Центрирование с отступом сверху */
+  padding: 30px 25px 25px; /* Отступы для кнопки закрытия */
   width: 90%;
   max-width: 800px;
   position: relative;
@@ -843,6 +844,8 @@ body {
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   color: var(--text-color);
+  max-height: 85vh; /* Фикс для переполнения */
+  overflow-y: auto; /* Скролл при необходимости */
 }
 
 .payment-method-content {
@@ -854,14 +857,26 @@ body {
   backdrop-filter: blur(10px);
 }
 
+/* Фикс для кнопки закрытия */
 .close-modal {
   background: none;
   border: none;
   color: var(--text-color);
-  font-size: 2rem;
   cursor: pointer;
+  font-size: 2rem;
   padding: 0;
   line-height: 1;
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 100;
+  background: rgba(0,0,0,0.3);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ===== SPINNER ===== */
@@ -1161,7 +1176,7 @@ body {
 .payment-status-modal .modal-content {
   background: var(--card-bg);
   border-radius: 20px;
-  padding: 40px;
+  padding: 40px 25px 25px; /* Адаптированные отступы */
   text-align: center;
   max-width: 500px;
   width: 90%;
@@ -1455,22 +1470,62 @@ body {
   border-color: rgba(0, 229, 255, 0.4) !important;
 }
 
-/* ===== RESPONSIVE STYLES ===== */
+/* ===== КРИТИЧЕСКИЕ ИСПРАВЛЕНИЯ ДЛЯ АДАПТАЦИИ ===== */
+
+/* Фикс для модальных окон */
+.modal-content {
+  max-height: 85vh; /* Ограничиваем высоту */
+  overflow-y: auto; /* Добавляем скролл при необходимости */
+}
+
+/* Фикс для кнопки закрытия */
+.close-modal {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 100;
+  background: rgba(0,0,0,0.3);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Фикс для кнопки перехода к платным проверкам */
+#paid-check-btn {
+  margin: 20px auto;
+  display: block;
+  max-width: 300px;
+}
+
+/* ===== АДАПТИВНЫЕ СТИЛИ ===== */
+
+/* Планшеты и маленькие ноутбуки (992px - 1200px) */
 @media (max-width: 1199px) {
   .sidebar {
     width: 250px;
   }
   .main-content {
     margin-left: 250px;
+    padding: 25px;
+  }
+  
+  .carousel {
+    min-height: 300px;
+    max-width: 95%;
   }
 }
 
+/* Планшеты (768px - 992px) */
 @media (max-width: 992px) {
   .sidebar {
     width: 70px;
   }
   
-  .sidebar-logo h2, .nav-link span {
+  .sidebar-logo h2, 
+  .nav-link span {
     display: none;
   }
   
@@ -1487,6 +1542,7 @@ body {
   
   .main-content {
     margin-left: 70px;
+    padding: 20px;
   }
   
   .logo-animated {
@@ -1518,7 +1574,6 @@ body {
     height: 90px;
   }
 
-  /* Carousel adjustments */
   .carousel {
     min-height: 250px;
     max-width: 95%;
@@ -1529,6 +1584,7 @@ body {
   }
 }
 
+/* Мобильные устройства (576px - 768px) */
 @media (max-width: 768px) {
   .sidebar {
     display: none;
@@ -1587,20 +1643,17 @@ body {
     width: 100%;
   }
   
-  /* Mobile optimization for gradients */
   .gradient-bg {
     width: 300px;
     height: 300px;
     filter: blur(80px);
   }
   
-  /* Mobile input optimization */
   #imei-input {
     font-size: 16px !important;
     padding: 12px 15px !important;
   }
   
-  /* Payment status modal on mobile */
   .payment-status-modal .modal-content {
     padding: 25px 20px;
   }
@@ -1624,7 +1677,6 @@ body {
     padding: 20px 15px;
   }
 
-  /* Carousel adjustments */
   .carousel {
     min-height: 200px;
     max-width: 95%;
@@ -1634,6 +1686,7 @@ body {
   }
 }
 
+/* Маленькие мобильные устройства (до 576px) */
 @media (max-width: 576px) {
   .birth-date-group {
     flex-direction: column;
@@ -1668,7 +1721,6 @@ body {
     font-size: 0.9rem;
   }
 
-  /* Carousel adjustments */
   .carousel {
     min-height: 150px;
     max-width: 95%;
@@ -1676,10 +1728,66 @@ body {
   .placeholder-text {
     font-size: 1.2rem;
   }
+  
+  /* Дополнительные исправления для очень маленьких экранов */
+  .modal-content {
+    padding: 20px 15px;
+  }
+  
+  .close-modal {
+    top: 10px;
+    right: 10px;
+    width: 35px;
+    height: 35px;
+    font-size: 1.5rem;
+  }
+  
+  .btn-primary {
+    padding: 12px 15px;
+    font-size: 1rem;
+  }
+  
+  .service-action {
+    padding: 8px 15px;
+    font-size: 0.9rem;
+  }
 }
 
-/* ===== CRITICAL FIXES ===== */
-/* Ensure all interactive elements are above gradients */
+/* Очень маленькие устройства (до 360px) */
+@media (max-width: 360px) {
+  .main-content {
+    padding: 15px 10px;
+  }
+  
+  .auth-container {
+    padding: 20px 10px;
+  }
+  
+  .section-title {
+    font-size: 1.3rem;
+  }
+  
+  .service-title {
+    font-size: 1.1rem;
+  }
+  
+  .service-price {
+    font-size: 1.5rem;
+  }
+  
+  .modal-content {
+    padding: 15px 10px;
+  }
+  
+  .close-modal {
+    width: 30px;
+    height: 30px;
+    font-size: 1.3rem;
+  }
+}
+
+/* ===== КРИТИЧЕСКИЕ ФИКСЫ ===== */
+/* Гарантируем, что интерактивные элементы выше градиентов */
 .main-content, 
 .auth-container, 
 .payment-method-content, 
@@ -1690,7 +1798,7 @@ body {
   z-index: 20;
 }
 
-/* Block scrolling and modal animations */
+/* Фикс для скролла и анимации модалок */
 .result-modal, 
 .payment-method-modal, 
 .payment-status-modal {
@@ -1705,13 +1813,18 @@ body {
   transition: all 0.3s ease;
 }
 
-/* Fix for password recovery modal */
-.password-recovery-modal {
-  display: none;
-}
-
-/* Fix for black modal issue */
+/* Фикс для чёрного фона модалок */
 .result-modal .modal-content {
   background: var(--card-bg);
   color: var(--text-color);
 }
+
+/* Фикс для увеличения на iOS */
+input, select, textarea {
+  font-size: 16px;
+}
+
+/* Гарантируем, что кнопки доступны для нажатия */
+button, a {
+  touch-action: manipulation;
+  }
