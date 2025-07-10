@@ -1284,15 +1284,18 @@
                     </div>
                 `).show();
                 
-                // Исправленный формат ID для MongoDB
-                const phone1Id = phone1._id.$oid ? phone1._id.$oid : phone1._id;
-                const phone2Id = phone2._id.$oid ? phone2._id.$oid : phone2._id;
+                // Исправление: правильное извлечение ID
+                const getPhoneId = (phone) => {
+                    if (phone._id && phone._id.$oid) {
+                        return phone._id.$oid;
+                    }
+                    return phone._id;
+                };
                 
-                console.log("Sending compare request with IDs:", {
-                    phone1_id: phone1Id,
-                    phone2_id: phone2Id
-                });
+                const phone1Id = getPhoneId(phone1);
+                const phone2Id = getPhoneId(phone2);
                 
+                // Исправление: правильный формат данных для сервера
                 $.ajax({
                     url: '/api/compare',
                     type: 'POST',
@@ -1302,7 +1305,6 @@
                         phone2_id: phone2Id
                     }),
                     success: function(result) {
-                        console.log("Comparison result:", result);
                         displayComparisonResult(result);
                     },
                     error: function(xhr) {
