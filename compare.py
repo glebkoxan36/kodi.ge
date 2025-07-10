@@ -4,7 +4,6 @@ import time
 from collections import defaultdict
 from functools import lru_cache
 from bson import ObjectId
-from flask import jsonify, request
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -369,33 +368,20 @@ def convert_objectids(obj):
     if isinstance(obj, dict):
         return {key: convert_objectids(value) for key, value in obj.items()}
     return obj
-    
-    start_time = time.time()
-    data = request.get_json()
-    
-    if not data or 'phone1_id' not in data or 'phone2_id' not in data:
-        return jsonify({"error": "Missing phone IDs"}), 400
+
+def generate_image_path(brand, model):
+    """Генерирует путь к изображению телефона на основе бренда и модели"""
+    if not brand or not model:
+        return '/static/placeholder.jpg'
     
     try:
-        # Преобразование ID
-        phone1_id = parse_phone_id(data['phone1_id'])
-        phone2_id = parse_phone_id(data['phone2_id'])
+        # Нормализация названий для файловой системы
+        brand_clean = re.sub(r'[^a-zA-Z0-9]', '', brand).lower()
+        model_clean = re.sub(r'[^a-zA-Z0-9]', '', model).lower()
         
-        # Получение данных из базы
-        phone1 = db.phones.find_one({"_id": phone1_id})
-        phone2 = db.phones.find_one({"_id": phone2_id})
-        
-        if not phone1 or not phone2:
-            return jsonify({"error": "Phone not found"}), 404
-        
-        # Сравнение
-        result = compare_two_phones(phone1, phone2)
-        return jsonify(convert_objectids(result))
-        
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        # Формирование пути в формате: static/img/phones/бренд/модель.jpg
+        return f"/static/img/phones/{brand_clean}/{model_clean}.jpg"
+    
     except Exception as e:
-        logger.exception("Comparison failed")
-        return jsonify({"error": "Internal server error"}), 500
-    finally:
-        logger.info(f"API request processed in {time.time() - start_time:.2f}s")
+        logger.error(f"Error generating image path: {e}")
+        return '/static/placeholder.jpg'
