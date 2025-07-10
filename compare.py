@@ -1,6 +1,11 @@
 import re
 from collections import defaultdict
 from bson import ObjectId
+import logging
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Веса характеристик для сравнения
 WEIGHTS = {
@@ -316,7 +321,7 @@ def compare_two_phones(phone1, phone2):
         phone1 = enrich_phone_data(phone1)
         phone2 = enrich_phone_data(phone2)
     except Exception as e:
-        print(f"Error enriching phone data: {e}")
+        logger.error(f"Error enriching phone data: {e}")
     
     # Игнорируемые поля
     ignore_fields = [
