@@ -37,7 +37,6 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(days=7)
-)
 Session(app)
 
 # Инициализация CSRF защиты
@@ -1198,6 +1197,54 @@ def check_details(check_id):
     return jsonify(details)
 
 # ======================================
+# Compare Blueprint (Сравнение телефонов)
+# ======================================
+
+compare_bp = Blueprint('compare', __name__, url_prefix='/compare')
+
+@compare_bp.route('/')
+def compare_index():
+    """Главная страница сравнения телефонов"""
+    return render_template('compares.html')
+
+@compare_bp.route('/search', methods=['GET'])
+def search_phones():
+    """Поиск телефонов в базе данных"""
+    query = request.args.get('q', '')
+    results = []
+    
+    if query:
+        # Ищем по бренду или модели (регистронезависимо)
+        regex = re.compile(f'.*{query}.*', re.IGNORECASE)
+        results = list(phonebase_collection.find({
+            "$or": [
+                {"Бренд": regex},
+                {"Модель": regex},
+                {"Brand": regex},  # английские варианты
+                {"Model": regex}
+            ]
+        }).limit(10))
+        
+        # Преобразуем ObjectId в строку для JSON
+        for phone in results:
+            phone['_id'] = str(phone['_id'])
+    
+    return jsonify(results)
+
+@compare_bp.route('/details/<phone_id>')
+def phone_details(phone_id):
+    """Получение деталей конкретного телефона"""
+    try:
+        phone = phonebase_collection.find_one({"_id": ObjectId(phone_id)})
+        if phone:
+            # Преобразуем ObjectId и удаляем ненужные поля
+            phone['_id'] = str(phone['_id'])
+            return jsonify(phone)
+        return jsonify({"error": "Phone not found"}), 404
+    except:
+        return jsonify({"error": "Invalid ID"}), 400
+
+# ======================================
 # Регистрация блюпринтов
 # ======================================
 
@@ -1212,6 +1259,7 @@ def admin_dashboard():
 app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(compare_bp)  # новый блюпринт
 
 # Установка CSRF-куки для AJAX
 @app.after_request
