@@ -1050,32 +1050,45 @@ def api_compare_phones():
         return jsonify({'error': 'Missing phone IDs'}), 400
     
     try:
-        phone1 = phonebase_collection.find_one({'_id': ObjectId(phone1_id)})
-        phone2 = phonebase_collection.find_one({'_id': ObjectId(phone2_id)})
-    except:
-        return jsonify({'error': 'Invalid phone ID'}), 400
+        # Преобразуем ID в ObjectId и ищем
+        obj_id1 = ObjectId(phone1_id)
+        obj_id2 = ObjectId(phone2_id)
+    except Exception as e:
+        app.logger.error(f"Error converting phone IDs: {str(e)}")
+        return jsonify({'error': 'Invalid phone ID format'}), 400
     
-    if not phone1 or not phone2:
-        return jsonify({'error': 'Phone not found'}), 404
+    phone1 = phonebase_collection.find_one({'_id': obj_id1})
+    phone2 = phonebase_collection.find_one({'_id': obj_id2})
     
-    comparison_result = compare_two_phones(phone1, phone2)
+    if not phone1:
+        return jsonify({'error': 'Phone 1 not found'}), 404
+    if not phone2:
+        return jsonify({'error': 'Phone 2 not found'}), 404
+    
+    # Логирование перед сравнением
+    app.logger.info(f"Comparing phones: {phone1.get('Модель', 'Unknown')} vs {phone2.get('Модель', 'Unknown')}")
+    
+    try:
+        comparison_result = compare_two_phones(phone1, phone2)
+    except Exception as e:
+        app.logger.error(f"Comparison failed: {str(e)}")
+        return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
     
     # Сохраняем в историю сравнений
     if 'user_id' in session:
         comparison_record = {
             'user_id': ObjectId(session['user_id']),
-            'phone1_id': ObjectId(phone1_id),
-            'phone2_id': ObjectId(phone2_id),
+            'phone1_id': obj_id1,
+            'phone2_id': obj_id2,
             'model1': phone1.get('Модель', ''),
             'model2': phone2.get('Модель', ''),
-            'result': comparison_result.get('winner', 'draw'),
+            'result': comparison_result.get('overall_winner', 'draw'),
             'timestamp': datetime.utcnow()
         }
         comparisons_collection.insert_one(comparison_record)
     
     # Преобразуем все ObjectId в строки для сериализации
-    comparison_result = convert_objectids(comparison_result)
-    return jsonify(comparison_result)
+    return jsonify(convert_objectids(comparison_result))
 
 # ======================================
 # User Blueprint (Личный кабинет пользователя)
@@ -1317,7 +1330,7 @@ def check_details(check_id):
         return jsonify({'error': 'Check not found'}), 404
 
     # Определяем статус
-    status = check.get('status', 'unknown')
+    status = 'unknown'
     # Если в записи нет статуса, попробуем взять из результата
     if status == 'unknown' and isinstance(check.get('result'), dict):
         result = check.get('result')
