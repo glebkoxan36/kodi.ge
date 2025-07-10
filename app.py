@@ -37,6 +37,8 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(days=7)
+    # здесь скобка закрытия 
+)
 Session(app)
 
 # Инициализация CSRF защиты
