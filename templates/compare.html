@@ -24,7 +24,7 @@
         </div>
         
         <!-- Режим просмотра характеристик одного телефона -->
-        <div id="singlePhoneModeContainer" style="display: none;">
+        <div id="singlePhoneModeContainer" class="hidden">
             <div class="phone-selectors">
                 <button id="selectSinglePhoneBtn" class="phone-selector-btn">
                     <div class="phone-thumb-container">
@@ -41,7 +41,7 @@
         </div>
         
         <!-- Режим сравнения двух телефонов -->
-        <div id="compareModeContainer" style="display: none;">
+        <div id="compareModeContainer" class="hidden">
             <div class="phone-selectors">
                 <button id="selectPhone1Btn" class="phone-selector-btn">
                     <div class="phone-thumb-container">
@@ -184,15 +184,15 @@
                 // Обработчики для кнопок режимов
                 $('#singleModeBtn').on('click', function() {
                     $('.mode-selection').hide();
-                    $('#singlePhoneModeContainer').show();
-                    $('#compareModeContainer').hide();
+                    $('#singlePhoneModeContainer').removeClass('hidden').show();
+                    $('#compareModeContainer').addClass('hidden').hide();
                     resetComparisonState();
                 });
                 
                 $('#compareModeBtn').on('click', function() {
                     $('.mode-selection').hide();
-                    $('#compareModeContainer').show();
-                    $('#singlePhoneModeContainer').hide();
+                    $('#compareModeContainer').removeClass('hidden').show();
+                    $('#singlePhoneModeContainer').addClass('hidden').hide();
                     resetComparisonState();
                 });
                 
@@ -522,6 +522,8 @@
                     return;
                 }
                 
+                console.log("Starting comparison", phone1?._id, phone2?._id);
+                
                 $('#comparisonResult').html(`
                     <div style="text-align: center; padding: 50px;">
                         <div class="loading-spinner" style="width: 50px; height: 50px;"></div>
@@ -542,6 +544,7 @@
                         displayComparisonResult(result);
                     },
                     error: function(xhr) {
+                        console.error("Comparison failed", xhr.status, xhr.responseText);
                         let errorMsg = `შედარების პროცესი ვერ მოხერხდა (${xhr.status})`;
                         try {
                             const response = JSON.parse(xhr.responseText);
@@ -603,9 +606,9 @@
                 if (result.comparison && result.comparison.length > 0) {
                     result.comparison.forEach(category => {
                         if (category.category_percent_phone1 !== category.category_percent_phone2) {
-                            const winnerValue = max(category.category_percent_phone1, category.category_percent_phone2]);
-                            const loserValue = min(category.category_percent_phone1, category.category_percent_phone2]);
-                            const winnerPhone = model1 if category.category_percent_phone1 > category.category_percent_phone2 else model2;
+                            const winnerValue = Math.max(category.category_percent_phone1, category.category_percent_phone2);
+                            const loserValue = Math.min(category.category_percent_phone1, category.category_percent_phone2);
+                            const winnerPhone = category.category_percent_phone1 > category.category_percent_phone2 ? model1 : model2;
                             
                             advantagesHtml += `
                                 <div class="advantage-item">
