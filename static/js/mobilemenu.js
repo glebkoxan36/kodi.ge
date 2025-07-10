@@ -56,14 +56,14 @@
         .mobile-menu-modal {
             display: none;
             position: fixed;
-            bottom: 0;
+            bottom: -10;
             left: 0;
             width: 100%;
             height: 70vh;
             max-height: 90%;
             z-index: 1100;
             align-items: flex-end;
-            transform: translateY(80%);
+            transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
             opacity: 1;
             overflow: visible;
