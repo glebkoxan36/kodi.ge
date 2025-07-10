@@ -249,7 +249,7 @@
     </div>
 
     <!-- Модальное окно для выбора даты рождения -->
-    <div id="datepicker-modal" class="modal show">
+    <div id="datepicker-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>აირჩიეთ თარიღი</h3>
@@ -385,11 +385,6 @@
             if (e.target === dateModal) {
                 closeDatePicker();
             }
-        });
-        
-        // Показать календарь при загрузке страницы
-        window.addEventListener('DOMContentLoaded', () => {
-            showDatePicker();
         });
         
         // Функция валидации формы
