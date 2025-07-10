@@ -1,4 +1,16 @@
 (function() {
+    // Кеширование DOM элементов
+    let cachedElements = {};
+    let userHTMLCache = null;
+    
+    // Функция для получения элементов с кешированием
+    function getElement(id) {
+        if (!cachedElements[id]) {
+            cachedElements[id] = document.getElementById(id);
+        }
+        return cachedElements[id];
+    }
+
     // Добавляем стили
     const style = document.createElement('style');
     style.id = 'mobile-menu-styles';
@@ -64,11 +76,12 @@
             display: flex;
         }
         
-        /* Анимированный градиентный фон */
+        /* Новый статичный фон с космическим эффектом */
         .mobile-menu-modal .modal-content {
-            background: linear-gradient(125deg, #0a0e17, #1a2138, #0a0e17, #1a2138);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(10, 14, 23, 0.9) 0%, rgba(26, 33, 56, 0.9) 40%),
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="20" cy="20" r="1" fill="rgba(0, 198, 255, 0.3)"/><circle cx="50" cy="70" r="0.8" fill="rgba(0, 198, 255, 0.3)"/><circle cx="80" cy="40" r="0.5" fill="rgba(0, 198, 255, 0.3)"/></svg>'),
+                linear-gradient(135deg, #0a0e17, #1a2138);
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
@@ -81,13 +94,7 @@
             z-index: 1;
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* Красивые линии для фона */
+        /* Декоративные линии */
         .modal-content::before {
             content: '';
             position: absolute;
@@ -554,16 +561,17 @@
         }, 100);
     }
 
-    // Функция для генерации HTML пользователя
+    // Функция для генерации HTML пользователя с кешированием
     function generateUserHTML() {
-        // Проверяем наличие данных пользователя
+        if (userHTMLCache) return userHTMLCache;
+        
         const userData = window.currentUser || {};
+        let html;
         
         if (userData.first_name && userData.last_name) {
             const formattedBalance = (userData.balance || 0).toFixed(2);
             const fullName = `${userData.first_name} ${userData.last_name}`;
             
-            // Поддержка загруженных аватарок
             let avatarHTML;
             if (userData.avatar_url) {
                 avatarHTML = `<img src="${userData.avatar_url}" alt="User Avatar" class="avatar-image">`;
@@ -572,7 +580,7 @@
                 avatarHTML = `<div class="avatar-placeholder" style="background-color: ${userData.avatar_color || '#1a2138'}">${initials}</div>`;
             }
             
-            return `
+            html = `
                 <div class="floating-avatar" onclick="window.goToDashboard()">
                     ${avatarHTML}
                 </div>
@@ -586,7 +594,7 @@
                 </div>
             `;
         } else {
-            return `
+            html = `
                 <div class="floating-avatar" onclick="window.goToLogin()">
                     <div class="avatar-placeholder">KODI.GE</div>
                 </div>
@@ -597,10 +605,15 @@
                 </div>
             `;
         }
+        
+        userHTMLCache = html;
+        return html;
     }
 
     // Создаем HTML структуру мобильного меню
     function createMobileMenuStructure() {
+        if (getElement('mobile-menu-container')) return;
+        
         const mobileMenuContainer = document.createElement('div');
         mobileMenuContainer.id = 'mobile-menu-container';
         document.body.appendChild(mobileMenuContainer);
@@ -619,11 +632,11 @@
         if (savedMenuState) {
             sessionStorage.removeItem('mobileMenuState');
             setTimeout(() => {
-                if (savedMenuState === 'main' && document.getElementById('mobileMenuModal')) {
+                if (savedMenuState === 'main' && getElement('mobileMenuModal')) {
                     openMobileMenu();
-                } else if (savedMenuState === 'apple' && document.getElementById('appleSubmenuModal')) {
+                } else if (savedMenuState === 'apple' && getElement('appleSubmenuModal')) {
                     openAppleSubmenu();
-                } else if (savedMenuState === 'android' && document.getElementById('androidSubmenuModal')) {
+                } else if (savedMenuState === 'android' && getElement('androidSubmenuModal')) {
                     openAndroidSubmenu();
                 }
             }, 50);
@@ -843,90 +856,66 @@
 
     // Mobile menu functions
     window.openMobileMenu = function() {
-        try {
-            const modal = document.getElementById('mobileMenuModal');
-            if (modal) {
-                modal.style.display = 'flex';
-                setTimeout(() => {
-                    modal.classList.add('open');
-                }, 10);
-            }
-        } catch(e) {
-            console.error('Error opening mobile menu:', e);
+        const modal = getElement('mobileMenuModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('open');
+            }, 10);
         }
     }
 
     window.closeMobileMenu = function() {
-        try {
-            const modal = document.getElementById('mobileMenuModal');
-            if (modal) {
-                modal.classList.remove('open');
-                setTimeout(() => {
-                    modal.style.display = 'none';
-                }, 400);
-            }
-        } catch(e) {
-            console.error('Error closing mobile menu:', e);
+        const modal = getElement('mobileMenuModal');
+        if (modal) {
+            modal.classList.remove('open');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 400);
         }
     }
 
     window.openAppleSubmenu = function() {
-        try {
-            closeMobileMenu();
-            const appleModal = document.getElementById('appleSubmenuModal');
-            if (appleModal) {
-                appleModal.style.display = 'flex';
-                setTimeout(() => {
-                    appleModal.classList.add('open');
-                }, 10);
-            }
-        } catch(e) {
-            console.error('Error opening Apple submenu:', e);
+        closeMobileMenu();
+        const appleModal = getElement('appleSubmenuModal');
+        if (appleModal) {
+            appleModal.style.display = 'flex';
+            setTimeout(() => {
+                appleModal.classList.add('open');
+            }, 10);
         }
     }
 
     window.closeAppleSubmenu = function() {
-        try {
-            const appleModal = document.getElementById('appleSubmenuModal');
-            if (appleModal) {
-                appleModal.classList.remove('open');
-                setTimeout(() => {
-                    appleModal.style.display = 'none';
-                    openMobileMenu();
-                }, 400);
-            }
-        } catch(e) {
-            console.error('Error closing Apple submenu:', e);
+        const appleModal = getElement('appleSubmenuModal');
+        if (appleModal) {
+            appleModal.classList.remove('open');
+            setTimeout(() => {
+                appleModal.style.display = 'none';
+                openMobileMenu();
+            }, 400);
         }
     }
 
     window.openAndroidSubmenu = function() {
-        try {
-            closeMobileMenu();
-            const androidModal = document.getElementById('androidSubmenuModal');
-            if (androidModal) {
-                androidModal.style.display = 'flex';
-                setTimeout(() => {
-                    androidModal.classList.add('open');
-                }, 10);
-            }
-        } catch(e) {
-            console.error('Error opening Android submenu:', e);
+        closeMobileMenu();
+        const androidModal = getElement('androidSubmenuModal');
+        if (androidModal) {
+            androidModal.style.display = 'flex';
+            setTimeout(() => {
+                androidModal.classList.add('open');
+            }, 10);
         }
     }
 
     window.closeAndroidSubmenu = function() {
-        try {
-            const androidModal = document.getElementById('androidSubmenuModal');
-            if (androidModal) {
-                androidModal.classList.remove('open');
-                setTimeout(() => {
-                    androidModal.style.display = 'none';
-                    openMobileMenu();
-                }, 400);
-            }
-        } catch(e) {
-            console.error('Error closing Android submenu:', e);
+        const androidModal = getElement('androidSubmenuModal');
+        if (androidModal) {
+            androidModal.classList.remove('open');
+            setTimeout(() => {
+                androidModal.style.display = 'none';
+                openMobileMenu();
+            }, 400);
         }
     }
 
@@ -938,56 +927,50 @@
 
     // Initialize mobile menu when the page loads
     document.addEventListener('DOMContentLoaded', () => {
-        // Создаем структуру меню
         createMobileMenuStructure();
         
         // Mobile menu button setup
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenuBtn = getElement('mobileMenuBtn');
         if (mobileMenuBtn) {
             mobileMenuBtn.addEventListener('click', function() {
-                // Пересоздаем меню для обновления данных пользователя
-                const container = document.getElementById('mobile-menu-container');
+                // Сбрасываем кеш пользовательских данных
+                userHTMLCache = null;
+                
+                const container = getElement('mobile-menu-container');
                 if (container) {
                     container.remove();
+                    cachedElements['mobile-menu-container'] = null;
                 }
+                
                 createMobileMenuStructure();
                 openMobileMenu();
             });
-        } else {
-            console.warn('Mobile menu button not found');
         }
 
         // Close menu when clicking outside
         document.addEventListener('click', (e) => {
-            try {
-                const mobileMenuModal = document.getElementById('mobileMenuModal');
-                const appleSubmenuModal = document.getElementById('appleSubmenuModal');
-                const androidSubmenuModal = document.getElementById('androidSubmenuModal');
-                const floatingAvatar = document.querySelector('.floating-avatar-container');
-                
-                // Close mobile menu if click is outside
-                if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
-                    !mobileMenuModal.contains(e.target) && 
-                    e.target.id !== 'mobileMenuBtn' &&
-                    !(floatingAvatar && floatingAvatar.contains(e.target))) {
-                    closeMobileMenu();
-                }
-                
-                // Close apple submenu if click is outside
-                if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
-                    !appleSubmenuModal.contains(e.target) && 
-                    e.target.id !== 'mobileMenuBtn') {
-                    closeAppleSubmenu();
-                }
-                
-                // Close android submenu if click is outside
-                if (androidSubmenuModal && androidSubmenuModal.classList.contains('open') && 
-                    !androidSubmenuModal.contains(e.target) && 
-                    e.target.id !== 'mobileMenuBtn') {
-                    closeAndroidSubmenu();
-                }
-            } catch(e) {
-                console.error('Click handler error:', e);
+            const mobileMenuModal = getElement('mobileMenuModal');
+            const appleSubmenuModal = getElement('appleSubmenuModal');
+            const androidSubmenuModal = getElement('androidSubmenuModal');
+            const floatingAvatar = document.querySelector('.floating-avatar-container');
+            
+            if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
+                !mobileMenuModal.contains(e.target) && 
+                e.target.id !== 'mobileMenuBtn' &&
+                !(floatingAvatar && floatingAvatar.contains(e.target))) {
+                closeMobileMenu();
+            }
+            
+            if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
+                !appleSubmenuModal.contains(e.target) && 
+                e.target.id !== 'mobileMenuBtn') {
+                closeAppleSubmenu();
+            }
+            
+            if (androidSubmenuModal && androidSubmenuModal.classList.contains('open') && 
+                !androidSubmenuModal.contains(e.target) && 
+                e.target.id !== 'mobileMenuBtn') {
+                closeAndroidSubmenu();
             }
         });
     });
