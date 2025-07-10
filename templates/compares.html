@@ -20,118 +20,120 @@
             </button>
         </div>
 
-        <div class="text-center mb-5">
-            <h1 class="display-4 mb-3">База спецификаций телефонов</h1>
-            <p class="lead">Найдите и изучите характеристики различных моделей смартфонов</p>
-            
-            <div class="form-group mt-4" style="max-width: 600px; margin: 0 auto;">
-                <div class="input-group">
-                    <input type="text" id="phoneSearch" class="form-control form-control-lg" 
-                           placeholder="Введите бренд или модель телефона...">
-                </div>
-            </div>
-        </div>
-
-        <!-- Контейнер для выбора телефонов в режиме сравнения -->
-        <div id="compareSelection" class="compare-selection mb-4" style="display: none;">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="phone-selector">
-                        <div class="selector-header">
-                            <h4>Телефон 1</h4>
-                        </div>
-                        <div class="phone-preview" id="phonePreview1">
-                            <div class="placeholder">
-                                <i class="fas fa-plus"></i>
-                                <p>Выберите телефон</p>
-                            </div>
-                        </div>
-                        <button class="btn btn-outline-secondary mt-2 select-phone-btn" data-phone="1">
-                            Выбрать телефон
-                        </button>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="phone-selector">
-                        <div class="selector-header">
-                            <h4>Телефон 2</h4>
-                        </div>
-                        <div class="phone-preview" id="phonePreview2">
-                            <div class="placeholder">
-                                <i class="fas fa-plus"></i>
-                                <p>Выберите телефон</p>
-                            </div>
-                        </div>
-                        <button class="btn btn-outline-secondary mt-2 select-phone-btn" data-phone="2">
-                            Выбрать телефон
-                        </button>
+        <div id="mainContent" style="display: none;">
+            <div class="text-center mb-5">
+                <h1 class="display-4 mb-3">База спецификаций телефонов</h1>
+                <p class="lead">Найдите и изучите характеристики различных моделей смартфонов</p>
+                
+                <div class="form-group mt-4" style="max-width: 600px; margin: 0 auto;">
+                    <div class="input-group">
+                        <input type="text" id="phoneSearch" class="form-control form-control-lg" 
+                               placeholder="Введите бренд или модель телефона...">
                     </div>
                 </div>
             </div>
-            <div class="text-center mt-4">
-                <button id="startCompareBtn" class="btn btn-success" disabled>
-                    <i class="fas fa-balance-scale me-2"></i>Сравнить
+
+            <!-- Контейнер для выбора телефонов в режиме сравнения -->
+            <div id="compareSelection" class="compare-selection mb-4" style="display: none;">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="phone-selector">
+                            <div class="selector-header">
+                                <h4>Телефон 1</h4>
+                            </div>
+                            <div class="phone-preview" id="phonePreview1">
+                                <div class="placeholder">
+                                    <i class="fas fa-plus"></i>
+                                    <p>Выберите телефон</p>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline-secondary mt-2 select-phone-btn" data-phone="1">
+                                Выбрать телефон
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="phone-selector">
+                            <div class="selector-header">
+                                <h4>Телефон 2</h4>
+                            </div>
+                            <div class="phone-preview" id="phonePreview2">
+                                <div class="placeholder">
+                                    <i class="fas fa-plus"></i>
+                                    <p>Выберите телефон</p>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline-secondary mt-2 select-phone-btn" data-phone="2">
+                                Выбрать телефон
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-4">
+                    <button id="startCompareBtn" class="btn btn-success" disabled>
+                        <i class="fas fa-balance-scale me-2"></i>Сравнить
+                    </button>
+                    <button id="clearCompareBtn" class="btn btn-outline-danger ms-2">
+                        <i class="fas fa-times me-2"></i>Очистить
+                    </button>
+                </div>
+            </div>
+
+            <div id="searchResults" class="phone-grid" style="display: none;">
+                <!-- Результаты поиска будут здесь -->
+            </div>
+
+            <div id="phoneDetails" class="specs-container mt-5" style="display: none;">
+                <button id="backToResults" class="btn btn-secondary mb-4">
+                    <i class="fas fa-arrow-left me-2"></i>Назад к результатам
                 </button>
-                <button id="clearCompareBtn" class="btn btn-outline-danger ms-2">
-                    <i class="fas fa-times me-2"></i>Очистить
+                
+                <div class="specs-header">
+                    <div class="specs-phone">
+                        <img id="phoneImage" src="" alt="Phone" class="phone-thumb">
+                        <div id="phoneTitle" class="mt-3 h3 text-center"></div>
+                    </div>
+                </div>
+                
+                <div class="spec-items mt-4" id="specsContainer">
+                    <!-- Спецификации будут здесь -->
+                </div>
+            </div>
+
+            <!-- Контейнер для сравнения -->
+            <div id="compareDetails" class="compare-container mt-5" style="display: none;">
+                <button id="backFromCompare" class="btn btn-secondary mb-4">
+                    <i class="fas fa-arrow-left me-2"></i>Назад к выбору
                 </button>
-            </div>
-        </div>
-
-        <div id="searchResults" class="phone-grid" style="display: none;">
-            <!-- Результаты поиска будут здесь -->
-        </div>
-
-        <div id="phoneDetails" class="specs-container mt-5" style="display: none;">
-            <button id="backToResults" class="btn btn-secondary mb-4">
-                <i class="fas fa-arrow-left me-2"></i>Назад к результатам
-            </button>
-            
-            <div class="specs-header">
-                <div class="specs-phone">
-                    <img id="phoneImage" src="" alt="Phone" class="phone-thumb">
-                    <div id="phoneTitle" class="mt-3 h3 text-center"></div>
+                
+                <div class="compare-header">
+                    <div class="compare-phone">
+                        <img id="compareImage1" src="" alt="Phone 1" class="phone-thumb">
+                        <div id="compareTitle1" class="mt-3 h4 text-center"></div>
+                    </div>
+                    <div class="vs-badge">
+                        <span>VS</span>
+                    </div>
+                    <div class="compare-phone">
+                        <img id="compareImage2" src="" alt="Phone 2" class="phone-thumb">
+                        <div id="compareTitle2" class="mt-3 h4 text-center"></div>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="spec-items mt-4" id="specsContainer">
-                <!-- Спецификации будут здесь -->
-            </div>
-        </div>
-
-        <!-- Контейнер для сравнения -->
-        <div id="compareDetails" class="compare-container mt-5" style="display: none;">
-            <button id="backFromCompare" class="btn btn-secondary mb-4">
-                <i class="fas fa-arrow-left me-2"></i>Назад к выбору
-            </button>
-            
-            <div class="compare-header">
-                <div class="compare-phone">
-                    <img id="compareImage1" src="" alt="Phone 1" class="phone-thumb">
-                    <div id="compareTitle1" class="mt-3 h4 text-center"></div>
+                
+                <div class="compare-table mt-4">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Характеристика</th>
+                                <th id="compareHeader1"></th>
+                                <th id="compareHeader2"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="compareSpecs">
+                            <!-- Спецификации для сравнения будут здесь -->
+                        </tbody>
+                    </table>
                 </div>
-                <div class="vs-badge">
-                    <span>VS</span>
-                </div>
-                <div class="compare-phone">
-                    <img id="compareImage2" src="" alt="Phone 2" class="phone-thumb">
-                    <div id="compareTitle2" class="mt-3 h4 text-center"></div>
-                </div>
-            </div>
-            
-            <div class="compare-table mt-4">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Характеристика</th>
-                            <th id="compareHeader1"></th>
-                            <th id="compareHeader2"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="compareSpecs">
-                        <!-- Спецификации для сравнения будут здесь -->
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>
@@ -139,6 +141,7 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Элементы интерфейса
+        const mainContent = document.getElementById('mainContent');
         const phoneSearch = document.getElementById('phoneSearch');
         const searchResults = document.getElementById('searchResults');
         const phoneDetails = document.getElementById('phoneDetails');
@@ -269,10 +272,12 @@
                 searchResults.style.display = 'none';
                 phoneDetails.style.display = 'none';
                 compareDetails.style.display = 'none';
+                mainContent.style.display = 'none';
                 return;
             }
             
             currentMode = mode;
+            mainContent.style.display = 'block';
             
             // Обновление активной кнопки
             singleModeBtn.classList.toggle('active', mode === 'single');
@@ -696,9 +701,6 @@
                 compareSelection.style.display = 'block';
             }
         });
-        
-        // Инициализация
-        phoneSearch.focus();
     });
     </script>
 </body>
