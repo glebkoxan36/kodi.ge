@@ -1,5 +1,5 @@
 (function() {
-    // Добавляем оптимизированные стили
+    // Добавляем стили
     const style = document.createElement('style');
     style.id = 'mobile-menu-styles';
     style.textContent = `
@@ -33,7 +33,7 @@
             align-items: center;
             justify-content: center;
             margin: 0 auto;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.3s ease;
         }
         
         .mobile-menu-btn:hover {
@@ -44,31 +44,36 @@
         .mobile-menu-modal {
             display: none;
             position: fixed;
-            bottom: 20px;
+            bottom: 0;
             left: 0;
             width: 100%;
             height: 70vh;
-            max-height: calc(90% - 20px);
+            max-height: 90%;
             z-index: 1100;
-            transform: translateY(120%);
+            align-items: flex-end;
+            transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
             opacity: 1;
             overflow: visible;
             padding-top: 0;
             border-radius: 30px 30px 0 0;
-            box-sizing: border-box;
         }
         
         .mobile-menu-modal.open {
             transform: translateY(0);
-            display: block;
+            display: flex;
         }
         
+        /* Анимированный градиентный фон */
         .mobile-menu-modal .modal-content {
-            background: linear-gradient(135deg, #1a2138, #0e1321);
-            border: 1px solid rgba(0, 198, 255, 0.3);
+            background: linear-gradient(125deg, #0a0e17, #1a2138, #0a0e17, #1a2138);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            box-shadow: 
+                0 0 15px rgba(0, 198, 255, 0.3),
+                inset 0 0 20px rgba(0, 150, 200, 0.2);
             overflow: visible;
             position: relative;
             width: 100%;
@@ -76,6 +81,37 @@
             z-index: 1;
         }
 
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Красивые линии для фона */
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #00c6ff, transparent);
+            z-index: 2;
+            opacity: 0.4;
+        }
+        
+        .modal-content::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #00c6ff, transparent);
+            z-index: 2;
+            opacity: 0.4;
+        }
+        
         .mobile-menu-modal .modal-body {
             flex: 1;
             overflow: hidden;
@@ -88,6 +124,7 @@
             z-index: 3;
         }
         
+        /* Кнопка закрытия */
         .close-modal {
             position: absolute;
             top: 15px;
@@ -114,6 +151,7 @@
             box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
         }
         
+        /* Подняли аватарку на 5px вверх */
         .floating-avatar-container {
             position: absolute;
             top: -50px;
@@ -190,9 +228,8 @@
             font-weight: 700;
             cursor: pointer;
             text-align: center;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            overflow: visible;
+            text-overflow: clip;
             width: 100%;
             box-sizing: border-box;
             letter-spacing: 0.5px;
@@ -208,6 +245,7 @@
             max-width: 250px;
             margin: 0 auto;
             min-height: auto;
+            white-space: nowrap;
             line-height: 1.3;
             color: white;
         }
@@ -220,9 +258,7 @@
         .user-balance {
             font-size: 0.95rem;
             font-weight: 700;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            text-overflow: clip;
             background: none !important;
             border: none !important;
             border-radius: 0;
@@ -236,6 +272,7 @@
             color: #00c6ff;
         }
         
+        /* Увеличенные иконки одного размера */
         .menu-item i {
             font-size: 40px !important;
             margin-bottom: 8px;
@@ -243,6 +280,7 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+            text-shadow: 0 0 8px rgba(0, 198, 255, 0.3);
         }
         
         .menu-icon-img {
@@ -256,6 +294,7 @@
             object-position: center;
         }
         
+        /* Убираем подчеркивание у всех ссылок */
         .menu-item a,
         .floating-avatar-info,
         .user-balance,
@@ -264,16 +303,19 @@
             outline: none !important;
         }
         
+        /* Убираем подчеркивание при фокусе */
         .menu-item a:focus,
         .menu-item a:active {
             text-decoration: none !important;
             outline: none !important;
         }
         
+        /* Убираем тень при наведении */
         .menu-item:hover {
             box-shadow: none !important;
         }
         
+        /* Увеличенные ячейки сетки */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -295,13 +337,15 @@
             align-items: center;
             justify-content: center;
             border-radius: 15px;
-            background: rgba(26, 33, 56, 0.8);
-            border: 1px solid rgba(0, 198, 255, 0.3);
+            background: linear-gradient(135deg, #1a2138, #0e1321);
+            border: 1px solid rgba(0, 198, 255, 0.4);
             aspect-ratio: 1 / 1;
             text-align: center;
             transition: all 0.3s ease;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.3),
+                inset 0 0 10px rgba(0, 198, 255, 0.1);
             min-width: 0;
             min-height: 0;
             padding: 12px 8px;
@@ -309,14 +353,15 @@
             color: white;
             position: relative;
             z-index: 3;
-            backdrop-filter: blur(5px);
         }
         
         .menu-item:hover {
-            background: rgba(34, 48, 86, 0.9);
-            transform: translateY(-5px);
+            background: linear-gradient(135deg, #223056, #121a33);
+            transform: translateY(-7px);
             border-color: var(--accent-color);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+            box-shadow: 
+                0 6px 16px rgba(0, 0, 0, 0.4),
+                inset 0 0 15px rgba(0, 198, 255, 0.2);
         }
         
         .menu-item span {
@@ -332,11 +377,13 @@
             padding: 0 2px;
         }
         
+        /* Ограничение ширины для текста под аватаркой */
         .floating-avatar-info, .user-balance {
             max-width: 250px;
             margin: 0 auto;
         }
         
+        /* Уменьшенные ячейки мобильного меню */
         @media (max-width: 768px) {
             .floating-avatar-info, .user-balance {
                 max-width: 230px;
@@ -436,10 +483,9 @@
         @media (min-width: 769px) and (max-width: 1024px) {
             .mobile-menu-modal {
                 height: 55vh;
-                max-height: calc(85% - 20px);
             }
             .floating-avatar-container {
-                top: -35px;
+                top: -35px; /* Подняли аватарку */
             }
             .floating-avatar {
                 width: 110px;
@@ -468,6 +514,7 @@
             }
         }
         
+        /* Скрыть на ПК */
         @media (min-width: 1025px) {
             .mobile-menu-modal {
                 display: none !important;
@@ -477,6 +524,7 @@
             }
         }
         
+        /* Новые стили для элементов авторизации */
         #mobileLoginRegister {
             display: block;
             margin-top: 10px;
@@ -490,40 +538,6 @@
         }
     `;
     document.head.appendChild(style);
-
-    // Создаем кнопку меню, если она не существует
-    function createMenuButtonIfNeeded() {
-        if (!document.getElementById('mobileMenuBtn')) {
-            const menuBtn = document.createElement('div');
-            menuBtn.id = 'mobileMenuBtn';
-            menuBtn.className = 'mobile-menu-btn';
-            menuBtn.innerHTML = '<i class="fas fa-bars"></i>';
-            
-            const menuBottom = document.createElement('div');
-            menuBottom.className = 'mobile-menu-bottom';
-            menuBottom.appendChild(menuBtn);
-            
-            document.body.appendChild(menuBottom);
-            return menuBtn;
-        }
-        return document.getElementById('mobileMenuBtn');
-    }
-
-    // Кеширование DOM-элементов
-    let cachedElements = {
-        mobileMenuModal: null,
-        appleSubmenuModal: null,
-        androidSubmenuModal: null,
-        mobileMenuBtn: null
-    };
-
-    // Инициализация кешированных элементов
-    function cacheElements() {
-        cachedElements.mobileMenuModal = document.getElementById('mobileMenuModal');
-        cachedElements.appleSubmenuModal = document.getElementById('appleSubmenuModal');
-        cachedElements.androidSubmenuModal = document.getElementById('androidSubmenuModal');
-        cachedElements.mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    }
 
     // Глобальные функции навигации
     window.goToLogin = function() {
@@ -542,12 +556,14 @@
 
     // Функция для генерации HTML пользователя
     function generateUserHTML() {
+        // Проверяем наличие данных пользователя
         const userData = window.currentUser || {};
         
         if (userData.first_name && userData.last_name) {
             const formattedBalance = (userData.balance || 0).toFixed(2);
             const fullName = `${userData.first_name} ${userData.last_name}`;
             
+            // Поддержка загруженных аватарок
             let avatarHTML;
             if (userData.avatar_url) {
                 avatarHTML = `<img src="${userData.avatar_url}" alt="User Avatar" class="avatar-image">`;
@@ -585,10 +601,6 @@
 
     // Создаем HTML структуру мобильного меню
     function createMobileMenuStructure() {
-        if (document.getElementById('mobile-menu-container')) {
-            return;
-        }
-
         const mobileMenuContainer = document.createElement('div');
         mobileMenuContainer.id = 'mobile-menu-container';
         document.body.appendChild(mobileMenuContainer);
@@ -602,7 +614,20 @@
             createMainMobileMenu(mobileMenuContainer, userHTML);
         }
 
-        cacheElements();
+        // Восстановление состояния меню
+        const savedMenuState = sessionStorage.getItem('mobileMenuState');
+        if (savedMenuState) {
+            sessionStorage.removeItem('mobileMenuState');
+            setTimeout(() => {
+                if (savedMenuState === 'main' && document.getElementById('mobileMenuModal')) {
+                    openMobileMenu();
+                } else if (savedMenuState === 'apple' && document.getElementById('appleSubmenuModal')) {
+                    openAppleSubmenu();
+                } else if (savedMenuState === 'android' && document.getElementById('androidSubmenuModal')) {
+                    openAndroidSubmenu();
+                }
+            }, 50);
+        }
     }
 
     function createDashboardMobileMenu(container, userHTML) {
@@ -620,27 +645,27 @@
                             ${userHTML}
                         </div>
                         <div class="menu-grid">
-                            <div class="menu-item" onclick="window.location.href='/'">
+                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/';">
                                 <i class="fas fa-home"></i>
                                 <span>მთავარი</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/user/accounts'">
+                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/user/accounts';">
                                 <i class="fas fa-wallet"></i>
                                 <span>ანგარიშები</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/user/history_checks'">
+                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/user/history_checks';">
                                 <i class="fas fa-history"></i>
                                 <span>IMEI ისტორია</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/user/history_comparisons'">
+                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/user/history_comparisons';">
                                 <i class="fas fa-exchange-alt"></i>
                                 <span>შედარებები</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/user/settings'">
+                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/user/settings';">
                                 <i class="fas fa-cog"></i>
                                 <span>პარამეტრები</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/auth/logout'">
+                            <div class="menu-item" onclick="window.location.href='/auth/logout';">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>გასვლა</span>
                             </div>
@@ -653,6 +678,7 @@
 
     function createMainMobileMenu(container, userHTML) {
         container.innerHTML = `
+            <!-- Mobile Menu Modal -->
             <div class="mobile-menu-modal" id="mobileMenuModal">
                 <button class="close-modal" onclick="closeMobileMenu()">
                     <i class="fas fa-times"></i>
@@ -665,7 +691,7 @@
                 <div class="modal-content">
                     <div class="modal-body">
                         <div class="menu-grid">
-                            <a class="menu-item" href="/">
+                            <a class="menu-item" href="/" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
                                 <i class="fas fa-home"></i>
                                 <span>მთავარი</span>
                             </a>
@@ -681,15 +707,15 @@
                                 <i class="fas fa-unlock-alt"></i>
                                 <span>განბლოკვა</span>
                             </div>
-                            <a class="menu-item" href="/compare">
+                            <a class="menu-item" href="/compare" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
                                 <i class="fas fa-exchange-alt"></i>
                                 <span>შედარება</span>
                             </a>
-                            <a class="menu-item" href="/knowledge-base">
+                            <a class="menu-item" href="/knowledge-base" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
                                 <i class="fas fa-book"></i>
                                 <span>ცოდნის ბაზა</span>
                             </a>
-                            <a class="menu-item" href="/contacts">
+                            <a class="menu-item" href="/contacts" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
                                 <i class="fas fa-address-card"></i>
                                 <span>კონტაქტი</span>
                             </a>
@@ -706,6 +732,7 @@
                 </div>
             </div>
 
+            <!-- Apple Submenu Modal -->
             <div class="mobile-menu-modal" id="appleSubmenuModal">
                 <button class="close-modal" onclick="closeAppleSubmenu()">
                     <i class="fas fa-times"></i>
@@ -718,32 +745,32 @@
                 <div class="modal-content">
                     <div class="modal-body">
                         <div class="menu-grid">
-                            <a class="menu-item" href="/applecheck?type=free">
+                            <a class="menu-item" href="/applecheck?type=free" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/8f1197c9-19f4-4923-8030-4f7b88c9d697_20250627_012614_0000.png" 
                                      class="menu-icon-img">
                                 <span>უფასო შემოწმება</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=fmi">
+                            <a class="menu-item" href="/applecheck?type=fmi" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/f9a07c0e-e427-4a1a-aab9-948ba60f1b6a_20250627_012716_0000.png" 
                                      class="menu-icon-img">
                                 <span>FMI iCloud</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=sim_lock">
+                            <a class="menu-item" href="/applecheck?type=sim_lock" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/957afe67-7a27-48cb-9622-6c557b220b71_20250627_012808_0000.png" 
                                      class="menu-icon-img">
                                 <span>SIM ლოკი</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=blacklist">
+                            <a class="menu-item" href="/applecheck?type=blacklist" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/4e28c4f2-541b-4a1b-8163-c79e6db5481c_20250627_012852_0000.png" 
                                      class="menu-icon-img">
                                 <span>შავი სია</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=mdm">
+                            <a class="menu-item" href="/applecheck?type=mdm" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/275e6a62-c55e-48b9-8781-5b323ebcdce0_20250627_012946_0000.png" 
                                      class="menu-icon-img">
                                 <span>MDM ბლოკი</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=premium">
+                            <a class="menu-item" href="/applecheck?type=premium" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/84df4824-0564-447c-b5c4-e749442bdc19_20250627_013110_0000.png" 
                                      class="menu-icon-img">
                                 <span>პრემიუმ შემოწმება</span>
@@ -762,6 +789,7 @@
                 </div>
             </div>
 
+            <!-- Android Submenu Modal -->
             <div class="mobile-menu-modal" id="androidSubmenuModal">
                 <button class="close-modal" onclick="closeAndroidSubmenu()">
                     <i class="fas fa-times"></i>
@@ -774,31 +802,31 @@
                 <div class="modal-content">
                     <div class="modal-body">
                         <div class="menu-grid">
-                            <a class="menu-item" href="/androidcheck">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fab fa-samsung"></i>
                                 <span>Samsung</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fas fa-bolt"></i>
                                 <span>Xiaomi</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fab fa-google"></i>
                                 <span>Pixel</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fab fa-huawei"></i>
                                 <span>Huawei</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fas fa-circle"></i>
                                 <span>Oppo</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fab fa-android"></i>
                                 <span>LG</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fas fa-ellipsis-h"></i>
                                 <span>სხვა</span>
                             </a>
@@ -816,13 +844,12 @@
     // Mobile menu functions
     window.openMobileMenu = function() {
         try {
-            if (cachedElements.mobileMenuModal) {
-                cachedElements.mobileMenuModal.style.display = 'block';
+            const modal = document.getElementById('mobileMenuModal');
+            if (modal) {
+                modal.style.display = 'flex';
                 setTimeout(() => {
-                    cachedElements.mobileMenuModal.classList.add('open');
+                    modal.classList.add('open');
                 }, 10);
-            } else {
-                console.error('Mobile menu modal not found');
             }
         } catch(e) {
             console.error('Error opening mobile menu:', e);
@@ -831,10 +858,11 @@
 
     window.closeMobileMenu = function() {
         try {
-            if (cachedElements.mobileMenuModal) {
-                cachedElements.mobileMenuModal.classList.remove('open');
+            const modal = document.getElementById('mobileMenuModal');
+            if (modal) {
+                modal.classList.remove('open');
                 setTimeout(() => {
-                    cachedElements.mobileMenuModal.style.display = 'none';
+                    modal.style.display = 'none';
                 }, 400);
             }
         } catch(e) {
@@ -845,10 +873,11 @@
     window.openAppleSubmenu = function() {
         try {
             closeMobileMenu();
-            if (cachedElements.appleSubmenuModal) {
-                cachedElements.appleSubmenuModal.style.display = 'block';
+            const appleModal = document.getElementById('appleSubmenuModal');
+            if (appleModal) {
+                appleModal.style.display = 'flex';
                 setTimeout(() => {
-                    cachedElements.appleSubmenuModal.classList.add('open');
+                    appleModal.classList.add('open');
                 }, 10);
             }
         } catch(e) {
@@ -858,10 +887,11 @@
 
     window.closeAppleSubmenu = function() {
         try {
-            if (cachedElements.appleSubmenuModal) {
-                cachedElements.appleSubmenuModal.classList.remove('open');
+            const appleModal = document.getElementById('appleSubmenuModal');
+            if (appleModal) {
+                appleModal.classList.remove('open');
                 setTimeout(() => {
-                    cachedElements.appleSubmenuModal.style.display = 'none';
+                    appleModal.style.display = 'none';
                     openMobileMenu();
                 }, 400);
             }
@@ -873,10 +903,11 @@
     window.openAndroidSubmenu = function() {
         try {
             closeMobileMenu();
-            if (cachedElements.androidSubmenuModal) {
-                cachedElements.androidSubmenuModal.style.display = 'block';
+            const androidModal = document.getElementById('androidSubmenuModal');
+            if (androidModal) {
+                androidModal.style.display = 'flex';
                 setTimeout(() => {
-                    cachedElements.androidSubmenuModal.classList.add('open');
+                    androidModal.classList.add('open');
                 }, 10);
             }
         } catch(e) {
@@ -886,10 +917,11 @@
 
     window.closeAndroidSubmenu = function() {
         try {
-            if (cachedElements.androidSubmenuModal) {
-                cachedElements.androidSubmenuModal.classList.remove('open');
+            const androidModal = document.getElementById('androidSubmenuModal');
+            if (androidModal) {
+                androidModal.classList.remove('open');
                 setTimeout(() => {
-                    cachedElements.androidSubmenuModal.style.display = 'none';
+                    androidModal.style.display = 'none';
                     openMobileMenu();
                 }, 400);
             }
@@ -906,49 +938,52 @@
 
     // Initialize mobile menu when the page loads
     document.addEventListener('DOMContentLoaded', () => {
-        // Создаем кнопку меню
-        const menuBtn = createMenuButtonIfNeeded();
-        
         // Создаем структуру меню
         createMobileMenuStructure();
         
-        // Вешаем обработчик на кнопку меню
-        if (menuBtn) {
-            menuBtn.addEventListener('click', function() {
+        // Mobile menu button setup
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', function() {
+                // Пересоздаем меню для обновления данных пользователя
+                const container = document.getElementById('mobile-menu-container');
+                if (container) {
+                    container.remove();
+                }
                 createMobileMenuStructure();
                 openMobileMenu();
             });
         } else {
-            console.error('Mobile menu button could not be created');
+            console.warn('Mobile menu button not found');
         }
 
         // Close menu when clicking outside
         document.addEventListener('click', (e) => {
             try {
+                const mobileMenuModal = document.getElementById('mobileMenuModal');
+                const appleSubmenuModal = document.getElementById('appleSubmenuModal');
+                const androidSubmenuModal = document.getElementById('androidSubmenuModal');
                 const floatingAvatar = document.querySelector('.floating-avatar-container');
                 
                 // Close mobile menu if click is outside
-                if (cachedElements.mobileMenuModal && 
-                    cachedElements.mobileMenuModal.classList.contains('open') && 
-                    !cachedElements.mobileMenuModal.contains(e.target) && 
-                    e.target !== menuBtn &&
+                if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
+                    !mobileMenuModal.contains(e.target) && 
+                    e.target.id !== 'mobileMenuBtn' &&
                     !(floatingAvatar && floatingAvatar.contains(e.target))) {
                     closeMobileMenu();
                 }
                 
                 // Close apple submenu if click is outside
-                if (cachedElements.appleSubmenuModal && 
-                    cachedElements.appleSubmenuModal.classList.contains('open') && 
-                    !cachedElements.appleSubmenuModal.contains(e.target) && 
-                    e.target !== menuBtn) {
+                if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
+                    !appleSubmenuModal.contains(e.target) && 
+                    e.target.id !== 'mobileMenuBtn') {
                     closeAppleSubmenu();
                 }
                 
                 // Close android submenu if click is outside
-                if (cachedElements.androidSubmenuModal && 
-                    cachedElements.androidSubmenuModal.classList.contains('open') && 
-                    !cachedElements.androidSubmenuModal.contains(e.target) && 
-                    e.target !== menuBtn) {
+                if (androidSubmenuModal && androidSubmenuModal.classList.contains('open') && 
+                    !androidSubmenuModal.contains(e.target) && 
+                    e.target.id !== 'mobileMenuBtn') {
                     closeAndroidSubmenu();
                 }
             } catch(e) {
