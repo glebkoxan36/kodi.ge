@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from bson import ObjectId
 
 # Веса характеристик для сравнения
 WEIGHTS = {
@@ -474,3 +475,13 @@ def generate_image_path(brand, model):
     brand_normalized = brand.lower().replace(' ', '_').replace('-', '_')
     model_normalized = model.lower().replace(' ', '_').replace('-', '_').replace('/', '_').replace('\\', '_')
     return f"/static/img/phones/{brand_normalized}/{model_normalized}.jpg"
+
+def convert_objectids(obj):
+    """Рекурсивно преобразует все ObjectId в строки"""
+    if isinstance(obj, ObjectId):
+        return str(obj)
+    if isinstance(obj, list):
+        return [convert_objectids(item) for item in obj]
+    if isinstance(obj, dict):
+        return {key: convert_objectids(value) for key, value in obj.items()}
+    return obj
