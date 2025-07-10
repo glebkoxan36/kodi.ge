@@ -49,7 +49,6 @@
             width: 100%;
             height: 70vh;
             max-height: 90%;
-            background: rgba(0, 0, 0, 0.7);
             z-index: 1100;
             align-items: flex-end;
             transform: translateY(100%);
@@ -65,10 +64,11 @@
             display: flex;
         }
         
-        /* ФИКС РАСТЯНУТОГО ИЗОБРАЖЕНИЯ */
+        /* Анимированный градиентный фон */
         .mobile-menu-modal .modal-content {
-            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
-                         url('static/mobilemenu.jpg') no-repeat center center / cover;
+            background: linear-gradient(125deg, #0a0e17, #1a2138, #0a0e17, #1a2138);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
@@ -79,11 +79,12 @@
             width: 100%;
             height: 100%;
             z-index: 1;
-            
-            /* Гарантия правильного отображения */
-            background-attachment: scroll;
-            background-origin: border-box;
-            background-clip: border-box;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         /* Красивые линии для фона */
@@ -206,7 +207,6 @@
             background: linear-gradient(135deg, #0a0e17, #1a2138);
             color: #ffffff;
             font-weight: bold;
-            /* Уменьшили размер надписи KODI.GE */
             font-size: 1.2rem;
             text-align: center;
             padding: 10px;
@@ -272,15 +272,26 @@
             color: #00c6ff;
         }
         
-        /* Увеличенные иконки с градиентом */
+        /* Увеличенные иконки одного размера */
         .menu-item i {
-            font-size: 34px !important;
+            font-size: 40px !important;
             margin-bottom: 8px;
             background: linear-gradient(135deg, #00c6ff, #0072ff);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
             text-shadow: 0 0 8px rgba(0, 198, 255, 0.3);
+        }
+        
+        .menu-icon-img {
+            display: block;
+            width: 40px !important;
+            height: 40px !important;
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 7px;
+            object-fit: contain;
+            object-position: center;
         }
         
         /* Убираем подчеркивание у всех ссылок */
@@ -388,7 +399,7 @@
                 padding: 10px 7px;
             }
             .menu-item i {
-                font-size: 32px !important;
+                font-size: 38px !important;
                 margin-bottom: 6px;
             }
             .menu-item span {
@@ -412,7 +423,7 @@
                 margin-top: 110px;
             }
             .menu-item i {
-                font-size: 30px !important;
+                font-size: 36px !important;
             }
             .menu-item span {
                 font-size: 0.65rem;
@@ -435,7 +446,7 @@
                 margin-top: 100px;
             }
             .menu-item i {
-                font-size: 28px !important;
+                font-size: 34px !important;
             }
             .menu-item span {
                 font-size: 0.6rem;
@@ -458,7 +469,7 @@
                 margin-top: 90px;
             }
             .menu-item i {
-                font-size: 26px !important;
+                font-size: 32px !important;
             }
             .menu-item span {
                 font-size: 0.55rem;
@@ -492,7 +503,7 @@
                 margin-top: 120px;
             }
             .menu-item i {
-                font-size: 34px !important;
+                font-size: 38px !important;
             }
             .menu-item span {
                 font-size: 0.8rem;
@@ -519,17 +530,6 @@
             margin-top: 10px;
             cursor: pointer;
             transition: all 0.3s ease;
-        }
-        
-        .menu-item .menu-icon-img {
-            display: block;
-            width: 30px;
-            height: 30px;
-            margin-left: auto;
-            margin-right: auto;
-            margin-bottom: 7px;
-            object-fit: contain;
-            object-position: center;
         }
         
         #mobileLoginRegister:hover {
@@ -613,6 +613,21 @@
         } else {
             createMainMobileMenu(mobileMenuContainer, userHTML);
         }
+
+        // Восстановление состояния меню
+        const savedMenuState = sessionStorage.getItem('mobileMenuState');
+        if (savedMenuState) {
+            sessionStorage.removeItem('mobileMenuState');
+            setTimeout(() => {
+                if (savedMenuState === 'main' && document.getElementById('mobileMenuModal')) {
+                    openMobileMenu();
+                } else if (savedMenuState === 'apple' && document.getElementById('appleSubmenuModal')) {
+                    openAppleSubmenu();
+                } else if (savedMenuState === 'android' && document.getElementById('androidSubmenuModal')) {
+                    openAndroidSubmenu();
+                }
+            }, 50);
+        }
     }
 
     function createDashboardMobileMenu(container, userHTML) {
@@ -630,27 +645,27 @@
                             ${userHTML}
                         </div>
                         <div class="menu-grid">
-                            <div class="menu-item" onclick="window.location.href='/'; closeAllMobileMenus();">
+                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/';">
                                 <i class="fas fa-home"></i>
                                 <span>მთავარი</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/user/accounts'; closeAllMobileMenus();">
+                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/user/accounts';">
                                 <i class="fas fa-wallet"></i>
                                 <span>ანგარიშები</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/user/history_checks'; closeAllMobileMenus();">
+                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/user/history_checks';">
                                 <i class="fas fa-history"></i>
                                 <span>IMEI ისტორია</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/user/history_comparisons'; closeAllMobileMenus();">
+                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/user/history_comparisons';">
                                 <i class="fas fa-exchange-alt"></i>
                                 <span>შედარებები</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/user/settings'; closeAllMobileMenus();">
+                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/user/settings';">
                                 <i class="fas fa-cog"></i>
                                 <span>პარამეტრები</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/auth/logout'; closeAllMobileMenus();">
+                            <div class="menu-item" onclick="window.location.href='/auth/logout';">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>გასვლა</span>
                             </div>
@@ -676,7 +691,7 @@
                 <div class="modal-content">
                     <div class="modal-body">
                         <div class="menu-grid">
-                            <a class="menu-item" href="/" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
                                 <i class="fas fa-home"></i>
                                 <span>მთავარი</span>
                             </a>
@@ -692,15 +707,15 @@
                                 <i class="fas fa-unlock-alt"></i>
                                 <span>განბლოკვა</span>
                             </div>
-                            <a class="menu-item" href="/compare" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/compare" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
                                 <i class="fas fa-exchange-alt"></i>
                                 <span>შედარება</span>
                             </a>
-                            <a class="menu-item" href="/knowledge-base" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/knowledge-base" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
                                 <i class="fas fa-book"></i>
                                 <span>ცოდნის ბაზა</span>
                             </a>
-                            <a class="menu-item" href="/contacts" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/contacts" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
                                 <i class="fas fa-address-card"></i>
                                 <span>კონტაქტი</span>
                             </a>
@@ -730,37 +745,37 @@
                 <div class="modal-content">
                     <div class="modal-body">
                         <div class="menu-grid">
-                            <a class="menu-item" href="/applecheck?type=free" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/applecheck?type=free" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/8f1197c9-19f4-4923-8030-4f7b88c9d697_20250627_012614_0000.png" 
                                      class="menu-icon-img">
                                 <span>უფასო შემოწმება</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=fmi" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/applecheck?type=fmi" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/f9a07c0e-e427-4a1a-aab9-948ba60f1b6a_20250627_012716_0000.png" 
                                      class="menu-icon-img">
                                 <span>FMI iCloud</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=sim_lock" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/applecheck?type=sim_lock" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/957afe67-7a27-48cb-9622-6c557b220b71_20250627_012808_0000.png" 
                                      class="menu-icon-img">
                                 <span>SIM ლოკი</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=blacklist" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/applecheck?type=blacklist" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/4e28c4f2-541b-4a1b-8163-c79e6db5481c_20250627_012852_0000.png" 
                                      class="menu-icon-img">
                                 <span>შავი სია</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=mdm" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/applecheck?type=mdm" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/275e6a62-c55e-48b9-8781-5b323ebcdce0_20250627_012946_0000.png" 
                                      class="menu-icon-img">
                                 <span>MDM ბლოკი</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=premium" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/applecheck?type=premium" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/84df4824-0564-447c-b5c4-e749442bdc19_20250627_013110_0000.png" 
                                      class="menu-icon-img">
                                 <span>პრემიუმ შემოწმება</span>
                             </a>
-                            <a class="menu-item" href="#" onclick="alert('სერვისი მომზადების პროცესშია'); closeAllMobileMenus();">
+                            <a class="menu-item" href="#" onclick="alert('სერვისი მომზადების პროცესშია');">
                                 <img src="static/ico/874fae5b-c0f5-42d8-9c37-679aa86360e6_20250627_013030_0000.png" 
                                      class="menu-icon-img">
                                 <span>MacBook</span>
@@ -787,31 +802,31 @@
                 <div class="modal-content">
                     <div class="modal-body">
                         <div class="menu-grid">
-                            <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fab fa-samsung"></i>
                                 <span>Samsung</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fas fa-bolt"></i>
                                 <span>Xiaomi</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fab fa-google"></i>
                                 <span>Pixel</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fab fa-huawei"></i>
                                 <span>Huawei</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fas fa-circle"></i>
                                 <span>Oppo</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fab fa-android"></i>
                                 <span>LG</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck" onclick="closeAllMobileMenus();">
+                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
                                 <i class="fas fa-ellipsis-h"></i>
                                 <span>სხვა</span>
                             </a>
