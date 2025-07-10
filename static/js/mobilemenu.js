@@ -56,7 +56,7 @@
         .mobile-menu-modal {
             display: none;
             position: fixed;
-            bottom: -10;
+            bottom: 0;
             left: 0;
             width: 100%;
             height: 70vh;
