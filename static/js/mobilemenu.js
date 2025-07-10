@@ -57,6 +57,7 @@
             overflow: visible;
             padding-top: 0;
             border-radius: 30px 30px 0 0;
+            will-change: transform; /* Оптимизация для анимации */
         }
         
         .mobile-menu-modal.open {
@@ -64,16 +65,11 @@
             display: flex;
         }
         
-        /* Анимированный градиентный фон */
+        /* Легкий анимированный фон */
         .mobile-menu-modal .modal-content {
-            background: linear-gradient(125deg, #0a0e17, #1a2138, #0a0e17, #1a2138);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            background: linear-gradient(135deg, #0a0e17, #1a2138);
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
-            box-shadow: 
-                0 0 15px rgba(0, 198, 255, 0.3),
-                inset 0 0 20px rgba(0, 150, 200, 0.2);
             overflow: visible;
             position: relative;
             width: 100%;
@@ -81,25 +77,36 @@
             z-index: 1;
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* Красивые линии для фона */
+        /* Анимация фона с помощью псевдоэлементов */
         .modal-content::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #00c6ff, transparent);
-            z-index: 2;
-            opacity: 0.4;
+            bottom: 0;
+            background: linear-gradient(
+                45deg,
+                rgba(0, 198, 255, 0.05) 0%,
+                rgba(0, 198, 255, 0.01) 20%,
+                rgba(0, 198, 255, 0.05) 40%,
+                rgba(0, 198, 255, 0.01) 60%,
+                rgba(0, 198, 255, 0.05) 80%,
+                rgba(0, 198, 255, 0.01) 100%
+            );
+            background-size: 300% 300%;
+            animation: animatedBackground 15s ease infinite;
+            z-index: 1;
+            pointer-events: none;
         }
-        
+
+        @keyframes animatedBackground {
+            0% { background-position: 0% 0%; }
+            50% { background-position: 100% 100%; }
+            100% { background-position: 0% 0%; }
+        }
+
+        /* Красивые линии для фона */
         .modal-content::after {
             content: '';
             position: absolute;
@@ -280,7 +287,6 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            text-shadow: 0 0 8px rgba(0, 198, 255, 0.3);
         }
         
         .menu-icon-img {
@@ -344,8 +350,7 @@
             transition: all 0.3s ease;
             cursor: pointer;
             box-shadow: 
-                0 4px 12px rgba(0, 0, 0, 0.3),
-                inset 0 0 10px rgba(0, 198, 255, 0.1);
+                0 4px 12px rgba(0, 0, 0, 0.3);
             min-width: 0;
             min-height: 0;
             padding: 12px 8px;
@@ -353,15 +358,13 @@
             color: white;
             position: relative;
             z-index: 3;
+            will-change: transform; /* Оптимизация для анимации */
         }
         
         .menu-item:hover {
             background: linear-gradient(135deg, #223056, #121a33);
             transform: translateY(-7px);
             border-color: var(--accent-color);
-            box-shadow: 
-                0 6px 16px rgba(0, 0, 0, 0.4),
-                inset 0 0 15px rgba(0, 198, 255, 0.2);
         }
         
         .menu-item span {
@@ -485,7 +488,7 @@
                 height: 55vh;
             }
             .floating-avatar-container {
-                top: -35px; /* Подняли аватарку */
+                top: -35px;
             }
             .floating-avatar {
                 width: 110px;
@@ -846,10 +849,18 @@
         try {
             const modal = document.getElementById('mobileMenuModal');
             if (modal) {
+                // Остановить все текущие анимации
+                modal.style.transition = 'none';
                 modal.style.display = 'flex';
-                setTimeout(() => {
-                    modal.classList.add('open');
-                }, 10);
+                modal.style.transform = 'translateY(100%)';
+                
+                // Запустить анимацию в следующем кадре
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        modal.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)';
+                        modal.classList.add('open');
+                    });
+                });
             }
         } catch(e) {
             console.error('Error opening mobile menu:', e);
@@ -875,10 +886,18 @@
             closeMobileMenu();
             const appleModal = document.getElementById('appleSubmenuModal');
             if (appleModal) {
+                // Остановить все текущие анимации
+                appleModal.style.transition = 'none';
                 appleModal.style.display = 'flex';
-                setTimeout(() => {
-                    appleModal.classList.add('open');
-                }, 10);
+                appleModal.style.transform = 'translateY(100%)';
+                
+                // Запустить анимацию в следующем кадре
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        appleModal.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)';
+                        appleModal.classList.add('open');
+                    });
+                });
             }
         } catch(e) {
             console.error('Error opening Apple submenu:', e);
@@ -905,10 +924,18 @@
             closeMobileMenu();
             const androidModal = document.getElementById('androidSubmenuModal');
             if (androidModal) {
+                // Остановить все текущие анимации
+                androidModal.style.transition = 'none';
                 androidModal.style.display = 'flex';
-                setTimeout(() => {
-                    androidModal.classList.add('open');
-                }, 10);
+                androidModal.style.transform = 'translateY(100%)';
+                
+                // Запустить анимацию в следующем кадре
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        androidModal.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)';
+                        androidModal.classList.add('open');
+                    });
+                });
             }
         } catch(e) {
             console.error('Error opening Android submenu:', e);
