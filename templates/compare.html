@@ -516,6 +516,12 @@
                     return;
                 }
                 
+                // Проверяем наличие ID телефонов
+                if (!phone1._id || !phone2._id) {
+                    showErrorNotification('ტელეფონის ID არ მოიძებნა');
+                    return;
+                }
+                
                 $('#comparisonResult').html(`
                     <div style="text-align: center; padding: 50px;">
                         <div class="loading-spinner" style="width: 50px; height: 50px;"></div>
@@ -523,44 +529,29 @@
                     </div>
                 `).show();
                 
-                // Исправление: правильное извлечение ID
-                const getPhoneId = (phone) => {
-                    if (phone._id && phone._id.$oid) {
-                        return phone._id.$oid;
-                    }
-                    return phone._id;
-                };
-                
-                const phone1Id = getPhoneId(phone1);
-                const phone2Id = getPhoneId(phone2);
-                
-                // Исправление: правильный формат данных для сервера
+                // Отправляем запрос
                 $.ajax({
                     url: '/api/compare',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({
-                        phone1_id: phone1Id,
-                        phone2_id: phone2Id
+                        phone1_id: phone1._id,
+                        phone2_id: phone2._id
                     }),
                     success: function(result) {
                         displayComparisonResult(result);
                     },
                     error: function(xhr) {
-                        let errorMsg = `შედარების პროცესი ვერ მოხერხდა (${xhr.status} ${xhr.statusText})`;
+                        let errorMsg = `შედარების პროცესი ვერ მოხერხდა (${xhr.status})`;
                         try {
                             const response = JSON.parse(xhr.responseText);
-                            if (response.error) {
-                                errorMsg = response.error;
-                            } else if (response.message) {
-                                errorMsg = response.message;
-                            }
+                            if (response.error) errorMsg = response.error;
+                            if (response.details) errorMsg += ": " + response.details;
                         } catch (e) {
-                            errorMsg = xhr.responseText || errorMsg;
+                            // Не удалось распарсить ответ
                         }
-                        console.error("Comparison error:", errorMsg, xhr);
                         $('#comparisonResult').html(`
-                            <div class="error-message" style="margin: 30px;">
+                            <div class="error-message">
                                 ${errorMsg}
                                 <button class="retry-btn" id="retryComparisonBtn">ხელახლა ცდა</button>
                             </div>
@@ -612,20 +603,19 @@
                 if (result.comparison && result.comparison.length > 0) {
                     result.comparison.forEach(category => {
                         if (category.category_percent_phone1 !== category.category_percent_phone2) {
-                            const winnerPercent = Math.max(category.category_percent_phone1, category.category_percent_phone2);
-                            const loserPercent = Math.min(category.category_percent_phone1, category.category_percent_phone2);
-                            const winnerPhone = category.category_percent_phone1 > category.category_percent_phone2 ? 
-                                                model1 : model2;
+                            const winnerValue = max(category.category_percent_phone1, category.category_percent_phone2]);
+                            const loserValue = min(category.category_percent_phone1, category.category_percent_phone2]);
+                            const winnerPhone = model1 if category.category_percent_phone1 > category.category_percent_phone2 else model2;
                             
                             advantagesHtml += `
                                 <div class="advantage-item">
                                     <div class="advantage-header">
                                         <strong>${category.category}</strong>
-                                        <span style="color: var(--success-color);">${winnerPercent}%</span>
+                                        <span style="color: var(--success-color);">${winnerValue}%</span>
                                     </div>
                                     <div class="advantage-details">
-                                        <span>${winnerPhone} უკეთესია ${(winnerPercent - loserPercent).toFixed(1)}%-ით</span>
-                                        <span>${loserPercent}%</span>
+                                        <span>${winnerPhone} ${winnerValue}%-ით უკეთესია</span>
+                                        <span>განსხვავება: ${(winnerValue - loserValue).toFixed(1)}%</span>
                                     </div>
                                 </div>
                             `;
@@ -747,4 +737,4 @@
         });
     </script>
 </body>
-    </html>
+</html>
