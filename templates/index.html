@@ -244,6 +244,27 @@
             font-weight: bold;
             text-align: center;
         }
+        
+        /* New styles for description text */
+        .service-description {
+            background: rgba(30, 40, 50, 0.6);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #00e5ff;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        
+        .service-description ul {
+            text-align: left;
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        
+        .service-description li {
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
@@ -764,16 +785,36 @@
                     </div>
                 `;
                 
-                // Блок с кнопками для дополнительной проверки
-                let actionButtonsHTML = '';
+                // Блок с описанием и кнопками для дополнительной проверки
+                let actionSectionHTML = '';
                 if (isApple) {
-                    actionButtonsHTML = `
+                    actionSectionHTML = `
+                        <div class="service-description">
+                            <p>გსურთ იცოდეთ მეტი თქვენი iPhone-ის შესახებ?</p>
+                            <ul>
+                                <li>შეამოწმეთ FMI (Find My iPhone) სტატუსი</li>
+                                <li>გაიგეთ მოწყობილობის წარმოების თარიღი</li>
+                                <li>შეამოწმეთ SIM ლოკის და ქსელის სტატუსი</li>
+                                <li>გაიგეთ არის თუ არა მოწყობილობა შავ სიაში</li>
+                                <li>მიიღეთ ინფორმაცია გარანტიის სტატუსზე</li>
+                            </ul>
+                        </div>
                         <div class="result-actions">
                             <a href="/applecheck" class="btn-primary">Apple-ის სრული შემოწმება</a>
                         </div>
                     `;
                 } else if (isAndroid) {
-                    actionButtonsHTML = `
+                    actionSectionHTML = `
+                        <div class="service-description">
+                            <p>გსურთ იცოდეთ მეტი თქვენი Android ტელეფონის შესახებ?</p>
+                            <ul>
+                                <li>შეამოწმეთ FRP (Factory Reset Protection) ლოკი</li>
+                                <li>გაიგეთ მოწყობილობის წარმოების თარიღი</li>
+                                <li>შეამოწმეთ SIM ლოკის და ქსელის სტატუსი</li>
+                                <li>გაიგეთ არის თუ არა მოწყობილობა შავ სიაში</li>
+                                <li>მიიღეთ ინფორმაცია მოწყობილობის ბლოკირების სტატუსზე</li>
+                            </ul>
+                        </div>
                         <div class="result-actions">
                             <a href="/androidcheck" class="btn-primary">Android-ის სრული შემოწმება</a>
                         </div>
@@ -784,7 +825,7 @@
                 resultsHTML = `
                     ${authenticityHTML}
                     ${deviceInfoHTML}
-                    ${actionButtonsHTML}
+                    ${actionSectionHTML}
                 `;
             }
 
