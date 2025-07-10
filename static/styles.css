@@ -661,16 +661,16 @@ body {
   overflow: hidden;
   box-shadow: 0 8px 25px rgba(0,0,0,0.3);
   border-radius: 12px;
-  min-height: 300px; /* Reduced height */
+  min-height: 350px; /* Increased height */
   background: #000;
-  aspect-ratio: 16/6; /* Rectangular format */
+  aspect-ratio: 16/7; /* Wider format */
 }
 
 .carousel-inner {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 300px;
+  min-height: 350px;
 }
 
 .slide {
@@ -705,7 +705,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: rgba(10, 16, 30, 0.85) !important; /* Darker background */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -721,10 +721,12 @@ body {
   margin-top: 30px;
   letter-spacing: 1px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: white;
+  color: rgba(255, 255, 255, 0.9); /* Brighter text */
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+  padding: 20px 40px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 15px;
   animation: pulse 2s infinite;
-  padding: 15px 30px;
-  text-shadow: 0 0 15px rgba(0, 229, 255, 0.7);
 }
 
 /* Pulsation animation */
@@ -1721,6 +1723,76 @@ body {
   color: rgba(255, 255, 255, 0.7);
 }
 
+/* ===== UPDATED FREE CHECK SECTION ===== */
+#free-check-section .card-header {
+  background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
+}
+
+.authenticity-check {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.authenticity-icon {
+  font-size: 5rem;
+  margin-bottom: 15px;
+}
+
+.authenticity-original {
+  color: var(--success-color);
+}
+
+.authenticity-not-original {
+  color: var(--danger-color);
+}
+
+.authenticity-label {
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.check-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin: 25px 0;
+}
+
+.feature-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  background: rgba(0, 198, 255, 0.1);
+}
+
+.feature-icon {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  color: var(--accent-color);
+}
+
+/* ===== INPUT FIXES ===== */
+.form-control::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* ===== SERVICE CARD HOVER FIX ===== */
+.service-card:hover {
+  transform: none;
+  box-shadow: 0 20px 30px rgba(0, 229, 255, 0.4) !important;
+  background: var(--card-hover-bg) !important;
+  border-color: rgba(0, 229, 255, 0.4) !important;
+}
+
 /* ===== RESPONSIVE STYLES ===== */
 @media (max-width: 1199px) {
   .sidebar {
@@ -2015,4 +2087,4 @@ body {
 .result-modal .modal-content {
   background: var(--card-bg);
   color: var(--text-color);
-}
+    }
