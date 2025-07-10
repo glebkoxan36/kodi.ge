@@ -1,492 +1,1388 @@
+import os
+import json
+import logging
 import re
-from collections import defaultdict
+import hmac
+import secrets
+import hashlib
+import requests
+import time
+import threading
+from datetime import datetime, timedelta
+from logging.handlers import RotatingFileHandler
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, Blueprint
+from flask_cors import CORS
+import stripe
+from functools import wraps
 from bson import ObjectId
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
+from flask_session import Session
+from bs4 import BeautifulSoup
 
-# Веса характеристик для сравнения
-WEIGHTS = {
-    # Процессор
-    "Процессор": 4.5,
-    "CPU Балл": 5.0,
-    "CPU Ядра": 3.8,
-    "CPU Частота (ГГц)": 4.0,
-    "Оценка AnTuTu": 4.7,
-    "Geekbench (одиночное ядро)": 4.2,
-    "Geekbench (многоядерное)": 4.5,
-    "TDP (Вт)": 3.0,
-    
-    # Видеокарта
-    "GPU": 5.0,
-    "GPU Балл": 5.0,
-    "3DMark Wild Life": 4.8,
-    "GFXBench ES 3.1 (fps)": 4.6,
-    "Игры (FPS @ 1080p)": 4.7,
-    "Поддержка RT": 3.5,
-    
-    # Память
-    "ОЗУ (ГБ)": 3.2,
-    "Тип ОЗУ": 2.0,
-    "ПЗУ (ГБ)": 2.5,
-    
-    # Экран
-    "Тип дисплея": 3.5,
-    "Частота обновления (Гц)": 4.0,
-    "Плотность пикселей (PPI)": 3.0,
-    
-    # Батарея
-    "Емкость батареи (mAh)": 3.8,
-    "Время работы (ч)": 4.0
-}
+# Импорт модулей сравнения
+from compare import compare_two_phones, generate_image_path, convert_objectids
+from auth import auth_bp
+from ifreeapi import validate_imei, perform_api_check, parse_free_html
+from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, comparisons_collection, phonebase_collection, prices_collection
+from stripepay import StripePayment
 
-# Категории характеристик
-SPEC_CATEGORIES = {
-    "Процессор": [
-        "Процессор", "CPU Балл", "CPU Ядра", "CPU Частота (ГГц)",
-        "Оценка AnTuTu", "Geekbench (одиночное ядро)", "Geekbench (многоядерное)", "TDP (Вт)"
-    ],
-    "Видеокарта": [
-        "GPU", "GPU Балл", "3DMark Wild Life", "GFXBench ES 3.1 (fps)", 
-        "Игры (FPS @ 1080p)", "Поддержка RT"
-    ],
-    "Память": [
-        "ОЗУ (ГБ)", "Тип ОЗУ", "ПЗУ (ГБ)"
-    ],
-    "Экран": [
-        "Тип дисплея", "Частота обновления (Гц)", "Плотность пикселей (PPI)"
-    ],
-    "Батарея": [
-        "Емкость батареи (mAh)", "Время работы (ч)"
-    ],
-    "Дополнительно": [
-        "Поддержка 5G", "NFC", "Вес (г)", "Стартовая цена (руб)"
-    ]
-}
+app = Flask(__name__)
+CORS(app)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 
-# Правила сравнения характеристик
-SPEC_RULES = {
-    "numeric": [
-        "CPU Балл", "GPU Балл", "Оценка AnTuTu", "Geekbench (одиночное ядро)", 
-        "Geekbench (многоядерное)", "3DMark Wild Life", "GFXBench ES 3.1 (fps)",
-        "Игры (FPS @ 1080p)", "ОЗУ (ГБ)", "ПЗУ (ГБ)", "Плотность пикселей (PPI)",
-        "Емкость батареи (mAh)", "Время работы (ч)"
-    ],
-    "numeric_reverse": [
-        "TDP (Вт)", "Вес (г)", "Стартовая цена (руб)"
-    ],
-    "boolean": [
-        "Поддержка RT", "Поддержка 5G", "NFC"
-    ],
-    "gpu_priority": [
-        "Apple M4 10-core GPU", "Qualcomm Adreno 840", "ARM Immortalis-G925",
-        "Apple A18 Pro GPU", "Samsung Xclipse 940"
-    ]
-}
+# Настройки сессии
+app.config.update(
+    SESSION_TYPE='filesystem',
+    SESSION_COOKIE_SECURE=os.getenv('FLASK_ENV') == 'production',
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    PERMANENT_SESSION_LIFETIME=timedelta(days=7)
+)
+Session(app)
 
-# Справочник CPU (производительность в баллах)
-CPU_SCORES = {
-    "Dimensity 9300": 100, "Snapdragon 8 Gen 3": 98, "A17 Pro": 95, "Exynos 2400": 92,
-    "A16 Bionic": 90, "Dimensity 9200 Plus": 88, "Snapdragon 8 Gen 2": 87, 
-    "Dimensity 9200": 85, "Dimensity 8300": 87, "A15 Bionic": 85, 
-    "Snapdragon 8+ Gen 1": 82, "Dimensity 9000 Plus": 80, "Tensor G3": 76,
-    "Snapdragon 8 Gen 1": 75, "A14 Bionic": 72, "Exynos 2200": 70, 
-    "Snapdragon 7+ Gen 2": 78, "Dimensity 9000": 75, "A13 Bionic": 70,
-    "Snapdragon 888 Plus": 68, "Kirin 9000": 67, "Tensor G2": 65,
-    "Snapdragon 888": 64, "Dimensity 8200": 66, "Exynos 2100": 63,
-    "Snapdragon 7 Gen 3": 62, "Dimensity 8100": 60, "Dimensity 1200": 58,
-    "Snapdragon 865 Plus": 57, "Kirin 9000S": 65, "Dimensity 1300": 56,
-    "Dimensity 1100": 55, "Snapdragon 870": 60, "Dimensity 7200 Ultra": 52,
-    "Dimensity 8050": 54, "Dimensity 8020": 53, "Dimensity 7200": 50,
-    "Snapdragon 865": 58, "Exynos 990": 52, "A12 Bionic": 48,
-    "Kirin 990 (5G)": 50, "Snapdragon 782G": 49, "Snapdragon 7 Gen 1": 47,
-    "Snapdragon 860": 45, "Dimensity 1000 Plus": 44, "Snapdragon 778G+": 48,
-    "Snapdragon 780G": 46, "Snapdragon 855+": 45, "Exynos 9820": 42,
-    "Snapdragon 778G": 46, "Exynos 9825": 43, "Snapdragon 855": 44,
-    "Snapdragon 6 Gen 1": 42, "Snapdragon 7s Gen 2": 41, "Exynos 1380": 45,
-    "Dimensity 1050": 40, "Dimensity 7050": 55, "Dimensity 1080": 38,
-    "Dimensity 920": 37, "Kirin 980": 43, "Dimensity 7030": 39,
-    "Dimensity 7020": 36, "Dimensity 930": 35, "Dimensity 900": 40,
-    "A11 Bionic": 38, "Dimensity 820": 37, "Unisoc T820": 36,
-    "Exynos 1280": 34, "Snapdragon 845": 33, "Dimensity 6080": 32,
-    "Snapdragon 4 Gen 2": 31, "Exynos 1330": 33, "Snapdragon 695": 48,
-    "Dimensity 800": 30, "Exynos 980": 32, "Dimensity 800U": 31,
-    "Kirin 810": 29, "Exynos 9810": 28, "Dimensity 6100+": 30,
-    "Dimensity 6020": 29, "Snapdragon 4 Gen 1": 28, "Dimensity 810": 33,
-    "Dimensity 720": 31, "Snapdragon 765G": 30, "Helio G99": 35,
-    "Snapdragon 480+": 27, "Snapdragon 732G": 29, "Snapdragon 720G": 28,
-    "Dimensity 700": 26, "Snapdragon 750G": 25, "Helio G95": 24,
-    "Snapdragon 690": 23
-}
+# Инициализация CSRF защиты
+csrf = CSRFProtect(app)
 
-# Справочник GPU (производительность в баллах)
-GPU_SCORES = {
-    "Apple M4 10-core GPU": 100, "Qualcomm Adreno 840": 98, 
-    "ARM Immortalis-G925 MC16": 95, "Apple A18 Pro GPU": 92,
-    "Qualcomm Adreno 830": 90, "ARM Immortalis-G925 MC12": 88,
-    "Qualcomm Adreno 750": 90, "Samsung Xclipse 950": 85,
-    "Samsung Xclipse 940": 85, "Qualcomm Adreno 740": 88,
-    "ARM Immortalis-G720 MP12": 83, "ARM Immortalis-G715 MP11": 80,
-    "Apple A16 GPU 5-Core": 78, "ARM Immortalis-G720 MP7": 75,
-    "Qualcomm Adreno 735": 72, "Apple A15 GPU 5-Core": 70,
-    "Apple A16 GPU 4-Core": 68, "Qualcomm Adreno 732": 65,
-    "Qualcomm Adreno 730": 63, "ARM Mali-G715 MP7": 60,
-    "ARM Mali-G615 MP6": 58, "Qualcomm Adreno 725": 55,
-    "Qualcomm Adreno 720": 50, "ARM Mali-G710 MP10": 53,
-    "Apple A15 GPU 4-Core": 52, "Apple A14 Bionic GPU": 50,
-    "HiSilicon Maleoon 920": 48, "Samsung Xclipse 920": 45,
-    "Qualcomm Adreno 660": 42, "ARM Mali-G78 MP24": 40,
-    "ARM Mali-G710 MP7": 38, "ARM Mali-G78 MP22": 37,
-    "Apple A13 Bionic GPU": 35, "Apple A12 Bionic GPU": 32,
-    "Qualcomm Adreno 650": 30, "ARM Mali-G78 MP20": 28,
-    "ARM Mali-G78 MP14": 25, "Apple A11 Bionic GPU": 23,
-    "Apple A10X Fusion GPU": 20, "Apple A9X": 18,
-    "NVIDIA Tegra X1 Maxwell GPU": 15, "Apple A10 Fusion GPU": 12,
-    "ARM Mali-G77 MP11": 25, "Samsung Xclipse 540": 22,
-    "Samsung Xclipse 530": 20, "ARM Mali-G77 MP9": 18,
-    "ARM Mali-G76 MP16": 15, "ARM Mali-G610 MP6": 25,
-    "ARM Mali-G610 MP4": 22, "Qualcomm Adreno 810": 30,
-    "Qualcomm Adreno 644": 28, "Qualcomm Adreno 643": 26,
-    "Qualcomm Adreno 642": 24, "ARM Mali-G610 MP3": 20,
-    "ARM Mali-G615 MP2": 18, "Qualcomm Adreno 642L": 22,
-    "Qualcomm Adreno 710": 25, "Qualcomm Adreno 640": 23
-}
+# Семафор для ограничения запросов
+REQUEST_SEMAPHORE = threading.BoundedSemaphore(3)
 
-def normalize_cpu_name(name):
-    """Нормализация названий процессоров"""
+# Функция для генерации цвета аватара
+def generate_avatar_color(name):
+    """Генерирует HEX-цвет на основе хеша имени пользователя"""
     if not name:
-        return "Unknown CPU"
+        return "#{:06x}".format(secrets.randbelow(0xFFFFFF))
     
-    name = name.lower()
-    if "dimensity" in name:
-        if "9300" in name: return "Dimensity 9300"
-        if "9200+" in name: return "Dimensity 9200 Plus"
-        if "9200" in name: return "Dimensity 9200"
-        if "8300" in name: return "Dimensity 8300"
-        if "9000+" in name: return "Dimensity 9000 Plus"
-        if "9000" in name: return "Dimensity 9000"
-    elif "snapdragon" in name:
-        if "8 gen 3" in name: return "Snapdragon 8 Gen 3"
-        if "8 gen 2" in name: return "Snapdragon 8 Gen 2"
-        if "8+ gen 1" in name: return "Snapdragon 8+ Gen 1"
-        if "8 gen 1" in name: return "Snapdragon 8 Gen 1"
-        if "7+ gen 2" in name: return "Snapdragon 7+ Gen 2"
-        if "7 gen 3" in name: return "Snapdragon 7 Gen 3"
-    elif "exynos" in name:
-        if "2400" in name: return "Exynos 2400"
-        if "2200" in name: return "Exynos 2200"
-        if "2100" in name: return "Exynos 2100"
-    elif "apple" in name or "a" in name:
-        if "a17 pro" in name: return "A17 Pro"
-        if "a16 bionic" in name: return "A16 Bionic"
-        if "a15 bionic" in name: return "A15 Bionic"
-    return name.title()
+    hash_obj = hashlib.md5(name.encode('utf-8'))
+    return '#' + hash_obj.hexdigest()[:6]
 
-def normalize_gpu_name(name):
-    """Нормализация названий видеокарт"""
-    if not name:
-        return "Unknown GPU"
-    
-    name = name.lower()
-    if "adreno" in name:
-        if "840" in name: return "Qualcomm Adreno 840"
-        if "830" in name: return "Qualcomm Adreno 830"
-        if "750" in name: return "Qualcomm Adreno 750"
-        if "740" in name: return "Qualcomm Adreno 740"
-    elif "immortalis" in name or "mali" in name:
-        if "g925 mc16" in name: return "ARM Immortalis-G925 MC16"
-        if "g925 mc12" in name: return "ARM Immortalis-G925 MC12"
-        if "g720 mp12" in name: return "ARM Immortalis-G720 MP12"
-    elif "xclipse" in name:
-        if "940" in name: return "Samsung Xclipse 940"
-        if "920" in name: return "Samsung Xclipse 920"
-    elif "apple" in name:
-        if "m4" in name: return "Apple M4 10-core GPU"
-        if "a18 pro" in name: return "Apple A18 Pro GPU"
-        if "a16" in name: return "Apple A16 GPU 5-Core"
-    return name.title()
-
-def enrich_phone_data(phone):
-    """Обогащение данных телефона дополнительными характеристиками"""
-    # Нормализация CPU
-    if "Процессор" in phone:
-        cpu_name = normalize_cpu_name(phone["Процессор"])
-        phone["Процессор"] = cpu_name
-        phone["CPU Балл"] = CPU_SCORES.get(cpu_name, 0)
-    
-    # Нормализация GPU
-    if "GPU" in phone:
-        gpu_name = normalize_gpu_name(phone["GPU"])
-        phone["GPU"] = gpu_name
-        phone["GPU Балл"] = GPU_SCORES.get(gpu_name, 0)
-    
-    # Автоматическое заполнение FPS
-    if "GPU" in phone:
-        gpu = phone["GPU"]
-        if "Adreno 840" in gpu: phone["Игры (FPS @ 1080p)"] = 120
-        elif "Immortalis-G925" in gpu: phone["Игры (FPS @ 1080p)"] = 105
-        elif "Adreno 830" in gpu: phone["Игры (FPS @ 1080p)"] = 110
-        elif "Apple A18" in gpu: phone["Игры (FPS @ 1080p)"] = 78
-    
-    # Добавление 3DMark Wild Life
-    if "GPU Балл" in phone:
-        gpu_score = phone["GPU Балл"]
-        phone["3DMark Wild Life"] = int(150 * gpu_score)
-    
-    return phone
-
-def try_parse_number(value):
-    """Парсинг числовых значений из строк"""
-    if isinstance(value, (int, float)):
-        return value
-    if value is None:
-        return None
-        
-    try:
-        # Извлекаем число из строки с единицами измерения
-        match = re.search(r'([\d.,-]+)', str(value))
-        if match:
-            cleaned = match.group(1).replace(',', '.')
-            return float(cleaned)
-        else:
-            return None
-    except:
-        return None
-
-def compare_values(rule, value1, value2):
-    """Сравнение значений по заданным правилам"""
-    # Сравнение приоритетов GPU
-    if rule == "gpu_priority":
-        gpu_priority_order = [
-            "Apple M4 10-core GPU", "Qualcomm Adreno 840", 
-            "ARM Immortalis-G925", "Apple A18 Pro GPU", 
-            "Samsung Xclipse 940"
-        ]
-        
-        # Нормализация значений для сравнения
-        val1 = normalize_gpu_name(str(value1))
-        val2 = normalize_gpu_name(str(value2))
-        
-        # Поиск индексов в приоритетном списке
-        try:
-            idx1 = gpu_priority_order.index(val1)
-        except ValueError:
-            idx1 = len(gpu_priority_order)
-            
-        try:
-            idx2 = gpu_priority_order.index(val2)
-        except ValueError:
-            idx2 = len(gpu_priority_order)
-            
-        if idx1 < idx2: return 'phone1'
-        elif idx1 > idx2: return 'phone2'
-        return None
-    
-    # Обработка числовых значений (больше = лучше)
-    if rule == "numeric":
-        num1 = try_parse_number(value1)
-        num2 = try_parse_number(value2)
-        if num1 is not None and num2 is not None:
-            if num1 > num2: return 'phone1'
-            elif num1 < num2: return 'phone2'
-        return None
-    
-    # Обработка обратных числовых значений (меньше = лучше)
-    if rule == "numeric_reverse":
-        num1 = try_parse_number(value1)
-        num2 = try_parse_number(value2)
-        if num1 is not None and num2 is not None:
-            if num1 < num2: return 'phone1'
-            elif num1 > num2: return 'phone2'
-        return None
-    
-    # Обработка булевых значений
-    if rule == "boolean":
-        true_values = ['да', 'yes', 'есть', '+', 'е', 'y', 'true', 'supported', 'присутствует']
-        false_values = ['нет', 'no', 'отсутствует', '-', 'н', 'n', 'false', 'unsupported', 'не поддерживается']
-        val1 = str(value1).strip().lower()
-        val2 = str(value2).strip().lower()
-        if val1 in true_values and val2 in false_values: return 'phone1'
-        elif val1 in false_values and val2 in true_values: return 'phone2'
-        return None
-    
-    return None
-
-def compare_two_phones(phone1, phone2):
-    """Основная функция сравнения двух телефонов"""
-    # Обогащение данных
-    try:
-        phone1 = enrich_phone_data(phone1)
-        phone2 = enrich_phone_data(phone2)
-    except Exception as e:
-        print(f"Error enriching phone data: {e}")
-    
-    # Игнорируемые поля
-    ignore_fields = [
-        '_id', 'ID', 'image_url', 'image', 
-        'Бренд', 'Модель', 'Год выпуска', 
-        'brand', 'model', 'release_year'
-    ]
-    
-    phone1_clean = {k: v for k, v in phone1.items() if k not in ignore_fields}
-    phone2_clean = {k: v for k, v in phone2.items() if k not in ignore_fields}
-    
-    # Сбор всех характеристик
-    all_keys = set(phone1_clean.keys()) | set(phone2_clean.keys())
-    categories = defaultdict(list)
-    
-    # Группировка характеристик по категориям
-    for key in all_keys:
-        category_name = "Дополнительно"
-        for cat, fields in SPEC_CATEGORIES.items():
-            if key in fields:
-                category_name = cat
-                break
-        categories[category_name].append(key)
-    
-    # Упорядочивание категорий
-    ordered_categories = []
-    for cat in SPEC_CATEGORIES.keys():
-        if cat in categories: ordered_categories.append(cat)
-    if "Дополнительно" in categories: ordered_categories.append("Дополнительно")
-    
-    # Основные структуры для хранения результатов
-    comparison = []
-    overall_scores = {'phone1': 0, 'phone2': 0}
-    category_scores = defaultdict(lambda: {'phone1': 0, 'phone2': 0})
-
-    # Сравнение характеристик по категориям
-    for category in ordered_categories:
-        specs_list = []
-        for key in categories[category]:
-            val1 = phone1_clean.get(key, "N/A")
-            val2 = phone2_clean.get(key, "N/A")
-            
-            # Определение правила сравнения
-            rule = None
-            for rule_type, fields in SPEC_RULES.items():
-                if key in fields: 
-                    rule = rule_type
-                    break
-            
-            winner = None
-            weight = WEIGHTS.get(key, 1.0)
-            
-            # Применение правила сравнения
-            if rule:
-                winner = compare_values(rule, val1, val2)
-                if winner:
-                    overall_scores[winner] += weight
-                    category_scores[category][winner] += weight
-
-            # Сохранение результата сравнения
-            specs_list.append({
-                'name': key,
-                'phone1_value': val1,
-                'phone2_value': val2,
-                'winner': winner,
-                'weight': weight
-            })
-        
-        # Расчет процентов побед для категории
-        total_cat = category_scores[category]['phone1'] + category_scores[category]['phone2']
-        cat_percent_phone1 = round(category_scores[category]['phone1'] / total_cat * 100, 1) if total_cat > 0 else 0
-        cat_percent_phone2 = round(category_scores[category]['phone2'] / total_cat * 100, 1) if total_cat > 0 else 0
-        
-        # Сохранение результатов категории
-        comparison.append({
-            'category': category,
-            'specs': specs_list,
-            'category_score_phone1': category_scores[category]['phone1'],
-            'category_score_phone2': category_scores[category]['phone2'],
-            'category_percent_phone1': cat_percent_phone1,
-            'category_percent_phone2': cat_percent_phone2,
-        })
-    
-    # Расчет общего результата сравнения
-    total_score = overall_scores['phone1'] + overall_scores['phone2']
-    
-    if total_score > 0:
-        percent_phone1 = round(overall_scores['phone1'] / total_score * 100, 1)
-        percent_phone2 = round(overall_scores['phone2'] / total_score * 100, 1)
-        advantage_percent = round(abs(percent_phone1 - percent_phone2), 1)
-    else:
-        percent_phone1 = percent_phone2 = 50.0
-        advantage_percent = 0.0
-    
-    # Определение общего победителя
-    overall_winner = None
-    if overall_scores['phone1'] > overall_scores['phone2']: 
-        overall_winner = 'phone1'
-    elif overall_scores['phone1'] < overall_scores['phone2']: 
-        overall_winner = 'phone2'
-    
-    # Генерация AI анализа
-    ai_analysis = generate_ai_analysis(phone1, phone2, comparison, overall_winner, percent_phone1, percent_phone2)
-    
-    # Формирование итогового результата
+# Регистрируем функцию в контексте шаблонов
+@app.context_processor
+def inject_utils():
     return {
-        'phone1': phone1,
-        'phone2': phone2,
-        'comparison': comparison,
-        'overall_winner': overall_winner,
-        'total_score_phone1': overall_scores['phone1'],
-        'total_score_phone2': overall_scores['phone2'],
-        'percent_phone1': percent_phone1,
-        'percent_phone2': percent_phone2,
-        'advantage_percent': advantage_percent,
-        'total_comparable_specs': total_score,
-        'ai_analysis': ai_analysis
+        'generate_avatar_color': generate_avatar_color,
+        'csrf_token': generate_csrf
     }
 
-def generate_ai_analysis(phone1, phone2, comparison, overall_winner, percent1, percent2):
-    """Генерация текстового AI анализа результатов сравнения"""
-    # Извлечение бренда и модели
-    brand1 = phone1.get('Бренд', phone1.get('brand', 'Unknown'))
-    model1 = phone1.get('Модель', phone1.get('model', 'Unknown'))
-    brand2 = phone2.get('Бренд', phone2.get('brand', 'Unknown'))
-    model2 = phone2.get('Модель', phone2.get('model', 'Unknown'))
+# Контекстный процессор для передачи данных пользователя
+@app.context_processor
+def inject_user_data():
+    if 'user_id' in session and client:
+        user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
+        if user:
+            avatar_color = generate_avatar_color(
+                user.get('first_name', '') + ' ' + user.get('last_name', ''))
+            return {
+                'currentUser': {
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'balance': user.get('balance', 0.0),
+                    'avatar_color': avatar_color
+                }
+            }
+    return {'currentUser': None}
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+app.logger.setLevel(logging.INFO)
+
+log_handler = RotatingFileHandler(
+    'app.log', 
+    maxBytes=1024 * 1024 * 5,
+    backupCount=3
+)
+log_handler.setFormatter(logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+))
+app.logger.addHandler(log_handler)
+
+# Конфигурация
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+
+# Данные для PHP API
+API_URL = "https://api.ifreeicloud.co.uk"
+API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
+PLACEHOLDER = '/static/placeholder.jpg'
+
+# Инициализация StripePayment
+stripe_payment = StripePayment(
+    stripe_api_key=stripe.api_key,
+    webhook_secret=STRIPE_WEBHOOK_SECRET,
+    users_collection=regular_users_collection,
+    payments_collection=payments_collection,
+    refunds_collection=refunds_collection
+)
+
+def get_current_prices():
+    if not client:
+        return DEFAULT_PRICES
+        
+    try:
+        price_doc = prices_collection.find_one({'type': 'current'})
+        if price_doc:
+            return price_doc['prices']
+        return DEFAULT_PRICES
+    except Exception as e:
+        app.logger.error(f"Error getting prices: {str(e)}")
+        return DEFAULT_PRICES
+
+# ======================================
+# Декораторы
+# ======================================
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
+            return redirect(url_for('auth.login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('auth.login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated
+# ======================================
+# Основные маршруты приложения
+# ======================================
+
+@app.route('/')
+def index():
+    prices = get_current_prices()
+    user_data = None
     
-    # Определение победителя и проигравшего
-    winner_model = model1 if overall_winner == 'phone1' else model2
-    loser_model = model2 if overall_winner == 'phone1' else model1
-    advantage = abs(percent1 - percent2)
+    if 'user_id' in session:
+        user_id = session['user_id']
+        if client:
+            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            if user:
+                avatar_color = generate_avatar_color(
+                    user.get('first_name', '') + ' ' + user.get('last_name', ''))
+                user_data = {
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'balance': user.get('balance', 0.0),
+                    'avatar_color': avatar_color
+                }
+
+    return render_template('index.html', 
+                         stripe_public_key=STRIPE_PUBLIC_KEY,
+                         paid_price=prices['paid'] / 100,
+                         premium_price=prices['premium'] / 100,
+                         currentUser=user_data)
+
+@app.route('/contacts')
+def contacts_page():
+    """Страница контактов"""
+    user_data = None
+    if 'user_id' in session:
+        user_id = session['user_id']
+        if client:
+            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            if user:
+                avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+                user_data = {
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'balance': user.get('balance', 0.0),
+                    'avatar_color': avatar_color
+                }
     
-    # Формирование базового анализа
-    analysis = f"<p>შედარების შედეგები აჩვენებს, რომ <strong>{winner_model}</strong> საერთო ჯამში {advantage}%-ით უკეთესია ვიდრე {loser_model}.</p>"
+    return render_template('contacts.html', currentUser=user_data)
+
+@app.route('/knowledge-base')
+def knowledge_base():
+    """База знаний"""
+    user_data = None
+    if 'user_id' in session:
+        user_id = session['user_id']
+        if client:
+            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            if user:
+                avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+                user_data = {
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'balance': user.get('balance', 0.0),
+                    'avatar_color': avatar_color
+                }
     
-    # Добавление информации по категориям
-    analysis += "<p>ძირითადი განსხვავებები:</p><ul>"
+    return render_template('knowledge-base.html', currentUser=user_data)
+
+# ======================================
+# Роут для страницы проверки Apple IMEI
+# ======================================
+
+@app.route('/applecheck')
+def apple_check():
+    # Определяем тип услуги из параметра URL
+    service_type = request.args.get('type', 'free')
     
-    for category in comparison:
-        if category['category_percent_phone1'] != category['category_percent_phone2']:
-            winner_value = max(category['category_percent_phone1'], category['category_percent_phone2'])
-            loser_value = min(category['category_percent_phone1'], category['category_percent_phone2'])
-            winner_phone = model1 if category['category_percent_phone1'] > category['category_percent_phone2'] else model2
+    # Получаем текущие цены и конвертируем в лари
+    prices = get_current_prices()
+    paid_price_gel = prices['paid'] / 100.0
+    premium_price_gel = prices['premium'] / 100.0
+    
+    # Создаем словарь цен для каждого типа услуги
+    service_prices = {
+        'free': 'უფასო',
+        'fmi': f"{paid_price_gel:.2f}₾",
+        'blacklist': f"{paid_price_gel:.2f}₾",
+        'sim_lock': f"{premium_price_gel:.2f}₾",
+        'activation': f"{paid_price_gel:.2f}₾",
+        'carrier': f"{paid_price_gel:.2f}₾",
+        'mdm': f"{premium_price_gel:.2f}₾"
+    }
+
+    # Данные пользователя (если авторизован)
+    user_data = None
+    if 'user_id' in session:
+        user_id = session['user_id']
+        if client:
+            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            if user:
+                avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+                user_data = {
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'balance': user.get('balance', 0.0),
+                    'avatar_color': avatar_color
+                }
+
+    # Создаем список услуг с данными для передачи в шаблон
+    services_data = [
+        { 
+            'id': 'free', 
+            'title': 'ძირითადი შემოწმება', 
+            'icon': 'fa-mobile-screen', 
+            'description': 'მოწყობილობის აქტივაციის სტატუსისა და მოდელის შემოწმება', 
+            'price': service_prices['free'] 
+        },
+        { 
+            'id': 'fmi', 
+            'title': 'FMI სტატუსი', 
+            'icon': 'fa-lock', 
+            'description': 'მოწყობილობის "მოძებნე" სტატუსის შემოწმება', 
+            'price': service_prices['fmi'] 
+        },
+        { 
+            'id': 'blacklist', 
+            'title': 'შავი სია', 
+            'icon': 'fa-ban', 
+            'description': 'მოწყობილობის შავ სიაში მოხვედრის შემოწმება', 
+            'price': service_prices['blacklist'] 
+        },
+        { 
+            'id': 'sim_lock', 
+            'title': 'SIM-ლოკი', 
+            'icon': 'fa-sim-card', 
+            'description': 'ოპერატორის მიერ დაბლოკვის შემოწმება', 
+            'price': service_prices['sim_lock'] 
+        },
+        { 
+            'id': 'activation', 
+            'title': 'აქტივაციის სტატუსი', 
+            'icon': 'fa-bolt', 
+            'description': 'მოწყობილობის აქტივაციის სტატუსის შემოწმება', 
+            'price': service_prices['activation'] 
+        },
+        { 
+            'id': 'carrier', 
+            'title': 'ოპერატორი', 
+            'icon': 'fa-tower-cell', 
+            'description': 'ოპერატორის დადასტურება, რომელსაც მოწყობილობა უკავშირდება', 
+            'price': service_prices['carrier'] 
+        },
+        { 
+            'id': 'mdm', 
+            'title': 'MDM ბლოკირება', 
+            'icon': 'fa-building-shield', 
+            'description': 'კორპორატიული ბლოკირების შემოწმება', 
+            'price': service_prices['mdm'] 
+        }
+    ]
+
+    return render_template(
+        'applecheck.html',
+        service_type=service_type,
+        services_data=services_data,
+        stripe_public_key=STRIPE_PUBLIC_KEY,
+        currentUser=user_data
+    )
+
+# ======================================
+# Роут для страницы проверки Android IMEI
+# ======================================
+
+@app.route('/androidcheck')
+def android_check():
+    """Страница проверки Android устройств"""
+    service_type = request.args.get('type', '')
+    prices = get_current_prices()
+    paid_price_gel = prices['paid'] / 100.0
+    premium_price_gel = prices['premium'] / 100.0
+
+    service_prices = {
+        'samsung_v1': f"{paid_price_gel:.2f}₾",
+        'samsung_v2': f"{paid_price_gel:.2f}₾",
+        'samsung_knox': f"{premium_price_gel:.2f}₾",
+        'xiaomi': f"{paid_price_gel:.2f}₾",
+        'google_pixel': f"{paid_price_gel:.2f}₾",
+        'huawei_v1': f"{paid_price_gel:.2f}₾",
+        'huawei_v2': f"{paid_price_gel:.2f}₾",
+        'motorola': f"{paid_price_gel:.2f}₾",
+        'oppo': f"{paid_price_gel:.2f}₾",
+        'frp': f"{paid_price_gel:.2f}₾",
+        'sim_lock_android': f"{paid_price_gel:.2f}₾",
+    }
+
+    # Данные сервисов
+    services_data = [
+        { 
+            'id': 'samsung', 
+            'title': 'Samsung', 
+            'icon': 'fa-mobile', 
+            'description': 'Samsung მოწყობილობების შემოწმება',
+            'versions': [
+                {'id': 'samsung_v1', 'name': 'სერვისი V1', 'price': service_prices['samsung_v1']},
+                {'id': 'samsung_v2', 'name': 'სერვისი V2', 'price': service_prices['samsung_v2']},
+                {'id': 'samsung_knox', 'name': 'Knox სტატუსი', 'price': service_prices['samsung_knox']}
+            ]
+        },
+        { 
+            'id': 'xiaomi', 
+            'title': 'Xiaomi', 
+            'icon': 'fa-mobile', 
+            'description': 'Xiaomi მოწყობილობების შემოწმება', 
+            'price': service_prices['xiaomi'] 
+        },
+        { 
+            'id': 'google_pixel', 
+            'title': 'Google Pixel', 
+            'icon': 'fa-mobile', 
+            'description': 'Google Pixel მოწყობილობების შემოწმება', 
+            'price': service_prices['google_pixel'] 
+        },
+        { 
+            'id': 'huawei', 
+            'title': 'Huawei', 
+            'icon': 'fa-mobile', 
+            'description': 'Huawei მოწყობილობების შემოწმება',
+            'versions': [
+                {'id': 'huawei_v1', 'name': 'სერვისი V1', 'price': service_prices['huawei_v1']},
+                {'id': 'huawei_v2', 'name': 'სერვისი V2', 'price': service_prices['huawei_v2']}
+            ]
+        },
+        { 
+            'id': 'motorola', 
+            'title': 'Motorola', 
+            'icon': 'fa-mobile', 
+            'description': 'Motorola მოწყობილობების შემოწმება', 
+            'price': service_prices['motorola'] 
+        },
+        { 
+            'id': 'oppo', 
+            'title': 'Oppo', 
+            'icon': 'fa-mobile', 
+            'description': 'Oppo მოწყობილობების შემოწმება', 
+            'price': service_prices['oppo'] 
+        },
+        { 
+            'id': 'frp', 
+            'title': 'FRP Lock', 
+            'icon': 'fa-google', 
+            'description': 'Google ანგარიშის ბლოკირების შემოწმება', 
+            'price': service_prices['frp'] 
+        },
+        { 
+            'id': 'sim_lock_android', 
+            'title': 'SIM Lock Status', 
+            'icon': 'fa-sim-card', 
+            'description': 'ოპერატორის მიერ დაბლოკვის შემოწმება', 
+            'price': service_prices['sim_lock_android'] 
+        }
+    ]
+
+    user_data = None
+    if 'user_id' in session:
+        user_id = session['user_id']
+        if client:
+            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            if user:
+                avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+                user_data = {
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'balance': user.get('balance', 0.0),
+                    'avatar_color': avatar_color
+                }
+
+    return render_template(
+        'androidcheck.html',
+        service_type=service_type,
+        services_data=services_data,
+        stripe_public_key=STRIPE_PUBLIC_KEY,
+        currentUser=user_data
+    )
+
+@app.route('/create-checkout-session', methods=['POST'])
+@csrf.exempt
+def create_checkout_session():
+    try:
+        data = request.json
+        imei = data.get('imei')
+        service_type = data.get('service_type')
+        use_balance = data.get('use_balance', False)
+        idempotency_key = data.get('idempotency_key', secrets.token_hex(16))
+        
+        if not validate_imei(imei):
+            return jsonify({'error': 'არასწორი IMEI'}), 400
+        
+        # Маппинг типов услуг на цены
+        price_mapping = {
+            'fmi': 'paid',
+            'blacklist': 'paid',
+            'sim_lock': 'premium',
+            'activation': 'paid',
+            'carrier': 'paid',
+            'mdm': 'premium',
+            'samsung_v1': 'paid',
+            'samsung_v2': 'paid',
+            'samsung_knox': 'premium',
+            'xiaomi': 'paid',
+            'google_pixel': 'paid',
+            'huawei_v1': 'paid',
+            'huawei_v2': 'paid',
+            'motorola': 'paid',
+            'oppo': 'paid',
+            'frp': 'paid',
+            'sim_lock_android': 'paid'
+        }
+        
+        if service_type not in price_mapping:
+            return jsonify({'error': 'არასწორი სერვისის ტიპი'}), 400
+        
+        prices = get_current_prices()
+        price_key = price_mapping[service_type]
+        amount = prices[price_key]  # в центах
+        
+        # Для бесплатной проверки не создаем сессию
+        if service_type == 'free':
+            return jsonify({'error': 'უფასო შემოწმება არ საჭიროებს გადახდამ'}), 400
+        
+        # Если пользователь авторизован и выбрал оплату с баланса
+        if use_balance and 'user_id' in session:
+            user_id = session['user_id']
+            # Конвертируем сумму в лари (amount в центах, поэтому делим на 100, чтобы получить лари)
+            amount_gel = amount / 100.0
             
-            analysis += f"<li><strong>{category['category']}</strong>: {winner_phone} {winner_value}%-ით უკეთესია (განსხვავება: {winner_value - loser_value}%)</li>"
+            # Генерируем уникальный ключ идемпотентности
+            idempotency_key = f"bal_{user_id}_{imei}_{datetime.utcnow().timestamp()}"
+            
+            # Пытаемся списать средства с баланса
+            if stripe_payment.deduct_balance(
+                user_id=user_id,
+                amount=amount_gel,
+                service_type=service_type,
+                imei=imei,
+                idempotency_key=idempotency_key
+            ):
+                # Создаем запись о проверке в коллекции checks
+                record = {
+                    'session_id': idempotency_key,  # используем idempotency_key как session_id для балансовой операции
+                    'imei': imei,
+                    'service_type': service_type,
+                    'paid': True,
+                    'payment_status': 'succeeded',
+                    'payment_method': 'balance',
+                    'amount': amount_gel,
+                    'currency': 'gel',
+                    'timestamp': datetime.utcnow(),
+                    'user_id': ObjectId(user_id),
+                    'idempotency_key': idempotency_key,
+                    'status': 'pending_verification'  # ожидание выполнения проверки
+                }
+                if client:
+                    checks_collection.insert_one(record)
+                
+                return jsonify({
+                    'id': idempotency_key,
+                    'payment_method': 'balance'
+                })
+            else:
+                return jsonify({'error': 'ბალანსიდან გადახდა ვერ მოხერხდა'}), 500
+        
+        # Если не используем баланс (неавторизован или недостаточно средств), создаем сессию Stripe
+        base_url = request.host_url.rstrip('/')
+        success_url = f"{base_url}/success?session_id={{CHECKOUT_SESSION_ID}}&imei={imei}&service_type={service_type}"
+        
+        # Определяем cancel_url в зависимости от типа услуги
+        if service_type in ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']:
+            cancel_url = f"{base_url}/apple_check?type={service_type}"
+        else:
+            cancel_url = f"{base_url}/android_check?type={service_type}"
+        
+        # Метаданные для сессии
+        metadata = {
+            'imei': imei,
+            'service_type': service_type,
+            'idempotency_key': idempotency_key
+        }
+        if 'user_id' in session:
+            metadata['user_id'] = session['user_id']
+        
+        # Создаем сессию через StripePayment
+        stripe_session = stripe_payment.create_checkout_session(
+            imei=imei,
+            service_type=service_type,
+            amount=amount,  # в центах
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata=metadata,
+            idempotency_key=idempotency_key
+        )
+        
+        return jsonify({
+            'id': stripe_session.id,
+            'payment_method': 'stripe'
+        })
     
-    analysis += "</ul>"
+    except Exception as e:
+        app.logger.error(f"Error creating checkout session: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/success')
+def payment_success():
+    session_id = request.args.get('session_id')
+    imei = request.args.get('imei')
+    service_type = request.args.get('service_type')
     
-    # Заключение в зависимости от разницы в процентах
-    if advantage < 5:
-        analysis += "<p>ორივე მოწყობილობა ძალიან ახლოსაა თავიანთ შესრულებაში. არჩევანი უნდა გაკეთდეს ინდივიდუალური პრიორიტეტების მიხედვით.</p>"
-    elif advantage < 15:
-        analysis += f"<p><strong>{winner_model}</strong> მნიშვნელოვნად უკეთესია ვიდრე {loser_model}, განსაკუთრებით ზემოთ ჩამოთვლილ კატეგორიებში.</p>"
+    if not session_id or not imei or not service_type:
+        return render_template('error.html', error="არასაკმარისი პარამეტრები"), 400
+    
+    # Если session_id начинается с "bal_", то это оплата с баланса
+    if session_id.startswith('bal_'):
+        # Для балансовой оплаты мы уже создали запись в checks_collection
+        # Теперь нужно выполнить проверку и обновить запись
+        # Но можно перенаправить сразу на страницу результатов, передав session_id
+        # Или отобразить результаты здесь?
+        # Пока просто перенаправляем на страницу проверки с параметрами
+        apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
+        if service_type in apple_services:
+            return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
+        else:
+            return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
     else:
-        analysis += f"<p><strong>{winner_model}</strong> აშკარად უკეთესი არჩევანია ვიდრე {loser_model} ყველა ძირითად კატეგორიაში.</p>"
+        # Это оплата через Stripe
+        try:
+            # Получаем сессию Stripe
+            stripe_session = stripe.checkout.Session.retrieve(session_id)
+            
+            # Создаем запись о платеже в коллекции checks
+            record = {
+                'stripe_session_id': session_id,
+                'imei': imei,
+                'service_type': service_type,
+                'paid': True,
+                'payment_status': stripe_session.payment_status,
+                'amount': stripe_session.amount_total / 100,  # переводим в лари
+                'currency': stripe_session.currency,
+                'timestamp': datetime.utcnow(),
+                'status': 'pending_verification'  # ожидание выполнения проверки
+            }
+            if 'user_id' in session:
+                record['user_id'] = ObjectId(session['user_id'])
+            if client:
+                checks_collection.insert_one(record)
+            
+            # Перенаправляем на страницу проверки с параметрами
+            apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
+            if service_type in apple_services:
+                return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
+            else:
+                return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
+        
+        except Exception as e:
+            app.logger.error(f"Payment success error: {str(e)}")
+            return render_template('error.html', error=str(e)), 500
+
+@app.route('/get_check_result')
+def get_check_result():
+    session_id = request.args.get('session_id')
+    if not session_id:
+        return jsonify({'error': 'სესიის ID არის მითითებული'}), 400
     
-    return analysis
+    if not client:
+        return jsonify({'error': 'Database unavailable'}), 500
+    
+    # Ищем как по session_id (баланс), так и по stripe_session_id (Stripe)
+    record = checks_collection.find_one({
+        '$or': [
+            {'session_id': session_id},
+            {'stripe_session_id': session_id}
+        ]
+    })
+    if not record:
+        return jsonify({'error': 'შედეგი ვერ მოიძებნა'}), 404
+    
+    return jsonify({
+        'imei': record['imei'],
+        'result': record['result']
+    })
 
-def generate_image_path(brand, model):
-    """Генерирует путь к изображению телефона"""
-    brand_normalized = brand.lower().replace(' ', '_').replace('-', '_')
-    model_normalized = model.lower().replace(' ', '_').replace('-', '_').replace('/', '_').replace('\\', '_')
-    return f"/static/img/phones/{brand_normalized}/{model_normalized}.jpg"
+@app.route('/perform_check', methods=['POST'])
+@csrf.exempt
+def perform_check():
+    try:
+        data = request.get_json()
+        imei = data.get('imei')
+        service_type = data.get('service_type')
+        
+        app.logger.info(f"Check started for IMEI: {imei}, service: {service_type}")
+        
+        if not imei or not service_type:
+            return jsonify({'error': 'არასაკმარისი პარამეტრები'}), 400
+        
+        if not validate_imei(imei):
+            return jsonify({'error': 'IMEI-ის არასწორი ფორმატი'}), 400
+        
+        # Пытаемся получить семафор с таймаутом
+        acquired = REQUEST_SEMAPHORE.acquire(timeout=15)
+        if not acquired:
+            app.logger.warning(f"Semaphore timeout for IMEI: {imei}")
+            return jsonify({'error': 'სისტემა დატვირთულია, გთხოვთ სცადოთ მოგვიანებით'}), 503
+        
+        try:
+            # Выполняем проверку
+            time.sleep(1)  # Искусственная задержка перед запросом
+            
+            attempts = 0
+            max_attempts = 3
+            delay = 2  # seconds
+            result = None
+            
+            while attempts < max_attempts:
+                try:
+                    result = perform_api_check(imei, service_type)
+                    
+                    # Искусственная задержка для обработки ответа
+                    time.sleep(0.5)
+                    
+                    if result and 'error' not in result:
+                        break
+                    
+                    # Повторная попытка при ошибках сервера
+                    if result and 'error' in result and 'სერვერის' in result['error']:
+                        raise Exception(f"Server error: {result['error']}")
+                        
+                except Exception as e:
+                    attempts += 1
+                    if attempts < max_attempts:
+                        time.sleep(delay)
+                        delay *= 2  # Экспоненциальная задержка
+                    else:
+                        return jsonify({
+                            'error': f'Request failed after {max_attempts} attempts',
+                            'details': str(e)
+                        }), 500
+        
+            if not result:
+                return jsonify({'error': 'API-დან ცარიელი პასუხი'}), 500
+            
+            if 'error' in result:
+                return jsonify(result), 400
+            
+            # Для сервисов, возвращающих HTML
+            if 'html_content' in result:
+                parsed_data = parse_free_html(result['html_content'])
+                
+                if parsed_data:
+                    # Сохраняем оригинальный HTML как резерв
+                    parsed_data['original_html'] = result['html_content'][:500] + '...' 
+                    result = parsed_data
+                else:
+                    # Fallback: возвращаем очищенный текст
+                    soup = BeautifulSoup(result['html_content'], 'html.parser')
+                    result = {'server_response': soup.get_text(separator='\n', strip=True)}
+            
+            # Сохраняем результат для бесплатных проверок
+            if service_type == 'free' and client:
+                # Извлекаем статус из результата
+                status = 'unknown'
+                if isinstance(result, dict):
+                    status = result.get('status') or result.get('სტატუსი', 'unknown')
+                
+                record = {
+                    'imei': imei,
+                    'service_type': service_type,
+                    'paid': False,
+                    'status': status,   # сохраняем статус
+                    'timestamp': datetime.utcnow(),
+                    'result': result
+                }
+                if 'user_id' in session:
+                    record['user_id'] = ObjectId(session['user_id'])
+                checks_collection.insert_one(record)
+            
+            app.logger.info(f"Check completed for IMEI: {imei}")
+            return jsonify(result)
+        
+        finally:
+            REQUEST_SEMAPHORE.release()
+    
+    except Exception as e:
+        app.logger.error(f'Check error: {str(e)}')
+        return jsonify({'error': 'სერვერული შეცდომა'}), 500
 
-def convert_objectids(obj):
-    """Рекурсивно преобразует все ObjectId в строки"""
-    if isinstance(obj, ObjectId):
-        return str(obj)
-    if isinstance(obj, list):
-        return [convert_objectids(item) for item in obj]
-    if isinstance(obj, dict):
-        return {key: convert_objectids(value) for key, value in obj.items()}
-    return obj
+@app.route('/reparse_imei')
+def reparse_imei():
+    imei = request.args.get('imei')
+    if not client:
+        return jsonify({'error': 'Database unavailable'}), 500
+        
+    record = checks_collection.find_one({'imei': imei, 'service_type': 'free'})
+    
+    if not record or 'result' not in record or 'html_content' not in record['result']:
+        return jsonify({'error': 'მონაცემები ვერ მოიძებნა'}), 404
+    
+    html_content = record['result']['html_content']
+    parsed_data = parse_free_html(html_content)
+    
+    if parsed_data:
+        parsed_data['reparsed'] = True
+        return jsonify(parsed_data)
+    
+    return jsonify({
+        'error': 'დამუშავება ვერ მოხერხდა',
+        'server_response': BeautifulSoup(html_content, 'html.parser').get_text()
+    })
+
+@app.route('/stripe_webhook', methods=['POST'])
+@csrf.exempt
+def stripe_webhook():
+    payload = request.data
+    sig_header = request.headers.get('Stripe-Signature')
+
+    try:
+        # Обработка вебхука через StripePayment
+        event = stripe_payment.handle_webhook(payload, sig_header)
+        return jsonify({'status': 'success'}), 200
+    
+    except ValueError as e:
+        return jsonify({'error': 'არასწორი მონაცემები'}), 400
+    except stripe.error.SignatureVerificationError as e:
+        return jsonify({'error': 'არასწორი ხელმოწერა'}), 400
+    except Exception as e:
+        app.logger.error(f"Webhook processing error: {str(e)}")
+        return jsonify({'error': 'სერვერული შეცდომა'}), 500
+
+@app.route('/refund_payment', methods=['POST'])
+@csrf.exempt
+@login_required
+def refund_payment():
+    try:
+        data = request.json
+        payment_id = data.get('payment_id')
+        amount = data.get('amount')
+        reason = data.get('reason', 'Customer request')
+        
+        if not payment_id or not amount:
+            return jsonify({'error': 'Missing required parameters'}), 400
+        
+        user_id = session['user_id']
+        
+        # Проверяем права пользователя на возврат
+        payment = payments_collection.find_one({
+            '_id': ObjectId(payment_id),
+            'user_id': ObjectId(user_id)
+        })
+        
+        if not payment:
+            return jsonify({'error': 'Payment not found or access denied'}), 404
+        
+        # Выполняем возврат через StripePayment
+        result = stripe_payment.create_refund(
+            payment_id=payment_id,
+            amount=amount,
+            currency=payment['currency'],
+            reason=reason,
+            idempotency_key=secrets.token_hex(16)
+        )
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        app.logger.error(f"Refund error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template(
+        'error.html', 
+        code=404,
+        message="გვერდი ვერ მოიძებნა"
+    ), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template(
+        'error.html', 
+        code=500,
+        message="სერვერზე შეცდომა მოხდა"
+    ), 500
+
+# ======================================
+# Health Check
+# ======================================
+
+@app.route('/health')
+def health_check():
+    status = {
+        'status': 'OK',
+        'timestamp': datetime.utcnow().isoformat(),
+        'services': {}
+    }
+    
+    # Проверка MongoDB
+    if client:
+        try:
+            db.command('ping')
+            status['services']['mongodb'] = 'OK'
+        except Exception as e:
+            status['services']['mongodb'] = f'ERROR: {str(e)}'
+            status['status'] = 'ERROR'
+    else:
+        status['services']['mongodb'] = 'DISABLED'
+        status['status'] = 'DEGRADED'
+    
+    # Проверка Stripe
+    try:
+        stripe.Balance.retrieve()
+        status['services']['stripe'] = 'OK'
+    except Exception as e:
+        status['services']['stripe'] = f'ERROR: {str(e)}'
+        status['status'] = 'ERROR'
+    
+    # Проверка внешнего API
+    try:
+        response = requests.get(API_URL, timeout=5)
+        status['services']['external_api'] = 'OK' if response.status_code == 200 else f'HTTP {response.status_code}'
+    except Exception as e:
+        status['services']['external_api'] = f'ERROR: {str(e)}'
+        status['status'] = 'ERROR'
+    
+    return jsonify(status), 200 if status['status'] == 'OK' else 500
+
+# ======================================
+# Webhook Manager
+# ======================================
+
+def send_webhook_event(event_type, payload):
+    if not client:
+        return
+        
+    active_webhooks = webhooks_collection.find({
+        'active': True,
+        'events': event_type
+    })
+    
+    for webhook in active_webhooks:
+        try:
+            headers = {'Content-Type': 'application/json'}
+            if webhook.get('secret'):
+                signature = hmac.new(
+                    webhook['secret'].encode(),
+                    json.dumps(payload).encode(),
+                    'sha256'
+                ).hexdigest()
+                headers['X-Webhook-Signature'] = signature
+            
+            response = requests.post(
+                webhook['url'],
+                json=payload,
+                headers=headers,
+                timeout=5
+            )
+            
+            webhooks_collection.update_one(
+                {'_id': webhook['_id']},
+                {'$set': {
+                    'last_delivery': datetime.utcnow(),
+                    'last_status': response.status_code
+                }}
+            )
+        except Exception as e:
+            app.logger.error(f"Webhook error for {webhook['url']}: {str(e)}")
+            webhooks_collection.update_one(
+                {'_id': webhook['_id']},
+                {'$set': {
+                    'last_delivery': datetime.utcnow(),
+                    'last_status': 'Error'
+                }}
+            )
+
+# ======================================
+# Carousel Image Upload Endpoints
+# ======================================
+
+@app.route('/create-carousel-folder', methods=['POST'])
+def create_carousel_folder():
+    """Создает папку для изображений карусели"""
+    data = request.json
+    path = data.get('path', 'static/img/carousel')
+    
+    try:
+        os.makedirs(path, exist_ok=True)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/upload-carousel-image', methods=['POST'])
+def upload_carousel_image():
+    """Загружает изображение для карусели"""
+    if 'carouselImage' not in request.files:
+        return jsonify({'success': False, 'error': 'ფაილი არ არის ატვირთული'}), 400
+    
+    file = request.files['carouselImage']
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'ფაილი არ არის არჩეული'}), 400
+    
+    try:
+        # Сохраняем в папку carousel
+        upload_folder = 'static/img/carousel'
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        filename = f"carousel_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+        file_path = os.path.join(upload_folder, filename)
+        file.save(file_path)
+        
+        return jsonify({
+            'success': True, 
+            'filePath': f'/{file_path}'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ======================================
+# Phone Comparison Endpoints
+# ======================================
+
+@app.route('/compare')
+def compare_phones_page():
+    """Страница сравнения телефонов"""
+    return render_template('compare.html')
+
+@app.route('/api/search_phones', methods=['GET'])
+@csrf.exempt
+def api_search_phones():
+    query = request.args.get('query', '')
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    
+    if not client:
+        return jsonify({'error': 'Database unavailable'}), 500
+    
+    if not query or len(query) < 2:
+        return jsonify([])
+    
+    try:
+        regex = re.compile(f'.*{re.escape(query)}.*', re.IGNORECASE)
+        results = phonebase_collection.find({
+            "$or": [
+                {"Бренд": regex},
+                {"Модель": regex},
+                {"Бренд_1": regex},
+                {"Модель_1": regex}
+            ]
+        }).skip((page-1)*per_page).limit(per_page)
+        
+        phones = []
+        for phone in results:
+            phone_data = {
+                '_id': str(phone['_id']),
+                'brand': phone.get('Бренд', ''),
+                'model': phone.get('Модель', ''),
+                'release_year': phone.get('Год выпуска', ''),
+                'image_url': generate_image_path(
+                    phone.get('Бренд', ''), 
+                    phone.get('Модель', '')
+                )
+            }
+            phones.append(phone_data)
+        
+        return jsonify(phones)
+    
+    except Exception as e:
+        app.logger.error(f"Error in api_search_phones: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/phone_details', methods=['GET'])
+@csrf.exempt
+def api_phone_details():
+    """Получение деталей телефона по ID"""
+    phone_id = request.args.get('id')
+    if not phone_id:
+        return jsonify({'error': 'Missing phone ID'}), 400
+    
+    try:
+        phone = phonebase_collection.find_one({'_id': ObjectId(phone_id)})
+        if phone:
+            # Преобразование ObjectId в строку
+            phone['_id'] = str(phone['_id'])
+            return jsonify(phone)
+        return jsonify({'error': 'Phone not found'}), 404
+    except:
+        return jsonify({'error': 'Invalid phone ID'}), 400
+
+@app.route('/api/compare', methods=['POST'])
+@csrf.exempt
+def api_compare_phones():
+    data = request.json
+    phone1_id = data.get('phone1_id')
+    phone2_id = data.get('phone2_id')
+    
+    if not phone1_id or not phone2_id:
+        return jsonify({'error': 'Missing phone IDs'}), 400
+    
+    try:
+        phone1 = phonebase_collection.find_one({'_id': ObjectId(phone1_id)})
+        phone2 = phonebase_collection.find_one({'_id': ObjectId(phone2_id)})
+    except:
+        return jsonify({'error': 'Invalid phone ID'}), 400
+    
+    if not phone1 or not phone2:
+        return jsonify({'error': 'Phone not found'}), 404
+    
+    comparison_result = compare_two_phones(phone1, phone2)
+    
+    # Сохраняем в историю сравнений
+    if 'user_id' in session:
+        comparison_record = {
+            'user_id': ObjectId(session['user_id']),
+            'phone1_id': ObjectId(phone1_id),
+            'phone2_id': ObjectId(phone2_id),
+            'model1': phone1.get('Модель', ''),
+            'model2': phone2.get('Модель', ''),
+            'result': comparison_result.get('winner', 'draw'),
+            'timestamp': datetime.utcnow()
+        }
+        comparisons_collection.insert_one(comparison_record)
+    
+    # Преобразуем все ObjectId в строки для сериализации
+    comparison_result = convert_objectids(comparison_result)
+    return jsonify(comparison_result)
+
+# ======================================
+# User Blueprint (Личный кабинет пользователя)
+# ======================================
+
+user_bp = Blueprint('user', __name__, url_prefix='/user')
+
+@user_bp.route('/dashboard')
+@login_required
+def dashboard():
+    """Личный кабинет пользователя"""
+    user_id = session['user_id']
+    if not client:
+        flash('Database unavailable', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    if not user:
+        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    # Получение баланса
+    balance = user.get('balance', 0)
+    
+    # Последние 5 проверок
+    last_checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
+    
+    # Последние 5 сравнений
+    last_comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
+    
+    # Последние 5 платежей
+    last_payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
+    
+    # Общее количество проверок
+    total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
+    
+    # Общее количество сравнений
+    total_comparisons = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
+    
+    # Генерируем цвет аватара
+    avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+    
+    return render_template(
+        'user/dashboard.html',
+        user=user,
+        balance=balance,
+        last_checks=last_checks,
+        last_comparisons=last_comparisons,
+        last_payments=last_payments,
+        total_checks=total_checks,
+        total_comparisons=total_comparisons,
+        stripe_public_key=STRIPE_PUBLIC_KEY,
+        avatar_color=avatar_color  # Передаем цвет аватара
+    )
+
+@user_bp.route('/settings')
+@login_required
+def settings():
+    """Страница настроек пользователя"""
+    user_id = session['user_id']
+    if not client:
+        flash('Database unavailable', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    if not user:
+        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+    
+    return render_template(
+        'user/settings.html',
+        user=user,
+        avatar_color=avatar_color
+    )
+
+@user_bp.route('/topup', methods=['GET', 'POST'])
+@login_required
+@csrf.exempt
+def topup_balance():
+    """Пополнение баланса"""
+    if request.method == 'POST':
+        amount = float(request.form.get('amount'))
+        if amount < 1:
+            flash('მინიმალური თანხა $1', 'danger')
+            return redirect(url_for('user.topup_balance'))
+        
+        # Используем StripePayment для создания сессии пополнения
+        try:
+            base_url = request.host_url.rstrip('/')
+            success_url = f"{base_url}/user/topup/success"
+            cancel_url = f"{base_url}/user/topup"
+            idempotency_key = secrets.token_hex(16)
+            
+            stripe_session = stripe_payment.create_topup_session(
+                user_id=str(session['user_id']),
+                amount=amount,
+                success_url=success_url,
+                cancel_url=cancel_url,
+                idempotency_key=idempotency_key
+            )
+            return redirect(stripe_session.url)
+        except Exception as e:
+            flash(f'გადახდის სესიის შექმნის შეცდომა: {str(e)}', 'danger')
+            return redirect(url_for('user.topup_balance'))
+    
+    return render_template('user/topup.html', stripe_public_key=STRIPE_PUBLIC_KEY)
+
+@user_bp.route('/topup/success')
+@login_required
+def topup_success():
+    """Успешное пополнение баланса"""
+    flash('გადახდა წარმატებით დასრულდა! თქვენი ბალანსი მალე განახლდება.', 'success')
+    return redirect(url_for('user.dashboard'))
+
+@user_bp.route('/payment-methods')
+@login_required
+def payment_methods():
+    """Управление платежными методами"""
+    return render_template('user/payment_methods.html')
+
+# Ключевое исправление: добавлен алиас для совместимости
+@user_bp.route('/accounts')
+@user_bp.route('/payment_history')  # Добавлен алиас для совместимости
+@login_required
+def payment_history():
+    """История платежей"""
+    user_id = session['user_id']
+    if not client:
+        flash('Database unavailable', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    if not user:
+        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    # Получаем всю историю платежей
+    payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1))
+    
+    return render_template(
+        'user/accounts.html',
+        user=user,
+        payments=payments
+    )
+
+@user_bp.route('/history/checks')
+@login_required
+def history_checks():
+    """История проверок IMEI"""
+    user_id = session['user_id']
+    if not client:
+        flash('Database unavailable', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    if not user:
+        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    balance = user.get('balance', 0)
+    
+    page = int(request.args.get('page', 1))
+    per_page = 20
+    
+    # Исправленный запрос с пагинацией
+    query = checks_collection.find({'user_id': ObjectId(user_id)})
+    query = query.sort('timestamp', -1)
+    query = query.skip((page - 1) * per_page).limit(per_page)
+    checks = list(query)
+    
+    total = checks_collection.count_documents({'user_id': ObjectId(user_id)})
+    
+    for check in checks:
+        check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M')
+    
+    return render_template(
+        'user/history_checks.html',
+        user=user,
+        balance=balance,
+        checks=checks,
+        page=page,
+        per_page=per_page,
+        total=total
+    )
+
+@user_bp.route('/history/comparisons')
+@login_required
+def history_comparisons():
+    """История сравнений телефонов"""
+    user_id = session['user_id']
+    if not client:
+        flash('Database unavailable', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    if not user:
+        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    balance = user.get('balance', 0)
+    
+    page = int(request.args.get('page', 1))
+    per_page = 20
+    
+    # Исправленный запрос с пагинацией
+    query = comparisons_collection.find({'user_id': ObjectId(user_id)})
+    query = query.sort('timestamp', -1)
+    query = query.skip((page - 1) * per_page).limit(per_page)
+    comparisons = list(query)
+    
+    total = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
+    
+    return render_template(
+        'user/history_comparisons.html',
+        user=user,
+        balance=balance,
+        comparisons=comparisons,
+        page=page,
+        per_page=per_page,
+        total=total
+    )
+
+# Новый роут для получения деталей проверки
+@user_bp.route('/check-details/<check_id>')
+@login_required
+def check_details(check_id):
+    """Возвращает детали проверки IMEI в формате JSON"""
+    try:
+        obj_id = ObjectId(check_id)
+    except:
+        return jsonify({'error': 'Invalid check ID'}), 400
+
+    user_id = ObjectId(session['user_id'])
+    check = checks_collection.find_one({'_id': obj_id, 'user_id': user_id})
+
+    if not check:
+        return jsonify({'error': 'Check not found'}), 404
+
+    # Определяем статус
+    status = check.get('status', 'unknown')
+    # Если в записи нет статуса, попробуем взять из результата
+    if status == 'unknown' and isinstance(check.get('result'), dict):
+        result = check.get('result')
+        status = result.get('status') or result.get('სტატუსი', 'unknown')
+
+    # Собираем детали
+    details = {
+        'imei': check.get('imei', ''),
+        'timestamp': check['timestamp'].strftime('%Y-%m-%d %H:%M'),
+        'status': status,
+        'device_info': '',
+        'additional_info': ''
+    }
+
+    result = check.get('result')
+    if isinstance(result, dict):
+        # Получаем модель
+        model = result.get('model') or result.get('მოდელი') or result.get('device_model') or ''
+        details['device_info'] = model
+
+        # Собираем дополнительные поля, исключая некоторые
+        excluded_keys = ['status', 'სტატუსი', 'model', 'მოდელი', 'server_response', 'service_type', 'imei', 'device_model']
+        additional_info_parts = []
+        for key, value in result.items():
+            if key not in excluded_keys:
+                additional_info_parts.append(f"{key}: {value}")
+
+        details['additional_info'] = '\n'.join(additional_info_parts) or 'დამატებითი ინფორმაცია არ არის'
+    else:
+        # Если результат не словарь, то выводим как есть
+        details['additional_info'] = str(result) or 'დამატებითი ინფორმაცია არ არის'
+
+    return jsonify(details)
+
+# ======================================
+# Регистрация блюпринтов
+# ======================================
+
+# Заглушка для админ-панели
+admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+
+@admin_bp.route('/admin_dashboard')
+def admin_dashboard():
+    return "Admin Dashboard"
+
+# Регистрация блюпринтов
+app.register_blueprint(auth_bp)
+app.register_blueprint(user_bp)
+app.register_blueprint(admin_bp)
+
+# Установка CSRF-куки для AJAX
+@app.after_request
+def set_csrf_cookie(response):
+    if request.path.startswith('/'):
+        # Убедитесь что сессия сохранена
+        session.modified = True
+        response.set_cookie('csrf_token', generate_csrf())
+    return response
+
+# Обработчик ошибок CSRF
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    app.logger.warning(f"CSRF error: {e.description}")
+    return jsonify({'error': f'CSRF token error: {e.description}'}), 400
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
