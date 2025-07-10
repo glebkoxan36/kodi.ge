@@ -1219,7 +1219,7 @@
             }
             
             function showComparisonButton() {
-                $('#afterFirstSelected').show();
+                $('#afterFirstSelected').show(); // Исправлено: не скрываем контейнер
                 $('#startComparisonBtn').show();
             }
             
@@ -1277,11 +1277,6 @@
                     return;
                 }
                 
-                if (phone1._id === phone2._id) {
-                    showErrorNotification('არ შეიძლება ერთი და იგივე ტელეფონის შედარება');
-                    return;
-                }
-                
                 $('#comparisonResult').html(`
                     <div style="text-align: center; padding: 50px;">
                         <div class="loading-spinner" style="width: 50px; height: 50px;"></div>
@@ -1289,9 +1284,9 @@
                     </div>
                 `).show();
                 
-                // Исправленный формат ID
-                const phone1Id = phone1._id;
-                const phone2Id = phone2._id;
+                // Исправленный формат ID для MongoDB
+                const phone1Id = phone1._id.$oid ? phone1._id.$oid : phone1._id;
+                const phone2Id = phone2._id.$oid ? phone2._id.$oid : phone2._id;
                 
                 console.log("Sending compare request with IDs:", {
                     phone1_id: phone1Id,
@@ -1511,4 +1506,4 @@
         });
     </script>
 </body>
-</html>
+    </html>
