@@ -20,11 +20,10 @@ from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_session import Session
 from bs4 import BeautifulSoup
 
-# Импорт модулей сравнения
-from compare import compare_two_phones, generate_image_path, convert_objectids
+# Импорт модулей
 from auth import auth_bp
 from ifreeapi import validate_imei, perform_api_check, parse_free_html
-from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, comparisons_collection, phonebase_collection, prices_collection
+from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection
 from stripepay import StripePayment
 
 app = Flask(__name__)
@@ -38,7 +37,6 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(days=7)
-)
 Session(app)
 
 # Инициализация CSRF защиты
@@ -969,128 +967,6 @@ def upload_carousel_image():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ======================================
-# Phone Comparison Endpoints
-# ======================================
-
-@app.route('/compare')
-def compare_phones_page():
-    """Страница сравнения телефонов"""
-    return render_template('compare.html')
-
-@app.route('/api/search_phones', methods=['GET'])
-@csrf.exempt
-def api_search_phones():
-    query = request.args.get('query', '')
-    page = int(request.args.get('page', 1))
-    per_page = 10
-    
-    if not client:
-        return jsonify({'error': 'Database unavailable'}), 500
-    
-    if not query or len(query) < 2:
-        return jsonify([])
-    
-    try:
-        regex = re.compile(f'.*{re.escape(query)}.*', re.IGNORECASE)
-        results = phonebase_collection.find({
-            "$or": [
-                {"Бренд": regex},
-                {"Модель": regex},
-                {"Бренд_1": regex},
-                {"Модель_1": regex}
-            ]
-        }).skip((page-1)*per_page).limit(per_page)
-        
-        phones = []
-        for phone in results:
-            phone_data = {
-                '_id': str(phone['_id']),
-                'brand': phone.get('Бренд', ''),
-                'model': phone.get('Модель', ''),
-                'release_year': phone.get('Год выпуска', ''),
-                'image_url': generate_image_path(
-                    phone.get('Бренд', ''), 
-                    phone.get('Модель', '')
-                )
-            }
-            phones.append(phone_data)
-        
-        return jsonify(phones)
-    
-    except Exception as e:
-        app.logger.error(f"Error in api_search_phones: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
-
-@app.route('/api/phone_details', methods=['GET'])
-@csrf.exempt
-def api_phone_details():
-    """Получение деталей телефона по ID"""
-    phone_id = request.args.get('id')
-    if not phone_id:
-        return jsonify({'error': 'Missing phone ID'}), 400
-    
-    try:
-        phone = phonebase_collection.find_one({'_id': ObjectId(phone_id)})
-        if phone:
-            # Преобразование ObjectId в строку
-            phone['_id'] = str(phone['_id'])
-            return jsonify(phone)
-        return jsonify({'error': 'Phone not found'}), 404
-    except:
-        return jsonify({'error': 'Invalid phone ID'}), 400
-
-@app.route('/api/compare', methods=['POST'])
-@csrf.exempt
-def api_compare_phones():
-    data = request.json
-    phone1_id = data.get('phone1_id')
-    phone2_id = data.get('phone2_id')
-    
-    if not phone1_id or not phone2_id:
-        return jsonify({'error': 'Missing phone IDs'}), 400
-    
-    try:
-        # Преобразуем ID в ObjectId и ищем
-        obj_id1 = ObjectId(phone1_id)
-        obj_id2 = ObjectId(phone2_id)
-    except Exception as e:
-        app.logger.error(f"Error converting phone IDs: {str(e)}")
-        return jsonify({'error': 'Invalid phone ID format'}), 400
-    
-    phone1 = phonebase_collection.find_one({'_id': obj_id1})
-    phone2 = phonebase_collection.find_one({'_id': obj_id2})
-    
-    if not phone1:
-        return jsonify({'error': 'Phone 1 not found'}), 404
-    if not phone2:
-        return jsonify({'error': 'Phone 2 not found'}), 404
-    
-    # Логирование перед сравнением
-    app.logger.info(f"Comparing phones: {phone1.get('Модель', 'Unknown')} vs {phone2.get('Модель', 'Unknown')}")
-    
-    try:
-        comparison_result = compare_two_phones(phone1, phone2)
-    except Exception as e:
-        app.logger.error(f"Comparison failed: {str(e)}")
-        return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
-    
-    # Сохраняем в историю сравнений
-    if 'user_id' in session:
-        comparison_record = {
-            'user_id': ObjectId(session['user_id']),
-            'phone1_id': obj_id1,
-            'phone2_id': obj_id2,
-            'model1': phone1.get('Модель', ''),
-            'model2': phone2.get('Модель', ''),
-            'result': comparison_result.get('overall_winner', 'draw'),
-            'timestamp': datetime.utcnow()
-        }
-        comparisons_collection.insert_one(comparison_record)
-    
-    # Преобразуем все ObjectId в строки для сериализации
-    return jsonify(convert_objectids(comparison_result))
-
-# ======================================
 # User Blueprint (Личный кабинет пользователя)
 # ======================================
 
@@ -1116,17 +992,11 @@ def dashboard():
     # Последние 5 проверок
     last_checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
-    # Последние 5 сравнений
-    last_comparisons = list(comparisons_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
-    
     # Последние 5 платежей
     last_payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
     
     # Общее количество проверок
     total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
-    
-    # Общее количество сравнений
-    total_comparisons = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
     
     # Генерируем цвет аватара
     avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
@@ -1136,10 +1006,8 @@ def dashboard():
         user=user,
         balance=balance,
         last_checks=last_checks,
-        last_comparisons=last_comparisons,
         last_payments=last_payments,
         total_checks=total_checks,
-        total_comparisons=total_comparisons,
         stripe_public_key=STRIPE_PUBLIC_KEY,
         avatar_color=avatar_color  # Передаем цвет аватара
     )
@@ -1271,43 +1139,6 @@ def history_checks():
         user=user,
         balance=balance,
         checks=checks,
-        page=page,
-        per_page=per_page,
-        total=total
-    )
-
-@user_bp.route('/history/comparisons')
-@login_required
-def history_comparisons():
-    """История сравнений телефонов"""
-    user_id = session['user_id']
-    if not client:
-        flash('Database unavailable', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-    if not user:
-        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    balance = user.get('balance', 0)
-    
-    page = int(request.args.get('page', 1))
-    per_page = 20
-    
-    # Исправленный запрос с пагинацией
-    query = comparisons_collection.find({'user_id': ObjectId(user_id)})
-    query = query.sort('timestamp', -1)
-    query = query.skip((page - 1) * per_page).limit(per_page)
-    comparisons = list(query)
-    
-    total = comparisons_collection.count_documents({'user_id': ObjectId(user_id)})
-    
-    return render_template(
-        'user/history_comparisons.html',
-        user=user,
-        balance=balance,
-        comparisons=comparisons,
         page=page,
         per_page=per_page,
         total=total
