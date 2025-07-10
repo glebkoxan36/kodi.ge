@@ -18,7 +18,7 @@
         .mobile-menu-bottom {
             display: none;
             position: fixed;
-            bottom: 20px;
+            bottom: 5px;
             left: 0;
             right: 0;
             text-align: center;
