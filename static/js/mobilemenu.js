@@ -1,5 +1,5 @@
 (function() {
-    // Кеширование DOM элементов
+    // Кеширование DOM элементов и пользовательских данных
     let cachedElements = {};
     let userHTMLCache = null;
     
@@ -18,7 +18,7 @@
         .mobile-menu-bottom {
             display: none;
             position: fixed;
-            bottom: 5px;
+            bottom: 20px;
             left: 0;
             right: 0;
             text-align: center;
@@ -76,11 +76,10 @@
             display: flex;
         }
         
-        /* Новый статичный фон с космическим эффектом */
+        /* Новый космический фон с глубокими синими тонами */
         .mobile-menu-modal .modal-content {
             background: 
-                radial-gradient(circle at 20% 30%, rgba(10, 14, 23, 0.9) 0%, rgba(26, 33, 56, 0.9) 40%),
-                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="20" cy="20" r="1" fill="rgba(0, 198, 255, 0.3)"/><circle cx="50" cy="70" r="0.8" fill="rgba(0, 198, 255, 0.3)"/><circle cx="80" cy="40" r="0.5" fill="rgba(0, 198, 255, 0.3)"/></svg>'),
+                radial-gradient(circle at 20% 30%, #0a0e17 0%, #1a2138 40%),
                 linear-gradient(135deg, #0a0e17, #1a2138);
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
@@ -94,19 +93,26 @@
             z-index: 1;
         }
 
-        /* Декоративные линии */
+        /* Звездный узор */
         .modal-content::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #00c6ff, transparent);
-            z-index: 2;
-            opacity: 0.4;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(0, 198, 255, 0.1) 1px, transparent 1px),
+                radial-gradient(circle at 80% 70%, rgba(0, 198, 255, 0.1) 1px, transparent 1px),
+                radial-gradient(circle at 50% 20%, rgba(0, 198, 255, 0.1) 1px, transparent 1px),
+                radial-gradient(circle at 10% 80%, rgba(0, 198, 255, 0.1) 1px, transparent 1px);
+            background-size: 300px 300px;
+            background-position: 0 0, 100px 100px;
+            opacity: 0.6;
+            z-index: 1;
         }
-        
+
+        /* Декоративные линии */
         .modal-content::after {
             content: '';
             position: absolute;
@@ -612,11 +618,21 @@
 
     // Создаем HTML структуру мобильного меню
     function createMobileMenuStructure() {
-        if (getElement('mobile-menu-container')) return;
+        // Удаляем старый контейнер если существует
+        const oldContainer = getElement('mobile-menu-container');
+        if (oldContainer) {
+            oldContainer.remove();
+            // Очищаем кеш связанных элементов
+            delete cachedElements['mobile-menu-container'];
+            delete cachedElements['mobileMenuModal'];
+            delete cachedElements['appleSubmenuModal'];
+            delete cachedElements['androidSubmenuModal'];
+        }
         
         const mobileMenuContainer = document.createElement('div');
         mobileMenuContainer.id = 'mobile-menu-container';
         document.body.appendChild(mobileMenuContainer);
+        cachedElements['mobile-menu-container'] = mobileMenuContainer;
         
         const isDashboard = window.location.pathname.includes('dashboard');
         const userHTML = generateUserHTML();
@@ -632,14 +648,28 @@
         if (savedMenuState) {
             sessionStorage.removeItem('mobileMenuState');
             setTimeout(() => {
-                if (savedMenuState === 'main' && getElement('mobileMenuModal')) {
+                openMenuByState(savedMenuState);
+            }, 50);
+        }
+    }
+
+    function openMenuByState(state) {
+        switch(state) {
+            case 'main':
+                if (getElement('mobileMenuModal')) {
                     openMobileMenu();
-                } else if (savedMenuState === 'apple' && getElement('appleSubmenuModal')) {
+                }
+                break;
+            case 'apple':
+                if (getElement('appleSubmenuModal')) {
                     openAppleSubmenu();
-                } else if (savedMenuState === 'android' && getElement('androidSubmenuModal')) {
+                }
+                break;
+            case 'android':
+                if (getElement('androidSubmenuModal')) {
                     openAndroidSubmenu();
                 }
-            }, 50);
+                break;
         }
     }
 
@@ -862,6 +892,10 @@
             setTimeout(() => {
                 modal.classList.add('open');
             }, 10);
+        } else {
+            // Если меню не найдено - пересоздаем
+            createMobileMenuStructure();
+            setTimeout(openMobileMenu, 50);
         }
     }
 
@@ -870,6 +904,7 @@
         if (modal) {
             modal.classList.remove('open');
             setTimeout(() => {
+                if (modal.classList.contains('open')) return;
                 modal.style.display = 'none';
             }, 400);
         }
@@ -877,13 +912,18 @@
 
     window.openAppleSubmenu = function() {
         closeMobileMenu();
-        const appleModal = getElement('appleSubmenuModal');
-        if (appleModal) {
-            appleModal.style.display = 'flex';
-            setTimeout(() => {
-                appleModal.classList.add('open');
-            }, 10);
-        }
+        setTimeout(() => {
+            const appleModal = getElement('appleSubmenuModal');
+            if (appleModal) {
+                appleModal.style.display = 'flex';
+                setTimeout(() => {
+                    appleModal.classList.add('open');
+                }, 10);
+            } else {
+                createMobileMenuStructure();
+                setTimeout(openAppleSubmenu, 50);
+            }
+        }, 50);
     }
 
     window.closeAppleSubmenu = function() {
@@ -891,6 +931,7 @@
         if (appleModal) {
             appleModal.classList.remove('open');
             setTimeout(() => {
+                if (appleModal.classList.contains('open')) return;
                 appleModal.style.display = 'none';
                 openMobileMenu();
             }, 400);
@@ -899,13 +940,18 @@
 
     window.openAndroidSubmenu = function() {
         closeMobileMenu();
-        const androidModal = getElement('androidSubmenuModal');
-        if (androidModal) {
-            androidModal.style.display = 'flex';
-            setTimeout(() => {
-                androidModal.classList.add('open');
-            }, 10);
-        }
+        setTimeout(() => {
+            const androidModal = getElement('androidSubmenuModal');
+            if (androidModal) {
+                androidModal.style.display = 'flex';
+                setTimeout(() => {
+                    androidModal.classList.add('open');
+                }, 10);
+            } else {
+                createMobileMenuStructure();
+                setTimeout(openAndroidSubmenu, 50);
+            }
+        }, 50);
     }
 
     window.closeAndroidSubmenu = function() {
@@ -913,6 +959,7 @@
         if (androidModal) {
             androidModal.classList.remove('open');
             setTimeout(() => {
+                if (androidModal.classList.contains('open')) return;
                 androidModal.style.display = 'none';
                 openMobileMenu();
             }, 400);
@@ -935,15 +982,8 @@
             mobileMenuBtn.addEventListener('click', function() {
                 // Сбрасываем кеш пользовательских данных
                 userHTMLCache = null;
-                
-                const container = getElement('mobile-menu-container');
-                if (container) {
-                    container.remove();
-                    cachedElements['mobile-menu-container'] = null;
-                }
-                
                 createMobileMenuStructure();
-                openMobileMenu();
+                setTimeout(openMobileMenu, 50);
             });
         }
 
@@ -954,6 +994,7 @@
             const androidSubmenuModal = getElement('androidSubmenuModal');
             const floatingAvatar = document.querySelector('.floating-avatar-container');
             
+            // Проверка для основного меню
             if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
                 !mobileMenuModal.contains(e.target) && 
                 e.target.id !== 'mobileMenuBtn' &&
@@ -961,15 +1002,19 @@
                 closeMobileMenu();
             }
             
+            // Проверка для подменю Apple
             if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
                 !appleSubmenuModal.contains(e.target) && 
-                e.target.id !== 'mobileMenuBtn') {
+                e.target.id !== 'mobileMenuBtn' &&
+                !(floatingAvatar && floatingAvatar.contains(e.target))) {
                 closeAppleSubmenu();
             }
             
+            // Проверка для подменю Android
             if (androidSubmenuModal && androidSubmenuModal.classList.contains('open') && 
                 !androidSubmenuModal.contains(e.target) && 
-                e.target.id !== 'mobileMenuBtn') {
+                e.target.id !== 'mobileMenuBtn' &&
+                !(floatingAvatar && floatingAvatar.contains(e.target))) {
                 closeAndroidSubmenu();
             }
         });
