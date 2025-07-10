@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>База спецификаций телефонов</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='compares.css') }}">
 </head>
 <body>
@@ -28,9 +28,6 @@
                 <div class="input-group">
                     <input type="text" id="phoneSearch" class="form-control form-control-lg" 
                            placeholder="Введите бренд или модель телефона...">
-                    <button id="searchBtn" class="btn btn-primary">
-                        <i class="fas fa-search me-2"></i>Найти
-                    </button>
                 </div>
             </div>
         </div>
@@ -81,7 +78,7 @@
             </div>
         </div>
 
-        <div id="searchResults" class="phone-grid">
+        <div id="searchResults" class="phone-grid" style="display: none;">
             <!-- Результаты поиска будут здесь -->
         </div>
 
@@ -143,7 +140,6 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Элементы интерфейса
         const phoneSearch = document.getElementById('phoneSearch');
-        const searchBtn = document.getElementById('searchBtn');
         const searchResults = document.getElementById('searchResults');
         const phoneDetails = document.getElementById('phoneDetails');
         const phoneTitle = document.getElementById('phoneTitle');
@@ -186,6 +182,71 @@
         // Кэш данных телефонов
         let phoneCache = {};
         
+        // Группы характеристик
+        const specGroups = {
+            "Основные": [
+                "Год выпуска", "ОС", "Версия ОС", "Оболочка ОС", "Политика обновлений",
+                "Последний патч безопасности"
+            ],
+            "Дисплей": [
+                "Размер дисплея (дюймы)", "Разрешение дисплея", "Тип дисплея", 
+                "Частота обновления (Гц)", "Пиковая яркость (нит)", "Поддержка HDR",
+                "Защитное стекло", "Соотношение экран/корпус", "Плотность пикселей (PPI)"
+            ],
+            "Процессор": [
+                "Процессор", "Архитектура CPU", "GPU", "Архитектура GPU", "NPU", "ISP", "Модем",
+                "ОЗУ (ГБ)", "Тип ОЗУ", "Частота ОЗУ (МГц)", "ПЗУ (ГБ)", "Тип ПЗУ", "Скорость ПЗУ",
+                "Система охлаждения", "Площадь охлаждения (мм²)", "Оценка AnTuTu", 
+                "Geekbench (одиночное ядро)", "Geekbench (многоядерное)"
+            ],
+            "Камера": [
+                "Основная камера (Мп)", "Сверхширокоугольная камера (Мп)", "Телефото 1 (Мп)", 
+                "Телефото 2 (Мп)", "Фронтальная камера (Мп)", "Размер сенсора (основной)", 
+                "Размер пикселя (основной)", "Возможности зума", "Видеозапись", "Замедленная съемка",
+                "Функции камеры"
+            ],
+            "Батарея": [
+                "Емкость батареи (mAh)", "Тип батареи", "Быстрая зарядка", "Беспроводная зарядка",
+                "Обратная беспроводная зарядка", "Интерфейс зарядки", "Время работы от батареи (ч)",
+                "Потребление в режиме ожидания", "Пиковая мощность"
+            ],
+            "Корпус": [
+                "Вес (г)", "Габариты (мм)", "Материал корпуса", "Защита от воды", "Защита от пыли",
+                "Сертификат защиты", "Материал рамки", "Материал задней панели", "Цвета"
+            ],
+            "Связь": [
+                "Поддержка 5G", "Диапазоны 5G", "Поддержка mmWave", "Слоты SIM", "Тип SIM", 
+                "Wi-Fi", "Особенности Wi-Fi", "Bluetooth", "Кодеки Bluetooth", "NFC", "ИК-порт", 
+                "Версия USB", "GPS", "Спутниковая связь"
+            ],
+            "Аудио": [
+                "Динамики", "Аудионастройка", "Микрофоны", "Аудиоразъем", "Пространственный звук"
+            ],
+            "Безопасность": [
+                "Сканер отпечатков", "Разблокировка по лицу", "Акселерометр", "Гироскоп", 
+                "Датчик приближения", "Компас", "Барометр", "Датчик освещенности", "Датчик Холла", 
+                "LiDAR", "Термометр", "Датчик SpO2"
+            ],
+            "Дополнительно": [
+                "Поддержка стилуса", "Тип стилуса", "Режим рабочего стола", "Поддержка VR", 
+                "ИИ-функции", "Игровые функции", "Безопасный чип"
+            ],
+            "Комплектация": [
+                "Зарядное устройство в комплекте", "Тип кабеля", "Адаптер в комплекте", 
+                "Наушники в комплекте", "Чехол в комплекте"
+            ],
+            "Экология": [
+                "Переработанные материалы", "Упаковка", "Экосертификаты", "Индекс ремонтопригодности",
+                "Циклы батареи"
+            ],
+            "Безопасность (SAR)": [
+                "SAR (голова)", "SAR (тело)"
+            ],
+            "Цена": [
+                "Стартовая цена (руб)", "Текущая цена (руб)", "Доступность", "Гарантия (мес)"
+            ]
+        };
+        
         // Переключение режимов
         singleModeBtn.addEventListener('click', function() {
             if (currentMode === 'compare') {
@@ -213,16 +274,11 @@
             
             // Показываем/скрываем элементы
             compareSelection.style.display = mode === 'compare' ? 'block' : 'none';
-            searchResults.style.display = 'block';
+            searchResults.style.display = 'none';
             phoneDetails.style.display = 'none';
             compareDetails.style.display = 'none';
             
-            // Очищаем результаты поиска
-            searchResults.innerHTML = mode === 'single' 
-                ? '<div class="text-center py-4">Введите запрос для поиска телефона</div>'
-                : '<div class="text-center py-4">Выберите телефон для сравнения</div>';
-            
-            // Сбрасываем поисковый запрос
+            // Очищаем поисковый запрос
             phoneSearch.value = '';
         }
         
@@ -284,15 +340,30 @@
             compareSelection.style.display = 'block';
         });
         
-        // Функция поиска телефонов
-        function searchPhones() {
+        // Live-поиск с задержкой
+        function debounce(func, wait) {
+            let timeout;
+            return function() {
+                const context = this;
+                const args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+        
+        phoneSearch.addEventListener('input', debounce(function() {
             const query = phoneSearch.value.trim();
-            if (!query) {
-                searchResults.innerHTML = '<div class="text-center py-4">Введите запрос для поиска</div>';
-                return;
+            if (query.length > 1) {
+                searchPhones(query);
+            } else {
+                searchResults.style.display = 'none';
             }
-            
+        }, 300));
+        
+        // Функция поиска телефонов
+        function searchPhones(query) {
             searchResults.innerHTML = '<div class="text-center py-5"><div class="spinner"></div><p>Идет поиск...</p></div>';
+            searchResults.style.display = 'block';
             
             fetch(`/compare/search?q=${encodeURIComponent(query)}`)
                 .then(response => response.json())
@@ -319,7 +390,7 @@
                 const model = phone.Модель || phone.Model || 'Неизвестная модель';
                 
                 // Формируем путь к изображению
-                const imagePath = `/static/img/phones/${brand}/${model}.jpg`.replace(/\s+/g, '_');
+                const imagePath = `/static/img/phones/${brand}/${brand}_${model}.jpg`.replace(/\s+/g, '_');
                 
                 // Сохраняем в кэш
                 phoneCache[phone._id] = phone;
@@ -357,6 +428,67 @@
             });
         }
         
+        // Загрузка деталей телефона
+        function loadPhoneDetails(phoneId) {
+            if (phoneCache[phoneId]) {
+                displayPhoneDetails(phoneCache[phoneId]);
+            } else {
+                fetch(`/compare/phone/${phoneId}`)
+                    .then(response => response.json())
+                    .then(phone => {
+                        phoneCache[phoneId] = phone;
+                        displayPhoneDetails(phone);
+                    })
+                    .catch(error => console.error('Ошибка:', error));
+            }
+        }
+        
+        // Отображение деталей телефона с группировкой
+        function displayPhoneDetails(phone) {
+            const brand = phone.Бренд || phone.Brand || 'Неизвестный бренд';
+            const model = phone.Модель || phone.Model || 'Неизвестная модель';
+            
+            phoneTitle.textContent = `${brand} ${model}`;
+            phoneImage.src = `/static/img/phones/${brand}/${brand}_${model}.jpg`.replace(/\s+/g, '_');
+            phoneImage.onerror = function() { this.src = '/static/placeholder.jpg'; };
+            
+            let specsHTML = '';
+            
+            // Создаем группы характеристик
+            for (const [groupName, groupSpecs] of Object.entries(specGroups)) {
+                let groupHTML = '';
+                
+                for (const spec of groupSpecs) {
+                    if (phone[spec]) {
+                        groupHTML += `
+                            <div class="spec-item">
+                                <div class="spec-name">${spec}</div>
+                                <div class="spec-value">${phone[spec]}</div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                if (groupHTML) {
+                    specsHTML += `
+                        <div class="spec-group">
+                            <div class="group-header">
+                                <i class="fas fa-circle"></i>
+                                <h4>${groupName}</h4>
+                            </div>
+                            <div class="spec-items">
+                                ${groupHTML}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            specsContainer.innerHTML = specsHTML;
+            searchResults.style.display = 'none';
+            phoneDetails.style.display = 'block';
+        }
+        
         // Выбор телефона для сравнения
         function selectPhoneForComparison(phoneId) {
             const phone = phoneCache[phoneId];
@@ -373,7 +505,7 @@
             // Обновляем превью
             const brand = phone.Бренд || phone.Brand || 'Неизвестный бренд';
             const model = phone.Модель || phone.Model || 'Неизвестная модель';
-            const imagePath = `/static/img/phones/${brand}/${model}.jpg`.replace(/\s+/g, '_');
+            const imagePath = `/static/img/phones/${brand}/${brand}_${model}.jpg`.replace(/\s+/g, '_');
             
             phonePreviews[phoneNum].innerHTML = `
                 <div class="selected-phone">
@@ -444,8 +576,8 @@
             compareHeader2.textContent = `${brand2} ${model2}`;
             
             // Загружаем изображения
-            const imagePath1 = `/static/img/phones/${brand1}/${model1}.jpg`.replace(/\s+/g, '_');
-            const imagePath2 = `/static/img/phones/${brand2}/${model2}.jpg`.replace(/\s+/g, '_');
+            const imagePath1 = `/static/img/phones/${brand1}/${brand1}_${model1}.jpg`.replace(/\s+/g, '_');
+            const imagePath2 = `/static/img/phones/${brand2}/${brand2}_${model2}.jpg`.replace(/\s+/g, '_');
             
             compareImage1.src = imagePath1;
             compareImage2.src = imagePath2;
@@ -505,35 +637,18 @@
             compareSpecs.innerHTML = html;
         }
 
-        // Загрузка деталей телефона (режим одиночный)
-        function loadPhoneDetails(phoneId) {
-            // ... существующая реализация без изменений ...
-        }
-
-        // Отображение деталей телефона (режим одиночный)
-        function displayPhoneDetails(phone) {
-            // ... существующая реализация без изменений ...
-        }
-
-        // Обработчики событий для поиска
-        searchBtn.addEventListener('click', searchPhones);
-        phoneSearch.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') searchPhones();
-        });
-        
         // Обработчик кнопки "Назад"
         backToResults.addEventListener('click', function() {
             phoneDetails.style.display = 'none';
-            searchResults.style.display = 'block';
-            searchResults.style.opacity = '1';
-            searchResults.innerHTML = currentMode === 'single' 
-                ? '<div class="text-center py-4">Введите запрос для поиска телефона</div>'
-                : '<div class="text-center py-4">Выберите телефон для сравнения</div>';
-            phoneSearch.value = '';
+            if (currentMode === 'single') {
+                searchResults.style.display = 'block';
+            } else {
+                compareSelection.style.display = 'block';
+            }
         });
         
         // Инициализация
-        searchResults.innerHTML = '<div class="text-center py-4">Введите запрос для поиска телефона</div>';
+        phoneSearch.focus();
     });
     </script>
 </body>
