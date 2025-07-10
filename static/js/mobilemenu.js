@@ -50,7 +50,6 @@
             height: 70vh;
             max-height: calc(90% - 20px);
             z-index: 1100;
-            align-items: flex-end;
             transform: translateY(120%);
             transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
             opacity: 1;
@@ -62,7 +61,7 @@
         
         .mobile-menu-modal.open {
             transform: translateY(0);
-            display: flex;
+            display: block;
         }
         
         .mobile-menu-modal .modal-content {
@@ -492,6 +491,24 @@
     `;
     document.head.appendChild(style);
 
+    // Создаем кнопку меню, если она не существует
+    function createMenuButtonIfNeeded() {
+        if (!document.getElementById('mobileMenuBtn')) {
+            const menuBtn = document.createElement('div');
+            menuBtn.id = 'mobileMenuBtn';
+            menuBtn.className = 'mobile-menu-btn';
+            menuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+            
+            const menuBottom = document.createElement('div');
+            menuBottom.className = 'mobile-menu-bottom';
+            menuBottom.appendChild(menuBtn);
+            
+            document.body.appendChild(menuBottom);
+            return menuBtn;
+        }
+        return document.getElementById('mobileMenuBtn');
+    }
+
     // Кеширование DOM-элементов
     let cachedElements = {
         mobileMenuModal: null,
@@ -563,17 +580,6 @@
                     </div>
                 </div>
             `;
-        }
-    }
-
-    // Обновление информации о пользователе
-    function updateUserInfoInMenu() {
-        const userHTML = generateUserHTML();
-        const containers = document.querySelectorAll('.floating-avatar-container');
-        if (containers) {
-            containers.forEach(container => {
-                container.innerHTML = userHTML;
-            });
         }
     }
 
@@ -811,10 +817,12 @@
     window.openMobileMenu = function() {
         try {
             if (cachedElements.mobileMenuModal) {
-                cachedElements.mobileMenuModal.style.display = 'flex';
+                cachedElements.mobileMenuModal.style.display = 'block';
                 setTimeout(() => {
                     cachedElements.mobileMenuModal.classList.add('open');
                 }, 10);
+            } else {
+                console.error('Mobile menu modal not found');
             }
         } catch(e) {
             console.error('Error opening mobile menu:', e);
@@ -838,7 +846,7 @@
         try {
             closeMobileMenu();
             if (cachedElements.appleSubmenuModal) {
-                cachedElements.appleSubmenuModal.style.display = 'flex';
+                cachedElements.appleSubmenuModal.style.display = 'block';
                 setTimeout(() => {
                     cachedElements.appleSubmenuModal.classList.add('open');
                 }, 10);
@@ -866,7 +874,7 @@
         try {
             closeMobileMenu();
             if (cachedElements.androidSubmenuModal) {
-                cachedElements.androidSubmenuModal.style.display = 'flex';
+                cachedElements.androidSubmenuModal.style.display = 'block';
                 setTimeout(() => {
                     cachedElements.androidSubmenuModal.classList.add('open');
                 }, 10);
@@ -898,17 +906,20 @@
 
     // Initialize mobile menu when the page loads
     document.addEventListener('DOMContentLoaded', () => {
+        // Создаем кнопку меню
+        const menuBtn = createMenuButtonIfNeeded();
+        
         // Создаем структуру меню
         createMobileMenuStructure();
         
-        // Mobile menu button setup
-        if (cachedElements.mobileMenuBtn) {
-            cachedElements.mobileMenuBtn.addEventListener('click', function() {
-                updateUserInfoInMenu();
+        // Вешаем обработчик на кнопку меню
+        if (menuBtn) {
+            menuBtn.addEventListener('click', function() {
+                createMobileMenuStructure();
                 openMobileMenu();
             });
         } else {
-            console.warn('Mobile menu button not found');
+            console.error('Mobile menu button could not be created');
         }
 
         // Close menu when clicking outside
@@ -920,7 +931,7 @@
                 if (cachedElements.mobileMenuModal && 
                     cachedElements.mobileMenuModal.classList.contains('open') && 
                     !cachedElements.mobileMenuModal.contains(e.target) && 
-                    e.target !== cachedElements.mobileMenuBtn &&
+                    e.target !== menuBtn &&
                     !(floatingAvatar && floatingAvatar.contains(e.target))) {
                     closeMobileMenu();
                 }
@@ -929,7 +940,7 @@
                 if (cachedElements.appleSubmenuModal && 
                     cachedElements.appleSubmenuModal.classList.contains('open') && 
                     !cachedElements.appleSubmenuModal.contains(e.target) && 
-                    e.target !== cachedElements.mobileMenuBtn) {
+                    e.target !== menuBtn) {
                     closeAppleSubmenu();
                 }
                 
@@ -937,7 +948,7 @@
                 if (cachedElements.androidSubmenuModal && 
                     cachedElements.androidSubmenuModal.classList.contains('open') && 
                     !cachedElements.androidSubmenuModal.contains(e.target) && 
-                    e.target !== cachedElements.mobileMenuBtn) {
+                    e.target !== menuBtn) {
                     closeAndroidSubmenu();
                 }
             } catch(e) {
