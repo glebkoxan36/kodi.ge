@@ -20,7 +20,8 @@ from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_session import Session
 from bs4 import BeautifulSoup
 
-# Импорт модулей
+# Импорт модулей сравнения
+from compare import compare_two_phones, generate_image_path, convert_objectids
 from auth import auth_bp
 from ifreeapi import validate_imei, perform_api_check, parse_free_html
 from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, comparisons_collection, phonebase_collection, prices_collection
@@ -975,17 +976,6 @@ def upload_carousel_image():
 def compare_phones_page():
     """Страница сравнения телефонов"""
     return render_template('compare.html')
-
-# Функция для преобразования ObjectId в строки
-def convert_objectids(obj):
-    """Рекурсивно преобразует все ObjectId в строки"""
-    if isinstance(obj, ObjectId):
-        return str(obj)
-    if isinstance(obj, list):
-        return [convert_objectids(item) for item in obj]
-    if isinstance(obj, dict):
-        return {key: convert_objectids(value) for key, value in obj.items()}
-    return obj
 
 @app.route('/api/search_phones', methods=['GET'])
 @csrf.exempt
