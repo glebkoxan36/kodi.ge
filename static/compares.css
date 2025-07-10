@@ -1,179 +1,622 @@
-/* Режимы работы */
+/* compares.css */
+/* ===== MODE SWITCHER ===== */
 .mode-switcher {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+  margin-bottom: 30px;
 }
 
 .mode-btn {
-    padding: 10px 20px;
-    border-radius: 30px;
-    font-weight: 500;
-    transition: all 0.3s ease;
+  padding: 12px 25px;
+  border-radius: 30px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
 .mode-btn.active {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  background: linear-gradient(135deg, var(--accent-color), #0066ff);
+  color: white;
+  box-shadow: 0 5px 20px rgba(0, 198, 255, 0.4);
+  border: none;
 }
 
-/* Выбор телефонов для сравнения */
+.mode-btn i {
+  margin-right: 10px;
+}
+
+/* ===== COMPARE SELECTION ===== */
 .compare-selection {
-    background-color: #f8f9fa;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  background: rgba(18, 26, 43, 0.6);
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 30px;
+  border: 1px solid rgba(0, 198, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.5s ease;
 }
 
 .phone-selector {
-    background: white;
-    border-radius: 8px;
-    padding: 15px;
-    height: 100%;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  background: rgba(10, 14, 23, 0.7);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.phone-selector:hover {
+  border-color: var(--accent-color);
+  transform: translateY(-5px);
 }
 
 .selector-header {
-    text-align: center;
-    margin-bottom: 15px;
-    color: #333;
+  margin-bottom: 15px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--accent-color);
 }
 
 .phone-preview {
-    min-height: 150px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px dashed #ddd;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    background-color: #fafafa;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  background: rgba(10, 15, 30, 0.5);
+  margin-bottom: 15px;
+  position: relative;
+  overflow: hidden;
 }
 
 .phone-preview .placeholder {
-    text-align: center;
-    color: #6c757d;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 20px;
 }
 
 .phone-preview .placeholder i {
-    font-size: 24px;
-    margin-bottom: 10px;
-    color: #adb5bd;
+  font-size: 3rem;
+  margin-bottom: 10px;
+  display: block;
 }
 
-.select-phone-btn {
-    width: 100%;
+.phone-preview .placeholder p {
+  margin: 0;
+  font-size: 1.1rem;
 }
 
 .selected-phone {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2;
 }
 
 .phone-thumb-sm {
-    width: 60px;
-    height: 60px;
-    object-fit: contain;
-    margin-right: 15px;
-    border-radius: 6px;
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 5px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .phone-info {
-    flex-grow: 1;
+  text-align: center;
+}
+
+.phone-info strong {
+  font-size: 1.1rem;
+  display: block;
+  margin-bottom: 5px;
 }
 
 .remove-phone {
-    padding: 2px 8px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 61, 113, 0.2);
+  border: none;
+  color: var(--danger-color);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-/* Таблица сравнения */
+.remove-phone:hover {
+  background: rgba(255, 61, 113, 0.3);
+  transform: rotate(90deg);
+}
+
+.select-phone-btn {
+  background: rgba(0, 198, 255, 0.15);
+  border: 1px solid rgba(0, 198, 255, 0.3);
+  color: var(--accent-color);
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.select-phone-btn:hover {
+  background: rgba(0, 198, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.compare-controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.start-compare-btn {
+  background: linear-gradient(135deg, var(--success-color), #00b08b);
+  border: none;
+  color: white;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 5px 15px rgba(0, 214, 143, 0.3);
+}
+
+.start-compare-btn:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.start-compare-btn:not(:disabled):hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 214, 143, 0.5);
+}
+
+.clear-compare-btn {
+  background: rgba(255, 61, 113, 0.15);
+  border: 1px solid rgba(255, 61, 113, 0.3);
+  color: var(--danger-color);
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clear-compare-btn:hover {
+  background: rgba(255, 61, 113, 0.25);
+  transform: translateY(-2px);
+}
+
+/* ===== SEARCH RESULTS ===== */
+.phone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+
+.phone-card {
+  background: rgba(18, 26, 43, 0.6);
+  border-radius: 15px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 10;
+  backdrop-filter: blur(5px);
+}
+
+.phone-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 35px rgba(0, 229, 255, 0.3);
+  border-color: rgba(0, 229, 255, 0.3);
+}
+
+.phone-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+  padding: 20px;
+  background: rgba(10, 15, 30, 0.5);
+}
+
+.phone-card .card-body {
+  padding: 20px;
+  text-align: center;
+}
+
+.phone-card h5 {
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.phone-card p {
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+}
+
+.view-details-btn {
+  background: rgba(0, 198, 255, 0.15);
+  border: 1px solid rgba(0, 198, 255, 0.3);
+  color: var(--accent-color);
+  padding: 10px 25px;
+  border-radius: 30px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.view-details-btn:hover {
+  background: rgba(0, 198, 255, 0.25);
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 229, 255, 0.3);
+}
+
+/* ===== PHONE DETAILS ===== */
+.specs-container {
+  background: rgba(18, 26, 43, 0.6);
+  border-radius: 15px;
+  padding: 30px;
+  margin-top: 30px;
+  border: 1px solid rgba(0, 198, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.5s ease;
+}
+
+.specs-header {
+  display: flex;
+  justify-content: center;
+  padding: 15px 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.specs-phone {
+  text-align: center;
+  max-width: 300px;
+}
+
+.specs-phone img {
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+#phoneTitle {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.back-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.spec-group {
+  margin-bottom: 25px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 15px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.group-header {
+  background: rgba(0, 198, 255, 0.15);
+  padding: 15px 20px;
+  font-weight: 600;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.group-header:hover {
+  background: rgba(0, 198, 255, 0.25);
+}
+
+.group-header i {
+  margin-right: 12px;
+  transition: transform 0.3s;
+}
+
+.spec-items {
+  padding: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+.spec-item {
+  padding: 12px 15px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s;
+  border-left: 3px solid var(--accent-color);
+}
+
+.spec-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
+.spec-name {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  flex: 1;
+}
+
+.spec-value {
+  font-weight: 500;
+  text-align: right;
+  padding-left: 15px;
+  flex: 1;
+}
+
+/* ===== COMPARE CONTAINER ===== */
 .compare-container {
-    background-color: white;
-    border-radius: 10px;
-    padding: 25px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  background: rgba(18, 26, 43, 0.6);
+  border-radius: 15px;
+  padding: 30px;
+  margin-top: 30px;
+  border: 1px solid rgba(0, 198, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.5s ease;
 }
 
 .compare-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .compare-phone {
-    text-align: center;
-    flex: 1;
+  text-align: center;
+  width: 45%;
+}
+
+.compare-phone img {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+#compareTitle1, #compareTitle2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 5px;
 }
 
 .vs-badge {
-    background-color: #e9ecef;
-    color: #495057;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 18px;
-    margin: 0 20px;
+  background: rgba(0, 198, 255, 0.15);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--accent-color);
+  box-shadow: 0 0 0 8px rgba(0, 198, 255, 0.1);
 }
 
 .compare-table {
-    overflow-x: auto;
+  overflow-x: auto;
+  margin-top: 20px;
 }
 
 .compare-table table {
-    min-width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
 }
 
 .compare-table th {
-    background-color: #f1f3f5;
-    font-weight: 600;
-    text-align: center;
-    vertical-align: middle;
-    padding: 12px 15px;
-}
-
-.compare-table th:first-child {
-    text-align: left;
+  background: rgba(0, 198, 255, 0.1);
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--accent-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .compare-table td {
-    padding: 12px 15px;
-    border-bottom: 1px solid #e9ecef;
-    vertical-align: top;
+  padding: 12px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.compare-table tr:last-child td {
-    border-bottom: none;
+.compare-table tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
 }
 
-.diff-value {
-    font-weight: bold;
-    color: #d9534f;
-    background-color: #fff5f5;
+.compare-table tr:hover {
+  background: rgba(0, 198, 255, 0.05);
 }
 
-/* Адаптивность */
+.compare-table .diff-value {
+  font-weight: 600;
+  position: relative;
+  padding-left: 20px;
+}
+
+.compare-table .diff-value::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success-color);
+}
+
+.compare-table .diff-value.negative::before {
+  background: var(--danger-color);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== RESPONSIVE STYLES ===== */
+@media (max-width: 992px) {
+  .phone-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  
+  .spec-items {
+    grid-template-columns: 1fr;
+  }
+  
+  .compare-header {
+    flex-direction: column;
+    gap: 30px;
+  }
+  
+  .vs-badge {
+    margin: 15px 0;
+    transform: rotate(90deg);
+  }
+}
+
 @media (max-width: 768px) {
-    .compare-header {
-        flex-direction: column;
-    }
-    
-    .vs-badge {
-        margin: 20px 0;
-        transform: rotate(90deg);
-    }
-    
-    .phone-selector {
-        margin-bottom: 20px;
-    }
+  .mode-switcher {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .phone-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .specs-phone img {
+    width: 140px;
+    height: 140px;
+  }
+  
+  .compare-phone img {
+    width: 120px;
+    height: 120px;
+  }
+  
+  #compareTitle1, #compareTitle2 {
+    font-size: 1.3rem;
+  }
+  
+  .compare-table th,
+  .compare-table td {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .specs-phone img {
+    width: 120px;
+    height: 120px;
+  }
+  
+  #phoneTitle {
+    font-size: 1.5rem;
+  }
+  
+  .spec-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .spec-value {
+    text-align: left;
+    padding-left: 0;
+    width: 100%;
+  }
+  
+  .compare-controls {
+    flex-direction: column;
+  }
 }
