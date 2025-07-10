@@ -12,7 +12,7 @@
     <div class="container mt-5">
         <!-- Режимы работы -->
         <div class="mode-switcher mb-4">
-            <button id="singleModeBtn" class="btn btn-primary mode-btn active">
+            <button id="singleModeBtn" class="btn btn-outline-primary mode-btn">
                 <i class="fas fa-mobile-alt me-2"></i>Одиночный
             </button>
             <button id="compareModeBtn" class="btn btn-outline-primary mode-btn">
@@ -171,7 +171,7 @@
         const compareSpecs = document.getElementById('compareSpecs');
         
         // Текущий режим
-        let currentMode = 'single'; // 'single' или 'compare'
+        let currentMode = null;
         
         // Выбранные для сравнения телефоны
         let selectedPhones = {
@@ -249,18 +249,29 @@
         
         // Переключение режимов
         singleModeBtn.addEventListener('click', function() {
-            if (currentMode === 'compare') {
-                switchMode('single');
-            }
+            toggleMode('single');
         });
         
         compareModeBtn.addEventListener('click', function() {
-            if (currentMode === 'single') {
-                switchMode('compare');
-            }
+            toggleMode('compare');
         });
         
-        function switchMode(mode) {
+        function toggleMode(mode) {
+            // Если повторный клик на активный режим - выключаем
+            if (currentMode === mode) {
+                currentMode = null;
+                singleModeBtn.classList.remove('active', 'btn-primary');
+                singleModeBtn.classList.add('btn-outline-primary');
+                compareModeBtn.classList.remove('active', 'btn-primary');
+                compareModeBtn.classList.add('btn-outline-primary');
+                
+                compareSelection.style.display = 'none';
+                searchResults.style.display = 'none';
+                phoneDetails.style.display = 'none';
+                compareDetails.style.display = 'none';
+                return;
+            }
+            
             currentMode = mode;
             
             // Обновление активной кнопки
@@ -590,49 +601,88 @@
                 this.src = '/static/placeholder.jpg';
             };
             
-            // Генерируем таблицу сравнения
+            // Генерируем таблицу сравнения с группировкой
             generateComparisonTable(phone1, phone2);
         }
         
-        // Генерация таблицы сравнения
+        // Генерация таблицы сравнения с группировкой
         function generateComparisonTable(phone1, phone2) {
-            // Собираем все уникальные характеристики
-            const allSpecs = new Set();
+            let html = '';
             
             // Исключаемые поля
             const excludeFields = ['_id', 'ID', 'Бренд', 'Brand', 'Модель', 'Model'];
             
-            // Добавляем характеристики из первого телефона
+            // Собираем все характеристики для группы "Другое"
+            const otherSpecs = new Set();
             for (const key in phone1) {
                 if (!excludeFields.includes(key) && phone1[key]) {
-                    allSpecs.add(key);
+                    otherSpecs.add(key);
                 }
             }
-            
-            // Добавляем характеристики из второго телефона
             for (const key in phone2) {
                 if (!excludeFields.includes(key) && phone2[key]) {
-                    allSpecs.add(key);
+                    otherSpecs.add(key);
                 }
             }
             
-            // Создаем HTML для таблицы
-            let html = '';
-            allSpecs.forEach(spec => {
-                const value1 = phone1[spec] || '-';
-                const value2 = phone2[spec] || '-';
+            // Создаем группы характеристик
+            for (const [groupName, groupSpecs] of Object.entries(specGroups)) {
+                let groupHasSpec = false;
+                let groupRows = '';
                 
-                // Определяем класс для выделения различий
-                const diffClass = value1 !== value2 ? 'diff-value' : '';
+                for (const spec of groupSpecs) {
+                    if (otherSpecs.has(spec)) {
+                        otherSpecs.delete(spec);
+                        groupHasSpec = true;
+                        
+                        const value1 = phone1[spec] || '-';
+                        const value2 = phone2[spec] || '-';
+                        const diffClass = value1 !== value2 ? 'diff-value' : '';
+                        
+                        groupRows += `
+                            <tr>
+                                <td>${spec}</td>
+                                <td class="${diffClass}">${value1}</td>
+                                <td class="${diffClass}">${value2}</td>
+                            </tr>
+                        `;
+                    }
+                }
+                
+                if (groupHasSpec) {
+                    html += `
+                        <tr class="group-header">
+                            <td colspan="3" class="group-title">${groupName}</td>
+                        </tr>
+                        ${groupRows}
+                    `;
+                }
+            }
+            
+            // Добавляем группу "Другое"
+            if (otherSpecs.size > 0) {
+                let groupRows = '';
+                for (const spec of otherSpecs) {
+                    const value1 = phone1[spec] || '-';
+                    const value2 = phone2[spec] || '-';
+                    const diffClass = value1 !== value2 ? 'diff-value' : '';
+                    
+                    groupRows += `
+                        <tr>
+                            <td>${spec}</td>
+                            <td class="${diffClass}">${value1}</td>
+                            <td class="${diffClass}">${value2}</td>
+                        </tr>
+                    `;
+                }
                 
                 html += `
-                    <tr>
-                        <td>${spec}</td>
-                        <td class="${diffClass}">${value1}</td>
-                        <td class="${diffClass}">${value2}</td>
+                    <tr class="group-header">
+                        <td colspan="3" class="group-title">Другие характеристики</td>
                     </tr>
+                    ${groupRows}
                 `;
-            });
+            }
             
             compareSpecs.innerHTML = html;
         }
