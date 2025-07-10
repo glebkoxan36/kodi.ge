@@ -319,7 +319,12 @@ def compare_two_phones(phone1, phone2):
         print(f"Error enriching phone data: {e}")
     
     # Игнорируемые поля
-    ignore_fields = ['_id', 'ID', 'image_url', 'image', 'brand', 'model', 'release_year', 'Бренд', 'Модель', 'Год выпуска']
+    ignore_fields = [
+        '_id', 'ID', 'image_url', 'image', 
+        'Бренд', 'Модель', 'Год выпуска', 
+        'brand', 'model', 'release_year'
+    ]
+    
     phone1_clean = {k: v for k, v in phone1.items() if k not in ignore_fields}
     phone2_clean = {k: v for k, v in phone2.items() if k not in ignore_fields}
     
