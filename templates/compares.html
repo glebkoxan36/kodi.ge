@@ -114,12 +114,9 @@
                     </div>
                 </div>
                 
-                <div class="compare-table mt-4">
-                    <table class="table table-striped">
-                        <tbody id="compareSpecs">
-                            <!-- Спецификации для сравнения будут здесь -->
-                        </tbody>
-                    </table>
+                <!-- НОВЫЙ КОНТЕЙНЕР ДЛЯ СПЕЦИФИКАЦИЙ СРАВНЕНИЯ -->
+                <div class="compare-specs-grid" id="compareSpecs">
+                    <!-- Спецификации для сравнения будут здесь -->
                 </div>
             </div>
         </div>
@@ -617,12 +614,12 @@
                 this.src = '/static/placeholder.jpg';
             };
             
-            // Генерируем таблицу сравнения с группировкой
-            generateComparisonTable(phone1, phone2);
+            // Генерируем таблицу сравнения с новой структурой
+            generateComparisonGrid(phone1, phone2);
         }
         
-        // Генерация таблицы сравнения с группировкой
-        function generateComparisonTable(phone1, phone2) {
+        // Генерация таблицы сравнения с новой структурой
+        function generateComparisonGrid(phone1, phone2) {
             let html = '';
             
             // Исключаемые поля
@@ -644,7 +641,7 @@
             // Создаем группы характеристик
             for (const [groupName, groupSpecs] of Object.entries(specGroups)) {
                 let groupHasSpec = false;
-                let groupRows = '';
+                let groupHTML = '';
                 
                 for (const spec of groupSpecs) {
                     if (otherSpecs.has(spec)) {
@@ -653,50 +650,68 @@
                         
                         const value1 = phone1[spec] || '-';
                         const value2 = phone2[spec] || '-';
-                        const diffClass = value1 !== value2 ? 'diff-value' : '';
+                        const diffClass1 = value1 !== value2 ? 'diff-value' : '';
+                        const diffClass2 = value1 !== value2 ? 'diff-value' : '';
                         
-                        groupRows += `
-                            <tr>
-                                <td>${spec}</td>
-                                <td class="${diffClass}">${value1}</td>
-                                <td class="${diffClass}">${value2}</td>
-                            </tr>
+                        groupHTML += `
+                            <div class="compare-spec-item">
+                                <div class="compare-spec-name">${spec}</div>
+                                <div class="compare-spec-value ${diffClass1}">${value1}</div>
+                            </div>
+                            <div class="compare-spec-item">
+                                <div class="compare-spec-name" style="visibility: hidden;">${spec}</div>
+                                <div class="compare-spec-value ${diffClass2}">${value2}</div>
+                            </div>
                         `;
                     }
                 }
                 
                 if (groupHasSpec) {
                     html += `
-                        <tr class="group-header">
-                            <td colspan="3" class="group-title">${groupName}</td>
-                        </tr>
-                        ${groupRows}
+                        <div class="compare-spec-group">
+                            <div class="compare-group-header">
+                                <i class="fas fa-circle"></i>
+                                <h4>${groupName}</h4>
+                            </div>
+                            <div class="compare-spec-items">
+                                ${groupHTML}
+                            </div>
+                        </div>
                     `;
                 }
             }
             
             // Добавляем группу "Другое"
             if (otherSpecs.size > 0) {
-                let groupRows = '';
+                let groupHTML = '';
                 for (const spec of otherSpecs) {
                     const value1 = phone1[spec] || '-';
                     const value2 = phone2[spec] || '-';
-                    const diffClass = value1 !== value2 ? 'diff-value' : '';
+                    const diffClass1 = value1 !== value2 ? 'diff-value' : '';
+                    const diffClass2 = value1 !== value2 ? 'diff-value' : '';
                     
-                    groupRows += `
-                        <tr>
-                            <td>${spec}</td>
-                            <td class="${diffClass}">${value1}</td>
-                            <td class="${diffClass}">${value2}</td>
-                        </tr>
+                    groupHTML += `
+                        <div class="compare-spec-item">
+                            <div class="compare-spec-name">${spec}</div>
+                            <div class="compare-spec-value ${diffClass1}">${value1}</div>
+                        </div>
+                        <div class="compare-spec-item">
+                            <div class="compare-spec-name" style="visibility: hidden;">${spec}</div>
+                            <div class="compare-spec-value ${diffClass2}">${value2}</div>
+                        </div>
                     `;
                 }
                 
                 html += `
-                    <tr class="group-header">
-                        <td colspan="3" class="group-title">Другие характеристики</td>
-                    </tr>
-                    ${groupRows}
+                    <div class="compare-spec-group">
+                        <div class="compare-group-header">
+                            <i class="fas fa-circle"></i>
+                            <h4>Другие характеристики</h4>
+                        </div>
+                        <div class="compare-spec-items">
+                            ${groupHTML}
+                        </div>
+                    </div>
                 `;
             }
             
