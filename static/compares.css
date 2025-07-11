@@ -665,6 +665,10 @@
   margin-bottom: 1.5rem;
 }
 
+.hidden {
+  display: none;
+}
+
 /* ===== RESPONSIVE STYLES ===== */
 @media (max-width: 1200px) {
   .mode-btn {
@@ -809,4 +813,4 @@
   #compareTitle1, #compareTitle2 {
     font-size: 1.4rem;
   }
-  }
+    }
