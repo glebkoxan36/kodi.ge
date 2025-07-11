@@ -114,7 +114,7 @@
                     </div>
                 </div>
                 
-                <!-- ИСПРАВЛЕННЫЙ КОНТЕЙНЕР ДЛЯ СПЕЦИФИКАЦИЙ -->
+                <!-- КОНТЕЙНЕР ДЛЯ СПЕЦИФИКАЦИЙ -->
                 <div class="compare-specs-grid" id="compareSpecs">
                     <!-- Спецификации для сравнения будут здесь -->
                 </div>
@@ -614,11 +614,11 @@
                 this.src = '/static/placeholder.jpg';
             };
             
-            // Генерируем таблицу сравнения с новой структурой
+            // Генерируем таблицу сравнения
             generateComparisonGrid(phone1, phone2);
         }
         
-        // Генерация таблицы сравнения с исправленной структурой
+        // Генерация таблицы сравнения
         function generateComparisonGrid(phone1, phone2) {
             let html = '';
             
@@ -653,7 +653,6 @@
                         const diffClass1 = value1 !== value2 ? 'diff-value' : '';
                         const diffClass2 = value1 !== value2 ? 'diff-value' : '';
                         
-                        // ИСПРАВЛЕННАЯ РАЗМЕТКА ДЛЯ ДВУХКОЛОНОЧНОГО ОТОБРАЖЕНИЯ
                         groupHTML += `
                             <div class="compare-spec-name">${spec}</div>
                             <div class="compare-spec-value ${diffClass1}">${value1}</div>
