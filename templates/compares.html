@@ -114,6 +114,34 @@
                     </div>
                 </div>
                 
+                <!-- Блок с результатами сравнения -->
+                <div id="comparisonResult" class="comparison-result mb-5" style="display: none;">
+                    <div class="winner-banner text-center mb-4">
+                        <h3 id="winnerTitle" class="mb-3"></h3>
+                        <div id="winnerDescription" class="text-xl"></div>
+                    </div>
+                    
+                    <div class="score-summary">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="score-card text-center p-4 rounded-xl" id="phone1ScoreCard">
+                                <h4 id="phone1Score" class="text-3xl font-bold mb-2"></h4>
+                                <p id="phone1Model" class="text-lg"></p>
+                            </div>
+                            <div class="score-card text-center p-4 rounded-xl" id="phone2ScoreCard">
+                                <h4 id="phone2Score" class="text-3xl font-bold mb-2"></h4>
+                                <p id="phone2Model" class="text-lg"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="details-summary mt-6">
+                        <h4 class="text-center text-xl font-semibold mb-4">Сравнение по характеристикам</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="specsSummary">
+                            <!-- Здесь будут отображаться результаты сравнения -->
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- КОНТЕЙНЕР ДЛЯ СПЕЦИФИКАЦИЙ -->
                 <div class="compare-specs-grid" id="compareSpecs">
                     <!-- Спецификации для сравнения будут здесь -->
@@ -155,6 +183,16 @@
         const compareImage1 = document.getElementById('compareImage1');
         const compareImage2 = document.getElementById('compareImage2');
         const compareSpecs = document.getElementById('compareSpecs');
+        const comparisonResult = document.getElementById('comparisonResult');
+        const winnerTitle = document.getElementById('winnerTitle');
+        const winnerDescription = document.getElementById('winnerDescription');
+        const phone1ScoreCard = document.getElementById('phone1ScoreCard');
+        const phone2ScoreCard = document.getElementById('phone2ScoreCard');
+        const phone1Score = document.getElementById('phone1Score');
+        const phone2Score = document.getElementById('phone2Score');
+        const phone1Model = document.getElementById('phone1Model');
+        const phone2Model = document.getElementById('phone2Model');
+        const specsSummary = document.getElementById('specsSummary');
         
         // Текущий режим
         let currentMode = null;
@@ -348,6 +386,7 @@
         backFromCompare.addEventListener('click', function() {
             compareDetails.style.display = 'none';
             compareSelection.style.display = 'block';
+            comparisonResult.style.display = 'none';
         });
         
         // Live-поиск с задержкой
@@ -614,8 +653,107 @@
                 this.src = '/static/placeholder.jpg';
             };
             
-            // Генерируем таблицу сравнения
-            generateComparisonGrid(phone1, phone2);
+            // Показываем загрузку в блоке спецификаций
+            compareSpecs.innerHTML = '<div class="text-center py-10"><div class="spinner"></div><p>Идет сравнение...</p></div>';
+            
+            // Скрываем блок результатов, пока не получим ответ
+            comparisonResult.style.display = 'none';
+            
+            // Отправляем запрос на сравнение
+            fetch('/compare/perform', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    phone1_id: phoneId1,
+                    phone2_id: phoneId2
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayComparisonResult(data.result, model1, model2);
+                    generateComparisonGrid(phone1, phone2);
+                } else {
+                    // Если ошибка, показываем спецификации без результатов сравнения
+                    generateComparisonGrid(phone1, phone2);
+                    alert('Ошибка сравнения: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка сравнения:', error);
+                generateComparisonGrid(phone1, phone2);
+                alert('Произошла ошибка при сравнении');
+            });
+        }
+        
+        function displayComparisonResult(result, model1, model2) {
+            // Обновляем баллы
+            phone1Score.textContent = result.score1;
+            phone2Score.textContent = result.score2;
+            phone1Model.textContent = model1;
+            phone2Model.textContent = model2;
+            
+            // Сбрасываем стили
+            phone1ScoreCard.classList.remove('winner-card', 'loser-card', 'draw-card');
+            phone2ScoreCard.classList.remove('winner-card', 'loser-card', 'draw-card');
+            
+            // Определяем победителя
+            if (result.winner === 1) {
+                winnerTitle.textContent = `Победитель: ${model1}`;
+                winnerDescription.textContent = `${model1} набрал больше баллов по ключевым характеристикам`;
+                phone1ScoreCard.classList.add('winner-card');
+                phone2ScoreCard.classList.add('loser-card');
+            } else if (result.winner === 2) {
+                winnerTitle.textContent = `Победитель: ${model2}`;
+                winnerDescription.textContent = `${model2} набрал больше баллов по ключевым характеристикам`;
+                phone1ScoreCard.classList.add('loser-card');
+                phone2ScoreCard.classList.add('winner-card');
+            } else {
+                winnerTitle.textContent = 'Ничья!';
+                winnerDescription.textContent = 'Оба телефона набрали одинаковое количество баллов';
+                phone1ScoreCard.classList.add('draw-card');
+                phone2ScoreCard.classList.add('draw-card');
+            }
+            
+            // Формируем детали сравнения
+            specsSummary.innerHTML = '';
+            result.details.forEach(detail => {
+                const specName = detail.spec;
+                let statusClass = '';
+                let statusText = '';
+                
+                if (detail.advantage === 1) {
+                    statusClass = 'text-green-500';
+                    statusText = `${model1} лучше`;
+                } else if (detail.advantage === 2) {
+                    statusClass = 'text-red-500';
+                    statusText = `${model2} лучше`;
+                } else {
+                    statusClass = 'text-gray-500';
+                    statusText = 'Одинаково';
+                }
+                
+                const specHtml = `
+                <div class="spec-summary p-4 bg-slate-800 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-medium">${specName}</span>
+                        <span class="${statusClass} font-semibold">${statusText}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div>${model1}: ${detail.value1 || '-'}</div>
+                        <div>${model2}: ${detail.value2 || '-'}</div>
+                    </div>
+                </div>
+                `;
+                
+                specsSummary.innerHTML += specHtml;
+            });
+            
+            // Показываем результаты
+            comparisonResult.style.display = 'block';
         }
         
         // Генерация таблицы сравнения
