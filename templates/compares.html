@@ -21,66 +21,60 @@
         </div>
 
         <div id="mainContent" style="display: none;">
-            <div class="text-center mb-5">
-                <h1 class="display-4 mb-3">База спецификаций телефонов</h1>
-                <p class="lead">Найдите и изучите характеристики различных моделей смартфонов</p>
-                
-                <div class="form-group mt-4" style="max-width: 600px; margin: 0 auto;">
-                    <div class="input-group">
-                        <input type="text" id="phoneSearch" class="form-control form-control-lg" 
-                               placeholder="Введите бренд или модель телефона...">
-                    </div>
-                </div>
-            </div>
-
             <!-- Контейнер для выбора телефонов в режиме сравнения -->
             <div id="compareSelection" class="compare-selection mb-4" style="display: none;">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="phone-selector">
-                            <div class="selector-header">
-                                <h4>Телефон 1</h4>
-                            </div>
-                            <div class="phone-preview" id="phonePreview1">
-                                <div class="placeholder">
-                                    <i class="fas fa-plus"></i>
-                                    <p>Выберите телефон</p>
-                                </div>
-                            </div>
-                            <button class="btn btn-outline-secondary mt-2 select-phone-btn" data-phone="1">
-                                Выбрать телефон
-                            </button>
+                <div class="phone-selectors-container">
+                    <div class="phone-selector">
+                        <div class="selector-header">
+                            <h4>Телефон 1</h4>
                         </div>
+                        <div class="phone-preview" id="phonePreview1">
+                            <div class="placeholder">
+                                <i class="fas fa-plus"></i>
+                                <p>Выберите телефон</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-secondary mt-2 select-phone-btn" data-phone="1">
+                            Выбрать телефон
+                        </button>
                     </div>
-                    <div class="col-md-6">
-                        <div class="phone-selector">
-                            <div class="selector-header">
-                                <h4>Телефон 2</h4>
-                            </div>
-                            <div class="phone-preview" id="phonePreview2">
-                                <div class="placeholder">
-                                    <i class="fas fa-plus"></i>
-                                    <p>Выберите телефон</p>
-                                </div>
-                            </div>
-                            <button class="btn btn-outline-secondary mt-2 select-phone-btn" data-phone="2">
-                                Выбрать телефон
-                            </button>
+                    <div class="phone-selector">
+                        <div class="selector-header">
+                            <h4>Телефон 2</h4>
                         </div>
+                        <div class="phone-preview" id="phonePreview2">
+                            <div class="placeholder">
+                                <i class="fas fa-plus"></i>
+                                <p>Выберите телефон</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-secondary mt-2 select-phone-btn" data-phone="2">
+                            Выбрать телефон
+                        </button>
                     </div>
                 </div>
-                <div class="text-center mt-4">
+                <div class="compare-controls">
                     <button id="startCompareBtn" class="btn btn-success" disabled>
                         <i class="fas fa-balance-scale me-2"></i>Сравнить
                     </button>
-                    <button id="clearCompareBtn" class="btn btn-outline-danger ms-2">
+                    <button id="clearCompareBtn" class="btn btn-outline-danger">
                         <i class="fas fa-times me-2"></i>Очистить
                     </button>
                 </div>
             </div>
 
-            <div id="searchResults" class="phone-grid" style="display: none;">
-                <!-- Результаты поиска будут здесь -->
+            <div id="searchResults" class="specs-container mt-5" style="display: none;">
+                <div class="search-results-header">
+                    <div class="search-box">
+                        <div class="input-group">
+                            <input type="text" id="phoneSearch" class="form-control" 
+                                   placeholder="Введите бренд или модель телефона...">
+                        </div>
+                    </div>
+                </div>
+                <div class="phone-grid">
+                    <!-- Результаты поиска будут здесь -->
+                </div>
             </div>
 
             <div id="phoneDetails" class="specs-container mt-5" style="display: none;">
@@ -310,14 +304,19 @@
             // Сохраняем номер телефона, который выбираем
             sessionStorage.setItem('selectingFor', phoneNum);
             
+            // Очищаем поисковый запрос
+            phoneSearch.value = '';
+            
             // Показываем результаты поиска
             searchResults.style.display = 'block';
             phoneDetails.style.display = 'none';
             compareSelection.style.display = 'none';
             compareDetails.style.display = 'none';
             
-            // Заголовок для режима выбора
-            searchResults.innerHTML = '<div class="text-center py-4">Выберите телефон для сравнения</div>';
+            // Очищаем предыдущие результаты
+            document.querySelector('.phone-grid').innerHTML = '';
+            
+            // Фокусируемся на поле поиска
             phoneSearch.focus();
         }
         
@@ -372,14 +371,14 @@
             if (query.length > 1) {
                 searchPhones(query);
             } else {
-                searchResults.style.display = 'none';
+                document.querySelector('.phone-grid').innerHTML = '';
             }
         }, 300));
         
         // Функция поиска телефонов
         function searchPhones(query) {
-            searchResults.innerHTML = '<div class="text-center py-5"><div class="spinner"></div><p>Идет поиск...</p></div>';
-            searchResults.style.display = 'block';
+            const phoneGrid = document.querySelector('.phone-grid');
+            phoneGrid.innerHTML = '<div class="text-center py-5"><div class="spinner"></div><p>Идет поиск...</p></div>';
             
             fetch(`/compare/search?q=${encodeURIComponent(query)}`)
                 .then(response => response.json())
@@ -387,26 +386,30 @@
                     displaySearchResults(data);
                 })
                 .catch(error => {
-                    searchResults.innerHTML = '<div class="text-center py-4">Ошибка при поиске</div>';
+                    phoneGrid.innerHTML = '<div class="text-center py-4">Ошибка при поиске</div>';
                     console.error('Error:', error);
                 });
         }
 
         // Отображение результатов поиска
         function displaySearchResults(phones) {
+            const phoneGrid = document.querySelector('.phone-grid');
+            
             if (!phones || phones.length === 0) {
-                searchResults.innerHTML = '<div class="text-center py-4">Телефоны не найдены</div>';
+                phoneGrid.innerHTML = '<div class="text-center py-4">Телефоны не найдены</div>';
                 return;
             }
 
-            let html = '<div class="phone-grid">';
+            let html = '';
             phones.forEach(phone => {
                 // Определяем бренд и модель с учетом языка
                 const brand = phone.Бренд || phone.Brand || 'Неизвестный бренд';
                 const model = phone.Модель || phone.Model || 'Неизвестная модель';
                 
-                // Формируем путь к изображению
-                const imagePath = `/static/img/phones/${brand}/${brand}_${model}.jpg`.replace(/\s+/g, '_');
+                // Формируем путь к изображению (с учетом новой структуры)
+                const brandFolder = brand.replace(/\s+/g, '_').toLowerCase();
+                const modelName = model.replace(/\s+/g, '_').toLowerCase();
+                const imagePath = `/static/img/phones/${brandFolder}/${modelName}.jpg`;
                 
                 // Сохраняем в кэш
                 phoneCache[phone._id] = phone;
@@ -427,8 +430,7 @@
                     </div>
                 `;
             });
-            html += '</div>';
-            searchResults.innerHTML = html;
+            phoneGrid.innerHTML = html;
 
             // Добавляем обработчики событий
             document.querySelectorAll('.view-details-btn').forEach(btn => {
@@ -465,7 +467,11 @@
             const model = phone.Модель || phone.Model || 'Неизвестная модель';
             
             phoneTitle.textContent = `${brand} ${model}`;
-            phoneImage.src = `/static/img/phones/${brand}/${brand}_${model}.jpg`.replace(/\s+/g, '_');
+            
+            // Формируем путь к изображению (с учетом новой структуры)
+            const brandFolder = brand.replace(/\s+/g, '_').toLowerCase();
+            const modelName = model.replace(/\s+/g, '_').toLowerCase();
+            phoneImage.src = `/static/img/phones/${brandFolder}/${modelName}.jpg`;
             phoneImage.onerror = function() { this.src = '/static/placeholder.jpg'; };
             
             let specsHTML = '';
@@ -521,7 +527,11 @@
             // Обновляем превью
             const brand = phone.Бренд || phone.Brand || 'Неизвестный бренд';
             const model = phone.Модель || phone.Model || 'Неизвестная модель';
-            const imagePath = `/static/img/phones/${brand}/${brand}_${model}.jpg`.replace(/\s+/g, '_');
+            
+            // Формируем путь к изображению (с учетом новой структуры)
+            const brandFolder = brand.replace(/\s+/g, '_').toLowerCase();
+            const modelName = model.replace(/\s+/g, '_').toLowerCase();
+            const imagePath = `/static/img/phones/${brandFolder}/${modelName}.jpg`;
             
             phonePreviews[phoneNum].innerHTML = `
                 <div class="selected-phone">
@@ -592,8 +602,13 @@
             compareHeader2.textContent = `${brand2} ${model2}`;
             
             // Загружаем изображения
-            const imagePath1 = `/static/img/phones/${brand1}/${brand1}_${model1}.jpg`.replace(/\s+/g, '_');
-            const imagePath2 = `/static/img/phones/${brand2}/${brand2}_${model2}.jpg`.replace(/\s+/g, '_');
+            const brandFolder1 = brand1.replace(/\s+/g, '_').toLowerCase();
+            const modelName1 = model1.replace(/\s+/g, '_').toLowerCase();
+            const imagePath1 = `/static/img/phones/${brandFolder1}/${modelName1}.jpg`;
+            
+            const brandFolder2 = brand2.replace(/\s+/g, '_').toLowerCase();
+            const modelName2 = model2.replace(/\s+/g, '_').toLowerCase();
+            const imagePath2 = `/static/img/phones/${brandFolder2}/${modelName2}.jpg`;
             
             compareImage1.src = imagePath1;
             compareImage2.src = imagePath2;
