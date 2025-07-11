@@ -654,12 +654,9 @@
                         const diffClass2 = value1 !== value2 ? 'diff-value' : '';
                         
                         groupHTML += `
-                            <div class="compare-spec-item">
+                            <div class="compare-spec-row">
                                 <div class="compare-spec-name">${spec}</div>
                                 <div class="compare-spec-value ${diffClass1}">${value1}</div>
-                            </div>
-                            <div class="compare-spec-item">
-                                <div class="compare-spec-name" style="visibility: hidden;">${spec}</div>
                                 <div class="compare-spec-value ${diffClass2}">${value2}</div>
                             </div>
                         `;
@@ -686,17 +683,14 @@
                 let groupHTML = '';
                 for (const spec of otherSpecs) {
                     const value1 = phone1[spec] || '-';
-                    const value2 = phone2[spec] || '-';
+                    const value2 = phone2[pec] || '-';
                     const diffClass1 = value1 !== value2 ? 'diff-value' : '';
                     const diffClass2 = value1 !== value2 ? 'diff-value' : '';
                     
                     groupHTML += `
-                        <div class="compare-spec-item">
+                        <div class="compare-spec-row">
                             <div class="compare-spec-name">${spec}</div>
                             <div class="compare-spec-value ${diffClass1}">${value1}</div>
-                        </div>
-                        <div class="compare-spec-item">
-                            <div class="compare-spec-name" style="visibility: hidden;">${spec}</div>
                             <div class="compare-spec-value ${diffClass2}">${value2}</div>
                         </div>
                     `;
