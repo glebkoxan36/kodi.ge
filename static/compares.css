@@ -566,7 +566,7 @@
   flex-shrink: 0;
 }
 
-/* НОВЫЕ СТИЛИ ДЛЯ ДВУХКОЛОНОЧНОГО СРАВНЕНИЯ */
+/* ИСПРАВЛЕННЫЕ СТИЛИ ДЛЯ СРАВНЕНИЯ */
 .compare-specs-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -575,7 +575,6 @@
 }
 
 .compare-spec-group {
-  grid-column: span 1;
   background: rgba(30, 41, 59, 0.5);
   border-radius: 15px;
   overflow: hidden;
@@ -606,10 +605,6 @@
   padding: 20px;
 }
 
-.compare-spec-row {
-  display: contents;
-}
-
 .compare-spec-name {
   grid-column: 1 / -1;
   color: #94a3b8;
@@ -627,8 +622,12 @@
   background: rgba(15, 23, 42, 0.4);
   font-weight: 600;
   font-size: 1.1rem;
-  transition: all 0.3s;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-left: 4px solid #3b82f6;
+  transition: all 0.3s;
 }
 
 .compare-spec-value.diff-value {
@@ -760,6 +759,10 @@
   .compare-spec-items {
     grid-template-columns: 1fr;
   }
+  
+  .compare-spec-name {
+    grid-column: 1;
+  }
 }
 
 @media (max-width: 576px) {
@@ -828,8 +831,4 @@
   #compareTitle1, #compareTitle2 {
     font-size: 1.4rem;
   }
-  
-  .compare-spec-items {
-    grid-template-columns: 1fr;
-  }
-}
+    }
