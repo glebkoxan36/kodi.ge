@@ -519,9 +519,10 @@
   transform: translateY(-2px);
 }
 
+/* ШАПКА СРАВНЕНИЯ - РЯДОМ ДРУГ С ДРУГОМ */
 .compare-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding: 20px 0;
   margin-bottom: 40px;
@@ -530,7 +531,6 @@
 
 .compare-phone {
   text-align: center;
-  width: 40%;
   min-width: 300px;
 }
 
@@ -566,15 +566,16 @@
   flex-shrink: 0;
 }
 
-/* ИСПРАВЛЕННЫЕ СТИЛИ ДЛЯ СРАВНЕНИЯ */
+/* ТАБЛИЦА СРАВНЕНИЯ - 2 ВЕРТИКАЛЬНЫХ СТОЛБЦА */
 .compare-specs-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
   width: 100%;
 }
 
 .compare-spec-group {
+  grid-column: 1 / -1;
   background: rgba(30, 41, 59, 0.5);
   border-radius: 15px;
   overflow: hidden;
@@ -694,8 +695,7 @@
   }
   
   .compare-header {
-    flex-direction: column;
-    gap: 30px;
+    grid-template-columns: 1fr;
   }
   
   .vs-badge {
@@ -711,6 +711,10 @@
   .specs-phone img {
     width: 200px;
     height: 200px;
+  }
+  
+  .compare-specs-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -746,22 +750,6 @@
   
   .spec-group {
     margin-bottom: 25px;
-  }
-  
-  .compare-specs-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .compare-spec-group {
-    grid-column: span 1;
-  }
-  
-  .compare-spec-items {
-    grid-template-columns: 1fr;
-  }
-  
-  .compare-spec-name {
-    grid-column: 1;
   }
 }
 
