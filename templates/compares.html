@@ -116,13 +116,6 @@
                 
                 <div class="compare-table mt-4">
                     <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Характеристика</th>
-                                <th id="compareHeader1"></th>
-                                <th id="compareHeader2"></th>
-                            </tr>
-                        </thead>
                         <tbody id="compareSpecs">
                             <!-- Спецификации для сравнения будут здесь -->
                         </tbody>
@@ -136,6 +129,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Элементы интерфейса
         const mainContent = document.getElementById('mainContent');
+        const modeSwitcher = document.querySelector('.mode-switcher');
         const phoneSearch = document.getElementById('phoneSearch');
         const searchResults = document.getElementById('searchResults');
         const phoneDetails = document.getElementById('phoneDetails');
@@ -163,8 +157,6 @@
         const compareTitle2 = document.getElementById('compareTitle2');
         const compareImage1 = document.getElementById('compareImage1');
         const compareImage2 = document.getElementById('compareImage2');
-        const compareHeader1 = document.getElementById('compareHeader1');
-        const compareHeader2 = document.getElementById('compareHeader2');
         const compareSpecs = document.getElementById('compareSpecs');
         
         // Текущий режим
@@ -254,6 +246,9 @@
         });
         
         function toggleMode(mode) {
+            // Скрываем кнопки выбора режимов
+            modeSwitcher.classList.add('hidden');
+            
             // Если повторный клик на активный режим - выключаем
             if (currentMode === mode) {
                 currentMode = null;
@@ -267,6 +262,9 @@
                 phoneDetails.style.display = 'none';
                 compareDetails.style.display = 'none';
                 mainContent.style.display = 'none';
+                
+                // Показываем кнопки режимов при выходе
+                modeSwitcher.classList.remove('hidden');
                 return;
             }
             
@@ -598,8 +596,6 @@
             
             compareTitle1.textContent = `${brand1} ${model1}`;
             compareTitle2.textContent = `${brand2} ${model2}`;
-            compareHeader1.textContent = `${brand1} ${model1}`;
-            compareHeader2.textContent = `${brand2} ${model2}`;
             
             // Загружаем изображения
             const brandFolder1 = brand1.replace(/\s+/g, '_').toLowerCase();
