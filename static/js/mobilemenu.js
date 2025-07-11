@@ -108,7 +108,7 @@
                 radial-gradient(circle at 10% 80%, rgba(0, 198, 255, 0.1) 1px, transparent 1px);
             background-size: 300px 300px;
             background-position: 0 0, 100px 100px;
-            opacity: 0.6;
+            opacity: 0.9;
             z-index: 1;
         }
 
