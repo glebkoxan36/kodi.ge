@@ -3,9 +3,9 @@
 .mode-switcher {
   display: flex;
   justify-content: center;
-  gap: 20px;
-  margin-top: 40px;
-  margin-bottom: 60px;
+  gap: 15px;
+  margin-top: 20px;
+  margin-bottom: 30px;
 }
 
 .mode-btn {
@@ -56,72 +56,30 @@
   animation: fadeIn 0.5s ease;
 }
 
-.search-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.search-header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 15px;
-  background: linear-gradient(to right, #93c5fd, #3b82f6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.search-header p {
-  font-size: 1.2rem;
-  color: #94a3b8;
-  max-width: 700px;
-  margin: 0 auto 30px;
-}
-
-.search-box {
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-.search-box .input-group {
-  position: relative;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 18px 25px;
-  font-size: 1.1rem;
-  background: rgba(15, 23, 42, 0.7);
-  border: 2px solid rgba(59, 130, 246, 0.3);
-  border-radius: 50px;
-  color: white;
-  transition: all 0.3s ease;
-}
-
-.search-box input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
-}
-
-.search-box input::placeholder {
-  color: #94a3b8;
-}
-
 /* ===== COMPARE SELECTION ===== */
 .compare-selection {
   background: rgba(15, 23, 42, 0.7);
   border-radius: 20px;
-  padding: 30px;
-  margin-bottom: 40px;
+  padding: 25px;
+  margin-bottom: 30px;
   border: 2px solid rgba(59, 130, 246, 0.2);
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.phone-selectors-container {
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  margin-bottom: 25px;
 }
 
 .phone-selector {
   background: rgba(30, 41, 59, 0.5);
   border-radius: 15px;
-  padding: 25px;
+  padding: 20px;
   text-align: center;
-  height: 100%;
+  width: 100%;
+  max-width: 400px;
   border: 2px dashed rgba(59, 130, 246, 0.3);
   transition: all 0.3s ease;
 }
@@ -132,7 +90,7 @@
 }
 
 .selector-header {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   font-size: 1.4rem;
   font-weight: 600;
   color: #3b82f6;
@@ -252,8 +210,8 @@
 .compare-controls {
   display: flex;
   justify-content: center;
-  gap: 20px;
-  margin-top: 30px;
+  gap: 15px;
+  margin-top: 20px;
 }
 
 #startCompareBtn {
@@ -304,11 +262,46 @@
 }
 
 /* ===== SEARCH RESULTS ===== */
+.search-results-header {
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.search-box {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.search-box .input-group {
+  position: relative;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 18px 25px;
+  font-size: 1.1rem;
+  background: rgba(15, 23, 42, 0.7);
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-radius: 50px;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.search-box input::placeholder {
+  color: #94a3b8;
+}
+
 .phone-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 30px;
-  margin-top: 30px;
+  margin-top: 20px;
 }
 
 .phone-card {
@@ -719,7 +712,12 @@
   .mode-switcher {
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
+  }
+  
+  .phone-selectors-container {
+    flex-direction: column;
+    align-items: center;
   }
   
   .phone-grid {
@@ -759,14 +757,6 @@
   
   .mode-btn i {
     font-size: 2.5rem;
-  }
-  
-  .search-header h1 {
-    font-size: 2rem;
-  }
-  
-  .search-header p {
-    font-size: 1.1rem;
   }
   
   .specs-phone img {
