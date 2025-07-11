@@ -23,8 +23,9 @@ from bs4 import BeautifulSoup
 # Импорт модулей
 from auth import auth_bp
 from ifreeapi import validate_imei, perform_api_check, parse_free_html
-from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection
+from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, comparisons_collection
 from stripepay import StripePayment
+from compares import compare_phones, save_comparison  # Добавлен импорт
 
 app = Flask(__name__)
 CORS(app)
@@ -37,8 +38,6 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(days=7)
-    # здесь скобка закрытия 
-)
 Session(app)
 
 # Инициализация CSRF защиты
@@ -1245,6 +1244,63 @@ def phone_details(phone_id):
         return jsonify({"error": "Phone not found"}), 404
     except:
         return jsonify({"error": "Invalid ID"}), 400
+
+@compare_bp.route('/perform', methods=['POST'])
+@csrf.exempt
+@login_required
+def perform_comparison():
+    """Выполняет сравнение двух телефонов"""
+    try:
+        data = request.json
+        phone1_id = data.get('phone1_id')
+        phone2_id = data.get('phone2_id')
+        
+        if not phone1_id or not phone2_id:
+            return jsonify({'error': 'Необходимо выбрать два телефона'}), 400
+        
+        # Получаем данные телефонов
+        phone1 = phonebase_collection.find_one({"_id": ObjectId(phone1_id)})
+        phone2 = phonebase_collection.find_one({"_id": ObjectId(phone2_id)})
+        
+        if not phone1 or not phone2:
+            return jsonify({'error': 'Один из телефонов не найден'}), 404
+        
+        # Сравниваем телефоны
+        result = compare_phones(phone1, phone2)
+        
+        # Сохраняем результаты
+        user_id = session.get('user_id')
+        save_comparison(user_id, phone1_id, phone2_id, result)
+        
+        return jsonify({
+            'success': True,
+            'result': result
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Comparison error: {str(e)}")
+        return jsonify({'error': 'Ошибка сравнения'}), 500
+
+@compare_bp.route('/history')
+@login_required
+def comparison_history():
+    """История сравнений пользователя"""
+    user_id = session['user_id']
+    if not client:
+        return jsonify({'error': 'Database unavailable'}), 500
+        
+    comparisons = list(comparisons_collection.find(
+        {'user_id': ObjectId(user_id)}
+    ).sort('timestamp', -1).limit(10))
+    
+    # Преобразуем ObjectId в строку
+    for comp in comparisons:
+        comp['_id'] = str(comp['_id'])
+        comp['phone1_id'] = str(comp['phone1_id'])
+        comp['phone2_id'] = str(comp['phone2_id'])
+        comp['timestamp'] = comp['timestamp'].isoformat()
+    
+    return jsonify(comparisons)
 
 # ======================================
 # Регистрация блюпринтов
