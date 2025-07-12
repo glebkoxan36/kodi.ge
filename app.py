@@ -1068,9 +1068,9 @@ def payment_methods():
 
 # Ключевое исправление: добавлен алиас для совместимости
 @user_bp.route('/accounts')
-@user_bp.route('/payment_history')  # Добавлен алиас для совместимости
+@user_bp.route('/payment_history')  # Добавлен алиас для обратной совместимости
 @login_required
-def payment_history():
+def accounts():
     """История платежей"""
     user_id = session['user_id']
     if not client:
@@ -1178,61 +1178,6 @@ def check_details(check_id):
 
     return jsonify(details)
 
-# ======================================
-# Compare Blueprint (Сравнение телефонов)
-# ======================================
-
-compare_bp = Blueprint('compare', __name__, url_prefix='/compare')
-
-@compare_bp.route('/')
-@cache.cached(timeout=300)  # Кеширование страницы сравнения
-def compare_index():
-    """Главная страница сравнения телефонов"""
-    return render_template('compares.html')
-
-@compare_bp.route('/search', methods=['GET'])
-@cache.memoize(timeout=300)  # Кеширование результатов поиска
-def search_phones():
-    """Поиск телефонов в базе данных"""
-    query = request.args.get('q', '')
-    results = []
-    
-    if query:
-        # Ищем по бренду или модели (регистронезависимо)
-        regex = re.compile(f'.*{query}.*', re.IGNORECASE)
-        results = list(phonebase_collection.find({
-            "$or": [
-                {"Бренд": regex},
-                {"Модель": regex},
-                {"Brand": regex},  # английские варианты
-                {"Model": regex}
-            ]
-        }).limit(10))
-        
-        # Преобразуем ObjectId в строку для JSON
-        for phone in results:
-            phone['_id'] = str(phone['_id'])
-    
-    return jsonify(results)
-
-@compare_bp.route('/details/<phone_id>')
-@cache.memoize(timeout=3600)  # Кеширование деталей телефона на 1 час
-def phone_details(phone_id):
-    """Получение деталей конкретного телефона"""
-    try:
-        phone = phonebase_collection.find_one({"_id": ObjectId(phone_id)})
-        if phone:
-            # Преобразуем ObjectId и удаляем ненужные поля
-            phone['_id'] = str(phone['_id'])
-            return jsonify(phone)
-        return jsonify({"error": "Phone not found"}), 404
-    except:
-        return jsonify({"error": "Invalid ID"}), 400
-
-# ======================================
-# Регистрация блюпринтов
-# ======================================
-
 # Заглушка для админ-панели
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -1244,7 +1189,6 @@ def admin_dashboard():
 app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(admin_bp)
-app.register_blueprint(compare_bp)  # новый блюпринт
 
 # Установка CSRF-куки для AJAX
 @app.after_request
