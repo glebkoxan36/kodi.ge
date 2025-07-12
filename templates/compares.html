@@ -443,7 +443,7 @@
                 // Формируем путь к изображению (с учетом новой структуры)
                 const brandFolder = brand.replace(/\s+/g, '_').toLowerCase();
                 const modelName = model.replace(/\s+/g, '_').toLowerCase();
-                const imagePath = `/static/img/phones/${brandFolder}/${modelName}.jpg`;
+                const imagePath = `/static/img/phones/${brandFolder}/${modelName}.jpg`.toLowerCase();
                 
                 // Сохраняем в кэш
                 phoneCache[phone._id] = phone;
@@ -505,7 +505,7 @@
             // Формируем путь к изображению (с учетом новой структуры)
             const brandFolder = brand.replace(/\s+/g, '_').toLowerCase();
             const modelName = model.replace(/\s+/g, '_').toLowerCase();
-            phoneImage.src = `/static/img/phones/${brandFolder}/${modelName}.jpg`;
+            phoneImage.src = `/static/img/phones/${brandFolder}/${modelName}.jpg`.toLowerCase();
             phoneImage.onerror = function() { this.src = '/static/placeholder.jpg'; };
             
             let specsHTML = '';
@@ -565,7 +565,7 @@
             // Формируем путь к изображению (с учетом новой структуры)
             const brandFolder = brand.replace(/\s+/g, '_').toLowerCase();
             const modelName = model.replace(/\s+/g, '_').toLowerCase();
-            const imagePath = `/static/img/phones/${brandFolder}/${modelName}.jpg`;
+            const imagePath = `/static/img/phones/${brandFolder}/${modelName}.jpg`.toLowerCase();
             
             phonePreviews[phoneNum].innerHTML = `
                 <div class="selected-phone">
@@ -636,11 +636,11 @@
             // Загружаем изображения
             const brandFolder1 = brand1.replace(/\s+/g, '_').toLowerCase();
             const modelName1 = model1.replace(/\s+/g, '_').toLowerCase();
-            const imagePath1 = `/static/img/phones/${brandFolder1}/${modelName1}.jpg`;
+            const imagePath1 = `/static/img/phones/${brandFolder1}/${modelName1}.jpg`.toLowerCase();
             
             const brandFolder2 = brand2.replace(/\s+/g, '_').toLowerCase();
             const modelName2 = model2.replace(/\s+/g, '_').toLowerCase();
-            const imagePath2 = `/static/img/phones/${brandFolder2}/${modelName2}.jpg`;
+            const imagePath2 = `/static/img/phones/${brandFolder2}/${modelName2}.jpg`.toLowerCase();
             
             compareImage1.src = imagePath1;
             compareImage2.src = imagePath2;
@@ -673,19 +673,25 @@
             })
             .then(response => response.json())
             .then(data => {
+                console.log('Comparison response:', data);
                 if (data.success) {
                     displayComparisonResult(data.result, model1, model2);
                     generateComparisonGrid(phone1, phone2);
                 } else {
                     // Если ошибка, показываем спецификации без результатов сравнения
                     generateComparisonGrid(phone1, phone2);
-                    alert('Ошибка сравнения: ' + (data.error || 'Неизвестная ошибка'));
+                    compareSpecs.innerHTML = `<div class="text-center py-4 text-red-500">
+                        Ошибка сравнения: ${data.error || 'неизвестная ошибка'}
+                    </div>`;
+                    console.error('Ошибка сравнения:', data.error);
                 }
             })
             .catch(error => {
                 console.error('Ошибка сравнения:', error);
                 generateComparisonGrid(phone1, phone2);
-                alert('Произошла ошибка при сравнении');
+                compareSpecs.innerHTML = `<div class="text-center py-4 text-red-500">
+                    Ошибка при сравнении: ${error.message || 'Неизвестная ошибка'}
+                </div>`;
             });
         }
         
