@@ -15,6 +15,91 @@
     const style = document.createElement('style');
     style.id = 'mobile-menu-styles';
     style.textContent = `
+        /* Анимированный хай-тек фон */
+        .tech-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            border-radius: 30px 30px 0 0;
+        }
+        
+        .circuit-layer {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background-image: 
+                linear-gradient(rgba(0, 198, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 198, 255, 0.1) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: circuitMove 40s infinite linear;
+            opacity: 0.7;
+        }
+        
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,198,255,0.8), transparent 70%);
+            filter: blur(15px);
+            animation: float 25s infinite ease-in-out;
+            will-change: transform;
+            backface-visibility: hidden;
+        }
+        
+        .p1 { 
+            width: 150px; 
+            height: 150px;
+            top: 20%; 
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .p2 { 
+            width: 200px; 
+            height: 200px;
+            bottom: 15%; 
+            right: 10%;
+            animation-delay: -8s;
+        }
+        
+        .grid-matrix {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 19px,
+                    rgba(0, 114, 255, 0.05) 20px
+                ),
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 19px,
+                    rgba(0, 114, 255, 0.05) 20px
+                );
+            box-shadow: 
+                inset 0 0 100px rgba(0, 82, 204, 0.2),
+                0 0 50px rgba(0, 92, 230, 0.1);
+        }
+        
+        @keyframes circuitMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-60px, -60px); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(40px, -30px) scale(1.2); }
+        }
+        
+        /* Остальные стили меню */
         .mobile-menu-bottom {
             display: none;
             position: fixed;
@@ -80,35 +165,19 @@
             display: flex;
         }
         
-        /* Исправленный фон - без растягивания */
+        /* Анимированный хай-тек фон вместо изображения */
         .mobile-menu-modal .modal-content {
-            background: 
-                #0a0e17 /* Фон на случай если изображение не загрузится */
-                url('static/img/bg2-ezgif.com-overlay.webp') no-repeat center center;
-            background-size: contain; /* Сохраняем пропорции */
-            background-attachment: local;
+            background: linear-gradient(135deg, #0a0e17 0%, #0a1a2a 100%);
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
                 0 0 15px rgba(0, 198, 255, 0.3),
                 inset 0 0 20px rgba(0, 150, 200, 0.2);
-            overflow: visible;
+            overflow: hidden;
             position: relative;
             width: 100%;
             height: 100%;
             z-index: 1;
-        }
-
-        /* Для заполнения пустого пространства */
-        .modal-content::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: #0a0e17;
-            z-index: -1; /* Помещаем под основное изображение */
         }
 
         .mobile-menu-modal .modal-body {
@@ -672,6 +741,12 @@
         container.innerHTML = `
             <div class="mobile-menu-modal" id="mobileMenuModal">
                 <div class="modal-content">
+                    <div class="tech-background">
+                        <div class="circuit-layer"></div>
+                        <div class="particle p1"></div>
+                        <div class="particle p2"></div>
+                        <div class="grid-matrix"></div>
+                    </div>
                     <div class="modal-header">
                         <button class="close-modal" onclick="closeMobileMenu()">
                             <i class="fas fa-times"></i>
@@ -714,15 +789,21 @@
         container.innerHTML = `
             <!-- Mobile Menu Modal -->
             <div class="mobile-menu-modal" id="mobileMenuModal">
-                <button class="close-modal" onclick="closeMobileMenu()">
-                    <i class="fas fa-times"></i>
-                </button>
-                
-                <div class="floating-avatar-container">
-                    ${userHTML}
-                </div>
-                
                 <div class="modal-content">
+                    <div class="tech-background">
+                        <div class="circuit-layer"></div>
+                        <div class="particle p1"></div>
+                        <div class="particle p2"></div>
+                        <div class="grid-matrix"></div>
+                    </div>
+                    <button class="close-modal" onclick="closeMobileMenu()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    
+                    <div class="floating-avatar-container">
+                        ${userHTML}
+                    </div>
+                    
                     <div class="modal-body">
                         <div class="menu-grid">
                             <a class="menu-item" href="/" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
@@ -768,15 +849,21 @@
 
             <!-- Apple Submenu Modal -->
             <div class="mobile-menu-modal" id="appleSubmenuModal">
-                <button class="close-modal" onclick="closeAppleSubmenu()">
-                    <i class="fas fa-times"></i>
-                </button>
-
-                <div class="floating-avatar-container">
-                    ${userHTML}
-                </div>
-                
                 <div class="modal-content">
+                    <div class="tech-background">
+                        <div class="circuit-layer"></div>
+                        <div class="particle p1"></div>
+                        <div class="particle p2"></div>
+                        <div class="grid-matrix"></div>
+                    </div>
+                    <button class="close-modal" onclick="closeAppleSubmenu()">
+                        <i class="fas fa-times"></i>
+                    </button>
+
+                    <div class="floating-avatar-container">
+                        ${userHTML}
+                    </div>
+                    
                     <div class="modal-body">
                         <div class="menu-grid">
                             <a class="menu-item" href="/applecheck?type=free" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
@@ -794,7 +881,7 @@
                                      class="menu-icon-img">
                                 <span>SIM ლოკი</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=blacklist" onclick="sessionStorage.setItem('mobileMenuState', 'apple';">
+                            <a class="menu-item" href="/applecheck?type=blacklist" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/4e28c4f2-541b-4a1b-8163-c79e6db5481c_20250627_012852_0000.png" 
                                      class="menu-icon-img">
                                 <span>შავი სია</span>
@@ -825,15 +912,21 @@
 
             <!-- Android Submenu Modal -->
             <div class="mobile-menu-modal" id="androidSubmenuModal">
-                <button class="close-modal" onclick="closeAndroidSubmenu()">
-                    <i class="fas fa-times"></i>
-                </button>
-
-                <div class="floating-avatar-container">
-                    ${userHTML}
-                </div>
-                
                 <div class="modal-content">
+                    <div class="tech-background">
+                        <div class="circuit-layer"></div>
+                        <div class="particle p1"></div>
+                        <div class="particle p2"></div>
+                        <div class="grid-matrix"></div>
+                    </div>
+                    <button class="close-modal" onclick="closeAndroidSubmenu()">
+                        <i class="fas fa-times"></i>
+                    </button>
+
+                    <div class="floating-avatar-container">
+                        ${userHTML}
+                    </div>
+                    
                     <div class="modal-body">
                         <div class="menu-grid">
                             <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
