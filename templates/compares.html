@@ -124,6 +124,335 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Весовые коэффициенты для групп характеристик
+        const groupWeights = {
+            "Основные": 0.05,
+            "Дисплей": 0.15,
+            "Процессор": 0.25,
+            "Камера": 0.20,
+            "Батарея": 0.15,
+            "Корпус": 0.05,
+            "Связь": 0.05,
+            "Аудио": 0.03,
+            "Безопасность": 0.02,
+            "Дополнительно": 0.03,
+            "Комплектация": 0.01,
+            "Экология": 0.01,
+            "Цена": 0.10
+        };
+
+        // Правила преобразования нечисловых значений в баллы
+        const converters = {
+            "Тип дисплея": {
+                "AMOLED": 10,
+                "OLED": 9,
+                "Dynamic AMOLED": 10,
+                "Super AMOLED": 9.5,
+                "LTPO AMOLED": 10,
+                "IPS": 7,
+                "TFT": 5,
+                "LCD": 6
+            },
+            "Защитное стекло": {
+                "Gorilla Glass Victus 2": 10,
+                "Gorilla Glass Victus": 9,
+                "Gorilla Glass 7": 8,
+                "Gorilla Glass 6": 7,
+                "Gorilla Glass 5": 6
+            },
+            "Материал корпуса": {
+                "Титан": 10,
+                "Алюминий": 8,
+                "Магний": 7,
+                "Стекло": 6,
+                "Пластик": 4
+            },
+            "Защита от воды": {
+                "IP68": 10,
+                "IP67": 8,
+                "IP54": 5
+            },
+            "Тип SIM": {
+                "eSIM + nanoSIM": 10,
+                "Двойная nanoSIM": 8,
+                "nanoSIM + microSD": 7,
+                "Одиночная nanoSIM": 5
+            },
+            "Аудиоразъем": {
+                "Есть": 10,
+                "Нет": 5
+            },
+            "Сканер отпечатков": {
+                "Ультразвуковой в дисплее": 10,
+                "Оптический в дисплее": 8,
+                "Боковой": 7,
+                "На задней панели": 6
+            }
+        };
+
+        // Правила сравнения для числовых характеристик
+        const comparisonRules = {
+            "Размер дисплея (дюймы)": { higherBetter: true },
+            "Пиковая яркость (нит)": { higherBetter: true },
+            "Частота обновления (Гц)": { higherBetter: true },
+            "Плотность пикселей (PPI)": { higherBetter: true },
+            "ОЗУ (ГБ)": { higherBetter: true },
+            "ПЗУ (ГБ)": { higherBetter: true },
+            "Емкость батареи (mAh)": { higherBetter: true },
+            "Время работы от батареи (ч)": { higherBetter: true },
+            "Пиковая мощность": { higherBetter: true },
+            "Оценка AnTuTu": { higherBetter: true },
+            "Geekbench (одиночное ядро)": { higherBetter: true },
+            "Geekbench (многоядерное)": { higherBetter: true },
+            "Основная камера (Мп)": { higherBetter: true },
+            "Фронтальная камера (Мп)": { higherBetter: true },
+            "Вес (г)": { higherBetter: false },
+            "Толщина (мм)": { higherBetter: false },
+            "Стартовая цена (руб)": { higherBetter: false },
+            "Текущая цена (руб)": { higherBetter: false }
+        };
+
+        // Функция для извлечения чисел из строк
+        function extractNumber(str) {
+            if (!str) return null;
+            
+            // Попробуем найти число с плавающей точкой
+            const match = str.match(/(\d+[\.,]?\d*)/);
+            if (match) {
+                return parseFloat(match[0].replace(',', '.'));
+            }
+            
+            // Попробуем найти целое число
+            const intMatch = str.match(/\d+/);
+            if (intMatch) {
+                return parseInt(intMatch[0]);
+            }
+            
+            return null;
+        }
+
+        // Функция нормализации значений
+        function normalizeValue(specName, value) {
+            // Если есть специальный конвертер - используем его
+            if (converters[specName] && converters[specName][value]) {
+                return converters[specName][value];
+            }
+            
+            // Если значение - число, возвращаем как есть
+            if (!isNaN(value) && value !== "") {
+                return parseFloat(value);
+            }
+            
+            // Пробуем извлечь число из строки
+            const num = extractNumber(value);
+            if (num !== null) {
+                return num;
+            }
+            
+            // Если ничего не получилось - возвращаем исходное значение
+            return value;
+        }
+
+        // Функция сравнения характеристик
+        function compareSpecs(phone1, phone2) {
+            const scores = {
+                phone1: 0,
+                phone2: 0,
+                groupScores: {}
+            };
+            
+            // Временные хранилища для промежуточных баллов
+            const groupPoints = {
+                phone1: {},
+                phone2: {}
+            };
+            
+            // Инициализация групп
+            Object.keys(specGroups).forEach(group => {
+                groupPoints.phone1[group] = 0;
+                groupPoints.phone2[group] = 0;
+                scores.groupScores[group] = { phone1: 0, phone2: 0 };
+            });
+            
+            // Счетчики характеристик в группах
+            const groupCounts = {};
+            
+            // Проходим по всем группам характеристик
+            Object.entries(specGroups).forEach(([groupName, specs]) => {
+                groupCounts[groupName] = 0;
+                
+                specs.forEach(spec => {
+                    const value1 = phone1[spec];
+                    const value2 = phone2[spec];
+                    
+                    // Пропускаем если отсутствуют значения
+                    if (!value1 && !value2) return;
+                    
+                    const norm1 = normalizeValue(spec, value1);
+                    const norm2 = normalizeValue(spec, value2);
+                    
+                    // Пропускаем если не удалось нормализовать
+                    if (typeof norm1 !== 'number' || typeof norm2 !== 'number') return;
+                    
+                    groupCounts[groupName]++;
+                    
+                    // Определяем правило сравнения
+                    const rule = comparisonRules[spec] || { higherBetter: true };
+                    const { higherBetter } = rule;
+                    
+                    // Рассчитываем баллы в зависимости от типа сравнения
+                    if (higherBetter) {
+                        if (norm1 > norm2) {
+                            groupPoints.phone1[groupName] += 10;
+                            groupPoints.phone2[groupName] += (norm2 / norm1) * 10;
+                        } else if (norm2 > norm1) {
+                            groupPoints.phone2[groupName] += 10;
+                            groupPoints.phone1[groupName] += (norm1 / norm2) * 10;
+                        } else {
+                            groupPoints.phone1[groupName] += 10;
+                            groupPoints.phone2[groupName] += 10;
+                        }
+                    } else {
+                        if (norm1 < norm2) {
+                            groupPoints.phone1[groupName] += 10;
+                            groupPoints.phone2[groupName] += (norm1 / norm2) * 10;
+                        } else if (norm2 < norm1) {
+                            groupPoints.phone2[groupName] += 10;
+                            groupPoints.phone1[groupName] += (norm2 / norm1) * 10;
+                        } else {
+                            groupPoints.phone1[groupName] += 10;
+                            groupPoints.phone2[groupName] += 10;
+                        }
+                    }
+                });
+            });
+            
+            // Рассчитываем итоговые баллы с учетом весов
+            Object.keys(groupPoints.phone1).forEach(group => {
+                if (groupCounts[group] > 0) {
+                    // Средний балл в группе
+                    const avg1 = groupPoints.phone1[group] / groupCounts[group];
+                    const avg2 = groupPoints.phone2[group] / groupCounts[group];
+                    
+                    // Применяем весовой коэффициент
+                    const weight = groupWeights[group] || 0.05;
+                    const weighted1 = avg1 * weight;
+                    const weighted2 = avg2 * weight;
+                    
+                    scores.phone1 += weighted1;
+                    scores.phone2 += weighted2;
+                    
+                    // Сохраняем для отображения
+                    scores.groupScores[group] = {
+                        phone1: Math.round(avg1),
+                        phone2: Math.round(avg2)
+                    };
+                }
+            });
+            
+            // Округляем общие баллы
+            scores.phone1 = Math.round(scores.phone1 * 100);
+            scores.phone2 = Math.round(scores.phone2 * 100);
+            
+            // Определяем победителя
+            if (scores.phone1 > scores.phone2) {
+                scores.winner = 1;
+            } else if (scores.phone2 > scores.phone1) {
+                scores.winner = 2;
+            } else {
+                scores.winner = 0; // Ничья
+            }
+            
+            return scores;
+        }
+
+        // Функция для отображения результатов сравнения
+        function displayComparisonResults(scores, phone1, phone2) {
+            const brand1 = phone1.Бренд || phone1.Brand || 'Телефон 1';
+            const model1 = phone1.Модель || phone1.Model || 'Неизвестно';
+            const brand2 = phone2.Бренд || phone2.Brand || 'Телефон 2';
+            const model2 = phone2.Модель || phone2.Model || 'Неизвестно';
+            
+            // Определяем классы для карточек
+            const phone1Class = scores.winner === 1 ? 'winner-card' : (scores.winner === 0 ? 'draw-card' : 'loser-card');
+            const phone2Class = scores.winner === 2 ? 'winner-card' : (scores.winner === 0 ? 'draw-card' : 'loser-card');
+            
+            // Создаем HTML для результатов
+            let resultsHTML = `
+                <div class="comparison-result">
+                    <div class="winner-banner">
+                        <h3>
+                            ${scores.winner === 0 ? 
+                                '<i class="fas fa-handshake me-2"></i> Ничья!' : 
+                                `<i class="fas fa-trophy me-2"></i> Победитель: ${scores.winner === 1 ? brand1 + ' ' + model1 : brand2 + ' ' + model2}`
+                            }
+                        </h3>
+                        <h4>Общий балл: ${scores.phone1} vs ${scores.phone2}</h4>
+                    </div>
+                    
+                    <div class="score-summary">
+                        <h4 class="text-center mb-4"><i class="fas fa-chart-bar me-2"></i>Результаты по категориям</h4>
+                        <div class="grid-cols-2">
+                            <div class="score-card ${phone1Class}">
+                                <h4 class="text-center mb-3">${brand1} ${model1}</h4>
+                                <div class="space-y-3">
+            `;
+            
+            // Добавляем баллы по группам для первого телефона
+            Object.entries(scores.groupScores).forEach(([group, groupScores]) => {
+                if (groupScores.phone1 > 0 || groupScores.phone2 > 0) {
+                    resultsHTML += `
+                        <div class="spec-summary">
+                            <div class="flex">
+                                <span class="font-medium">${group}</span>
+                                <span class="font-bold">${groupScores.phone1}/10</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            resultsHTML += `
+                                </div>
+                            </div>
+                            
+                            <div class="score-card ${phone2Class}">
+                                <h4 class="text-center mb-3">${brand2} ${model2}</h4>
+                                <div class="space-y-3">
+            `;
+            
+            // Добавляем баллы по группам для второго телефона
+            Object.entries(scores.groupScores).forEach(([group, groupScores]) => {
+                if (groupScores.phone1 > 0 || groupScores.phone2 > 0) {
+                    resultsHTML += `
+                        <div class="spec-summary">
+                            <div class="flex">
+                                <span class="font-medium">${group}</span>
+                                <span class="font-bold">${groupScores.phone2}/10</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            resultsHTML += `
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Создаем контейнер для результатов
+            const resultsContainer = document.createElement('div');
+            resultsContainer.id = 'comparisonResults';
+            resultsContainer.innerHTML = resultsHTML;
+            
+            // Добавляем результаты в контейнер сравнения
+            const compareContainer = document.getElementById('compareDetails');
+            compareContainer.appendChild(resultsContainer);
+        }
+
         // Элементы интерфейса
         const mainContent = document.getElementById('mainContent');
         const modeSwitcher = document.querySelector('.mode-switcher');
@@ -585,6 +914,12 @@
             compareSelection.style.display = 'none';
             compareDetails.style.display = 'block';
             
+            // Удаляем предыдущие результаты, если есть
+            const existingResults = document.getElementById('comparisonResults');
+            if (existingResults) {
+                existingResults.remove();
+            }
+            
             // Заполняем заголовки
             const brand1 = phone1.Бренд || phone1.Brand || 'Неизвестный бренд';
             const model1 = phone1.Модель || phone1.Model || 'Неизвестная модель';
@@ -616,6 +951,10 @@
             
             // Генерируем таблицу сравнения
             generateComparisonGrid(phone1, phone2);
+            
+            // Рассчитываем баллы и выводим результаты
+            const scores = compareSpecs(phone1, phone2);
+            displayComparisonResults(scores, phone1, phone2);
         }
         
         // Генерация таблицы сравнения
