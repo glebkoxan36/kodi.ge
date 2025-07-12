@@ -10,7 +10,7 @@ import time
 import threading
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, Blueprint
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app
 from flask_cors import CORS
 import stripe
 from functools import wraps, lru_cache
@@ -234,6 +234,69 @@ def contacts_page():
 def knowledge_base():
     """База знаний"""
     return render_common_template('knowledge-base.html')
+
+# ======================================
+# Роут для страницы сравнения телефонов
+# ======================================
+
+@app.route('/compares')
+@cache.cached(timeout=300, unless=lambda: 'user_id' in session)
+def compares_page():
+    """Страница сравнения спецификаций телефонов"""
+    return render_common_template('compares.html')
+
+# ======================================
+# API для сравнения телефонов
+# ======================================
+
+@app.route('/compare/search')
+def compare_search():
+    """Поиск телефонов для сравнения"""
+    query = request.args.get('q', '').strip()
+    if not query or len(query) < 2:
+        return jsonify([])
+
+    try:
+        # Используем regex для нечеткого поиска
+        regex_query = re.compile(f'.*{re.escape(query)}.*', re.IGNORECASE)
+        
+        # Ищем по бренду и модели
+        results = phonebase_collection.find({
+            '$or': [
+                {'Бренд': regex_query},
+                {'Модель': regex_query},
+                {'Brand': regex_query},
+                {'Model': regex_query}
+            ]
+        }).limit(20)
+        
+        phones = list(results)
+        
+        # Преобразуем ObjectId в строки
+        for phone in phones:
+            phone['_id'] = str(phone['_id'])
+        
+        return jsonify(phones)
+    
+    except Exception as e:
+        app.logger.error(f"Phone search error: {str(e)}")
+        return jsonify({'error': 'Database error'}), 500
+
+@app.route('/compare/phone/<phone_id>')
+def get_phone_details(phone_id):
+    """Получение деталей телефона по ID"""
+    try:
+        phone = phonebase_collection.find_one({'_id': ObjectId(phone_id)})
+        if not phone:
+            return jsonify({'error': 'Phone not found'}), 404
+        
+        # Преобразуем ObjectId в строку
+        phone['_id'] = str(phone['_id'])
+        return jsonify(phone)
+    
+    except Exception as e:
+        app.logger.error(f"Phone details error: {str(e)}")
+        return jsonify({'error': 'Invalid phone ID'}), 400
 
 # ======================================
 # Роут для страницы проверки Apple IMEI
