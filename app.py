@@ -14,7 +14,8 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, f
 from flask_cors import CORS
 import stripe
 from functools import wraps, lru_cache
-from bson import ObjectId, InvalidId
+from bson import ObjectId
+from bson.errors import InvalidId
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_session import Session
