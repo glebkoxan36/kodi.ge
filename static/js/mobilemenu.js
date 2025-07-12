@@ -18,12 +18,12 @@
         .mobile-menu-bottom {
             display: none;
             position: fixed;
-            bottom: 0; /* Исправлено: было 20px */
+            bottom: 0;
             left: 0;
             right: 0;
             text-align: center;
             z-index: 1050;
-            padding-bottom: env(safe-area-inset-bottom, 10px); /* Защита от индикатора iPhone */
+            padding-bottom: env(safe-area-inset-bottom, 10px);
         }
         
         @media (max-width: 1024px) {
@@ -80,11 +80,10 @@
             display: flex;
         }
         
-        /* Новый космический фон с глубокими синими тонами */
+        /* Заменен фон на изображение */
         .mobile-menu-modal .modal-content {
-            background: 
-                radial-gradient(circle at 20% 30%, #0a0e17 0%, #1a2138 40%),
-                linear-gradient(135deg, #0a0e17, #1a2138);
+            background: url('static/img/bg2-ezgif.com-overlay.webp') no-repeat center center;
+            background-size: 800px 600px;
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
@@ -97,37 +96,7 @@
             z-index: 1;
         }
 
-        /* Звездный узор */
-        .modal-content::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: 
-                radial-gradient(circle at 20% 30%, rgba(0, 198, 255, 0.1) 1px, transparent 1px),
-                radial-gradient(circle at 80% 70%, rgba(0, 198, 255, 0.1) 1px, transparent 1px),
-                radial-gradient(circle at 50% 20%, rgba(0, 198, 255, 0.1) 1px, transparent 1px),
-                radial-gradient(circle at 10% 80%, rgba(0, 198, 255, 0.1) 1px, transparent 1px);
-            background-size: 300px 300px;
-            background-position: 0 0, 100px 100px;
-            opacity: 0.9;
-            z-index: 1;
-        }
-
-        /* Декоративные линии */
-        .modal-content::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #00c6ff, transparent);
-            z-index: 2;
-            opacity: 0.4;
-        }
+        /* Удалены все эффекты фона */
         
         .mobile-menu-modal .modal-body {
             flex: 1;
@@ -221,7 +190,7 @@
             justify-content: center;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #0a0e17, #1a2138);
+            background: rgba(10, 14, 23, 0.8);
             color: #ffffff;
             font-weight: bold;
             font-size: 1.2rem;
@@ -354,7 +323,7 @@
             align-items: center;
             justify-content: center;
             border-radius: 15px;
-            background: linear-gradient(135deg, #1a2138, #0e1321);
+            background: rgba(26, 33, 56, 0.7);
             border: 1px solid rgba(0, 198, 255, 0.4);
             aspect-ratio: 1 / 1;
             text-align: center;
@@ -370,10 +339,11 @@
             color: white;
             position: relative;
             z-index: 3;
+            backdrop-filter: blur(2px);
         }
         
         .menu-item:hover {
-            background: linear-gradient(135deg, #223056, #121a33);
+            background: rgba(34, 48, 86, 0.8);
             transform: translateY(-7px);
             border-color: var(--accent-color);
             box-shadow: 
@@ -503,7 +473,7 @@
                 height: auto;
             }
             .floating-avatar-container {
-                top: -35px; /* Подняли аватарку */
+                top: -35px;
             }
             .floating-avatar {
                 width: 110px;
@@ -555,7 +525,7 @@
             transform: translateY(-2px);
         }
         
-        /* Блокировка прокрутки при открытом меню - ИСПРАВЛЕНО */
+        /* Блокировка прокрутки при открытом меню */
         body.mobile-menu-open {
             overflow: hidden;
             position: relative;
