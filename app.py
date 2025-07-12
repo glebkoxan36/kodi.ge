@@ -18,7 +18,7 @@ from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_session import Session
-from flask_caching import Cache  # Импорт системы кеширования
+from flask_caching import Cache
 from bs4 import BeautifulSoup
 
 # Импорт модулей
@@ -1014,7 +1014,7 @@ def dashboard():
         last_payments=last_payments,
         total_checks=total_checks,
         stripe_public_key=STRIPE_PUBLIC_KEY,
-        avatar_color=avatar_color  # Передаем цвет аватара
+        avatar_color=avatar_color
     )
 
 @user_bp.route('/settings')
@@ -1079,9 +1079,9 @@ def payment_methods():
     """Управление платежными методами"""
     return render_template('user/payment_methods.html')
 
-# Ключевое исправление: добавлен алиас для совместимости
-@user_bp.route('/accounts')
-@user_bp.route('/payment_history')  # Добавлен алиас для обратной совместимости
+# Ключевое исправление: добавлен явный endpoint для payment_history
+@user_bp.route('/accounts', endpoint='accounts')
+@user_bp.route('/payment_history', endpoint='payment_history')  # Явный endpoint для обратной совместимости
 @login_required
 def accounts():
     """История платежей"""
