@@ -13,11 +13,12 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, Blueprint
 from flask_cors import CORS
 import stripe
-from functools import wraps
+from functools import wraps, lru_cache
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_session import Session
+from flask_caching import Cache  # Импорт системы кеширования
 from bs4 import BeautifulSoup
 
 # Импорт модулей
@@ -30,6 +31,10 @@ app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 
+# Настройка кеширования
+cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
+cache.init_app(app)
+
 # Настройки сессии
 app.config.update(
     SESSION_TYPE='filesystem',
@@ -37,7 +42,6 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(days=7)
-    # здесь скобка закрытия 
 )
 Session(app)
 
@@ -56,6 +60,26 @@ def generate_avatar_color(name):
     hash_obj = hashlib.md5(name.encode('utf-8'))
     return '#' + hash_obj.hexdigest()[:6]
 
+# Кешируемая функция получения цен
+@cache.memoize(timeout=300)  # Кеширование на 5 минут
+def get_current_prices():
+    DEFAULT_PRICES = {
+        'paid': 100,  # 1.00 GEL в центах
+        'premium': 200  # 2.00 GEL в центах
+    }
+    
+    if not client:
+        return DEFAULT_PRICES
+        
+    try:
+        price_doc = prices_collection.find_one({'type': 'current'})
+        if price_doc:
+            return price_doc['prices']
+        return DEFAULT_PRICES
+    except Exception as e:
+        app.logger.error(f"Error getting prices: {str(e)}")
+        return DEFAULT_PRICES
+
 # Регистрируем функцию в контексте шаблонов
 @app.context_processor
 def inject_utils():
@@ -68,7 +92,12 @@ def inject_utils():
 @app.context_processor
 def inject_user_data():
     if 'user_id' in session and client:
-        user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
+        # Кешируем данные пользователя на время сессии
+        user = cache.get(f'user_{session["user_id"]}')
+        if user is None:
+            user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
+            if user:
+                cache.set(f'user_{session["user_id"]}', user, timeout=3600)  # 1 час
         if user:
             avatar_color = generate_avatar_color(
                 user.get('first_name', '') + ' ' + user.get('last_name', ''))
@@ -115,19 +144,6 @@ stripe_payment = StripePayment(
     refunds_collection=refunds_collection
 )
 
-def get_current_prices():
-    if not client:
-        return DEFAULT_PRICES
-        
-    try:
-        price_doc = prices_collection.find_one({'type': 'current'})
-        if price_doc:
-            return price_doc['prices']
-        return DEFAULT_PRICES
-    except Exception as e:
-        app.logger.error(f"Error getting prices: {str(e)}")
-        return DEFAULT_PRICES
-
 # ======================================
 # Декораторы
 # ======================================
@@ -147,78 +163,71 @@ def login_required(f):
             return redirect(url_for('auth.login', next=request.url))
         return f(*args, **kwargs)
     return decorated
+
+# ======================================
+# Вспомогательные функции
+# ======================================
+
+def get_user_data():
+    """Получение данных пользователя с кешированием"""
+    if 'user_id' in session and client:
+        user_id = session['user_id']
+        user = cache.get(f'user_{user_id}')
+        if user is None:
+            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            if user:
+                cache.set(f'user_{user_id}', user, timeout=3600)  # 1 час
+        return user
+    return None
+
+def render_common_template(template_name, **kwargs):
+    """Общая функция для рендеринга шаблонов с данными пользователя"""
+    user = get_user_data()
+    user_data = None
+    if user:
+        avatar_color = generate_avatar_color(
+            user.get('first_name', '') + ' ' + user.get('last_name', ''))
+        user_data = {
+            'first_name': user.get('first_name', ''),
+            'last_name': user.get('last_name', ''),
+            'balance': user.get('balance', 0.0),
+            'avatar_color': avatar_color
+        }
+    return render_template(template_name, currentUser=user_data, **kwargs)
+
 # ======================================
 # Основные маршруты приложения
 # ======================================
 
 @app.route('/')
+@cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
 def index():
     prices = get_current_prices()
-    user_data = None
-    
-    if 'user_id' in session:
-        user_id = session['user_id']
-        if client:
-            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-            if user:
-                avatar_color = generate_avatar_color(
-                    user.get('first_name', '') + ' ' + user.get('last_name', ''))
-                user_data = {
-                    'first_name': user.get('first_name', ''),
-                    'last_name': user.get('last_name', ''),
-                    'balance': user.get('balance', 0.0),
-                    'avatar_color': avatar_color
-                }
-
-    return render_template('index.html', 
-                         stripe_public_key=STRIPE_PUBLIC_KEY,
-                         paid_price=prices['paid'] / 100,
-                         premium_price=prices['premium'] / 100,
-                         currentUser=user_data)
+    return render_common_template(
+        'index.html',
+        stripe_public_key=STRIPE_PUBLIC_KEY,
+        paid_price=prices['paid'] / 100,
+        premium_price=prices['premium'] / 100
+    )
 
 @app.route('/contacts')
+@cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
 def contacts_page():
     """Страница контактов"""
-    user_data = None
-    if 'user_id' in session:
-        user_id = session['user_id']
-        if client:
-            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-            if user:
-                avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
-                user_data = {
-                    'first_name': user.get('first_name', ''),
-                    'last_name': user.get('last_name', ''),
-                    'balance': user.get('balance', 0.0),
-                    'avatar_color': avatar_color
-                }
-    
-    return render_template('contacts.html', currentUser=user_data)
+    return render_common_template('contacts.html')
 
 @app.route('/knowledge-base')
+@cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
 def knowledge_base():
     """База знаний"""
-    user_data = None
-    if 'user_id' in session:
-        user_id = session['user_id']
-        if client:
-            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-            if user:
-                avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
-                user_data = {
-                    'first_name': user.get('first_name', ''),
-                    'last_name': user.get('last_name', ''),
-                    'balance': user.get('balance', 0.0),
-                    'avatar_color': avatar_color
-                }
-    
-    return render_template('knowledge-base.html', currentUser=user_data)
+    return render_common_template('knowledge-base.html')
 
 # ======================================
 # Роут для страницы проверки Apple IMEI
 # ======================================
 
 @app.route('/applecheck')
+@cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
 def apple_check():
     # Определяем тип услуги из параметра URL
     service_type = request.args.get('type', 'free')
@@ -238,21 +247,6 @@ def apple_check():
         'carrier': f"{paid_price_gel:.2f}₾",
         'mdm': f"{premium_price_gel:.2f}₾"
     }
-
-    # Данные пользователя (если авторизован)
-    user_data = None
-    if 'user_id' in session:
-        user_id = session['user_id']
-        if client:
-            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-            if user:
-                avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
-                user_data = {
-                    'first_name': user.get('first_name', ''),
-                    'last_name': user.get('last_name', ''),
-                    'balance': user.get('balance', 0.0),
-                    'avatar_color': avatar_color
-                }
 
     # Создаем список услуг с данными для передачи в шаблон
     services_data = [
@@ -307,12 +301,11 @@ def apple_check():
         }
     ]
 
-    return render_template(
+    return render_common_template(
         'applecheck.html',
         service_type=service_type,
         services_data=services_data,
-        stripe_public_key=STRIPE_PUBLIC_KEY,
-        currentUser=user_data
+        stripe_public_key=STRIPE_PUBLIC_KEY
     )
 
 # ======================================
@@ -320,6 +313,7 @@ def apple_check():
 # ======================================
 
 @app.route('/androidcheck')
+@cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
 def android_check():
     """Страница проверки Android устройств"""
     service_type = request.args.get('type', '')
@@ -408,26 +402,11 @@ def android_check():
         }
     ]
 
-    user_data = None
-    if 'user_id' in session:
-        user_id = session['user_id']
-        if client:
-            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-            if user:
-                avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
-                user_data = {
-                    'first_name': user.get('first_name', ''),
-                    'last_name': user.get('last_name', ''),
-                    'balance': user.get('balance', 0.0),
-                    'avatar_color': avatar_color
-                }
-
-    return render_template(
+    return render_common_template(
         'androidcheck.html',
         service_type=service_type,
         services_data=services_data,
-        stripe_public_key=STRIPE_PUBLIC_KEY,
-        currentUser=user_data
+        stripe_public_key=STRIPE_PUBLIC_KEY
     )
 
 @app.route('/create-checkout-session', methods=['POST'])
@@ -651,6 +630,13 @@ def perform_check():
         if not validate_imei(imei):
             return jsonify({'error': 'IMEI-ის არასწორი ფორმატი'}), 400
         
+        # Проверяем кеш для бесплатных запросов
+        if service_type == 'free':
+            cache_key = f"free_check_{imei}"
+            cached_result = cache.get(cache_key)
+            if cached_result:
+                return jsonify(cached_result)
+        
         # Пытаемся получить семафор с таймаутом
         acquired = REQUEST_SEMAPHORE.acquire(timeout=15)
         if not acquired:
@@ -728,6 +714,9 @@ def perform_check():
                 if 'user_id' in session:
                     record['user_id'] = ObjectId(session['user_id'])
                 checks_collection.insert_one(record)
+                
+                # Кешируем результат на 10 минут
+                cache.set(f"free_check_{imei}", result, timeout=600)
             
             app.logger.info(f"Check completed for IMEI: {imei}")
             return jsonify(result)
@@ -841,6 +830,7 @@ def internal_server_error(e):
 # ======================================
 
 @app.route('/health')
+@cache.cached(timeout=30)  # Кеширование health check
 def health_check():
     status = {
         'status': 'OK',
@@ -983,7 +973,7 @@ def dashboard():
         flash('Database unavailable', 'danger')
         return redirect(url_for('auth.login'))
     
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    user = get_user_data()
     if not user:
         flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
@@ -1018,12 +1008,7 @@ def dashboard():
 @login_required
 def settings():
     """Страница настроек пользователя"""
-    user_id = session['user_id']
-    if not client:
-        flash('Database unavailable', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    user = get_user_data()
     if not user:
         flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
@@ -1092,7 +1077,7 @@ def payment_history():
         flash('Database unavailable', 'danger')
         return redirect(url_for('auth.login'))
     
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    user = get_user_data()
     if not user:
         flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
@@ -1110,12 +1095,7 @@ def payment_history():
 @login_required
 def history_checks():
     """История проверок IMEI"""
-    user_id = session['user_id']
-    if not client:
-        flash('Database unavailable', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    user = get_user_data()
     if not user:
         flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
@@ -1126,12 +1106,12 @@ def history_checks():
     per_page = 20
     
     # Исправленный запрос с пагинацией
-    query = checks_collection.find({'user_id': ObjectId(user_id)})
+    query = checks_collection.find({'user_id': ObjectId(user['_id'])})
     query = query.sort('timestamp', -1)
     query = query.skip((page - 1) * per_page).limit(per_page)
     checks = list(query)
     
-    total = checks_collection.count_documents({'user_id': ObjectId(user_id)})
+    total = checks_collection.count_documents({'user_id': ObjectId(user['_id'])})
     
     for check in checks:
         check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M')
@@ -1205,11 +1185,13 @@ def check_details(check_id):
 compare_bp = Blueprint('compare', __name__, url_prefix='/compare')
 
 @compare_bp.route('/')
+@cache.cached(timeout=300)  # Кеширование страницы сравнения
 def compare_index():
     """Главная страница сравнения телефонов"""
     return render_template('compares.html')
 
 @compare_bp.route('/search', methods=['GET'])
+@cache.memoize(timeout=300)  # Кеширование результатов поиска
 def search_phones():
     """Поиск телефонов в базе данных"""
     query = request.args.get('q', '')
@@ -1234,6 +1216,7 @@ def search_phones():
     return jsonify(results)
 
 @compare_bp.route('/details/<phone_id>')
+@cache.memoize(timeout=3600)  # Кеширование деталей телефона на 1 час
 def phone_details(phone_id):
     """Получение деталей конкретного телефона"""
     try:
