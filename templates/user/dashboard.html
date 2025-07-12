@@ -169,7 +169,7 @@
                             <tbody>
                                 {% for check in last_checks %}
                                 <tr>
-                                    <td>{{ check.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
+                                    <td>{{ check.timestamp | format_datetime }}</td>
                                     <td>{{ check.imei }}</td>
                                     <td>{{ check.service_type }}</td>
                                 </tr>
@@ -187,7 +187,7 @@
                     <i class="fas fa-credit-card me-2"></i>
                     გადახდების ისტორია
                 </div>
-                <a href="{{ url_for('user.accounts) }}" class="view-all-link">ყველას ნახვა</a>
+                <a href="{{ url_for('user.payment_history') }}" class="view-all-link">ყველას ნახვა</a>
             </div>
             <div class="card-body">
                 <table class="history-table">
@@ -202,7 +202,7 @@
                     <tbody>
                         {% for payment in last_payments %}
                         <tr>
-                            <td>{{ payment.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
+                            <td>{{ payment.timestamp | format_datetime }}</td>
                             <td>{{ payment.amount }} ₾</td>
                             <td>{{ payment.type }}</td>
                             <td>
