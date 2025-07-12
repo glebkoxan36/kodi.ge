@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app, g
 from pymongo import MongoClient
 from bson import ObjectId
+from bson.errors import InvalidId
 from functools import wraps
 import os
 import stripe
+from .stripepay import StripePayment
+from datetime import datetime
 
 # Инициализация Blueprint
 user_bp = Blueprint('user', __name__, url_prefix='/user')
@@ -26,9 +29,7 @@ checks_collection = db['results']
 payments_collection = db['payments']
 refunds_collection = db['refunds']
 
-# Импорт платежного модуля
-from .stripepay import StripePayment
-
+# Инициализация платежного модуля
 stripe_payment = StripePayment(
     stripe_api_key=stripe_api_key,
     webhook_secret=STRIPE_WEBHOOK_SECRET,
@@ -47,6 +48,17 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Middleware для загрузки текущего пользователя
+@user_bp.before_request
+def load_user():
+    if 'user_id' in session and session.get('role') == 'user':
+        try:
+            g.user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
+        except InvalidId:
+            session.clear()
+            flash('არასწორი სესია', 'danger')
+            return redirect(url_for('auth.login'))
+
 # Функция для генерации цвета аватара
 def generate_avatar_color(name):
     colors = [
@@ -63,7 +75,7 @@ def generate_avatar_color(name):
 @login_required
 def dashboard():
     user_id = session['user_id']
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    user = g.user
     
     if not user:
         flash('მომხმარებელი ვერ მოიძებნა', 'danger')
@@ -97,9 +109,7 @@ def dashboard():
 @user_bp.route('/settings')
 @login_required
 def settings():
-    user_id = session['user_id']
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-    
+    user = g.user
     if not user:
         flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
@@ -109,9 +119,7 @@ def settings():
 @user_bp.route('/history/checks')
 @login_required
 def history_checks():
-    user_id = session['user_id']
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-    
+    user = g.user
     if not user:
         flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
@@ -123,7 +131,7 @@ def history_checks():
     search_query = request.args.get('search', '')
     status_filter = request.args.get('status', 'all')
     
-    query = {'user_id': user_id}
+    query = {'user_id': user['_id']}
     if search_query:
         query['imei'] = {'$regex': search_query, '$options': 'i'}
     if status_filter != 'all':
@@ -154,29 +162,31 @@ def history_checks():
 @user_bp.route('/check-details/<check_id>')
 @login_required
 def check_details(check_id):
+    try:
+        obj_id = ObjectId(check_id)
+    except InvalidId:
+        return jsonify({'error': 'არასწორი ID'}), 400
+    
     user_id = session['user_id']
-    check = checks_collection.find_one({'_id': ObjectId(check_id), 'user_id': user_id})
+    check = checks_collection.find_one({'_id': obj_id, 'user_id': user_id})
     
     if not check:
-        return jsonify({'error': 'Check not found'}), 404
+        return jsonify({'error': 'შემოწმება ვერ მოიძებნა'}), 404
     
     check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
     
     return jsonify(check)
 
-# Обновлено: добавлен алиас /payment_history
 @user_bp.route('/accounts')
-@user_bp.route('/payment_history')  # Алиас для обратной совместимости
+@user_bp.route('/payment_history')
 @login_required
 def accounts():
-    user_id = session['user_id']
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-    
+    user = g.user
     if not user:
         flash('მომხმარებელი ვერ მოიძებნა', 'danger')
         return redirect(url_for('auth.login'))
     
-    payments = list(payments_collection.find({'user_id': user_id})
+    payments = list(payments_collection.find({'user_id': user['_id']})
         .sort('timestamp', -1)
         .limit(20))
     
@@ -193,13 +203,20 @@ def accounts():
 @user_bp.route('/create-payment-session', methods=['POST'])
 @login_required
 def create_payment_session():
-    data = request.json
-    amount = float(data.get('amount'))
-    user_id = session['user_id']
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'არასწორი მონაცემები'}), 400
+    
+    try:
+        amount = float(data.get('amount', 0))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'არასწორი თანხის ფორმატი'}), 400
     
     if amount < 1:
         return jsonify({'error': 'მინიმალური თანხა: 1 ₾'}), 400
 
+    user_id = session['user_id']
+    
     try:
         session_stripe = stripe_payment.create_topup_session(
             user_id=user_id,
@@ -209,13 +226,22 @@ def create_payment_session():
         )
         
         return jsonify({'sessionId': session_stripe.id})
+    
+    except stripe.error.StripeError as e:
+        current_app.logger.error(f"Stripe შეცდომა: {e.user_message}")
+        return jsonify({'error': str(e.user_message)}), 500
+    
     except Exception as e:
-        current_app.logger.error(f"შეცდომა გადახდის შექმნისას: {str(e)}")
+        current_app.logger.exception("გადახდის შექმნის შეცდომა")
         return jsonify({'error': 'გადახდის სისტემა დროებით მიუწვდომელია'}), 500
 
 @user_bp.route('/topup/success')
 @login_required
 def topup_success():
+    if 'user_id' not in session:
+        flash('გთხოვთ შეხვიდეთ სისტემაში', 'danger')
+        return redirect(url_for('auth.login'))
+    
     amount = request.args.get('amount', '0.00')
     flash(f'გადახდა წარმატებით დასრულდა! თქვენი ბალანსი განახლდება მალე (+{amount} ₾).', 'success')
     return redirect(url_for('user.dashboard'))
@@ -224,9 +250,25 @@ def topup_success():
 def stripe_webhook():
     payload = request.data
     sig_header = request.headers.get('Stripe-Signature')
+    
     try:
-        event = stripe_payment.handle_webhook(payload, sig_header)
+        # Верификация подписи Stripe
+        event = stripe.Webhook.construct_event(
+            payload,
+            sig_header,
+            STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError as e:
+        current_app.logger.error(f"ვებჰუკის მონაცემების შეცდომა: {str(e)}")
+        return jsonify({'error': 'Invalid payload'}), 400
+    except stripe.error.SignatureVerificationError as e:
+        current_app.logger.error(f"ვებჰუკის ხელმოწერის შეცდომა: {str(e)}")
+        return jsonify({'error': 'Invalid signature'}), 400
+    
+    try:
+        # Обработка вебхука через платежный модуль
+        stripe_payment.handle_webhook(event)
         return jsonify({'status': 'success'}), 200
     except Exception as e:
-        current_app.logger.error(f"ვებჰუკის შეცდომა: {str(e)}")
-        return jsonify({'error': str(e)}), 400
+        current_app.logger.error(f"ვებჰუკის დამუშავების შეცდომა: {str(e)}")
+        return jsonify({'error': str(e)}), 500
