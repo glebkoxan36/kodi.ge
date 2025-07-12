@@ -562,58 +562,73 @@
             ]
         };
         
-        // Переключение режимов
+        // Переключение режимов - ИСПРАВЛЕННАЯ ЧАСТЬ
         singleModeBtn.addEventListener('click', function() {
-            toggleMode('single');
+            setActiveMode('single');
         });
         
         compareModeBtn.addEventListener('click', function() {
-            toggleMode('compare');
+            setActiveMode('compare');
         });
         
-        function toggleMode(mode) {
-            // Скрываем кнопки выбора режимов
-            modeSwitcher.classList.add('hidden');
-            
-            // Если повторный клик на активный режим - выключаем
+        function setActiveMode(mode) {
+            // Сбрасываем предыдущий режим
             if (currentMode === mode) {
-                currentMode = null;
-                singleModeBtn.classList.remove('active', 'btn-primary');
-                singleModeBtn.classList.add('btn-outline-primary');
-                compareModeBtn.classList.remove('active', 'btn-primary');
-                compareModeBtn.classList.add('btn-outline-primary');
-                
-                compareSelection.style.display = 'none';
-                searchResults.style.display = 'none';
-                phoneDetails.style.display = 'none';
-                compareDetails.style.display = 'none';
-                mainContent.style.display = 'none';
-                
-                // Показываем кнопки режимов при выходе
-                modeSwitcher.classList.remove('hidden');
+                // Клик на активный режим - выходим из режима
+                resetMode();
                 return;
             }
             
+            // Устанавливаем новый режим
             currentMode = mode;
+            
+            // Обновляем кнопки
+            singleModeBtn.classList.toggle('active', mode === 'single');
+            compareModeBtn.classList.toggle('active', mode === 'compare');
+            
+            // Показываем основной контент
             mainContent.style.display = 'block';
             
-            // Обновление активной кнопки
-            singleModeBtn.classList.toggle('active', mode === 'single');
-            singleModeBtn.classList.toggle('btn-primary', mode === 'single');
-            singleModeBtn.classList.toggle('btn-outline-primary', mode !== 'single');
-            
-            compareModeBtn.classList.toggle('active', mode === 'compare');
-            compareModeBtn.classList.toggle('btn-primary', mode === 'compare');
-            compareModeBtn.classList.toggle('btn-outline-primary', mode !== 'compare');
-            
-            // Показываем/скрываем элементы
-            compareSelection.style.display = mode === 'compare' ? 'block' : 'none';
+            // Скрываем все подразделы
+            compareSelection.style.display = 'none';
             searchResults.style.display = 'none';
             phoneDetails.style.display = 'none';
             compareDetails.style.display = 'none';
             
-            // Очищаем поисковый запрос
-            phoneSearch.value = '';
+            // Показываем нужный раздел в зависимости от режима
+            if (mode === 'compare') {
+                compareSelection.style.display = 'block';
+            } else if (mode === 'single') {
+                searchResults.style.display = 'block';
+                phoneSearch.focus();
+            }
+        }
+        
+        function resetMode() {
+            currentMode = null;
+            
+            // Сбрасываем кнопки
+            singleModeBtn.classList.remove('active');
+            compareModeBtn.classList.remove('active');
+            
+            // Скрываем основной контент
+            mainContent.style.display = 'none';
+            
+            // Сбрасываем выбранные телефоны
+            selectedPhones = { 1: null, 2: null };
+            phonePreviews[1].innerHTML = `
+                <div class="placeholder">
+                    <i class="fas fa-plus"></i>
+                    <p>Выберите телефон</p>
+                </div>
+            `;
+            phonePreviews[2].innerHTML = `
+                <div class="placeholder">
+                    <i class="fas fa-plus"></i>
+                    <p>Выберите телефон</p>
+                </div>
+            `;
+            startCompareBtn.disabled = true;
         }
         
         // Выбор телефона для сравнения
@@ -633,8 +648,8 @@
             
             // Показываем результаты поиска
             searchResults.style.display = 'block';
-            phoneDetails.style.display = 'none';
             compareSelection.style.display = 'none';
+            phoneDetails.style.display = 'none';
             compareDetails.style.display = 'none';
             
             // Очищаем предыдущие результаты
