@@ -18,12 +18,12 @@
         .mobile-menu-bottom {
             display: none;
             position: fixed;
-            bottom: 0;
+            bottom: 0; /* Исправлено: было 20px */
             left: 0;
             right: 0;
             text-align: center;
             z-index: 1050;
-            padding-bottom: env(safe-area-inset-bottom, 10px);
+            padding-bottom: env(safe-area-inset-bottom, 10px); /* Защита от индикатора iPhone */
         }
         
         @media (max-width: 1024px) {
@@ -80,13 +80,11 @@
             display: flex;
         }
         
-        /* Исправленный фон - без растягивания */
+        /* Новый космический фон с глубокими синими тонами */
         .mobile-menu-modal .modal-content {
             background: 
-                #0a0e17 /* Фон на случай если изображение не загрузится */
-                url('static/img/bg2-ezgif.com-overlay.webp') no-repeat center center;
-            background-size: contain; /* Сохраняем пропорции */
-            background-attachment: local;
+                radial-gradient(circle at 20% 30%, #0a0e17 0%, #1a2138 40%),
+                linear-gradient(135deg, #0a0e17, #1a2138);
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
@@ -99,7 +97,7 @@
             z-index: 1;
         }
 
-        /* Для заполнения пустого пространства */
+        /* Звездный узор */
         .modal-content::before {
             content: '';
             position: absolute;
@@ -107,10 +105,30 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: #0a0e17;
-            z-index: -1; /* Помещаем под основное изображение */
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(0, 198, 255, 0.1) 1px, transparent 1px),
+                radial-gradient(circle at 80% 70%, rgba(0, 198, 255, 0.1) 1px, transparent 1px),
+                radial-gradient(circle at 50% 20%, rgba(0, 198, 255, 0.1) 1px, transparent 1px),
+                radial-gradient(circle at 10% 80%, rgba(0, 198, 255, 0.1) 1px, transparent 1px);
+            background-size: 300px 300px;
+            background-position: 0 0, 100px 100px;
+            opacity: 0.9;
+            z-index: 1;
         }
 
+        /* Декоративные линии */
+        .modal-content::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #00c6ff, transparent);
+            z-index: 2;
+            opacity: 0.4;
+        }
+        
         .mobile-menu-modal .modal-body {
             flex: 1;
             overflow: hidden;
@@ -203,7 +221,7 @@
             justify-content: center;
             width: 100%;
             height: 100%;
-            background: rgba(10, 14, 23, 0.8);
+            background: linear-gradient(135deg, #0a0e17, #1a2138);
             color: #ffffff;
             font-weight: bold;
             font-size: 1.2rem;
@@ -336,7 +354,7 @@
             align-items: center;
             justify-content: center;
             border-radius: 15px;
-            background: rgba(26, 33, 56, 0.7);
+            background: linear-gradient(135deg, #1a2138, #0e1321);
             border: 1px solid rgba(0, 198, 255, 0.4);
             aspect-ratio: 1 / 1;
             text-align: center;
@@ -352,11 +370,10 @@
             color: white;
             position: relative;
             z-index: 3;
-            backdrop-filter: blur(2px);
         }
         
         .menu-item:hover {
-            background: rgba(34, 48, 86, 0.8);
+            background: linear-gradient(135deg, #223056, #121a33);
             transform: translateY(-7px);
             border-color: var(--accent-color);
             box-shadow: 
@@ -486,7 +503,7 @@
                 height: auto;
             }
             .floating-avatar-container {
-                top: -35px;
+                top: -35px; /* Подняли аватарку */
             }
             .floating-avatar {
                 width: 110px;
@@ -538,7 +555,7 @@
             transform: translateY(-2px);
         }
         
-        /* Блокировка прокрутки при открытом меню */
+        /* Блокировка прокрутки при открытом меню - ИСПРАВЛЕНО */
         body.mobile-menu-open {
             overflow: hidden;
             position: relative;
@@ -794,7 +811,7 @@
                                      class="menu-icon-img">
                                 <span>SIM ლოკი</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=blacklist" onclick="sessionStorage.setItem('mobileMenuState', 'apple';">
+                            <a class="menu-item" href="/applecheck?type=blacklist" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
                                 <img src="static/ico/4e28c4f2-541b-4a1b-8163-c79e6db5481c_20250627_012852_0000.png" 
                                      class="menu-icon-img">
                                 <span>შავი სია</span>
