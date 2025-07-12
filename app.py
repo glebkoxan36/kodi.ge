@@ -1233,7 +1233,7 @@ def search_phones():
     
     return jsonify(results)
 
-@compare_bp.route('/details/<phone_id>')
+@compare_bp.route('/phone/<phone_id>')  # Изменено с /details/ на /phone/
 def phone_details(phone_id):
     """Получение деталей конкретного телефона"""
     try:
@@ -1257,14 +1257,14 @@ def perform_comparison():
         phone2_id = data.get('phone2_id')
         
         if not phone1_id or not phone2_id:
-            return jsonify({'error': 'Необходимо выбрать два телефона'}), 400
+            return jsonify({'success': False, 'error': 'Необходимо выбрать два телефона'}), 400
         
         # Получаем данные телефонов
         phone1 = phonebase_collection.find_one({"_id": ObjectId(phone1_id)})
         phone2 = phonebase_collection.find_one({"_id": ObjectId(phone2_id)})
         
         if not phone1 or not phone2:
-            return jsonify({'error': 'Один из телефонов не найден'}), 404
+            return jsonify({'success': False, 'error': 'Один из телефонов не найден'}), 404
         
         # Сравниваем телефоны
         result = compare_phones(phone1, phone2)
@@ -1280,7 +1280,7 @@ def perform_comparison():
         
     except Exception as e:
         app.logger.error(f"Comparison error: {str(e)}")
-        return jsonify({'error': 'Ошибка сравнения'}), 500
+        return jsonify({'success': False, 'error': 'Ошибка сравнения', 'details': str(e)}), 500
 
 @compare_bp.route('/history')
 @login_required
