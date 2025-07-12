@@ -18,11 +18,12 @@
         .mobile-menu-bottom {
             display: none;
             position: fixed;
-            bottom: 20px;
+            bottom: 0; /* Исправлено: было 20px */
             left: 0;
             right: 0;
             text-align: center;
             z-index: 1050;
+            padding-bottom: env(safe-area-inset-bottom, 10px); /* Защита от индикатора iPhone */
         }
         
         @media (max-width: 1024px) {
@@ -46,6 +47,7 @@
             justify-content: center;
             margin: 0 auto;
             transition: all 0.3s ease;
+            margin-bottom: 10px;
         }
         
         .mobile-menu-btn:hover {
@@ -553,11 +555,10 @@
             transform: translateY(-2px);
         }
         
-        /* Блокировка прокрутки при открытом меню */
+        /* Блокировка прокрутки при открытом меню - ИСПРАВЛЕНО */
         body.mobile-menu-open {
             overflow: hidden;
-            position: fixed;
-            width: 100%;
+            position: relative;
             height: 100%;
         }
     `;
@@ -893,9 +894,9 @@
 
     // Mobile menu functions
     window.openMobileMenu = function() {
-        document.body.classList.add('mobile-menu-open');
         const modal = getElement('mobileMenuModal');
         if (modal) {
+            document.body.classList.add('mobile-menu-open');
             modal.style.display = 'flex';
             setTimeout(() => {
                 modal.classList.add('open');
@@ -908,13 +909,13 @@
     }
 
     window.closeMobileMenu = function() {
-        document.body.classList.remove('mobile-menu-open');
         const modal = getElement('mobileMenuModal');
         if (modal) {
             modal.classList.remove('open');
             setTimeout(() => {
                 if (modal.classList.contains('open')) return;
                 modal.style.display = 'none';
+                document.body.classList.remove('mobile-menu-open');
             }, 400);
         }
     }
@@ -922,9 +923,9 @@
     window.openAppleSubmenu = function() {
         closeMobileMenu();
         setTimeout(() => {
-            document.body.classList.add('mobile-menu-open');
             const appleModal = getElement('appleSubmenuModal');
             if (appleModal) {
+                document.body.classList.add('mobile-menu-open');
                 appleModal.style.display = 'flex';
                 setTimeout(() => {
                     appleModal.classList.add('open');
@@ -937,15 +938,13 @@
     }
 
     window.closeAppleSubmenu = function() {
-        document.body.classList.remove('mobile-menu-open');
         const appleModal = getElement('appleSubmenuModal');
         if (appleModal) {
             appleModal.classList.remove('open');
             setTimeout(() => {
                 if (appleModal.classList.contains('open')) return;
                 appleModal.style.display = 'none';
-                document.body.classList.add('mobile-menu-open');
-                openMobileMenu();
+                document.body.classList.remove('mobile-menu-open');
             }, 400);
         }
     }
@@ -953,9 +952,9 @@
     window.openAndroidSubmenu = function() {
         closeMobileMenu();
         setTimeout(() => {
-            document.body.classList.add('mobile-menu-open');
             const androidModal = getElement('androidSubmenuModal');
             if (androidModal) {
+                document.body.classList.add('mobile-menu-open');
                 androidModal.style.display = 'flex';
                 setTimeout(() => {
                     androidModal.classList.add('open');
@@ -968,24 +967,22 @@
     }
 
     window.closeAndroidSubmenu = function() {
-        document.body.classList.remove('mobile-menu-open');
         const androidModal = getElement('androidSubmenuModal');
         if (androidModal) {
             androidModal.classList.remove('open');
             setTimeout(() => {
                 if (androidModal.classList.contains('open')) return;
                 androidModal.style.display = 'none';
-                document.body.classList.add('mobile-menu-open');
-                openMobileMenu();
+                document.body.classList.remove('mobile-menu-open');
             }, 400);
         }
     }
 
     window.closeAllMobileMenus = function() {
-        document.body.classList.remove('mobile-menu-open');
         closeMobileMenu();
         closeAppleSubmenu();
         closeAndroidSubmenu();
+        document.body.classList.remove('mobile-menu-open');
     }
 
     // Initialize mobile menu when the page loads
