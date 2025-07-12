@@ -59,8 +59,8 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 70vh;
-            max-height: 90%;
+            height: auto;
+            max-height: 90vh;
             z-index: 1100;
             align-items: flex-end;
             transform: translateY(100%);
@@ -69,6 +69,8 @@
             overflow: visible;
             padding-top: 0;
             border-radius: 30px 30px 0 0;
+            padding-bottom: env(safe-area-inset-bottom, 0);
+            box-sizing: border-box;
         }
         
         .mobile-menu-modal.open {
@@ -495,7 +497,8 @@
         
         @media (min-width: 769px) and (max-width: 1024px) {
             .mobile-menu-modal {
-                height: 55vh;
+                max-height: 55vh;
+                height: auto;
             }
             .floating-avatar-container {
                 top: -35px; /* Подняли аватарку */
@@ -548,6 +551,14 @@
         #mobileLoginRegister:hover {
             color: #00c6ff;
             transform: translateY(-2px);
+        }
+        
+        /* Блокировка прокрутки при открытом меню */
+        body.mobile-menu-open {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
         }
     `;
     document.head.appendChild(style);
@@ -882,6 +893,7 @@
 
     // Mobile menu functions
     window.openMobileMenu = function() {
+        document.body.classList.add('mobile-menu-open');
         const modal = getElement('mobileMenuModal');
         if (modal) {
             modal.style.display = 'flex';
@@ -896,6 +908,7 @@
     }
 
     window.closeMobileMenu = function() {
+        document.body.classList.remove('mobile-menu-open');
         const modal = getElement('mobileMenuModal');
         if (modal) {
             modal.classList.remove('open');
@@ -909,6 +922,7 @@
     window.openAppleSubmenu = function() {
         closeMobileMenu();
         setTimeout(() => {
+            document.body.classList.add('mobile-menu-open');
             const appleModal = getElement('appleSubmenuModal');
             if (appleModal) {
                 appleModal.style.display = 'flex';
@@ -923,12 +937,14 @@
     }
 
     window.closeAppleSubmenu = function() {
+        document.body.classList.remove('mobile-menu-open');
         const appleModal = getElement('appleSubmenuModal');
         if (appleModal) {
             appleModal.classList.remove('open');
             setTimeout(() => {
                 if (appleModal.classList.contains('open')) return;
                 appleModal.style.display = 'none';
+                document.body.classList.add('mobile-menu-open');
                 openMobileMenu();
             }, 400);
         }
@@ -937,6 +953,7 @@
     window.openAndroidSubmenu = function() {
         closeMobileMenu();
         setTimeout(() => {
+            document.body.classList.add('mobile-menu-open');
             const androidModal = getElement('androidSubmenuModal');
             if (androidModal) {
                 androidModal.style.display = 'flex';
@@ -951,18 +968,21 @@
     }
 
     window.closeAndroidSubmenu = function() {
+        document.body.classList.remove('mobile-menu-open');
         const androidModal = getElement('androidSubmenuModal');
         if (androidModal) {
             androidModal.classList.remove('open');
             setTimeout(() => {
                 if (androidModal.classList.contains('open')) return;
                 androidModal.style.display = 'none';
+                document.body.classList.add('mobile-menu-open');
                 openMobileMenu();
             }, 400);
         }
     }
 
     window.closeAllMobileMenus = function() {
+        document.body.classList.remove('mobile-menu-open');
         closeMobileMenu();
         closeAppleSubmenu();
         closeAndroidSubmenu();
