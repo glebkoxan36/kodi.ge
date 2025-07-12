@@ -63,7 +63,7 @@
             max-height: 90vh;
             z-index: 1100;
             align-items: flex-end;
-            transform: translateY(100%);
+            transform: translateY(50%);
             transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
             opacity: 1;
             overflow: visible;
