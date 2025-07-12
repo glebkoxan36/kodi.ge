@@ -78,7 +78,7 @@ def compare_phones(phone1_specs, phone2_specs):
         'score2': score2,
         'winner': winner,
         'details': comparison_details,
-        'timestamp': datetime.utcnow()
+        'timestamp': datetime.utcnow().isoformat()  # Исправлено: используем isoformat для JSON
     }
 
 def save_comparison(user_id, phone1_id, phone2_id, result):
