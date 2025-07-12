@@ -53,12 +53,6 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('user.history_comparisons') }}">
-                    <i class="fas fa-exchange-alt"></i>
-                    <span>შედარებები</span>
-                </a>
-            </li>
-            <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('user.settings') }}">
                     <i class="fas fa-cog"></i>
                     <span>პარამეტრები</span>
@@ -134,12 +128,6 @@
                                     <span>{{ total_checks }}</span>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="d-flex justify-content-between">
-                                    <span>შედარებები:</span>
-                                    <span>{{ total_comparisons }}</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -160,7 +148,7 @@
         </div>
         
         <div class="row">
-            <div class="col-md-6 mb-4">
+            <div class="col-md-12 mb-4">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
@@ -184,44 +172,6 @@
                                     <td>{{ check.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
                                     <td>{{ check.imei }}</td>
                                     <td>{{ check.service_type }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-exchange-alt me-2"></i>
-                            ბოლო შედარებები
-                        </div>
-                        <a href="{{ url_for('user.history_comparisons') }}" class="view-all-link">ყველას ნახვა</a>
-                    </div>
-                    <div class="card-body">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th>თარიღი</th>
-                                    <th>მოდელები</th>
-                                    <th>შედეგი</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for comparison in last_comparisons %}
-                                <tr>
-                                    <td>{{ comparison.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
-                                    <td>{{ comparison.model1 }} vs {{ comparison.model2 }}</td>
-                                    <td>
-                                        {% if comparison.result == 'draw' %}
-                                            <span class="badge bg-secondary">ფრე</span>
-                                        {% else %}
-                                            <span class="badge bg-success">{{ comparison.result }} ლიდერობს</span>
-                                        {% endif %}
-                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -400,10 +350,6 @@
                         <i class="fas fa-history"></i>
                         <span>IMEI ისტორია</span>
                     </div>
-                    <div class="menu-item" onclick="window.location.href='{{ url_for('user.history_comparisons') }}'">
-                        <i class="fas fa-exchange-alt"></i>
-                        <span>შედარებები</span>
-                    </div>
                     <div class="menu-item" onclick="window.location.href='{{ url_for('user.settings') }}'">
                         <i class="fas fa-cog"></i>
                         <span>პარამეტრები</span>
@@ -512,4 +458,4 @@
         });
     </script>
 </body>
-                        </html>
+</html>
