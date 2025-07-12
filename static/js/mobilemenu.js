@@ -15,18 +15,9 @@
     const style = document.createElement('style');
     style.id = 'mobile-menu-styles';
     style.textContent = `
-        /* АНИМАЦИИ */
-        @keyframes circuitMove {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-60px, -60px); }
-        }
+        /* УБРАНЫ ВСЕ АНИМАЦИИ ФОНА */
         
-        @keyframes particle-float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(40px, -30px) scale(1.2); }
-        }
-        
-        /* Анимированный хай-тек фон */
+        /* Статичный хай-тек фон */
         .tech-background {
             position: absolute;
             top: 0;
@@ -36,76 +27,24 @@
             z-index: 1;
             overflow: hidden;
             border-radius: 30px 30px 0 0;
-        }
-        
-        .circuit-layer {
-            position: absolute;
-            width: 200%;
-            height: 200%;
-            background-image: 
+            background: 
+                linear-gradient(135deg, #0a0e17 0%, #1a2a3a 100%),
+                radial-gradient(circle at 20% 30%, rgba(0, 198, 255, 0.15) 0%, transparent 25%),
+                radial-gradient(circle at 80% 70%, rgba(0, 114, 255, 0.15) 0%, transparent 25%),
                 linear-gradient(rgba(0, 198, 255, 0.1) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0, 198, 255, 0.1) 1px, transparent 1px);
-            background-size: 60px 60px;
-            animation: circuitMove 40s infinite linear;
-            opacity: 0.7;
-            will-change: transform;
-            backface-visibility: hidden;
+            background-size: 
+                100% 100%,
+                100% 100%,
+                100% 100%,
+                30px 30px,
+                30px 30px;
         }
-        
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0,198,255,0.8), transparent 70%);
-            filter: blur(15px);
-            animation: particle-float 25s infinite ease-in-out;
-            will-change: transform;
-            backface-visibility: hidden;
-        }
-        
-        .p1 { 
-            width: 150px; 
-            height: 150px;
-            top: 20%; 
-            left: 10%;
-            animation-delay: 0s;
-        }
-        
-        .p2 { 
-            width: 200px; 
-            height: 200px;
-            bottom: 15%; 
-            right: 10%;
-            animation-delay: -8s;
-        }
-        
-        .grid-matrix {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                repeating-linear-gradient(
-                    0deg,
-                    transparent,
-                    transparent 19px,
-                    rgba(0, 114, 255, 0.05) 20px
-                ),
-                repeating-linear-gradient(
-                    90deg,
-                    transparent,
-                    transparent 19px,
-                    rgba(0, 114, 255, 0.05) 20px
-                );
-            box-shadow: 
-                inset 0 0 100px rgba(0, 82, 204, 0.2),
-                0 0 50px rgba(0, 92, 230, 0.1);
-        }
-        
+
         /* ИСПРАВЛЕНИЯ ДЛЯ АВАТАРКИ */
         .floating-avatar-container {
             position: absolute;
-            top: -50px; /* Уменьшен отступ сверху */
+            top: -40px; /* Уменьшен отступ сверху */
             left: 50%;
             transform: translateX(-50%);
             z-index: 10070;
@@ -119,10 +58,10 @@
         }
         
         .mobile-menu-modal .modal-content {
-            padding-top: 70px; /* Уменьшен паддинг */
+            padding-top: 80px; /* Увеличен паддинг */
             position: relative;
-            overflow: visible; /* Разрешаем выход за границы */
-            max-height: 60vh !important; /* Максимальная высота */
+            overflow: visible;
+            max-height: 60vh !important;
             height: auto;
         }
         
@@ -174,7 +113,7 @@
             left: 0;
             width: 100%;
             height: auto;
-            max-height: 60vh; /* Фиксированная максимальная высота */
+            max-height: 60vh;
             z-index: 10060;
             align-items: flex-end;
             transform: translateY(100%);
@@ -348,9 +287,9 @@
             color: #00c6ff;
         }
         
-        /* Увеличенные иконки одного размера */
+        /* Уменьшенные иконки */
         .menu-item i {
-            font-size: 40px !important;
+            font-size: 36px !important;
             margin-bottom: 8px;
             background: linear-gradient(135deg, #00c6ff, #0072ff);
             -webkit-background-clip: text;
@@ -361,8 +300,8 @@
         
         .menu-icon-img {
             display: block;
-            width: 40px !important;
-            height: 40px !important;
+            width: 36px !important;
+            height: 36px !important;
             margin-left: auto;
             margin-right: auto;
             margin-bottom: 7px;
@@ -391,15 +330,15 @@
             box-shadow: none !important;
         }
         
-        /* Увеличенные ячейки сетки */
+        /* Уменьшенные ячейки сетки */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
-            gap: 12px;
+            gap: 10px;
             width: 100%;
-            max-width: 440px;
-            height: 440px;
+            max-width: 380px;
+            height: 380px;
             margin: 0 auto;
             background: transparent;
             box-sizing: border-box;
@@ -424,7 +363,7 @@
                 inset 0 0 10px rgba(0, 198, 255, 0.1);
             min-width: 0;
             min-height: 0;
-            padding: 12px 8px;
+            padding: 10px 5px;
             box-sizing: border-box;
             color: white;
             position: relative;
@@ -442,7 +381,7 @@
         }
         
         .menu-item span {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             line-height: 1.3;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -463,11 +402,11 @@
         /* Уменьшенные ячейки мобильного меню */
         @media (max-width: 768px) {
             .floating-avatar-container {
-                top: -40px; /* Уменьшен отступ */
+                top: -35px;
             }
             
             .mobile-menu-modal .modal-content {
-                padding-top: 60px; /* Уменьшен паддинг */
+                padding-top: 70px;
             }
             
             .floating-avatar-info, .user-balance {
@@ -475,20 +414,20 @@
             }
             
             .menu-grid {
-                gap: 10px;
-                max-width: 380px;
-                height: 380px;
+                gap: 8px;
+                max-width: 340px;
+                height: 340px;
                 margin-top: 15px;
             }
             .menu-item {
-                padding: 10px 7px;
+                padding: 8px 4px;
             }
             .menu-item i {
-                font-size: 38px !important;
+                font-size: 34px !important;
                 margin-bottom: 6px;
             }
             .menu-item span {
-                font-size: 0.7rem;
+                font-size: 0.65rem;
             }
             
             .user-info-container {
@@ -498,11 +437,11 @@
         
         @media (max-width: 576px) {
             .floating-avatar-container {
-                top: -35px; /* Уменьшен отступ */
+                top: -30px;
             }
             
             .mobile-menu-modal .modal-content {
-                padding-top: 50px; /* Уменьшен паддинг */
+                padding-top: 60px;
             }
             
             .floating-avatar-info, .user-balance {
@@ -510,16 +449,16 @@
             }
             
             .menu-grid {
-                gap: 8px;
-                max-width: 340px;
-                height: 340px;
+                gap: 7px;
+                max-width: 300px;
+                height: 300px;
                 margin-top: 10px;
             }
             .menu-item i {
-                font-size: 36px !important;
+                font-size: 32px !important;
             }
             .menu-item span {
-                font-size: 0.65rem;
+                font-size: 0.6rem;
             }
             
             .user-info-container {
@@ -529,16 +468,16 @@
         
         @media (max-width: 400px) {
             .floating-avatar {
-                width: 90px;
-                height: 90px;
+                width: 85px;
+                height: 85px;
             }
             
             .floating-avatar-container {
-                top: -30px; /* Уменьшен отступ */
+                top: -25px;
             }
             
             .mobile-menu-modal .modal-content {
-                padding-top: 45px; /* Уменьшен паддинг */
+                padding-top: 55px;
             }
             
             .floating-avatar-info, .user-balance {
@@ -547,15 +486,15 @@
             
             .menu-grid {
                 gap: 6px;
-                max-width: 300px;
-                height: 300px;
+                max-width: 270px;
+                height: 270px;
                 margin-top: 5px;
             }
             .menu-item i {
-                font-size: 34px !important;
+                font-size: 30px !important;
             }
             .menu-item span {
-                font-size: 0.6rem;
+                font-size: 0.55rem;
             }
             
             .user-info-container {
@@ -570,11 +509,11 @@
             }
             
             .floating-avatar-container {
-                top: -25px; /* Уменьшен отступ */
+                top: -20px;
             }
             
             .mobile-menu-modal .modal-content {
-                padding-top: 40px; /* Уменьшен паддинг */
+                padding-top: 50px;
             }
             
             .floating-avatar-info, .user-balance {
@@ -583,15 +522,15 @@
             
             .menu-grid {
                 gap: 5px;
-                max-width: 280px;
-                height: 280px;
+                max-width: 250px;
+                height: 250px;
                 margin-top: 0;
             }
             .menu-item i {
-                font-size: 32px !important;
+                font-size: 28px !important;
             }
             .menu-item span {
-                font-size: 0.55rem;
+                font-size: 0.5rem;
             }
             
             .user-info-container {
@@ -605,35 +544,35 @@
                 height: auto;
             }
             .floating-avatar-container {
-                top: -45px; /* Возвращено исходное значение */
+                top: -40px;
             }
             .mobile-menu-modal .modal-content {
-                padding-top: 60px; /* Возвращено исходное значение */
+                padding-top: 70px;
             }
             .floating-avatar {
-                width: 110px;
-                height: 110px;
+                width: 100px;
+                height: 100px;
             }
             .floating-avatar-info {
-                font-size: 1.1rem;
+                font-size: 1.05rem;
             }
             .user-balance {
-                font-size: 1rem;
+                font-size: 0.95rem;
             }
             .menu-grid {
-                max-width: 420px;
-                height: 420px;
-                margin-top: 25px;
+                max-width: 360px;
+                height: 360px;
+                margin-top: 20px;
             }
             .menu-item i {
-                font-size: 38px !important;
+                font-size: 36px !important;
             }
             .menu-item span {
-                font-size: 0.8rem;
+                font-size: 0.75rem;
             }
             
             .user-info-container {
-                margin-top: 25px;
+                margin-top: 20px;
             }
         }
         
@@ -665,17 +604,6 @@
             overflow: hidden;
             position: relative;
             height: 100%;
-        }
-
-        /* Фикс для анимации */
-        .circuit-layer,
-        .particle {
-            animation-play-state: paused;
-        }
-        
-        .mobile-menu-modal.open .circuit-layer,
-        .mobile-menu-modal.open .particle {
-            animation-play-state: running;
         }
     `;
     document.head.appendChild(style);
@@ -805,12 +733,7 @@
         container.innerHTML = `
             <div class="mobile-menu-modal" id="mobileMenuModal">
                 <div class="modal-content">
-                    <div class="tech-background">
-                        <div class="circuit-layer"></div>
-                        <div class="particle p1"></div>
-                        <div class="particle p2"></div>
-                        <div class="grid-matrix"></div>
-                    </div>
+                    <div class="tech-background"></div>
                     <div class="modal-header">
                         <button class="close-modal" onclick="closeMobileMenu()">
                             <i class="fas fa-times"></i>
@@ -854,12 +777,7 @@
             <!-- Mobile Menu Modal -->
             <div class="mobile-menu-modal" id="mobileMenuModal">
                 <div class="modal-content">
-                    <div class="tech-background">
-                        <div class="circuit-layer"></div>
-                        <div class="particle p1"></div>
-                        <div class="particle p2"></div>
-                        <div class="grid-matrix"></div>
-                    </div>
+                    <div class="tech-background"></div>
                     <button class="close-modal" onclick="closeMobileMenu()">
                         <i class="fas fa-times"></i>
                     </button>
@@ -914,12 +832,7 @@
             <!-- Apple Submenu Modal -->
             <div class="mobile-menu-modal" id="appleSubmenuModal">
                 <div class="modal-content">
-                    <div class="tech-background">
-                        <div class="circuit-layer"></div>
-                        <div class="particle p1"></div>
-                        <div class="particle p2"></div>
-                        <div class="grid-matrix"></div>
-                    </div>
+                    <div class="tech-background"></div>
                     <button class="close-modal" onclick="closeAppleSubmenu()">
                         <i class="fas fa-times"></i>
                     </button>
@@ -977,12 +890,7 @@
             <!-- Android Submenu Modal -->
             <div class="mobile-menu-modal" id="androidSubmenuModal">
                 <div class="modal-content">
-                    <div class="tech-background">
-                        <div class="circuit-layer"></div>
-                        <div class="particle p1"></div>
-                        <div class="particle p2"></div>
-                        <div class="grid-matrix"></div>
-                    </div>
+                    <div class="tech-background"></div>
                     <button class="close-modal" onclick="closeAndroidSubmenu()">
                         <i class="fas fa-times"></i>
                     </button>
