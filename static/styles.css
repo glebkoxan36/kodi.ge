@@ -20,6 +20,12 @@
   --danger-bg: rgba(244, 67, 54, 0.1);
   --primary-dark: #081020;
   --secondary-dark: #152450;
+  --mobile-menu-z-index: 10050;
+  --mobile-menu-modal-z-index: 10060;
+  --mobile-menu-close-bg: #ff6b6b;
+  --mobile-menu-gradient-1: #0a0e17;
+  --mobile-menu-gradient-2: #1a2138;
+  
 }
 
 /* ===== BASE STYLES WITH IMPROVED ADAPTATION ===== */
@@ -1828,3 +1834,9 @@ input, select, textarea {
 button, a {
   touch-action: manipulation;
   }
+
+@media (max-width: 1024px) {
+  body {
+    padding-bottom: 80px;
+  }
+}
