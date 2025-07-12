@@ -60,6 +60,19 @@ def generate_avatar_color(name):
     hash_obj = hashlib.md5(name.encode('utf-8'))
     return '#' + hash_obj.hexdigest()[:6]
 
+# Фильтр для форматирования даты в шаблонах Jinja2
+@app.template_filter('format_datetime')
+def format_datetime_filter(value, format='%d.%m.%Y %H:%M'):
+    """Фильтр для форматирования даты в шаблонах Jinja2"""
+    if isinstance(value, datetime):
+        return value.strftime(format)
+    try:
+        # Попытка преобразовать строку в datetime
+        dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S.%f')
+        return dt.strftime(format)
+    except:
+        return value  # Возвращаем как есть, если не удалось преобразовать
+
 # Кешируемая функция получения цен
 @cache.memoize(timeout=300)  # Кеширование на 5 минут
 def get_current_prices():
