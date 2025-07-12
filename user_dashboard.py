@@ -18,7 +18,6 @@ client = MongoClient(os.getenv('MONGODB_URI'))
 db = client['imei_checker']
 regular_users_collection = db['users']
 checks_collection = db['results']
-comparisons_collection = db['comparisons']
 payments_collection = db['payments']
 refunds_collection = db['refunds']
 
@@ -71,16 +70,11 @@ def dashboard():
         .sort('timestamp', -1)
         .limit(5))
     
-    comparisons = list(comparisons_collection.find({'user_id': user_id})
-        .sort('timestamp', -1)
-        .limit(5))
-    
     payments = list(payments_collection.find({'user_id': user_id})
         .sort('timestamp', -1)
         .limit(5))
     
     total_checks = checks_collection.count_documents({'user_id': user_id})
-    total_comparisons = comparisons_collection.count_documents({'user_id': user_id})
     
     avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
     
@@ -89,10 +83,8 @@ def dashboard():
         user=user,
         balance=balance,
         last_checks=checks,
-        last_comparisons=comparisons,
         last_payments=payments,
         total_checks=total_checks,
-        total_comparisons=total_comparisons,
         avatar_color=avatar_color,
         stripe_public_key=STRIPE_PUBLIC_KEY
     )
@@ -109,43 +101,6 @@ def settings():
     
     return render_template('user/settings.html', user=user)
 
-# Исправлено: удален endpoint параметр
-@user_bp.route('/history/comparisons')
-@login_required
-def history_comparisons():
-    user_id = session['user_id']
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-    
-    if not user:
-        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    balance = user.get('balance', 0.0)
-    
-    page = int(request.args.get('page', 1))
-    per_page = 20
-    
-    comparisons = list(comparisons_collection.find({'user_id': user_id})
-        .sort('timestamp', -1)
-        .skip((page - 1) * per_page)
-        .limit(per_page))
-    
-    total = comparisons_collection.count_documents({'user_id': user_id})
-    
-    for comp in comparisons:
-        comp['timestamp'] = comp['timestamp'].strftime('%Y-%m-%d %H:%M')
-    
-    return render_template(
-        'user/history_comparisons.html',
-        user=user,
-        balance=balance,
-        comparisons=comparisons,
-        page=page,
-        per_page=per_page,
-        total=total
-    )
-
-# Исправлено: удален endpoint параметр
 @user_bp.route('/history/checks')
 @login_required
 def history_checks():
