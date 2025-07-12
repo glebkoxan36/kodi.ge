@@ -8,10 +8,15 @@ import stripe
 # Инициализация Blueprint
 user_bp = Blueprint('user', __name__, url_prefix='/user')
 
-# Настройка Stripe
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+# Проверка наличия ключей Stripe
+stripe_api_key = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+
+if not stripe_api_key or not STRIPE_PUBLIC_KEY:
+    raise ValueError("Stripe API keys are missing in environment variables")
+
+stripe.api_key = stripe_api_key
 
 # Подключение к MongoDB
 client = MongoClient(os.getenv('MONGODB_URI'))
@@ -25,8 +30,8 @@ refunds_collection = db['refunds']
 from .stripepay import StripePayment
 
 stripe_payment = StripePayment(
-    stripe_api_key=os.getenv('STRIPE_SECRET_KEY'),
-    webhook_secret=os.getenv('STRIPE_WEBHOOK_SECRET'),
+    stripe_api_key=stripe_api_key,
+    webhook_secret=STRIPE_WEBHOOK_SECRET,
     users_collection=regular_users_collection,
     payments_collection=payments_collection,
     refunds_collection=refunds_collection
@@ -199,19 +204,20 @@ def create_payment_session():
         session_stripe = stripe_payment.create_topup_session(
             user_id=user_id,
             amount=amount,
-            success_url=url_for('user.dashboard', _external=True) + '?payment=success&amount=' + str(amount),
+            success_url=url_for('user.topup_success', _external=True) + f'?amount={amount}',
             cancel_url=url_for('user.dashboard', _external=True) + '?payment=cancel'
         )
         
         return jsonify({'sessionId': session_stripe.id})
     except Exception as e:
         current_app.logger.error(f"შეცდომა გადახდის შექმნისას: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'გადახდის სისტემა დროებით მიუწვდომელია'}), 500
 
 @user_bp.route('/topup/success')
 @login_required
 def topup_success():
-    flash('გადახდა წარმატებით დასრულდა! თქვენი ბალანსი განახლდება მალე.', 'success')
+    amount = request.args.get('amount', '0.00')
+    flash(f'გადახდა წარმატებით დასრულდა! თქვენი ბალანსი განახლდება მალე (+{amount} ₾).', 'success')
     return redirect(url_for('user.dashboard'))
 
 @user_bp.route('/stripe-webhook', methods=['POST'])
