@@ -20,12 +20,6 @@
   --danger-bg: rgba(244, 67, 54, 0.1);
   --primary-dark: #081020;
   --secondary-dark: #152450;
-  --mobile-menu-z-index: 10050;
-  --mobile-menu-modal-z-index: 10060;
-  --mobile-menu-close-bg: #ff6b6b;
-  --mobile-menu-gradient-1: #0a0e17;
-  --mobile-menu-gradient-2: #1a2138;
-  
 }
 
 /* ===== BASE STYLES WITH IMPROVED ADAPTATION ===== */
@@ -1792,64 +1786,6 @@ body {
   }
 }
 
-/* ===== FIXES FOR MOBILE MENU ===== */
-.mobile-menu-modal {
-    z-index: var(--mobile-menu-modal-z-index) !important;
-}
-
-.mobile-menu-bottom {
-    z-index: var(--mobile-menu-z-index) !important;
-}
-
-.floating-avatar-container {
-    z-index: 10070 !important;
-}
-
-/* Disable conflicting animations */
-.mobile-menu-modal * {
-    animation: none !important;
-    transition: none !important;
-}
-
-/* Ensure avatar is fully visible */
-@media (max-width: 768px) {
-    .floating-avatar-container {
-        top: -80px !important;
-    }
-    
-    .mobile-menu-modal .modal-content {
-        padding-top: 100px !important;
-    }
-}
-
-@media (max-width: 576px) {
-    .floating-avatar-container {
-        top: -70px !important;
-    }
-}
-
-@media (max-width: 400px) {
-    .floating-avatar-container {
-        top: -60px !important;
-    }
-}
-
-@media (max-width: 340px) {
-    .floating-avatar-container {
-        top: -50px !important;
-    }
-}
-
-/* Fix background animations */
-@keyframes particle-float {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(40px, -30px) scale(1.2); }
-}
-
-.particle {
-    animation: particle-float 25s infinite ease-in-out !important;
-}
-
 /* ===== КРИТИЧЕСКИЕ ФИКСЫ ===== */
 /* Гарантируем, что интерактивные элементы выше градиентов */
 .main-content, 
@@ -1897,4 +1833,4 @@ button, a {
   body {
     padding-bottom: 80px;
   }
-  }
+    }
