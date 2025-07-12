@@ -21,7 +21,7 @@
             100% { transform: translate(-60px, -60px); }
         }
         
-        @keyframes float {
+        @keyframes particle-float {
             0%, 100% { transform: translate(0, 0) scale(1); }
             50% { transform: translate(40px, -30px) scale(1.2); }
         }
@@ -33,7 +33,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 0;
+            z-index: 1;
             overflow: hidden;
             border-radius: 30px 30px 0 0;
         }
@@ -55,7 +55,7 @@
             border-radius: 50%;
             background: radial-gradient(circle, rgba(0,198,255,0.8), transparent 70%);
             filter: blur(15px);
-            animation: float 25s infinite ease-in-out;
+            animation: particle-float 25s infinite ease-in-out;
             will-change: transform;
             backface-visibility: hidden;
         }
@@ -103,10 +103,10 @@
         /* ИСПРАВЛЕНИЯ ДЛЯ АВАТАРКИ */
         .floating-avatar-container {
             position: absolute;
-            top: -70px; /* Увеличили отступ для полного отображения */
+            top: -90px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 1500;
+            z-index: 10070;
             width: 100%;
             text-align: center;
             pointer-events: none;
@@ -117,10 +117,10 @@
         }
         
         .mobile-menu-modal .modal-content {
-            padding-top: 80px; /* Добавили место для аватарки */
-            min-height: 500px; /* Гарантируем минимальную высоту */
+            padding-top: 110px;
+            min-height: 500px;
             position: relative;
-            overflow: visible; /* Разрешаем выход за границы */
+            overflow: visible;
         }
         
         /* Остальные стили меню */
@@ -131,7 +131,7 @@
             left: 0;
             right: 0;
             text-align: center;
-            z-index: 1050;
+            z-index: 10050;
             padding-bottom: env(safe-area-inset-bottom, 10px);
         }
         
@@ -172,7 +172,7 @@
             width: 100%;
             height: auto;
             max-height: 90vh;
-            z-index: 1100;
+            z-index: 10060;
             align-items: flex-end;
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
@@ -401,7 +401,7 @@
             background: transparent;
             box-sizing: border-box;
             padding: 0;
-            margin-top: 20px; /* Уменьшили отступ сверху */
+            margin-top: 20px;
         }
         
         .menu-item {
@@ -460,7 +460,7 @@
         /* Уменьшенные ячейки мобильного меню */
         @media (max-width: 768px) {
             .floating-avatar-container {
-                top: -60px; /* Корректировка для мобильных */
+                top: -75px;
             }
             
             .floating-avatar-info, .user-balance {
@@ -491,7 +491,7 @@
         
         @media (max-width: 576px) {
             .floating-avatar-container {
-                top: -55px; /* Дополнительная корректировка */
+                top: -65px;
             }
             
             .floating-avatar-info, .user-balance {
@@ -523,7 +523,7 @@
             }
             
             .floating-avatar-container {
-                top: -50px;
+                top: -55px;
             }
             
             .floating-avatar-info, .user-balance {
@@ -586,7 +586,7 @@
                 height: auto;
             }
             .floating-avatar-container {
-                top: -60px;
+                top: -85px;
             }
             .floating-avatar {
                 width: 110px;
