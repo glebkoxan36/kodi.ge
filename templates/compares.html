@@ -562,7 +562,7 @@
             ]
         };
         
-        // Переключение режимов - ИСПРАВЛЕННАЯ ЧАСТЬ
+        // Переключение режимов - ИСПРАВЛЕННАЯ ВЕРСИЯ
         singleModeBtn.addEventListener('click', function() {
             setActiveMode('single');
         });
@@ -572,9 +572,8 @@
         });
         
         function setActiveMode(mode) {
-            // Сбрасываем предыдущий режим
+            // Если режим уже активен - сбрасываем его
             if (currentMode === mode) {
-                // Клик на активный режим - выходим из режима
                 resetMode();
                 return;
             }
