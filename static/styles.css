@@ -1827,7 +1827,29 @@ input, select, textarea {
 /* Гарантируем, что кнопки доступны для нажатия */
 button, a {
   touch-action: manipulation;
-  }
+}
+
+/* Гарантируем светлый текст в таблицах */
+.history-table,
+.history-table th,
+.history-table td,
+.history-table tr {
+  color: #ffffff !important;
+}
+
+/* Гарантируем светлый текст в модальных окнах */
+.modal-content,
+.modal-body,
+.modal-header,
+.modal-footer {
+  color: #ffffff !important;
+}
+
+/* Гарантируем светлый текст в элементах <pre> */
+pre {
+  color: #ffffff !important;
+  background-color: rgba(30, 30, 40, 0.7) !important;
+}
 
 @media (max-width: 1024px) {
   body {
