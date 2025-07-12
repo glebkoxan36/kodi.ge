@@ -15,6 +15,17 @@
     const style = document.createElement('style');
     style.id = 'mobile-menu-styles';
     style.textContent = `
+        /* АНИМАЦИИ */
+        @keyframes circuitMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-60px, -60px); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(40px, -30px) scale(1.2); }
+        }
+        
         /* Анимированный хай-тек фон */
         .tech-background {
             position: absolute;
@@ -89,14 +100,27 @@
                 0 0 50px rgba(0, 92, 230, 0.1);
         }
         
-        @keyframes circuitMove {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-60px, -60px); }
+        /* ИСПРАВЛЕНИЯ ДЛЯ АВАТАРКИ */
+        .floating-avatar-container {
+            position: absolute;
+            top: -70px; /* Увеличили отступ для полного отображения */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1500;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(40px, -30px) scale(1.2); }
+        .mobile-menu-modal .modal-content {
+            padding-top: 80px; /* Добавили место для аватарки */
+            min-height: 500px; /* Гарантируем минимальную высоту */
+            position: relative;
+            overflow: visible; /* Разрешаем выход за границы */
         }
         
         /* Остальные стили меню */
@@ -165,7 +189,6 @@
             display: flex;
         }
         
-        /* Анимированный хай-тек фон вместо изображения */
         .mobile-menu-modal .modal-content {
             background: linear-gradient(135deg, #0a0e17 0%, #0a1a2a 100%);
             border: 3px solid rgba(0, 198, 255, 0.4);
@@ -174,7 +197,6 @@
                 0 0 15px rgba(0, 198, 255, 0.3),
                 inset 0 0 20px rgba(0, 150, 200, 0.2);
             overflow: hidden;
-            position: relative;
             width: 100%;
             height: 100%;
             z-index: 1;
@@ -217,23 +239,6 @@
             background: #ff5252;
             transform: scale(1.1);
             box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
-        }
-        
-        /* Подняли аватарку на 5px вверх */
-        .floating-avatar-container {
-            position: absolute;
-            top: -50px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1500;
-            width: 100%;
-            text-align: center;
-            padding-bottom: 5px;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
         }
         
         .floating-avatar,
@@ -396,7 +401,7 @@
             background: transparent;
             box-sizing: border-box;
             padding: 0;
-            margin-top: 130px;
+            margin-top: 20px; /* Уменьшили отступ сверху */
         }
         
         .menu-item {
@@ -454,6 +459,10 @@
         
         /* Уменьшенные ячейки мобильного меню */
         @media (max-width: 768px) {
+            .floating-avatar-container {
+                top: -60px; /* Корректировка для мобильных */
+            }
+            
             .floating-avatar-info, .user-balance {
                 max-width: 230px;
             }
@@ -462,7 +471,7 @@
                 gap: 10px;
                 max-width: 380px;
                 height: 380px;
-                margin-top: 120px;
+                margin-top: 15px;
             }
             .menu-item {
                 padding: 10px 7px;
@@ -481,6 +490,10 @@
         }
         
         @media (max-width: 576px) {
+            .floating-avatar-container {
+                top: -55px; /* Дополнительная корректировка */
+            }
+            
             .floating-avatar-info, .user-balance {
                 max-width: 220px;
             }
@@ -489,7 +502,7 @@
                 gap: 8px;
                 max-width: 340px;
                 height: 340px;
-                margin-top: 110px;
+                margin-top: 10px;
             }
             .menu-item i {
                 font-size: 36px !important;
@@ -504,6 +517,15 @@
         }
         
         @media (max-width: 400px) {
+            .floating-avatar {
+                width: 90px;
+                height: 90px;
+            }
+            
+            .floating-avatar-container {
+                top: -50px;
+            }
+            
             .floating-avatar-info, .user-balance {
                 max-width: 200px;
             }
@@ -512,7 +534,7 @@
                 gap: 6px;
                 max-width: 300px;
                 height: 300px;
-                margin-top: 100px;
+                margin-top: 5px;
             }
             .menu-item i {
                 font-size: 34px !important;
@@ -527,6 +549,15 @@
         }
         
         @media (max-width: 340px) {
+            .floating-avatar {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .floating-avatar-container {
+                top: -45px;
+            }
+            
             .floating-avatar-info, .user-balance {
                 max-width: 180px;
             }
@@ -535,7 +566,7 @@
                 gap: 5px;
                 max-width: 280px;
                 height: 280px;
-                margin-top: 90px;
+                margin-top: 0;
             }
             .menu-item i {
                 font-size: 32px !important;
@@ -555,7 +586,7 @@
                 height: auto;
             }
             .floating-avatar-container {
-                top: -35px;
+                top: -60px;
             }
             .floating-avatar {
                 width: 110px;
@@ -570,7 +601,7 @@
             .menu-grid {
                 max-width: 420px;
                 height: 420px;
-                margin-top: 120px;
+                margin-top: 25px;
             }
             .menu-item i {
                 font-size: 38px !important;
