@@ -63,7 +63,7 @@
             max-height: 90vh;
             z-index: 1100;
             align-items: flex-end;
-            transform: translateY(50%);
+            transform: translateY(150%);
             transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
             opacity: 1;
             overflow: visible;
@@ -111,19 +111,6 @@
             opacity: 0.15;
             z-index: 1;
         }
-
-        /* Декоративные линии */
-        .modal-content::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #00c6ff, transparent);
-            z-index: 2;
-            opacity: 0.4;
-        }
         
         .mobile-menu-modal .modal-body {
             flex: 1;
@@ -167,7 +154,7 @@
         /* Позиционирование аватарки */
         .floating-avatar-container {
             position: absolute;
-            top: -50px;
+            top: -70px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
