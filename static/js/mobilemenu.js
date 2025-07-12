@@ -15,8 +15,6 @@
     const style = document.createElement('style');
     style.id = 'mobile-menu-styles';
     style.textContent = `
-        /* УБРАНЫ ВСЕ АНИМАЦИИ ФОНА */
-        
         /* Статичный хай-тек фон */
         .tech-background {
             position: absolute;
@@ -25,8 +23,6 @@
             width: 100%;
             height: 100%;
             z-index: 1;
-            overflow: hidden;
-            border-radius: 30px 30px 0 0;
             background: 
                 linear-gradient(135deg, #0a0e17 0%, #1a2a3a 100%),
                 radial-gradient(circle at 20% 30%, rgba(0, 198, 255, 0.15) 0%, transparent 25%),
@@ -41,10 +37,10 @@
                 30px 30px;
         }
 
-        /* ИСПРАВЛЕНИЯ ДЛЯ АВАТАРКИ */
+        /* ФИКС АВАТАРКИ */
         .floating-avatar-container {
             position: absolute;
-            top: -40px; /* Уменьшен отступ сверху */
+            top: -45px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10070;
@@ -58,10 +54,10 @@
         }
         
         .mobile-menu-modal .modal-content {
-            padding-top: 80px; /* Увеличен паддинг */
+            padding-top: 90px;
             position: relative;
-            overflow: visible;
-            max-height: 60vh !important;
+            overflow: visible; /* РАЗРЕШАЕМ ВЫХОД ЗА ГРАНИЦЫ */
+            max-height: 65vh !important; /* УВЕЛИЧИВАЕМ ВЫСОТУ */
             height: auto;
         }
         
@@ -113,7 +109,7 @@
             left: 0;
             width: 100%;
             height: auto;
-            max-height: 60vh;
+            max-height: 65vh; /* УВЕЛИЧЕНА ВЫСОТА */
             z-index: 10060;
             align-items: flex-end;
             transform: translateY(100%);
@@ -138,7 +134,7 @@
             box-shadow: 
                 0 0 15px rgba(0, 198, 255, 0.3),
                 inset 0 0 20px rgba(0, 150, 200, 0.2);
-            overflow: hidden;
+            overflow: visible; /* ИЗМЕНЕНО НА VISIBLE */
             width: 100%;
             height: 100%;
             z-index: 1;
@@ -194,7 +190,7 @@
             border-radius: 50%;
             object-fit: cover;
             position: relative;
-            z-index: 2;
+            z-index: 10080; /* ВЫШЕ ФОНА И КНОПКИ */
             border: 3px solid var(--accent-color);
             box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
             cursor: pointer;
@@ -235,7 +231,7 @@
             align-items: center;
             gap: 5px;
             margin-bottom: 15px;
-            margin-top: 20px;
+            margin-top: 10px; /* УМЕНЬШЕН ОТСТУП */
         }
         
         .floating-avatar-info {
@@ -267,7 +263,7 @@
         
         .floating-avatar-info.not-logged-in {
             text-shadow: 0 0 5px #00c6ff, 0 0 10px #00c6ff;
-            margin-top: 10px;
+            margin-top: 5px; /* УМЕНЬШЕН ОТСТУП */
         }
         
         .user-balance {
@@ -283,7 +279,7 @@
             transition: all 0.3s ease;
             max-width: 180px;
             margin: 0 auto;
-            margin-top: 5px;
+            margin-top: 3px; /* УМЕНЬШЕН ОТСТУП */
             color: #00c6ff;
         }
         
@@ -343,7 +339,7 @@
             background: transparent;
             box-sizing: border-box;
             padding: 0;
-            margin-top: 20px;
+            margin-top: 15px; /* УМЕНЬШЕН ОТСТУП */
         }
         
         .menu-item {
@@ -402,11 +398,11 @@
         /* Уменьшенные ячейки мобильного меню */
         @media (max-width: 768px) {
             .floating-avatar-container {
-                top: -35px;
+                top: -40px;
             }
             
             .mobile-menu-modal .modal-content {
-                padding-top: 70px;
+                padding-top: 80px;
             }
             
             .floating-avatar-info, .user-balance {
@@ -417,7 +413,7 @@
                 gap: 8px;
                 max-width: 340px;
                 height: 340px;
-                margin-top: 15px;
+                margin-top: 10px;
             }
             .menu-item {
                 padding: 8px 4px;
@@ -431,17 +427,17 @@
             }
             
             .user-info-container {
-                margin-top: 15px;
+                margin-top: 10px;
             }
         }
         
         @media (max-width: 576px) {
             .floating-avatar-container {
-                top: -30px;
+                top: -35px;
             }
             
             .mobile-menu-modal .modal-content {
-                padding-top: 60px;
+                padding-top: 70px;
             }
             
             .floating-avatar-info, .user-balance {
@@ -452,7 +448,7 @@
                 gap: 7px;
                 max-width: 300px;
                 height: 300px;
-                margin-top: 10px;
+                margin-top: 5px;
             }
             .menu-item i {
                 font-size: 32px !important;
@@ -462,7 +458,7 @@
             }
             
             .user-info-container {
-                margin-top: 12px;
+                margin-top: 8px;
             }
         }
         
@@ -470,6 +466,42 @@
             .floating-avatar {
                 width: 85px;
                 height: 85px;
+            }
+            
+            .floating-avatar-container {
+                top: -30px;
+            }
+            
+            .mobile-menu-modal .modal-content {
+                padding-top: 60px;
+            }
+            
+            .floating-avatar-info, .user-balance {
+                max-width: 200px;
+            }
+            
+            .menu-grid {
+                gap: 6px;
+                max-width: 270px;
+                height: 270px;
+                margin-top: 0;
+            }
+            .menu-item i {
+                font-size: 30px !important;
+            }
+            .menu-item span {
+                font-size: 0.55rem;
+            }
+            
+            .user-info-container {
+                margin-top: 5px;
+            }
+        }
+        
+        @media (max-width: 340px) {
+            .floating-avatar {
+                width: 80px;
+                height: 80px;
             }
             
             .floating-avatar-container {
@@ -481,42 +513,6 @@
             }
             
             .floating-avatar-info, .user-balance {
-                max-width: 200px;
-            }
-            
-            .menu-grid {
-                gap: 6px;
-                max-width: 270px;
-                height: 270px;
-                margin-top: 5px;
-            }
-            .menu-item i {
-                font-size: 30px !important;
-            }
-            .menu-item span {
-                font-size: 0.55rem;
-            }
-            
-            .user-info-container {
-                margin-top: 10px;
-            }
-        }
-        
-        @media (max-width: 340px) {
-            .floating-avatar {
-                width: 80px;
-                height: 80px;
-            }
-            
-            .floating-avatar-container {
-                top: -20px;
-            }
-            
-            .mobile-menu-modal .modal-content {
-                padding-top: 50px;
-            }
-            
-            .floating-avatar-info, .user-balance {
                 max-width: 180px;
             }
             
@@ -524,7 +520,6 @@
                 gap: 5px;
                 max-width: 250px;
                 height: 250px;
-                margin-top: 0;
             }
             .menu-item i {
                 font-size: 28px !important;
@@ -534,20 +529,20 @@
             }
             
             .user-info-container {
-                margin-top: 8px;
+                margin-top: 5px;
             }
         }
         
         @media (min-width: 769px) and (max-width: 1024px) {
             .mobile-menu-modal {
-                max-height: 60vh;
+                max-height: 65vh;
                 height: auto;
             }
             .floating-avatar-container {
-                top: -40px;
+                top: -45px;
             }
             .mobile-menu-modal .modal-content {
-                padding-top: 70px;
+                padding-top: 85px;
             }
             .floating-avatar {
                 width: 100px;
@@ -562,7 +557,7 @@
             .menu-grid {
                 max-width: 360px;
                 height: 360px;
-                margin-top: 20px;
+                margin-top: 15px;
             }
             .menu-item i {
                 font-size: 36px !important;
@@ -572,7 +567,7 @@
             }
             
             .user-info-container {
-                margin-top: 20px;
+                margin-top: 15px;
             }
         }
         
@@ -584,19 +579,6 @@
             .mobile-menu-bottom {
                 display: none !important;
             }
-        }
-        
-        /* Новые стили для элементов авторизации */
-        #mobileLoginRegister {
-            display: block;
-            margin-top: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        #mobileLoginRegister:hover {
-            color: #00c6ff;
-            transform: translateY(-2px);
         }
         
         /* Блокировка прокрутки при открытом меню */
