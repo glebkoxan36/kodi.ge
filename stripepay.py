@@ -2,7 +2,8 @@ import os
 import stripe
 import time
 from datetime import datetime
-from bson import ObjectId, InvalidId
+from bson import ObjectId
+from bson.errors import InvalidId
 from flask import url_for, current_app
 
 class StripePayment:
