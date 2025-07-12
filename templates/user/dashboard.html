@@ -376,7 +376,14 @@
     
     <!-- Dashboard Script -->
     <script>
-        const stripe = Stripe('{{ stripe_public_key }}');
+        // ВАЖНОЕ ИСПРАВЛЕНИЕ 1: Проверка наличия ключа Stripe
+        const stripePublicKey = '{{ stripe_public_key }}';
+        let stripe;
+        if (stripePublicKey) {
+            stripe = Stripe(stripePublicKey);
+        } else {
+            console.error('Stripe public key is missing!');
+        }
         
         function showTopupModal() {
             document.getElementById('topupModal').style.display = 'flex';
@@ -397,8 +404,15 @@
         async function initiatePayment() {
             const amount = parseFloat(document.getElementById('amount').value);
             
-            if (amount < 1) {
+            // ВАЖНОЕ ИСПРАВЛЕНИЕ 2: Корректная проверка минимальной суммы
+            if (isNaN(amount) || amount < 1) {
                 alert('მინიმალური თანხა: 1 ₾');
+                return; // Прерываем выполнение
+            }
+            
+            // ВАЖНОЕ ИСПРАВЛЕНИЕ 3: Проверка инициализации Stripe
+            if (!stripe) {
+                alert('გადახდის სისტემა ვერ იმუშავა. სცადეთ მოგვიანებით.');
                 return;
             }
             
@@ -406,22 +420,30 @@
             document.getElementById('spinner').style.display = 'flex';
             
             try {
+                // ВАЖНОЕ ИСПРАВЛЕНИЕ 4: Логирование для отладки
+                console.log('Initiating payment for amount:', amount);
+                
                 // Send request to server to create payment session
                 const response = await fetch('/user/create-payment-session', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        // ВАЖНОЕ ИСПРАВЛЕНИЕ 5: Добавляем CSRF-токен для безопасности
+                        'X-CSRFToken': '{{ csrf_token() }}' 
                     },
                     body: JSON.stringify({
                         amount: amount
                     })
                 });
                 
-                const data = await response.json();
-                
+                // ВАЖНОЕ ИСПРАВЛЕНИЕ 6: Обработка HTTP ошибок
                 if (!response.ok) {
-                    throw new Error(data.error || 'გადახდა ვერ შესრულდა');
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
                 }
+                
+                const data = await response.json();
+                console.log('Payment session created:', data);
                 
                 // Redirect to Stripe Checkout
                 const result = await stripe.redirectToCheckout({
@@ -455,7 +477,12 @@
                     location.reload();
                 }, 5000);
             }
+            
+            // ВАЖНОЕ ИСПРАВЛЕНИЕ 7: Инициализация Stripe после загрузки
+            if (!stripe && stripePublicKey) {
+                stripe = Stripe(stripePublicKey);
+            }
         });
     </script>
 </body>
-</html>
+                        </html>
