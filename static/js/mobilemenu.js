@@ -15,53 +15,6 @@
     const style = document.createElement('style');
     style.id = 'mobile-menu-styles';
     style.textContent = `
-        /* Статичный хай-тек фон */
-        .tech-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            background: 
-                linear-gradient(135deg, #0a0e17 0%, #1a2a3a 100%),
-                radial-gradient(circle at 20% 30%, rgba(0, 198, 255, 0.15) 0%, transparent 25%),
-                radial-gradient(circle at 80% 70%, rgba(0, 114, 255, 0.15) 0%, transparent 25%),
-                linear-gradient(rgba(0, 198, 255, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 198, 255, 0.1) 1px, transparent 1px);
-            background-size: 
-                100% 100%,
-                100% 100%,
-                100% 100%,
-                30px 30px,
-                30px 30px;
-        }
-
-        /* ФИКС АВАТАРКИ */
-        .floating-avatar-container {
-            position: absolute;
-            top: -45px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10070;
-            width: 100%;
-            text-align: center;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .mobile-menu-modal .modal-content {
-            padding-top: 90px;
-            position: relative;
-            overflow: visible; /* РАЗРЕШАЕМ ВЫХОД ЗА ГРАНИЦЫ */
-            max-height: 65vh !important; /* УВЕЛИЧИВАЕМ ВЫСОТУ */
-            height: auto;
-        }
-        
-        /* Остальные стили меню */
         .mobile-menu-bottom {
             display: none;
             position: fixed;
@@ -69,7 +22,7 @@
             left: 0;
             right: 0;
             text-align: center;
-            z-index: 10050;
+            z-index: 1050;
             padding-bottom: env(safe-area-inset-bottom, 10px);
         }
         
@@ -109,8 +62,8 @@
             left: 0;
             width: 100%;
             height: auto;
-            max-height: 65vh; /* УВЕЛИЧЕНА ВЫСОТА */
-            z-index: 10060;
+            max-height: 90vh;
+            z-index: 1100;
             align-items: flex-end;
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
@@ -127,17 +80,35 @@
             display: flex;
         }
         
+        /* Исправленный фон - без растягивания */
         .mobile-menu-modal .modal-content {
-            background: linear-gradient(135deg, #0a0e17 0%, #0a1a2a 100%);
+            background: 
+                #0a0e17 /* Фон на случай если изображение не загрузится */
+                url('static/img/bg2-ezgif.com-overlay.webp') no-repeat center center;
+            background-size: contain; /* Сохраняем пропорции */
+            background-attachment: local;
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
                 0 0 15px rgba(0, 198, 255, 0.3),
                 inset 0 0 20px rgba(0, 150, 200, 0.2);
-            overflow: visible; /* ИЗМЕНЕНО НА VISIBLE */
+            overflow: visible;
+            position: relative;
             width: 100%;
             height: 100%;
             z-index: 1;
+        }
+
+        /* Для заполнения пустого пространства */
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0a0e17;
+            z-index: -1; /* Помещаем под основное изображение */
         }
 
         .mobile-menu-modal .modal-body {
@@ -179,6 +150,23 @@
             box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
         }
         
+        /* Подняли аватарку на 5px вверх */
+        .floating-avatar-container {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1500;
+            width: 100%;
+            text-align: center;
+            padding-bottom: 5px;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
         .floating-avatar,
         .floating-avatar-info {
             pointer-events: auto;
@@ -190,7 +178,7 @@
             border-radius: 50%;
             object-fit: cover;
             position: relative;
-            z-index: 10080; /* ВЫШЕ ФОНА И КНОПКИ */
+            z-index: 2;
             border: 3px solid var(--accent-color);
             box-shadow: 0 0 15px rgba(0, 198, 255, 0.5);
             cursor: pointer;
@@ -231,7 +219,7 @@
             align-items: center;
             gap: 5px;
             margin-bottom: 15px;
-            margin-top: 10px; /* УМЕНЬШЕН ОТСТУП */
+            margin-top: 20px;
         }
         
         .floating-avatar-info {
@@ -263,7 +251,7 @@
         
         .floating-avatar-info.not-logged-in {
             text-shadow: 0 0 5px #00c6ff, 0 0 10px #00c6ff;
-            margin-top: 5px; /* УМЕНЬШЕН ОТСТУП */
+            margin-top: 10px;
         }
         
         .user-balance {
@@ -279,13 +267,13 @@
             transition: all 0.3s ease;
             max-width: 180px;
             margin: 0 auto;
-            margin-top: 3px; /* УМЕНЬШЕН ОТСТУП */
+            margin-top: 5px;
             color: #00c6ff;
         }
         
-        /* Уменьшенные иконки */
+        /* Увеличенные иконки одного размера */
         .menu-item i {
-            font-size: 36px !important;
+            font-size: 40px !important;
             margin-bottom: 8px;
             background: linear-gradient(135deg, #00c6ff, #0072ff);
             -webkit-background-clip: text;
@@ -296,8 +284,8 @@
         
         .menu-icon-img {
             display: block;
-            width: 36px !important;
-            height: 36px !important;
+            width: 40px !important;
+            height: 40px !important;
             margin-left: auto;
             margin-right: auto;
             margin-bottom: 7px;
@@ -326,20 +314,20 @@
             box-shadow: none !important;
         }
         
-        /* Уменьшенные ячейки сетки */
+        /* Увеличенные ячейки сетки */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
-            gap: 10px;
+            gap: 12px;
             width: 100%;
-            max-width: 380px;
-            height: 380px;
+            max-width: 440px;
+            height: 440px;
             margin: 0 auto;
             background: transparent;
             box-sizing: border-box;
             padding: 0;
-            margin-top: 15px; /* УМЕНЬШЕН ОТСТУП */
+            margin-top: 130px;
         }
         
         .menu-item {
@@ -359,7 +347,7 @@
                 inset 0 0 10px rgba(0, 198, 255, 0.1);
             min-width: 0;
             min-height: 0;
-            padding: 10px 5px;
+            padding: 12px 8px;
             box-sizing: border-box;
             color: white;
             position: relative;
@@ -377,7 +365,7 @@
         }
         
         .menu-item span {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             line-height: 1.3;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -397,33 +385,71 @@
         
         /* Уменьшенные ячейки мобильного меню */
         @media (max-width: 768px) {
-            .floating-avatar-container {
-                top: -40px;
-            }
-            
-            .mobile-menu-modal .modal-content {
-                padding-top: 80px;
-            }
-            
             .floating-avatar-info, .user-balance {
                 max-width: 230px;
+            }
+            
+            .menu-grid {
+                gap: 10px;
+                max-width: 380px;
+                height: 380px;
+                margin-top: 120px;
+            }
+            .menu-item {
+                padding: 10px 7px;
+            }
+            .menu-item i {
+                font-size: 38px !important;
+                margin-bottom: 6px;
+            }
+            .menu-item span {
+                font-size: 0.7rem;
+            }
+            
+            .user-info-container {
+                margin-top: 15px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .floating-avatar-info, .user-balance {
+                max-width: 220px;
             }
             
             .menu-grid {
                 gap: 8px;
                 max-width: 340px;
                 height: 340px;
-                margin-top: 10px;
-            }
-            .menu-item {
-                padding: 8px 4px;
+                margin-top: 110px;
             }
             .menu-item i {
-                font-size: 34px !important;
-                margin-bottom: 6px;
+                font-size: 36px !important;
             }
             .menu-item span {
                 font-size: 0.65rem;
+            }
+            
+            .user-info-container {
+                margin-top: 12px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .floating-avatar-info, .user-balance {
+                max-width: 200px;
+            }
+            
+            .menu-grid {
+                gap: 6px;
+                max-width: 300px;
+                height: 300px;
+                margin-top: 100px;
+            }
+            .menu-item i {
+                font-size: 34px !important;
+            }
+            .menu-item span {
+                font-size: 0.6rem;
             }
             
             .user-info-container {
@@ -431,30 +457,22 @@
             }
         }
         
-        @media (max-width: 576px) {
-            .floating-avatar-container {
-                top: -35px;
-            }
-            
-            .mobile-menu-modal .modal-content {
-                padding-top: 70px;
-            }
-            
+        @media (max-width: 340px) {
             .floating-avatar-info, .user-balance {
-                max-width: 220px;
+                max-width: 180px;
             }
             
             .menu-grid {
-                gap: 7px;
-                max-width: 300px;
-                height: 300px;
-                margin-top: 5px;
+                gap: 5px;
+                max-width: 280px;
+                height: 280px;
+                margin-top: 90px;
             }
             .menu-item i {
                 font-size: 32px !important;
             }
             .menu-item span {
-                font-size: 0.6rem;
+                font-size: 0.55rem;
             }
             
             .user-info-container {
@@ -462,112 +480,38 @@
             }
         }
         
-        @media (max-width: 400px) {
-            .floating-avatar {
-                width: 85px;
-                height: 85px;
-            }
-            
-            .floating-avatar-container {
-                top: -30px;
-            }
-            
-            .mobile-menu-modal .modal-content {
-                padding-top: 60px;
-            }
-            
-            .floating-avatar-info, .user-balance {
-                max-width: 200px;
-            }
-            
-            .menu-grid {
-                gap: 6px;
-                max-width: 270px;
-                height: 270px;
-                margin-top: 0;
-            }
-            .menu-item i {
-                font-size: 30px !important;
-            }
-            .menu-item span {
-                font-size: 0.55rem;
-            }
-            
-            .user-info-container {
-                margin-top: 5px;
-            }
-        }
-        
-        @media (max-width: 340px) {
-            .floating-avatar {
-                width: 80px;
-                height: 80px;
-            }
-            
-            .floating-avatar-container {
-                top: -25px;
-            }
-            
-            .mobile-menu-modal .modal-content {
-                padding-top: 55px;
-            }
-            
-            .floating-avatar-info, .user-balance {
-                max-width: 180px;
-            }
-            
-            .menu-grid {
-                gap: 5px;
-                max-width: 250px;
-                height: 250px;
-            }
-            .menu-item i {
-                font-size: 28px !important;
-            }
-            .menu-item span {
-                font-size: 0.5rem;
-            }
-            
-            .user-info-container {
-                margin-top: 5px;
-            }
-        }
-        
         @media (min-width: 769px) and (max-width: 1024px) {
             .mobile-menu-modal {
-                max-height: 65vh;
+                max-height: 55vh;
                 height: auto;
             }
             .floating-avatar-container {
-                top: -45px;
-            }
-            .mobile-menu-modal .modal-content {
-                padding-top: 85px;
+                top: -35px;
             }
             .floating-avatar {
-                width: 100px;
-                height: 100px;
+                width: 110px;
+                height: 110px;
             }
             .floating-avatar-info {
-                font-size: 1.05rem;
+                font-size: 1.1rem;
             }
             .user-balance {
-                font-size: 0.95rem;
+                font-size: 1rem;
             }
             .menu-grid {
-                max-width: 360px;
-                height: 360px;
-                margin-top: 15px;
+                max-width: 420px;
+                height: 420px;
+                margin-top: 120px;
             }
             .menu-item i {
-                font-size: 36px !important;
+                font-size: 38px !important;
             }
             .menu-item span {
-                font-size: 0.75rem;
+                font-size: 0.8rem;
             }
             
             .user-info-container {
-                margin-top: 15px;
+                margin-top: 25px;
             }
         }
         
@@ -579,6 +523,19 @@
             .mobile-menu-bottom {
                 display: none !important;
             }
+        }
+        
+        /* Новые стили для элементов авторизации */
+        #mobileLoginRegister {
+            display: block;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        #mobileLoginRegister:hover {
+            color: #00c6ff;
+            transform: translateY(-2px);
         }
         
         /* Блокировка прокрутки при открытом меню */
@@ -715,7 +672,6 @@
         container.innerHTML = `
             <div class="mobile-menu-modal" id="mobileMenuModal">
                 <div class="modal-content">
-                    <div class="tech-background"></div>
                     <div class="modal-header">
                         <button class="close-modal" onclick="closeMobileMenu()">
                             <i class="fas fa-times"></i>
@@ -758,16 +714,15 @@
         container.innerHTML = `
             <!-- Mobile Menu Modal -->
             <div class="mobile-menu-modal" id="mobileMenuModal">
+                <button class="close-modal" onclick="closeMobileMenu()">
+                    <i class="fas fa-times"></i>
+                </button>
+                
+                <div class="floating-avatar-container">
+                    ${userHTML}
+                </div>
+                
                 <div class="modal-content">
-                    <div class="tech-background"></div>
-                    <button class="close-modal" onclick="closeMobileMenu()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                    
-                    <div class="floating-avatar-container">
-                        ${userHTML}
-                    </div>
-                    
                     <div class="modal-body">
                         <div class="menu-grid">
                             <a class="menu-item" href="/" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
@@ -813,16 +768,15 @@
 
             <!-- Apple Submenu Modal -->
             <div class="mobile-menu-modal" id="appleSubmenuModal">
-                <div class="modal-content">
-                    <div class="tech-background"></div>
-                    <button class="close-modal" onclick="closeAppleSubmenu()">
-                        <i class="fas fa-times"></i>
-                    </button>
+                <button class="close-modal" onclick="closeAppleSubmenu()">
+                    <i class="fas fa-times"></i>
+                </button>
 
-                    <div class="floating-avatar-container">
-                        ${userHTML}
-                    </div>
-                    
+                <div class="floating-avatar-container">
+                    ${userHTML}
+                </div>
+                
+                <div class="modal-content">
                     <div class="modal-body">
                         <div class="menu-grid">
                             <a class="menu-item" href="/applecheck?type=free" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
@@ -840,7 +794,7 @@
                                      class="menu-icon-img">
                                 <span>SIM ლოკი</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=blacklist" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
+                            <a class="menu-item" href="/applecheck?type=blacklist" onclick="sessionStorage.setItem('mobileMenuState', 'apple';">
                                 <img src="static/ico/4e28c4f2-541b-4a1b-8163-c79e6db5481c_20250627_012852_0000.png" 
                                      class="menu-icon-img">
                                 <span>შავი სია</span>
@@ -871,16 +825,15 @@
 
             <!-- Android Submenu Modal -->
             <div class="mobile-menu-modal" id="androidSubmenuModal">
-                <div class="modal-content">
-                    <div class="tech-background"></div>
-                    <button class="close-modal" onclick="closeAndroidSubmenu()">
-                        <i class="fas fa-times"></i>
-                    </button>
+                <button class="close-modal" onclick="closeAndroidSubmenu()">
+                    <i class="fas fa-times"></i>
+                </button>
 
-                    <div class="floating-avatar-container">
-                        ${userHTML}
-                    </div>
-                    
+                <div class="floating-avatar-container">
+                    ${userHTML}
+                </div>
+                
+                <div class="modal-content">
                     <div class="modal-body">
                         <div class="menu-grid">
                             <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
