@@ -48,6 +48,8 @@
             background-size: 60px 60px;
             animation: circuitMove 40s infinite linear;
             opacity: 0.7;
+            will-change: transform;
+            backface-visibility: hidden;
         }
         
         .particle {
@@ -103,7 +105,7 @@
         /* ИСПРАВЛЕНИЯ ДЛЯ АВАТАРКИ */
         .floating-avatar-container {
             position: absolute;
-            top: -90px;
+            top: -70px; /* Уменьшен отступ сверху */
             left: 50%;
             transform: translateX(-50%);
             z-index: 10070;
@@ -117,10 +119,10 @@
         }
         
         .mobile-menu-modal .modal-content {
-            padding-top: 110px;
+            padding-top: 100px; /* Уменьшен паддинг */
             min-height: 500px;
             position: relative;
-            overflow: visible;
+            overflow: visible; /* Разрешаем выход за границы */
         }
         
         /* Остальные стили меню */
@@ -460,7 +462,11 @@
         /* Уменьшенные ячейки мобильного меню */
         @media (max-width: 768px) {
             .floating-avatar-container {
-                top: -75px;
+                top: -60px; /* Уменьшен отступ */
+            }
+            
+            .mobile-menu-modal .modal-content {
+                padding-top: 90px; /* Уменьшен паддинг */
             }
             
             .floating-avatar-info, .user-balance {
@@ -491,7 +497,11 @@
         
         @media (max-width: 576px) {
             .floating-avatar-container {
-                top: -65px;
+                top: -50px; /* Уменьшен отступ */
+            }
+            
+            .mobile-menu-modal .modal-content {
+                padding-top: 80px; /* Уменьшен паддинг */
             }
             
             .floating-avatar-info, .user-balance {
@@ -523,7 +533,11 @@
             }
             
             .floating-avatar-container {
-                top: -55px;
+                top: -45px; /* Уменьшен отступ */
+            }
+            
+            .mobile-menu-modal .modal-content {
+                padding-top: 75px; /* Уменьшен паддинг */
             }
             
             .floating-avatar-info, .user-balance {
@@ -555,7 +569,11 @@
             }
             
             .floating-avatar-container {
-                top: -45px;
+                top: -40px; /* Уменьшен отступ */
+            }
+            
+            .mobile-menu-modal .modal-content {
+                padding-top: 70px; /* Уменьшен паддинг */
             }
             
             .floating-avatar-info, .user-balance {
@@ -586,7 +604,10 @@
                 height: auto;
             }
             .floating-avatar-container {
-                top: -85px;
+                top: -75px; /* Возвращено исходное значение */
+            }
+            .mobile-menu-modal .modal-content {
+                padding-top: 100px; /* Возвращено исходное значение */
             }
             .floating-avatar {
                 width: 110px;
@@ -643,6 +664,17 @@
             overflow: hidden;
             position: relative;
             height: 100%;
+        }
+
+        /* Фикс для анимации */
+        .circuit-layer,
+        .particle {
+            animation-play-state: paused;
+        }
+        
+        .mobile-menu-modal.open .circuit-layer,
+        .mobile-menu-modal.open .particle {
+            animation-play-state: running;
         }
     `;
     document.head.appendChild(style);
