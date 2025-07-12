@@ -10,11 +10,11 @@ import time
 import threading
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, Blueprint
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, g
 from flask_cors import CORS
 import stripe
 from functools import wraps, lru_cache
-from bson import ObjectId
+from bson import ObjectId, InvalidId
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_session import Session
@@ -108,7 +108,12 @@ def inject_user_data():
         # Кешируем данные пользователя на время сессии
         user = cache.get(f'user_{session["user_id"]}')
         if user is None:
-            user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
+            try:
+                user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
+            except InvalidId:
+                session.pop('user_id', None)
+                return {'currentUser': None}
+                
             if user:
                 cache.set(f'user_{session["user_id"]}', user, timeout=3600)  # 1 час
         if user:
@@ -187,7 +192,12 @@ def get_user_data():
         user_id = session['user_id']
         user = cache.get(f'user_{user_id}')
         if user is None:
-            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            try:
+                user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            except InvalidId:
+                session.pop('user_id', None)
+                return None
+                
             if user:
                 cache.set(f'user_{user_id}', user, timeout=3600)  # 1 час
         return user
@@ -578,9 +588,9 @@ def create_checkout_session():
         
         # Определяем cancel_url в зависимости от типа услуги
         if service_type in ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']:
-            cancel_url = f"{base_url}/apple_check?type={service_type}"
+            cancel_url = f"{base_url}/applecheck?type={service_type}"
         else:
-            cancel_url = f"{base_url}/android_check?type={service_type}"
+            cancel_url = f"{base_url}/androidcheck?type={service_type}"
         
         # Метаданные для сессии
         metadata = {
@@ -629,9 +639,9 @@ def payment_success():
         # Пока просто перенаправляем на страницу проверки с параметрами
         apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
         if service_type in apple_services:
-            return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
+            return redirect(url_for('applecheck', type=service_type, imei=imei, session_id=session_id))
         else:
-            return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
+            return redirect(url_for('androidcheck', type=service_type, imei=imei, session_id=session_id))
     else:
         # Это оплата через Stripe
         try:
@@ -658,9 +668,9 @@ def payment_success():
             # Перенаправляем на страницу проверки с параметрами
             apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
             if service_type in apple_services:
-                return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
+                return redirect(url_for('applecheck', type=service_type, imei=imei, session_id=session_id))
             else:
-                return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
+                return redirect(url_for('androidcheck', type=service_type, imei=imei, session_id=session_id))
         
         except Exception as e:
             app.logger.error(f"Payment success error: {str(e)}")
@@ -834,17 +844,26 @@ def stripe_webhook():
     sig_header = request.headers.get('Stripe-Signature')
 
     try:
-        # Обработка вебхука через StripePayment
-        event = stripe_payment.handle_webhook(payload, sig_header)
+        # Верификация подписи
+        event = stripe.Webhook.construct_event(
+            payload,
+            sig_header,
+            STRIPE_WEBHOOK_SECRET
+        )
+        
+        # Обработка верифицированного события
+        stripe_payment.handle_webhook(event)
         return jsonify({'status': 'success'}), 200
     
     except ValueError as e:
-        return jsonify({'error': 'არასწორი მონაცემები'}), 400
+        app.logger.error(f"Webhook value error: {str(e)}")
+        return jsonify({'error': 'Invalid payload'}), 400
     except stripe.error.SignatureVerificationError as e:
-        return jsonify({'error': 'არასწორი ხელმოწერა'}), 400
+        app.logger.error(f"Webhook signature error: {str(e)}")
+        return jsonify({'error': 'Invalid signature'}), 400
     except Exception as e:
         app.logger.error(f"Webhook processing error: {str(e)}")
-        return jsonify({'error': 'სერვერული შეცდომა'}), 500
+        return jsonify({'error': 'Server error'}), 500
 
 @app.route('/refund_payment', methods=['POST'])
 @csrf.exempt
@@ -1103,16 +1122,21 @@ def settings():
 def topup_balance():
     """Пополнение баланса"""
     if request.method == 'POST':
-        amount = float(request.form.get('amount'))
+        try:
+            amount = float(request.form.get('amount'))
+        except (TypeError, ValueError):
+            flash('არასწორი თანხის ფორმატი', 'danger')
+            return redirect(url_for('user.topup_balance'))
+            
         if amount < 1:
-            flash('მინიმალური თანხა $1', 'danger')
+            flash('მინიმალური თანხა: 1 ₾', 'danger')
             return redirect(url_for('user.topup_balance'))
         
         # Используем StripePayment для создания сессии пополнения
         try:
             base_url = request.host_url.rstrip('/')
-            success_url = f"{base_url}/user/topup/success"
-            cancel_url = f"{base_url}/user/topup"
+            success_url = f"{base_url}/user/topup/success?amount={amount}"
+            cancel_url = f"{base_url}/user/dashboard"
             idempotency_key = secrets.token_hex(16)
             
             stripe_session = stripe_payment.create_topup_session(
@@ -1133,7 +1157,8 @@ def topup_balance():
 @login_required
 def topup_success():
     """Успешное пополнение баланса"""
-    flash('გადახდა წარმატებით დასრულდა! თქვენი ბალანსი მალე განახლდება.', 'success')
+    amount = request.args.get('amount', '0.00')
+    flash(f'გადახდა წარმატებით დასრულდა! თქვენი ბალანსი მალე განახლდება (+{amount} ₾).', 'success')
     return redirect(url_for('user.dashboard'))
 
 @user_bp.route('/payment-methods')
@@ -1142,9 +1167,8 @@ def payment_methods():
     """Управление платежными методами"""
     return render_template('user/payment_methods.html')
 
-# Ключевое исправление: добавлен явный endpoint для payment_history
 @user_bp.route('/accounts', endpoint='accounts')
-@user_bp.route('/payment_history', endpoint='payment_history')  # Явный endpoint для обратной совместимости
+@user_bp.route('/payment_history', endpoint='payment_history')
 @login_required
 def accounts():
     """История платежей"""
@@ -1202,29 +1226,24 @@ def history_checks():
         total=total
     )
 
-# Новый роут для получения деталей проверки
 @user_bp.route('/check-details/<check_id>')
 @login_required
 def check_details(check_id):
     """Возвращает детали проверки IMEI в формате JSON"""
     try:
         obj_id = ObjectId(check_id)
-    except:
-        return jsonify({'error': 'Invalid check ID'}), 400
+    except InvalidId:
+        return jsonify({'error': 'არასწორი ID'}), 400
 
     user_id = ObjectId(session['user_id'])
     check = checks_collection.find_one({'_id': obj_id, 'user_id': user_id})
 
     if not check:
-        return jsonify({'error': 'Check not found'}), 404
+        return jsonify({'error': 'შემოწმება ვერ მოიძებნა'}), 404
 
     # Определяем статус
-    status = 'unknown'
-    # Если в записи нет статуса, попробуем взять из результата
-    if status == 'unknown' and isinstance(check.get('result'), dict):
-        result = check.get('result')
-        status = result.get('status') or result.get('სტატუსი', 'unknown')
-
+    status = check.get('status', 'unknown')
+    
     # Собираем детали
     details = {
         'imei': check.get('imei', ''),
