@@ -1,9 +1,7 @@
 (function() {
-    // Кеширование DOM элементов и пользовательских данных
+    // Кеширование DOM элементов
     let cachedElements = {};
-    let userHTMLCache = null;
     
-    // Функция для получения элементов с кешированием
     function getElement(id) {
         if (!cachedElements[id]) {
             cachedElements[id] = document.getElementById(id);
@@ -18,12 +16,12 @@
         .mobile-menu-bottom {
             display: none;
             position: fixed;
-            bottom: 0; /* Исправлено: было 20px */
+            bottom: 0;
             left: 0;
             right: 0;
             text-align: center;
             z-index: 1050;
-            padding-bottom: env(safe-area-inset-bottom, 10px); /* Защита от индикатора iPhone */
+            padding-bottom: env(safe-area-inset-bottom, 10px);
         }
         
         @media (max-width: 1024px) {
@@ -80,7 +78,7 @@
             display: flex;
         }
         
-        /* Новый космический фон с глубокими синими тонами */
+        /* Улучшенный космический фон */
         .mobile-menu-modal .modal-content {
             background: 
                 radial-gradient(circle at 20% 30%, #0a0e17 0%, #1a2138 40%),
@@ -97,7 +95,7 @@
             z-index: 1;
         }
 
-        /* Звездный узор */
+        /* Улучшенный звездный узор */
         .modal-content::before {
             content: '';
             position: absolute;
@@ -106,13 +104,11 @@
             right: 0;
             bottom: 0;
             background-image: 
-                radial-gradient(circle at 20% 30%, rgba(0, 198, 255, 0.1) 1px, transparent 1px),
-                radial-gradient(circle at 80% 70%, rgba(0, 198, 255, 0.1) 1px, transparent 1px),
-                radial-gradient(circle at 50% 20%, rgba(0, 198, 255, 0.1) 1px, transparent 1px),
-                radial-gradient(circle at 10% 80%, rgba(0, 198, 255, 0.1) 1px, transparent 1px);
-            background-size: 300px 300px;
-            background-position: 0 0, 100px 100px;
-            opacity: 0.9;
+                radial-gradient(white 0.5px, transparent 1px),
+                radial-gradient(white 0.5px, transparent 1px);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+            opacity: 0.15;
             z-index: 1;
         }
 
@@ -168,7 +164,7 @@
             box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
         }
         
-        /* Подняли аватарку на 5px вверх */
+        /* Позиционирование аватарки */
         .floating-avatar-container {
             position: absolute;
             top: -50px;
@@ -503,7 +499,7 @@
                 height: auto;
             }
             .floating-avatar-container {
-                top: -35px; /* Подняли аватарку */
+                top: -35px;
             }
             .floating-avatar {
                 width: 110px;
@@ -555,7 +551,7 @@
             transform: translateY(-2px);
         }
         
-        /* Блокировка прокрутки при открытом меню - ИСПРАВЛЕНО */
+        /* Блокировка прокрутки при открытом меню */
         body.mobile-menu-open {
             overflow: hidden;
             position: relative;
@@ -579,10 +575,8 @@
         }, 100);
     }
 
-    // Функция для генерации HTML пользователя с кешированием
+    // Функция для генерации HTML пользователя
     function generateUserHTML() {
-        if (userHTMLCache) return userHTMLCache;
-        
         const userData = window.currentUser || {};
         let html;
         
@@ -624,7 +618,6 @@
             `;
         }
         
-        userHTMLCache = html;
         return html;
     }
 
@@ -654,35 +647,6 @@
         } else {
             createMainMobileMenu(mobileMenuContainer, userHTML);
         }
-
-        // Восстановление состояния меню
-        const savedMenuState = sessionStorage.getItem('mobileMenuState');
-        if (savedMenuState) {
-            sessionStorage.removeItem('mobileMenuState');
-            setTimeout(() => {
-                openMenuByState(savedMenuState);
-            }, 50);
-        }
-    }
-
-    function openMenuByState(state) {
-        switch(state) {
-            case 'main':
-                if (getElement('mobileMenuModal')) {
-                    openMobileMenu();
-                }
-                break;
-            case 'apple':
-                if (getElement('appleSubmenuModal')) {
-                    openAppleSubmenu();
-                }
-                break;
-            case 'android':
-                if (getElement('androidSubmenuModal')) {
-                    openAndroidSubmenu();
-                }
-                break;
-        }
     }
 
     function createDashboardMobileMenu(container, userHTML) {
@@ -700,19 +664,19 @@
                             ${userHTML}
                         </div>
                         <div class="menu-grid">
-                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/';">
+                            <div class="menu-item" onclick="window.location.href='/';">
                                 <i class="fas fa-home"></i>
                                 <span>მთავარი</span>
                             </div>
-                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/user/accounts';">
+                            <div class="menu-item" onclick="window.location.href='/user/accounts';">
                                 <i class="fas fa-wallet"></i>
                                 <span>ანგარიშები</span>
                             </div>
-                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/user/history_checks';">
+                            <div class="menu-item" onclick="window.location.href='/user/history_checks';">
                                 <i class="fas fa-history"></i>
                                 <span>IMEI ისტორია</span>
                             </div>
-                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/user/settings';">
+                            <div class="menu-item" onclick="window.location.href='/user/settings';">
                                 <i class="fas fa-cog"></i>
                                 <span>პარამეტრები</span>
                             </div>
@@ -742,7 +706,7 @@
                 <div class="modal-content">
                     <div class="modal-body">
                         <div class="menu-grid">
-                            <a class="menu-item" href="/" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
+                            <a class="menu-item" href="/">
                                 <i class="fas fa-home"></i>
                                 <span>მთავარი</span>
                             </a>
@@ -758,15 +722,15 @@
                                 <i class="fas fa-unlock-alt"></i>
                                 <span>განბლოკვა</span>
                             </div>
-                            <a class="menu-item" href="/compare" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
+                            <a class="menu-item" href="/compare">
                                 <i class="fas fa-exchange-alt"></i>
                                 <span>შედარება</span>
                             </a>
-                            <a class="menu-item" href="/knowledge-base" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
+                            <a class="menu-item" href="/knowledge-base">
                                 <i class="fas fa-book"></i>
                                 <span>ცოდნის ბაზა</span>
                             </a>
-                            <a class="menu-item" href="/contacts" onclick="sessionStorage.setItem('mobileMenuState', 'main');">
+                            <a class="menu-item" href="/contacts">
                                 <i class="fas fa-address-card"></i>
                                 <span>კონტაქტი</span>
                             </a>
@@ -796,32 +760,32 @@
                 <div class="modal-content">
                     <div class="modal-body">
                         <div class="menu-grid">
-                            <a class="menu-item" href="/applecheck?type=free" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
+                            <a class="menu-item" href="/applecheck?type=free">
                                 <img src="static/ico/8f1197c9-19f4-4923-8030-4f7b88c9d697_20250627_012614_0000.png" 
                                      class="menu-icon-img">
                                 <span>უფასო შემოწმება</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=fmi" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
+                            <a class="menu-item" href="/applecheck?type=fmi">
                                 <img src="static/ico/f9a07c0e-e427-4a1a-aab9-948ba60f1b6a_20250627_012716_0000.png" 
                                      class="menu-icon-img">
                                 <span>FMI iCloud</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=sim_lock" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
+                            <a class="menu-item" href="/applecheck?type=sim_lock">
                                 <img src="static/ico/957afe67-7a27-48cb-9622-6c557b220b71_20250627_012808_0000.png" 
                                      class="menu-icon-img">
                                 <span>SIM ლოკი</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=blacklist" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
+                            <a class="menu-item" href="/applecheck?type=blacklist">
                                 <img src="static/ico/4e28c4f2-541b-4a1b-8163-c79e6db5481c_20250627_012852_0000.png" 
                                      class="menu-icon-img">
                                 <span>შავი სია</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=mdm" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
+                            <a class="menu-item" href="/applecheck?type=mdm">
                                 <img src="static/ico/275e6a62-c55e-48b9-8781-5b323ebcdce0_20250627_012946_0000.png" 
                                      class="menu-icon-img">
                                 <span>MDM ბლოკი</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=premium" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
+                            <a class="menu-item" href="/applecheck?type=premium">
                                 <img src="static/ico/84df4824-0564-447c-b5c4-e749442bdc19_20250627_013110_0000.png" 
                                      class="menu-icon-img">
                                 <span>პრემიუმ შემოწმება</span>
@@ -853,31 +817,31 @@
                 <div class="modal-content">
                     <div class="modal-body">
                         <div class="menu-grid">
-                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
+                            <a class="menu-item" href="/androidcheck">
                                 <i class="fab fa-samsung"></i>
                                 <span>Samsung</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
+                            <a class="menu-item" href="/androidcheck">
                                 <i class="fas fa-bolt"></i>
                                 <span>Xiaomi</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
+                            <a class="menu-item" href="/androidcheck">
                                 <i class="fab fa-google"></i>
                                 <span>Pixel</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
+                            <a class="menu-item" href="/androidcheck">
                                 <i class="fab fa-huawei"></i>
                                 <span>Huawei</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
+                            <a class="menu-item" href="/androidcheck">
                                 <i class="fas fa-circle"></i>
                                 <span>Oppo</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
+                            <a class="menu-item" href="/androidcheck">
                                 <i class="fab fa-android"></i>
                                 <span>LG</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck" onclick="sessionStorage.setItem('mobileMenuState', 'android');">
+                            <a class="menu-item" href="/androidcheck">
                                 <i class="fas fa-ellipsis-h"></i>
                                 <span>სხვა</span>
                             </a>
@@ -902,7 +866,6 @@
                 modal.classList.add('open');
             }, 10);
         } else {
-            // Если меню не найдено - пересоздаем
             createMobileMenuStructure();
             setTimeout(openMobileMenu, 50);
         }
@@ -993,8 +956,6 @@
         const mobileMenuBtn = getElement('mobileMenuBtn');
         if (mobileMenuBtn) {
             mobileMenuBtn.addEventListener('click', function() {
-                // Сбрасываем кеш пользовательских данных
-                userHTMLCache = null;
                 createMobileMenuStructure();
                 setTimeout(openMobileMenu, 50);
             });
