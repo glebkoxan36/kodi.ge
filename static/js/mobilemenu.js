@@ -700,10 +700,6 @@
                                 <i class="fas fa-history"></i>
                                 <span>IMEI ისტორია</span>
                             </div>
-                            <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/user/history_comparisons';">
-                                <i class="fas fa-exchange-alt"></i>
-                                <span>შედარებები</span>
-                            </div>
                             <div class="menu-item" onclick="sessionStorage.setItem('mobileMenuState', 'main'); window.location.href='/user/settings';">
                                 <i class="fas fa-cog"></i>
                                 <span>პარამეტრები</span>
