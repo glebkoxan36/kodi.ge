@@ -63,7 +63,7 @@
             max-height: 90vh;
             z-index: 1100;
             align-items: flex-end;
-            transform: translateY(150%);
+            transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
             opacity: 1;
             overflow: visible;
@@ -154,7 +154,7 @@
         /* Позиционирование аватарки */
         .floating-avatar-container {
             position: absolute;
-            top: -70px;
+            top: -35px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
