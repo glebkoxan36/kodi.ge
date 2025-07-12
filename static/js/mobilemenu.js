@@ -80,10 +80,13 @@
             display: flex;
         }
         
-        /* Заменен фон на изображение */
+        /* Исправленный фон - без растягивания */
         .mobile-menu-modal .modal-content {
-            background: url('static/img/bg2-ezgif.com-overlay.webp') no-repeat center center;
-            background-size: 800px 600px;
+            background: 
+                #0a0e17 /* Фон на случай если изображение не загрузится */
+                url('static/img/bg2-ezgif.com-overlay.webp') no-repeat center center;
+            background-size: contain; /* Сохраняем пропорции */
+            background-attachment: local;
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
@@ -96,8 +99,18 @@
             z-index: 1;
         }
 
-        /* Удалены все эффекты фона */
-        
+        /* Для заполнения пустого пространства */
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0a0e17;
+            z-index: -1; /* Помещаем под основное изображение */
+        }
+
         .mobile-menu-modal .modal-body {
             flex: 1;
             overflow: hidden;
@@ -781,7 +794,7 @@
                                      class="menu-icon-img">
                                 <span>SIM ლოკი</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=blacklist" onclick="sessionStorage.setItem('mobileMenuState', 'apple');">
+                            <a class="menu-item" href="/applecheck?type=blacklist" onclick="sessionStorage.setItem('mobileMenuState', 'apple';">
                                 <img src="static/ico/4e28c4f2-541b-4a1b-8163-c79e6db5481c_20250627_012852_0000.png" 
                                      class="menu-icon-img">
                                 <span>შავი სია</span>
