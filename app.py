@@ -1,4 +1,3 @@
-
 import os
 import json
 import logging
@@ -96,42 +95,6 @@ def get_current_prices():
         app.logger.error(f"Error getting prices: {str(e)}")
         return DEFAULT_PRICES
 
-# Регистрируем функцию в контексте шаблонов
-@app.context_processor
-def inject_utils():
-    return {
-        'generate_avatar_color': generate_avatar_color,
-        'csrf_token': generate_csrf
-    }
-
-# Контекстный процессор для передачи данных пользователя
-@app.context_processor
-def inject_user_data():
-    if 'user_id' in session and client:
-        # Кешируем данные пользователя на время сессии
-        user = cache.get(f'user_{session["user_id"]}')
-        if user is None:
-            try:
-                user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
-            except InvalidId:
-                session.pop('user_id', None)
-                return {'currentUser': None}
-                
-            if user:
-                cache.set(f'user_{session["user_id"]}', user, timeout=3600)  # 1 час
-        if user:
-            avatar_color = generate_avatar_color(
-                user.get('first_name', '') + ' ' + user.get('last_name', ''))
-            return {
-                'currentUser': {
-                    'first_name': user.get('first_name', ''),
-                    'last_name': user.get('last_name', ''),
-                    'balance': user.get('balance', 0.0),
-                    'avatar_color': avatar_color
-                }
-            }
-    return {'currentUser': None}
-
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 app.logger.setLevel(logging.INFO)
@@ -189,37 +152,9 @@ def login_required(f):
 # Вспомогательные функции
 # ======================================
 
-def get_user_data():
-    """Получение данных пользователя с кешированием"""
-    if 'user_id' in session and client:
-        user_id = session['user_id']
-        user = cache.get(f'user_{user_id}')
-        if user is None:
-            try:
-                user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-            except InvalidId:
-                session.pop('user_id', None)
-                return None
-                
-            if user:
-                cache.set(f'user_{user_id}', user, timeout=3600)  # 1 час
-        return user
-    return None
-
 def render_common_template(template_name, **kwargs):
-    """Общая функция для рендеринга шаблонов с данными пользователя"""
-    user = get_user_data()
-    user_data = None
-    if user:
-        avatar_color = generate_avatar_color(
-            user.get('first_name', '') + ' ' + user.get('last_name', ''))
-        user_data = {
-            'first_name': user.get('first_name', ''),
-            'last_name': user.get('last_name', ''),
-            'balance': user.get('balance', 0.0),
-            'avatar_color': avatar_color
-        }
-    return render_template(template_name, currentUser=user_data, **kwargs)
+    """Общая функция для рендеринга шаблонов без данных пользователя"""
+    return render_template(template_name, **kwargs)
 
 # ======================================
 # Основные маршруты приложения
