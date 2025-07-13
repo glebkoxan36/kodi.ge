@@ -51,19 +51,24 @@ def login_required(f):
 
 # Middleware для загрузки текущего пользователя
 @user_bp.before_request
+@login_required
 def load_user():
-    if 'user_id' in session and session.get('role') == 'user':
-        try:
-            g.user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
-            if not g.user:
-                flash('მომხმარებელი ვერ მოიძებნა', 'danger')
-                return redirect(url_for('auth.login'))
-        except InvalidId:
-            session.clear()
-            flash('არასწორი სესია', 'danger')
+    try:
+        # Исправление: преобразование строки в ObjectId
+        user_id = ObjectId(session['user_id'])
+        g.user = regular_users_collection.find_one({'_id': user_id})
+        
+        if not g.user:
+            flash('მომხმარებელი ვერ მოიძებნა', 'danger')
             return redirect(url_for('auth.login'))
-    else:
+            
+    except (InvalidId, TypeError) as e:
+        current_app.logger.error(f"Invalid user ID in session: {str(e)}")
+        session.clear()
+        flash('არასწორი სესია', 'danger')
         return redirect(url_for('auth.login'))
+    
+    return None
 
 # Функция для генерации цвета аватара
 def generate_avatar_color(name):
@@ -80,22 +85,33 @@ def generate_avatar_color(name):
 @user_bp.route('/dashboard')
 @login_required
 def dashboard():
-    user_id = session['user_id']
     user = g.user
+    user_id = user['_id']  # Используем ObjectId из g.user
     
     balance = user.get('balance', 0.0)
     
-    checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
+    # Получаем последние проверки
+    checks = list(checks_collection.find({'user_id': user_id})
         .sort('timestamp', -1)
         .limit(5))
     
-    payments = list(payments_collection.find({'user_id': ObjectId(user_id)})
+    # Получаем последние платежи
+    payments = list(payments_collection.find({'user_id': user_id})
         .sort('timestamp', -1)
         .limit(5))
     
-    total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
+    # Считаем общее количество проверок
+    total_checks = checks_collection.count_documents({'user_id': user_id})
     
-    avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
+    # Генерируем цвет аватара
+    avatar_color = generate_avatar_color(f"{user.get('first_name', '')} {user.get('last_name', '')}")
+    
+    # Форматируем даты для шаблона
+    for check in checks:
+        check['formatted_timestamp'] = check['timestamp'].strftime('%d.%m.%Y %H:%M')
+    
+    for payment in payments:
+        payment['formatted_timestamp'] = payment['timestamp'].strftime('%d.%m.%Y %H:%M')
     
     return render_template(
         'user/dashboard.html',
@@ -118,6 +134,7 @@ def settings():
 @login_required
 def history_checks():
     user = g.user
+    user_id = user['_id']
     balance = user.get('balance', 0.0)
     
     page = int(request.args.get('page', 1))
@@ -125,7 +142,7 @@ def history_checks():
     search_query = request.args.get('search', '')
     status_filter = request.args.get('status', 'all')
     
-    query = {'user_id': user['_id']}
+    query = {'user_id': user_id}
     if search_query:
         query['imei'] = {'$regex': search_query, '$options': 'i'}
     if status_filter != 'all':
@@ -139,7 +156,7 @@ def history_checks():
     total = checks_collection.count_documents(query)
     
     for check in checks:
-        check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M')
+        check['formatted_timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M')
     
     return render_template(
         'user/history_checks.html',
@@ -158,29 +175,38 @@ def history_checks():
 def check_details(check_id):
     try:
         obj_id = ObjectId(check_id)
+        user_id = g.user['_id']
+        
+        check = checks_collection.find_one({'_id': obj_id, 'user_id': user_id})
+        
+        if not check:
+            return jsonify({'error': 'შემოწმება ვერ მოიძებნა'}), 404
+        
+        check['formatted_timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Удаляем несериализуемые поля
+        if '_id' in check:
+            check['_id'] = str(check['_id'])
+        if 'user_id' in check:
+            check['user_id'] = str(check['user_id'])
+        
+        return jsonify(check)
+    
     except InvalidId:
         return jsonify({'error': 'არასწორი ID'}), 400
-    
-    user_id = session['user_id']
-    check = checks_collection.find_one({'_id': obj_id, 'user_id': ObjectId(user_id)})
-    
-    if not check:
-        return jsonify({'error': 'შემოწმება ვერ მოიძებნა'}), 404
-    
-    check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
-    
-    return jsonify(check)
 
 @user_bp.route('/accounts')
 @login_required
 def accounts():
     user = g.user
-    payments = list(payments_collection.find({'user_id': user['_id']})
+    user_id = user['_id']
+    
+    payments = list(payments_collection.find({'user_id': user_id})
         .sort('timestamp', -1)
         .limit(20))
     
     for payment in payments:
-        payment['timestamp'] = payment['timestamp'].strftime('%d.%m.%Y %H:%M')
+        payment['formatted_timestamp'] = payment['timestamp'].strftime('%d.%m.%Y %H:%M')
     
     return render_template(
         'user/accounts.html',
@@ -204,11 +230,11 @@ def create_payment_session():
     if amount < 1:
         return jsonify({'error': 'მინიმალური თანხა: 1 ₾'}), 400
 
-    user_id = session['user_id']
+    user_id = g.user['_id']
     
     try:
         session_stripe = stripe_payment.create_topup_session(
-            user_id=user_id,
+            user_id=str(user_id),  # Преобразуем в строку
             amount=amount,
             success_url=url_for('user.topup_success', _external=True) + f'?amount={amount}',
             cancel_url=url_for('user.dashboard', _external=True) + '?payment=cancel'
@@ -217,23 +243,17 @@ def create_payment_session():
         return jsonify({'sessionId': session_stripe.id})
     
     except stripe.error.StripeError as e:
-        current_app.logger.error(f"Stripe შეცდომა: {e.user_message}")
+        current_app.logger.error(f"Stripe error: {e.user_message}")
         return jsonify({'error': str(e.user_message)}), 500
     
     except Exception as e:
-        current_app.logger.exception("გადახდის შექმნის შეცდომა")
-        return jsonify({'error': 'გადახდის სისტემა დროებით მიუწვდომელია'}), 500
+        current_app.logger.exception("Payment creation error")
+        return jsonify({'error': 'Payment system is temporarily unavailable'}), 500
 
 @user_bp.route('/topup/success')
 @login_required
 def topup_success():
-    if 'user_id' not in session:
-        flash('გთხოვთ შეხვიდეთ სისტემაში', 'danger')
-        return redirect(url_for('auth.login'))
-    
     amount = request.args.get('amount', '0.00')
-    
-    # ВАЖНОЕ ИСПРАВЛЕНИЕ: Редирект с параметрами для JS обработчика
     return redirect(url_for(
         'user.dashboard',
         payment='success',
@@ -246,23 +266,21 @@ def stripe_webhook():
     sig_header = request.headers.get('Stripe-Signature')
     
     try:
-        # Верификация подписи Stripe
         event = stripe.Webhook.construct_event(
             payload,
             sig_header,
             STRIPE_WEBHOOK_SECRET
         )
     except ValueError as e:
-        current_app.logger.error(f"ვებჰუკის მონაცემების შეცდომა: {str(e)}")
+        current_app.logger.error(f"Webhook data error: {str(e)}")
         return jsonify({'error': 'Invalid payload'}), 400
     except stripe.error.SignatureVerificationError as e:
-        current_app.logger.error(f"ვებჰუკის ხელმოწერის შეცდომა: {str(e)}")
+        current_app.logger.error(f"Webhook signature error: {str(e)}")
         return jsonify({'error': 'Invalid signature'}), 400
     
     try:
-        # Обработка вебхука через платежный модуль
         stripe_payment.handle_webhook(event)
         return jsonify({'status': 'success'}), 200
     except Exception as e:
-        current_app.logger.error(f"ვებჰუკის დამუშავების შეცდომა: {str(e)}")
+        current_app.logger.error(f"Webhook processing error: {str(e)}")
         return jsonify({'error': str(e)}), 500
