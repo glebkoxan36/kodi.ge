@@ -1855,4 +1855,28 @@ pre {
   body {
     padding-bottom: 80px;
   }
-    }
+}
+
+/* Исправление для модальных окон */
+.result-modal.active {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+/* Гарантируем что модалки поверх других элементов */
+.result-modal {
+    z-index: 10001 !important;
+}
+
+/* Фикс для фона модалок */
+.modal-content {
+    background: rgba(18, 26, 43, 0.98) !important;
+    border: 1px solid rgba(0, 198, 255, 0.3) !important;
+}
+
+/* Анимация открытия */
+.result-modal {
+    transition: 
+        opacity 0.3s ease, 
+        transform 0.3s ease !important;
+                              }
