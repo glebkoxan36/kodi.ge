@@ -391,7 +391,7 @@
             background: transparent;
             box-sizing: border-box;
             padding: 0;
-            margin-top: 130px;
+            margin-top: 60px;
         }
         
         .menu-item {
