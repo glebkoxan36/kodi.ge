@@ -37,9 +37,12 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
 cache.init_app(app)
 
-# Настройки сессии
+# НОВЫЕ НАСТРОЙКИ СЕССИИ
 app.config.update(
-    SESSION_TYPE='filesystem',
+    SESSION_TYPE='mongodb',
+    SESSION_MONGODB=client,
+    SESSION_MONGODB_DB='imeicheck',
+    SESSION_MONGODB_COLLECT='sessions',
     SESSION_COOKIE_SECURE=os.getenv('FLASK_ENV') == 'production',
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
@@ -1007,10 +1010,16 @@ app.register_blueprint(admin_bp)
 # Установка CSRF-куки для AJAX
 @app.after_request
 def set_csrf_cookie(response):
-    if request.path.startswith('/'):
-        # Убедитесь что сессия сохранена
-        session.modified = True
-        response.set_cookie('csrf_token', generate_csrf())
+    # Не устанавливаем CSRF для статики и API
+    if not request.path.startswith(('/static', '/api')):
+        secure = app.config['SESSION_COOKIE_SECURE']
+        response.set_cookie(
+            'csrf_token', 
+            generate_csrf(),
+            secure=secure,
+            httponly=True,
+            samesite='Lax'
+        )
     return response
 
 # Обработчик ошибок CSRF
@@ -1018,6 +1027,15 @@ def set_csrf_cookie(response):
 def handle_csrf_error(e):
     app.logger.warning(f"CSRF error: {e.description}")
     return jsonify({'error': f'CSRF token error: {e.description}'}), 400
+
+# Роут для отладки сессии
+@app.route('/session-info')
+def session_info():
+    return jsonify({
+        'user_id': session.get('user_id'),
+        'role': session.get('role'),
+        'session_id': session.sid
+    })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
