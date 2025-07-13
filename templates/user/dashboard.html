@@ -10,6 +10,11 @@
     <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
+    <!-- Скрытый элемент для хранения URL-адресов -->
+    <div id="urls" 
+         data-create-payment-session="{{ url_for('user.create_payment_session') }}"
+         style="display: none;"></div>
+    
     <div class="gradient-bg gradient-1"></div>
     <div class="gradient-bg gradient-2"></div>
     
@@ -420,11 +425,17 @@
             document.getElementById('spinner').style.display = 'flex';
             
             try {
-                // ВАЖНОЕ ИСПРАВЛЕНИЕ 4: Логирование для отладки
-                console.log('Initiating payment for amount:', amount);
+                // ВАЖНОЕ ИСПРАВЛЕНИЕ: Использование динамического URL
+                const urlsElement = document.getElementById('urls');
+                if (!urlsElement) {
+                    throw new Error('System configuration error. Missing URL element.');
+                }
+                
+                const createPaymentUrl = urlsElement.dataset.createPaymentSession;
+                console.log('Creating payment session at:', createPaymentUrl);
                 
                 // Send request to server to create payment session
-                const response = await fetch('/user/create-payment-session', {
+                const response = await fetch(createPaymentUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
