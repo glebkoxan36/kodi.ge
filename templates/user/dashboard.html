@@ -13,6 +13,7 @@
     <!-- Скрытый элемент для хранения URL-адресов -->
     <div id="urls" 
          data-create-payment-session="{{ url_for('user.create_payment_session') }}"
+         data-get-balance="{{ url_for('user.get_balance') }}"
          style="display: none;"></div>
     
     <div class="gradient-bg gradient-1"></div>
@@ -333,7 +334,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">გადახდა წარმატებით დასრულდა</h3>
-                <button class="close-modal" onclick="closeModalAndReload()">
+                <button class="close-modal" onclick="closeSuccessModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -342,8 +343,11 @@
                     <i class="fas fa-check-circle fa-5x text-success"></i>
                 </div>
                 <h4>გმადლობთ გადახდისთვის!</h4>
-                <p>თქვენი ბალანსი მალე შეივსება <span class="text-success fw-bold" id="successAmount">10.00 ₾</span>-ით</p>
-                <p>გვერდი განახლდება ავტომატურად...</p>
+                <p>ბალანსის განახლება მიმდინარეობს...</p>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">იტვირთება...</span>
+                </div>
+                <p class="mt-3">თუ ბალანსი არ განახლებულა 1 წუთის განმავლობაში, <a href="javascript:location.reload()">განაახლეთ გვერდი</a></p>
             </div>
         </div>
     </div>
@@ -408,7 +412,6 @@
         function showTopupModal() {
             const modal = document.getElementById('topupModal');
             modal.style.display = 'flex';
-            // Активируем анимацию через 10мс
             setTimeout(() => {
                 modal.classList.add('active');
             }, 10);
@@ -418,18 +421,22 @@
             const modals = document.querySelectorAll('.result-modal');
             modals.forEach(modal => {
                 modal.classList.remove('active');
-                // Задержка для анимации перед скрытием
                 setTimeout(() => {
                     modal.style.display = 'none';
                 }, 300);
             });
         }
         
-        function closeModalAndReload() {
-            closeModal();
-            setTimeout(function() {
-                location.reload();
-            }, 400);
+        function closeSuccessModal() {
+            const successModal = document.getElementById('successModal');
+            successModal.classList.remove('active');
+            setTimeout(() => {
+                successModal.style.display = 'none';
+                // Remove payment parameter from URL
+                const url = new URL(window.location);
+                url.searchParams.delete('payment');
+                window.history.replaceState({}, document.title, url);
+            }, 300);
         }
         
         async function initiatePayment() {
@@ -488,22 +495,58 @@
             }
         }
         
+        async function checkBalanceUpdate() {
+            const urlsElement = document.getElementById('urls');
+            if (!urlsElement) {
+                console.error('URLs element not found');
+                return;
+            }
+            
+            const getBalanceUrl = urlsElement.dataset.getBalance;
+            if (!getBalanceUrl) {
+                console.error('Get balance URL not found');
+                return;
+            }
+            
+            try {
+                const response = await fetch(getBalanceUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const currentBalance = parseFloat("{{ balance }}");
+                const newBalance = parseFloat(data.balance);
+                
+                // Reload page if balance changed
+                if (newBalance !== currentBalance) {
+                    closeSuccessModal();
+                    location.reload();
+                } else {
+                    // Check again after 2 seconds
+                    setTimeout(checkBalanceUpdate, 2000);
+                }
+            } catch (error) {
+                console.error('Balance check failed:', error);
+                // Retry after 2 seconds on error
+                setTimeout(checkBalanceUpdate, 2000);
+            }
+        }
+        
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const paymentStatus = urlParams.get('payment');
             
             if (paymentStatus === 'success') {
                 const amount = urlParams.get('amount') || '10.00';
-                document.getElementById('successAmount').textContent = `${amount} ₾`;
                 const successModal = document.getElementById('successModal');
                 successModal.style.display = 'flex';
                 setTimeout(() => {
                     successModal.classList.add('active');
                 }, 10);
                 
-                setTimeout(function() {
-                    location.reload();
-                }, 5000);
+                // Start balance update checking
+                checkBalanceUpdate();
             }
             
             if (!stripe && stripePublicKey) {
@@ -512,4 +555,4 @@
         });
     </script>
 </body>
-                                            </html>
+                            </html>
