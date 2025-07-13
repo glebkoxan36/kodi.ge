@@ -243,8 +243,13 @@ def topup_success():
         return redirect(url_for('auth.login'))
     
     amount = request.args.get('amount', '0.00')
-    flash(f'გადახდა წარმატებით დასრულდა! თქვენი ბალანსი განახლდება მალე (+{amount} ₾).', 'success')
-    return redirect(url_for('user.dashboard'))
+    
+    # ВАЖНОЕ ИСПРАВЛЕНИЕ: Редирект с параметрами для JS обработчика
+    return redirect(url_for(
+        'user.dashboard',
+        payment='success',
+        amount=amount
+    ))
 
 @user_bp.route('/stripe-webhook', methods=['POST'])
 def stripe_webhook():
