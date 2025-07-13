@@ -54,10 +54,15 @@ def load_user():
     if 'user_id' in session and session.get('role') == 'user':
         try:
             g.user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
+            if not g.user:
+                flash('მომხმარებელი ვერ მოიძებნა', 'danger')
+                return redirect(url_for('auth.login'))
         except InvalidId:
             session.clear()
             flash('არასწორი სესია', 'danger')
             return redirect(url_for('auth.login'))
+    else:
+        return redirect(url_for('auth.login'))
 
 # Функция для генерации цвета аватара
 def generate_avatar_color(name):
@@ -76,10 +81,6 @@ def generate_avatar_color(name):
 def dashboard():
     user_id = session['user_id']
     user = g.user
-    
-    if not user:
-        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
-        return redirect(url_for('auth.login'))
     
     balance = user.get('balance', 0.0)
     
@@ -110,20 +111,12 @@ def dashboard():
 @login_required
 def settings():
     user = g.user
-    if not user:
-        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
-        return redirect(url_for('auth.login'))
-    
     return render_template('user/settings.html', user=user)
 
 @user_bp.route('/history/checks')
 @login_required
 def history_checks():
     user = g.user
-    if not user:
-        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
-        return redirect(url_for('auth.login'))
-    
     balance = user.get('balance', 0.0)
     
     page = int(request.args.get('page', 1))
@@ -182,10 +175,6 @@ def check_details(check_id):
 @login_required
 def accounts():
     user = g.user
-    if not user:
-        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
-        return redirect(url_for('auth.login'))
-    
     payments = list(payments_collection.find({'user_id': user['_id']})
         .sort('timestamp', -1)
         .limit(20))
