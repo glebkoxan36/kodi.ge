@@ -351,7 +351,7 @@
             background: transparent;
             box-sizing: border-box;
             padding: 0;
-            margin-top: 20px;
+            margin-top: 50px;
         }
         
         .kodi-menu-item {
