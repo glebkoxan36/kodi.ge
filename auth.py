@@ -100,6 +100,9 @@ def register():
         # Автоматический вход после регистрации
         session['user_id'] = str(user_id)
         session['role'] = 'user'
+        # ФИКС: Делаем сессию постоянной
+        session.permanent = True
+        session.modified = True
         
         return jsonify(success=True)
     
@@ -131,6 +134,9 @@ def login():
         # Успешная аутентификация
         session['user_id'] = str(user['_id'])
         session['role'] = user.get('role', 'user')
+        # ФИКС: Делаем сессию постоянной
+        session.permanent = True
+        session.modified = True
         
         return jsonify(success=True)
     
