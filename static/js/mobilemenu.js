@@ -64,7 +64,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 65vh;
+            height: 70vh;
             max-height: none;
             z-index: 1100;
             align-items: flex-end;
@@ -351,7 +351,7 @@
             background: transparent;
             box-sizing: border-box;
             padding: 0;
-            margin-top: 30px;
+            margin-top: 20px;
         }
         
         .kodi-menu-item {
