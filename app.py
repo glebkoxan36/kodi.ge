@@ -27,7 +27,7 @@ from auth import auth_bp
 from ifreeapi import validate_imei, perform_api_check, parse_free_html
 from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection
 from stripepay import StripePayment
-from user_dashboard import user_bp  # Импортируем исправленный блюпринт
+#from user_dashboard import user_bp  # Импортируем исправленный блюпринт
 
 app = Flask(__name__)
 CORS(app)
