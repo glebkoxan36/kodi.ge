@@ -16,7 +16,7 @@
         .mobile-menu-bottom {
             display: none;
             position: fixed;
-            bottom: -5;
+            bottom: 0;
             left: 0;
             right: 0;
             text-align: center;
@@ -69,6 +69,7 @@
             overflow: visible;
             padding-top: 0;
             border-radius: 30px 30px 0 0;
+            padding-bottom: env(safe-area-inset-bottom, 0);
             box-sizing: border-box;
         }
         
@@ -77,10 +78,10 @@
             display: flex;
         }
         
-        /* Circuit Board Background */
+        /* Circuit Board Background - ENHANCED */
         .mobile-menu-modal .modal-content {
             background: 
-                linear-gradient(135deg, #0c0f1a 0%, #161b2e 100%);
+                linear-gradient(135deg, #0a0e17 0%, #121a33 100%);
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
@@ -94,7 +95,7 @@
             padding-bottom: env(safe-area-inset-bottom, 0);
         }
 
-        /* Circuit lines effect */
+        /* Enhanced circuit lines effect */
         .modal-content::before {
             content: '';
             position: absolute;
@@ -103,23 +104,75 @@
             right: 0;
             bottom: 0;
             background-image: 
-                linear-gradient(to right, transparent 48%, rgba(0, 198, 255, 0.1) 49%, rgba(0, 198, 255, 0.1) 51%, transparent 52%),
-                linear-gradient(to right, transparent 8%, rgba(0, 198, 255, 0.1) 9%, rgba(0, 198, 255, 0.1) 11%, transparent 12%),
-                linear-gradient(to right, transparent 88%, rgba(0, 198, 255, 0.1) 89%, rgba(0, 198, 255, 0.1) 91%, transparent 92%),
-                radial-gradient(circle, rgba(0, 198, 255, 0.1) 1px, transparent 2px);
+                /* Main circuit paths */
+                linear-gradient(to right, 
+                    transparent 15%,
+                    rgba(0, 230, 255, 0.4) 16%,
+                    rgba(0, 230, 255, 0.4) 17%,
+                    transparent 18%,
+                    transparent 48%,
+                    rgba(0, 230, 255, 0.4) 49%,
+                    rgba(0, 230, 255, 0.4) 51%,
+                    transparent 52%,
+                    transparent 82%,
+                    rgba(0, 230, 255, 0.4) 83%,
+                    rgba(0, 230, 255, 0.4) 84%,
+                    transparent 85%
+                ),
+                /* Vertical connectors */
+                linear-gradient(to bottom, 
+                    transparent 25%,
+                    rgba(0, 230, 255, 0.3) 26%,
+                    rgba(0, 230, 255, 0.3) 27%,
+                    transparent 28%,
+                    transparent 75%,
+                    rgba(0, 230, 255, 0.3) 76%,
+                    rgba(0, 230, 255, 0.3) 77%,
+                    transparent 78%
+                ),
+                /* Circuit dots/nodes */
+                radial-gradient(circle, rgba(0, 230, 255, 0.6) 2px, transparent 3px),
+                radial-gradient(circle, rgba(0, 230, 255, 0.6) 2px, transparent 3px);
+            
             background-size: 
-                100% 3px,
-                100% 2px,
-                100% 2px,
-                20px 20px;
+                100% 5px,
+                5px 100%,
+                30px 30px,
+                60px 60px;
+            
             background-position: 
-                0 20%,
-                0 40%,
-                0 60%,
-                0 0;
-            background-repeat: no-repeat;
-            opacity: 0.3;
+                0 35%,
+                20% 0,
+                0 0,
+                30px 30px;
+            
+            background-repeat: repeat;
+            opacity: 0.8;
             z-index: 1;
+            animation: circuitGlow 3s infinite ease-in-out;
+        }
+
+        /* Animation for circuit effect */
+        @keyframes circuitGlow {
+            0% { opacity: 0.7; }
+            50% { opacity: 0.9; }
+            100% { opacity: 0.7; }
+        }
+
+        /* Additional glow effect */
+        .modal-content::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, 
+                rgba(0, 230, 255, 0.1) 0%, 
+                transparent 70%
+            );
+            z-index: 2;
+            pointer-events: none;
         }
         
         .mobile-menu-modal .modal-body {
@@ -134,10 +187,10 @@
             z-index: 3;
         }
         
-        /* Кнопка закрытия */
+        /* Кнопка закрытия - опущена ниже */
         .close-modal {
             position: absolute;
-            top: 35px; /* Опущена ниже */
+            top: 25px;
             right: 15px;
             background: #ff6b6b;
             color: white;
@@ -164,7 +217,7 @@
         /* Позиционирование аватарки */
         .floating-avatar-container {
             position: absolute;
-            top: -32px;
+            top: -35px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
