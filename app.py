@@ -10,7 +10,7 @@ import time
 import threading
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, g, Blueprint
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, g
 from flask_cors import CORS
 import stripe
 from functools import wraps, lru_cache
@@ -97,6 +97,37 @@ def get_current_prices():
     except Exception as e:
         app.logger.error(f"Error getting prices: {str(e)}")
         return DEFAULT_PRICES
+
+# Контекстный процессор для добавления данных пользователя во все шаблоны
+@app.context_processor
+def inject_user():
+    """Добавляет данные текущего пользователя во все шаблоны"""
+    user_data = None
+    user_id = session.get('user_id')
+    
+    if user_id:
+        try:
+            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+            if user:
+                # Генерируем цвет аватара если его нет
+                avatar_color = user.get('avatar_color')
+                if not avatar_color:
+                    name_part = user.get('first_name') or user.get('email', 'user')
+                    avatar_color = generate_avatar_color(name_part)
+                
+                user_data = {
+                    'id': str(user['_id']),
+                    'first_name': user.get('first_name', ''),
+                    'last_name': user.get('last_name', ''),
+                    'balance': user.get('balance', 0),
+                    'avatar_color': avatar_color,
+                    'avatar_url': user.get('avatar_url')
+                }
+        except (TypeError, InvalidId):
+            # Очищаем невалидную сессию
+            session.pop('user_id', None)
+    
+    return {'currentUser': user_data}
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
