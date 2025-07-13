@@ -64,7 +64,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 60vh;
+            height: 65vh;
             max-height: none;
             z-index: 1100;
             align-items: flex-end;
