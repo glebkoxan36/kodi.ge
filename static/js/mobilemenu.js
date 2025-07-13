@@ -162,8 +162,8 @@
         /* Close button */
         .kodi-close-modal {
             position: absolute;
-            top: 5px;
-            right: 15px;
+            top: 7px;
+            right: 10px;
             background: #ff6b6b;
             color: white;
             border: none;
@@ -189,7 +189,7 @@
         /* Avatar positioning */
         .kodi-avatar-container {
             position: absolute;
-            top: -65px;
+            top: -60px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
