@@ -912,7 +912,7 @@
         createMobileMenuStructure();
         
         // Menu button setup
-        const menuBtn = getElement('mobileMenuBtn');
+        const menuBtn = getElement('kodiMenuBtn');
         if (menuBtn) {
             menuBtn.addEventListener('click', function() {
                 createMobileMenuStructure();
@@ -930,7 +930,7 @@
             // Main menu check
             if (mainMenu && mainMenu.classList.contains('open') && 
                 !mainMenu.contains(e.target) && 
-                e.target.id !== 'mobileMenuBtn' &&
+                e.target.id !== 'kodiMenuBtn' &&
                 !(avatarContainer && avatarContainer.contains(e.target))) {
                 kodiCloseMenu();
             }
@@ -938,7 +938,7 @@
             // Apple menu check
             if (appleMenu && appleMenu.classList.contains('open') && 
                 !appleMenu.contains(e.target) && 
-                e.target.id !== 'mobileMenuBtn' &&
+                e.target.id !== 'kodiMenuBtn' &&
                 !(avatarContainer && avatarContainer.contains(e.target))) {
                 kodiCloseAppleMenu();
             }
@@ -946,7 +946,7 @@
             // Android menu check
             if (androidMenu && androidMenu.classList.contains('open') && 
                 !androidMenu.contains(e.target) && 
-                e.target.id !== 'mobileMenuBtn' &&
+                e.target.id !== 'kodiMenuBtn' &&
                 !(avatarContainer && avatarContainer.contains(e.target))) {
                 kodiCloseAndroidMenu();
             }
