@@ -13,6 +13,12 @@
     const style = document.createElement('style');
     style.id = 'mobile-menu-styles';
     style.textContent = `
+    
+        .html, body {
+          margin: 0;
+          padding: 0;
+          }
+          
         .mobile-menu-bottom {
             display: none;
             position: fixed;
