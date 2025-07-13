@@ -196,7 +196,7 @@
         /* Кнопка закрытия - опущена ниже */
         .close-modal {
             position: absolute;
-            top: 15px;
+            top: 5px;
             right: 15px;
             background: #ff6b6b;
             color: white;
@@ -223,7 +223,7 @@
         /* Позиционирование аватарки */
         .floating-avatar-container {
             position: absolute;
-            top: -60px;
+            top: -65px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
