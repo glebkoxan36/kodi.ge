@@ -69,7 +69,7 @@
             overflow: visible;
             padding-top: 0;
             border-radius: 30px 30px 0 0;
-            padding-bottom: env(safe-area-inset-bottom, 0);
+            
             box-sizing: border-box;
         }
         
