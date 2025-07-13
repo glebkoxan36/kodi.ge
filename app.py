@@ -809,6 +809,34 @@ def reparse_imei():
         'server_response': BeautifulSoup(html_content, 'html.parser').get_text()
     })
 
+# ======================================
+# Роут для получения баланса пользователя
+# ======================================
+
+@app.route('/user/get_balance', methods=['GET'])
+@login_required
+def get_balance():
+    """Возвращает текущий баланс пользователя в формате JSON"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        # Получаем пользователя из базы данных
+        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Возвращаем баланс пользователя
+        return jsonify({
+            'balance': user.get('balance', 0)
+        })
+    except (TypeError, InvalidId) as e:
+        return jsonify({'error': 'Invalid user ID'}), 400
+    except Exception as e:
+        app.logger.error(f"Error getting balance: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
 # Исправленный вебхук Stripe
 @app.route('/user/stripe-webhook', methods=['POST'])
 @csrf.exempt
