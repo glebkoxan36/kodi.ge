@@ -60,7 +60,7 @@
             left: 0;
             width: 100%;
             height: 100vh;
-            max-height: 90vh;
+            max-height: 70vh;
             z-index: 1100;
             align-items: flex-end;
             transform: translateY(100%);
