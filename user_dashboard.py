@@ -22,7 +22,8 @@ if not stripe_api_key or not STRIPE_PUBLIC_KEY:
 stripe.api_key = stripe_api_key
 
 # Подключение к MongoDB
-client = MongoClient(os.getenv('MONGODB_URI'))
+mongodb_uri = os.getenv('MONGODB_URI', 'mongodb://localhost:27017')
+client = MongoClient(mongodb_uri)
 db = client['imei_checker']
 regular_users_collection = db['users']
 checks_collection = db['results']
@@ -84,15 +85,15 @@ def dashboard():
     
     balance = user.get('balance', 0.0)
     
-    checks = list(checks_collection.find({'user_id': user_id})
+    checks = list(checks_collection.find({'user_id': ObjectId(user_id)})
         .sort('timestamp', -1)
         .limit(5))
     
-    payments = list(payments_collection.find({'user_id': user_id})
+    payments = list(payments_collection.find({'user_id': ObjectId(user_id)})
         .sort('timestamp', -1)
         .limit(5))
     
-    total_checks = checks_collection.count_documents({'user_id': user_id})
+    total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
     
     avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
     
@@ -161,7 +162,7 @@ def check_details(check_id):
         return jsonify({'error': 'არასწორი ID'}), 400
     
     user_id = session['user_id']
-    check = checks_collection.find_one({'_id': obj_id, 'user_id': user_id})
+    check = checks_collection.find_one({'_id': obj_id, 'user_id': ObjectId(user_id)})
     
     if not check:
         return jsonify({'error': 'შემოწმება ვერ მოიძებნა'}), 404
@@ -171,7 +172,6 @@ def check_details(check_id):
     return jsonify(check)
 
 @user_bp.route('/accounts')
-@user_bp.route('/payment_history')
 @login_required
 def accounts():
     user = g.user
