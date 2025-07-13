@@ -21,7 +21,7 @@
             right: 0;
             text-align: center;
             z-index: 1050;
-            padding-bottom: env(safe-area-inset-bottom, 10px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
         
         @media (max-width: 1024px) {
@@ -45,7 +45,7 @@
             justify-content: center;
             margin: 0 auto;
             transition: all 0.3s ease;
-            margin-bottom: 10px;
+            margin-bottom: 0px;
         }
         
         .mobile-menu-btn:hover {
