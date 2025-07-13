@@ -11,14 +11,14 @@
 
     // Добавляем стили
     const style = document.createElement('style');
-    style.id = 'mobile-menu-styles';
+    style.id = 'kodi-mobile-menu-styles';
     style.textContent = `
         .html, body {
           margin: 0;
           padding: 0;
         }
           
-        .mobile-menu-bottom {
+        .kodi-menu-bottom {
             display: none;
             position: fixed;
             bottom: 0;
@@ -30,12 +30,12 @@
         }
         
         @media (max-width: 1024px) {
-            .mobile-menu-bottom {
+            .kodi-menu-bottom {
                 display: block;
             }
         }
         
-        .mobile-menu-btn {
+        .kodi-menu-btn {
             background: var(--accent-color);
             color: white;
             border: none;
@@ -53,12 +53,12 @@
             margin-bottom: 0px;
         }
         
-        .mobile-menu-btn:hover {
+        .kodi-menu-btn:hover {
             transform: scale(1.1);
             box-shadow: 0 0 25px rgba(0, 198, 255, 0.7);
         }
         
-        .mobile-menu-modal {
+        .kodi-menu-modal {
             display: none;
             position: fixed;
             bottom: 0;
@@ -77,13 +77,13 @@
             box-sizing: border-box;
         }
         
-        .mobile-menu-modal.open {
+        .kodi-menu-modal.open {
             transform: translateY(0);
             display: flex;
         }
         
-        /* Circuit Board Background - ENHANCED */
-        .mobile-menu-modal .modal-content {
+        /* Unique Circuit Board Background */
+        .kodi-circuit-board-bg {
             background: 
                 linear-gradient(135deg, #0a0e17 0%, #121a33 100%);
             border: 3px solid rgba(0, 198, 255, 0.4);
@@ -99,8 +99,8 @@
             padding-bottom: env(safe-area-inset-bottom, 0);
         }
 
-        /* Эффект микросхемы */
-        .modal-content::before {
+        /* Unique circuit lines pattern */
+        .kodi-circuit-board-bg::before {
             content: '';
             position: absolute;
             top: 0;
@@ -108,7 +108,7 @@
             right: 0;
             bottom: 0;
             background: 
-                /* Горизонтальные дорожки */
+                /* Horizontal tracks */
                 linear-gradient(0deg, 
                     transparent 24%, 
                     rgba(0, 230, 255, 0.15) 25%,
@@ -123,7 +123,7 @@
                     rgba(0, 230, 255, 0.15) 76%,
                     transparent 77%
                 ),
-                /* Вертикальные дорожки */
+                /* Vertical tracks */
                 linear-gradient(90deg, 
                     transparent 19%, 
                     rgba(0, 230, 255, 0.15) 20%,
@@ -141,45 +141,13 @@
                     rgba(0, 230, 255, 0.15) 95%,
                     rgba(0, 230, 255, 0.15) 96%,
                     transparent 97%
-                ),
-                /* Контактные точки */
-                radial-gradient(circle, rgba(0, 230, 255, 0.5) 2px, transparent 3px);
-            background-size: 100px 100px, 100px 100px, 30px 30px;
+                );
+            background-size: 100px 100px, 100px 100px;
             opacity: 0.7;
             z-index: 1;
-            animation: circuitFlow 15s linear infinite;
-        }
-
-        /* Анимация платы */
-        @keyframes circuitFlow {
-            0% { background-position: 0 0, 0 0, 0 0; }
-            100% { background-position: 0 100px, 100px 0, 30px 30px; }
-        }
-
-        /* Эффект свечения */
-        .modal-content::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(
-                    circle at 20% 30%,
-                    rgba(0, 150, 255, 0.1) 0%,
-                    transparent 40%
-                ),
-                radial-gradient(
-                    circle at 80% 70%,
-                    rgba(100, 0, 255, 0.1) 0%,
-                    transparent 40%
-                );
-            z-index: 2;
-            pointer-events: none;
         }
         
-        .mobile-menu-modal .modal-body {
+        .kodi-menu-modal .kodi-modal-body {
             flex: 1;
             overflow: hidden;
             padding-bottom: 0;
@@ -191,8 +159,8 @@
             z-index: 3;
         }
         
-        /* Кнопка закрытия */
-        .close-modal {
+        /* Close button */
+        .kodi-close-modal {
             position: absolute;
             top: 5px;
             right: 15px;
@@ -212,14 +180,14 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
         
-        .close-modal:hover {
+        .kodi-close-modal:hover {
             background: #ff5252;
             transform: scale(1.1);
             box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
         }
         
-        /* Позиционирование аватарки */
-        .floating-avatar-container {
+        /* Avatar positioning */
+        .kodi-avatar-container {
             position: absolute;
             top: -65px;
             left: 50%;
@@ -235,12 +203,12 @@
             justify-content: center;
         }
         
-        .floating-avatar,
-        .floating-avatar-info {
+        .kodi-floating-avatar,
+        .kodi-user-info {
             pointer-events: auto;
         }
         
-        .floating-avatar {
+        .kodi-floating-avatar {
             width: 100px;
             height: 100px;
             border-radius: 50%;
@@ -258,14 +226,14 @@
             background: transparent !important;
         }
         
-        .avatar-image {
+        .kodi-avatar-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
             border-radius: 50%;
         }
         
-        .avatar-placeholder {
+        .kodi-avatar-placeholder {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -281,7 +249,7 @@
             border-radius: 50%;
         }
         
-        .user-info-container {
+        .kodi-user-info-container {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -290,7 +258,7 @@
             margin-top: 20px;
         }
         
-        .floating-avatar-info {
+        .kodi-user-info {
             font-size: 1.05rem;
             font-weight: 700;
             cursor: pointer;
@@ -317,12 +285,12 @@
             color: white;
         }
         
-        .floating-avatar-info.not-logged-in {
+        .kodi-user-info.not-logged-in {
             text-shadow: 0 0 5px #00c6ff, 0 0 10px #00c6ff;
             margin-top: 10px;
         }
         
-        .user-balance {
+        .kodi-user-balance {
             font-size: 0.95rem;
             font-weight: 700;
             text-overflow: clip;
@@ -339,8 +307,8 @@
             color: #00c6ff;
         }
         
-        /* Увеличенные иконки одного размера */
-        .menu-item i {
+        /* Menu icons */
+        .kodi-menu-item i {
             font-size: 40px !important;
             margin-bottom: 8px;
             background: linear-gradient(135deg, #00c6ff, #0072ff);
@@ -350,7 +318,7 @@
             text-shadow: 0 0 8px rgba(0, 198, 255, 0.3);
         }
         
-        .menu-icon-img {
+        .kodi-menu-icon-img {
             display: block;
             width: 40px !important;
             height: 40px !important;
@@ -361,29 +329,17 @@
             object-position: center;
         }
         
-        /* Убираем подчеркивание у всех ссылок */
-        .menu-item a,
-        .floating-avatar-info,
-        .user-balance,
-        .floating-avatar {
+        /* Remove link decorations */
+        .kodi-menu-item a,
+        .kodi-user-info,
+        .kodi-user-balance,
+        .kodi-floating-avatar {
             text-decoration: none !important;
             outline: none !important;
         }
         
-        /* Убираем подчеркивание при фокусе */
-        .menu-item a:focus,
-        .menu-item a:active {
-            text-decoration: none !important;
-            outline: none !important;
-        }
-        
-        /* Убираем тень при наведении */
-        .menu-item:hover {
-            box-shadow: none !important;
-        }
-        
-        /* Увеличенные ячейки сетки */
-        .menu-grid {
+        /* Menu grid */
+        .kodi-menu-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
@@ -395,11 +351,10 @@
             background: transparent;
             box-sizing: border-box;
             padding: 0;
-            /* ПОДНЯЛИ СЕТКУ ВЫШЕ */
             margin-top: 30px;
         }
         
-        .menu-item {
+        .kodi-menu-item {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -424,7 +379,7 @@
             z-index: 3;
         }
         
-        .menu-item:hover {
+        .kodi-menu-item:hover {
             background: linear-gradient(135deg, #223056cc, #121a33cc);
             transform: translateY(-7px);
             border-color: var(--accent-color);
@@ -433,7 +388,7 @@
                 inset 0 0 15px rgba(0, 198, 255, 0.25);
         }
         
-        .menu-item span {
+        .kodi-menu-item span {
             font-size: 0.75rem;
             line-height: 1.3;
             display: -webkit-box;
@@ -446,174 +401,118 @@
             padding: 0 2px;
         }
         
-        /* Ограничение ширины для текста под аватаркой */
-        .floating-avatar-info, .user-balance {
-            max-width: 250px;
-            margin: 0 auto;
-        }
-        
-        /* Уменьшенные ячейки мобильного меню */
+        /* Responsive adjustments */
         @media (max-width: 768px) {
-            .floating-avatar-info, .user-balance {
-                max-width: 230px;
-            }
-            
-            .menu-grid {
+            .kodi-menu-grid {
                 gap: 10px;
                 max-width: 380px;
                 height: 380px;
-                /* ПОДНЯЛИ СЕТКУ ВЫШЕ */
                 margin-top: 90px;
             }
-            .menu-item {
+            .kodi-menu-item {
                 padding: 10px 7px;
             }
-            .menu-item i {
+            .kodi-menu-item i {
                 font-size: 38px !important;
                 margin-bottom: 6px;
             }
-            .menu-item span {
+            .kodi-menu-item span {
                 font-size: 0.7rem;
             }
             
-            .user-info-container {
+            .kodi-user-info-container {
                 margin-top: 15px;
             }
         }
         
         @media (max-width: 576px) {
-            .floating-avatar-info, .user-balance {
-                max-width: 220px;
-            }
-            
-            .menu-grid {
+            .kodi-menu-grid {
                 gap: 8px;
                 max-width: 340px;
                 height: 340px;
-                /* ПОДНЯЛИ СЕТКУ ВЫШЕ */
                 margin-top: 80px;
             }
-            .menu-item i {
+            .kodi-menu-item i {
                 font-size: 36px !important;
             }
-            .menu-item span {
+            .kodi-menu-item span {
                 font-size: 0.65rem;
-            }
-            
-            .user-info-container {
-                margin-top: 12px;
             }
         }
         
         @media (max-width: 400px) {
-            .floating-avatar-info, .user-balance {
-                max-width: 200px;
-            }
-            
-            .menu-grid {
+            .kodi-menu-grid {
                 gap: 6px;
                 max-width: 300px;
                 height: 300px;
-                /* ПОДНЯЛИ СЕТКУ ВЫШЕ */
                 margin-top: 70px;
             }
-            .menu-item i {
+            .kodi-menu-item i {
                 font-size: 34px !important;
             }
-            .menu-item span {
+            .kodi-menu-item span {
                 font-size: 0.6rem;
-            }
-            
-            .user-info-container {
-                margin-top: 10px;
             }
         }
         
         @media (max-width: 340px) {
-            .floating-avatar-info, .user-balance {
-                max-width: 180px;
-            }
-            
-            .menu-grid {
+            .kodi-menu-grid {
                 gap: 5px;
                 max-width: 280px;
                 height: 280px;
-                /* ПОДНЯЛИ СЕТКУ ВЫШЕ */
                 margin-top: 60px;
             }
-            .menu-item i {
+            .kodi-menu-item i {
                 font-size: 32px !important;
             }
-            .menu-item span {
+            .kodi-menu-item span {
                 font-size: 0.55rem;
-            }
-            
-            .user-info-container {
-                margin-top: 8px;
             }
         }
         
         @media (min-width: 769px) and (max-width: 1024px) {
-            .mobile-menu-modal {
+            .kodi-menu-modal {
                 max-height: 55vh;
                 height: auto;
             }
-            .floating-avatar-container {
+            .kodi-avatar-container {
                 top: -35px;
             }
-            .floating-avatar {
+            .kodi-floating-avatar {
                 width: 110px;
                 height: 110px;
             }
-            .floating-avatar-info {
+            .kodi-user-info {
                 font-size: 1.1rem;
             }
-            .user-balance {
+            .kodi-user-balance {
                 font-size: 1rem;
             }
-            .menu-grid {
+            .kodi-menu-grid {
                 max-width: 420px;
                 height: 420px;
-                /* ПОДНЯЛИ СЕТКУ ВЫШЕ */
                 margin-top: 90px;
             }
-            .menu-item i {
+            .kodi-menu-item i {
                 font-size: 38px !important;
             }
-            .menu-item span {
+            .kodi-menu-item span {
                 font-size: 0.8rem;
             }
-            
-            .user-info-container {
-                margin-top: 25px;
-            }
         }
         
-        /* Скрыть на ПК */
+        /* Hide on desktop */
         @media (min-width: 1025px) {
-            .mobile-menu-modal {
+            .kodi-menu-modal {
                 display: none !important;
             }
-            .mobile-menu-bottom {
+            .kodi-menu-bottom {
                 display: none !important;
             }
         }
         
-        /* Новые стили для элементов авторизации */
-        #mobileLoginRegister {
-            display: block;
-            margin-top: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        #mobileLoginRegister:hover {
-            color: #00c6ff;
-            transform: translateY(-2px);
-        }
-        
-        /* Блокировка прокрутки при открытом меню */
-        body.mobile-menu-open {
+        /* Block scroll when menu is open */
+        body.kodi-menu-open {
             overflow: hidden;
             position: relative;
             height: 100%;
@@ -621,22 +520,22 @@
     `;
     document.head.appendChild(style);
 
-    // Глобальные функции навигации
-    window.goToLogin = function() {
-        closeAllMobileMenus();
+    // Navigation functions
+    window.kodiGoToLogin = function() {
+        kodiCloseAllMenus();
         setTimeout(() => {
             window.location.href = "/login";
         }, 100);
     }
 
-    window.goToDashboard = function() {
-        closeAllMobileMenus();
+    window.kodiGoToDashboard = function() {
+        kodiCloseAllMenus();
         setTimeout(() => {
             window.location.href = "/user/dashboard";
         }, 100);
     }
 
-    // Функция для генерации HTML пользователя
+    // Generate user HTML
     function generateUserHTML() {
         const userData = window.currentUser || {};
         let html;
@@ -647,32 +546,32 @@
             
             let avatarHTML;
             if (userData.avatar_url) {
-                avatarHTML = `<img src="${userData.avatar_url}" alt="User Avatar" class="avatar-image">`;
+                avatarHTML = `<img src="${userData.avatar_url}" alt="User Avatar" class="kodi-avatar-image">`;
             } else {
                 const initials = `${userData.first_name.charAt(0)}${userData.last_name.charAt(0)}`;
-                avatarHTML = `<div class="avatar-placeholder" style="background-color: ${userData.avatar_color || '#1a2138'}">${initials}</div>`;
+                avatarHTML = `<div class="kodi-avatar-placeholder" style="background-color: ${userData.avatar_color || '#1a2138'}">${initials}</div>`;
             }
             
             html = `
-                <div class="floating-avatar" onclick="window.goToDashboard()">
+                <div class="kodi-floating-avatar" onclick="kodiGoToDashboard()">
                     ${avatarHTML}
                 </div>
-                <div class="user-info-container">
-                    <div class="floating-avatar-info" onclick="window.goToDashboard()">
+                <div class="kodi-user-info-container">
+                    <div class="kodi-user-info" onclick="kodiGoToDashboard()">
                         ${fullName}
                     </div>
-                    <div class="user-balance" onclick="window.goToDashboard()">
+                    <div class="kodi-user-balance" onclick="kodiGoToDashboard()">
                         ბალანსი: ${formattedBalance}₾
                     </div>
                 </div>
             `;
         } else {
             html = `
-                <div class="floating-avatar" onclick="window.goToLogin()">
-                    <div class="avatar-placeholder">KODI.GE</div>
+                <div class="kodi-floating-avatar" onclick="kodiGoToLogin()">
+                    <div class="kodi-avatar-placeholder">KODI.GE</div>
                 </div>
-                <div class="user-info-container">
-                    <div class="floating-avatar-info not-logged-in" onclick="window.goToLogin()">
+                <div class="kodi-user-info-container">
+                    <div class="kodi-user-info not-logged-in" onclick="kodiGoToLogin()">
                         ლოგინი|რეგისტრაცია
                     </div>
                 </div>
@@ -682,66 +581,65 @@
         return html;
     }
 
-    // Создаем HTML структуру мобильного меню
+    // Create mobile menu structure
     function createMobileMenuStructure() {
-        // Удаляем старый контейнер если существует
-        const oldContainer = getElement('mobile-menu-container');
+        // Remove old container if exists
+        const oldContainer = getElement('kodi-menu-container');
         if (oldContainer) {
             oldContainer.remove();
-            // Очищаем кеш связанных элементов
-            delete cachedElements['mobile-menu-container'];
-            delete cachedElements['mobileMenuModal'];
-            delete cachedElements['appleSubmenuModal'];
-            delete cachedElements['androidSubmenuModal'];
+            delete cachedElements['kodi-menu-container'];
+            delete cachedElements['kodiMainMenu'];
+            delete cachedElements['kodiAppleMenu'];
+            delete cachedElements['kodiAndroidMenu'];
         }
         
         const mobileMenuContainer = document.createElement('div');
-        mobileMenuContainer.id = 'mobile-menu-container';
+        mobileMenuContainer.id = 'kodi-menu-container';
         document.body.appendChild(mobileMenuContainer);
-        cachedElements['mobile-menu-container'] = mobileMenuContainer;
+        cachedElements['kodi-menu-container'] = mobileMenuContainer;
         
         const isDashboard = window.location.pathname.includes('dashboard');
         const userHTML = generateUserHTML();
 
         if (isDashboard) {
-            createDashboardMobileMenu(mobileMenuContainer, userHTML);
+            createDashboardMenu(mobileMenuContainer, userHTML);
         } else {
-            createMainMobileMenu(mobileMenuContainer, userHTML);
+            createMainMenu(mobileMenuContainer, userHTML);
         }
     }
 
-    function createDashboardMobileMenu(container, userHTML) {
+    function createDashboardMenu(container, userHTML) {
         container.innerHTML = `
-            <div class="mobile-menu-modal" id="mobileMenuModal">
-                <div class="modal-content">
+            <div class="kodi-menu-modal" id="kodiMainMenu">
+                <div class="kodi-circuit-board-bg">
                     <div class="modal-header">
-                        <button class="close-modal" onclick="closeMobileMenu()">
+                        <button class="kodi-close-modal" onclick="kodiCloseMenu()">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
                     
-                    <div class="modal-body">
-                        <div class="floating-avatar-container">
+                    <div class="kodi-modal-body">
+                        <div class="kodi-avatar-container">
                             ${userHTML}
                         </div>
-                        <div class="menu-grid">
-                            <div class="menu-item" onclick="window.location.href='/';">
+                        <div class="kodi-menu-grid">
+                            <div class="kodi-menu-item" onclick="window.location.href='/';">
                                 <i class="fas fa-home"></i>
                                 <span>მთავარი</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/user/accounts';">
+                            <div class="kodi-menu-item" onclick="window.location.href='/user/accounts';">
                                 <i class="fas fa-wallet"></i>
                                 <span>ანგარიშები</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/user/history_checks';">
+                            <div class="kodi-menu-item" onclick="window.location.href='/user/history_checks';">
                                 <i class="fas fa-history"></i>
                                 <span>IMEI ისტორია</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/user/settings';">
+                            <div class="kodi-menu-item" onclick="window.location.href='/user/settings';">
                                 <i class="fas fa-cog"></i>
                                 <span>პარამეტრები</span>
                             </div>
-                            <div class="menu-item" onclick="window.location.href='/auth/logout';">
+                            <div class="kodi-menu-item" onclick="window.location.href='/auth/logout';">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>გასვლა</span>
                             </div>
@@ -752,54 +650,54 @@
         `;
     }
 
-    function createMainMobileMenu(container, userHTML) {
+    function createMainMenu(container, userHTML) {
         container.innerHTML = `
-            <!-- Mobile Menu Modal -->
-            <div class="mobile-menu-modal" id="mobileMenuModal">
-                <button class="close-modal" onclick="closeMobileMenu()">
+            <!-- Main Menu -->
+            <div class="kodi-menu-modal" id="kodiMainMenu">
+                <button class="kodi-close-modal" onclick="kodiCloseMenu()">
                     <i class="fas fa-times"></i>
                 </button>
                 
-                <div class="floating-avatar-container">
+                <div class="kodi-avatar-container">
                     ${userHTML}
                 </div>
                 
-                <div class="modal-content">
-                    <div class="modal-body">
-                        <div class="menu-grid">
-                            <a class="menu-item" href="/">
+                <div class="kodi-circuit-board-bg">
+                    <div class="kodi-modal-body">
+                        <div class="kodi-menu-grid">
+                            <a class="kodi-menu-item" href="/">
                                 <i class="fas fa-home"></i>
                                 <span>მთავარი</span>
                             </a>
-                            <div class="menu-item" onclick="openAppleSubmenu()">
+                            <div class="kodi-menu-item" onclick="kodiOpenAppleMenu()">
                                 <i class="fab fa-apple"></i>
                                 <span>Apple</span>
                             </div>
-                            <div class="menu-item" onclick="openAndroidSubmenu()">
+                            <div class="kodi-menu-item" onclick="kodiOpenAndroidMenu()">
                                 <i class="fab fa-android"></i>
                                 <span>Android</span>
                             </div>
-                            <div class="menu-item disabled">
+                            <div class="kodi-menu-item disabled">
                                 <i class="fas fa-unlock-alt"></i>
                                 <span>განბლოკვა</span>
                             </div>
-                            <a class="menu-item" href="/compares">
+                            <a class="kodi-menu-item" href="/compares">
                                 <i class="fas fa-exchange-alt"></i>
                                 <span>შედარება</span>
                             </a>
-                            <a class="menu-item" href="/knowledge-base">
+                            <a class="kodi-menu-item" href="/knowledge-base">
                                 <i class="fas fa-book"></i>
                                 <span>ცოდნის ბაზა</span>
                             </a>
-                            <a class="menu-item" href="/contacts">
+                            <a class="kodi-menu-item" href="/contacts">
                                 <i class="fas fa-address-card"></i>
                                 <span>კონტაქტი</span>
                             </a>
-                            <div class="menu-item">
+                            <div class="kodi-menu-item">
                                 <i class="fas fa-shield-alt"></i>
                                 <span>კონფიდენციალურობა</span>
                             </div>
-                            <div class="menu-item">
+                            <div class="kodi-menu-item">
                                 <i class="fas fa-undo"></i>
                                 <span>დაბრუნება</span>
                             </div>
@@ -808,55 +706,55 @@
                 </div>
             </div>
 
-            <!-- Apple Submenu Modal -->
-            <div class="mobile-menu-modal" id="appleSubmenuModal">
-                <button class="close-modal" onclick="closeAppleSubmenu()">
+            <!-- Apple Submenu -->
+            <div class="kodi-menu-modal" id="kodiAppleMenu">
+                <button class="kodi-close-modal" onclick="kodiCloseAppleMenu()">
                     <i class="fas fa-times"></i>
                 </button>
 
-                <div class="floating-avatar-container">
+                <div class="kodi-avatar-container">
                     ${userHTML}
                 </div>
                 
-                <div class="modal-content">
-                    <div class="modal-body">
-                        <div class="menu-grid">
-                            <a class="menu-item" href="/applecheck?type=free">
+                <div class="kodi-circuit-board-bg">
+                    <div class="kodi-modal-body">
+                        <div class="kodi-menu-grid">
+                            <a class="kodi-menu-item" href="/applecheck?type=free">
                                 <img src="static/ico/8f1197c9-19f4-4923-8030-4f7b88c9d697_20250627_012614_0000.png" 
-                                     class="menu-icon-img">
+                                     class="kodi-menu-icon-img">
                                 <span>უფასო შემოწმება</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=fmi">
+                            <a class="kodi-menu-item" href="/applecheck?type=fmi">
                                 <img src="static/ico/f9a07c0e-e427-4a1a-aab9-948ba60f1b6a_20250627_012716_0000.png" 
-                                     class="menu-icon-img">
+                                     class="kodi-menu-icon-img">
                                 <span>FMI iCloud</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=sim_lock">
+                            <a class="kodi-menu-item" href="/applecheck?type=sim_lock">
                                 <img src="static/ico/957afe67-7a27-48cb-9622-6c557b220b71_20250627_012808_0000.png" 
-                                     class="menu-icon-img">
+                                     class="kodi-menu-icon-img">
                                 <span>SIM ლოკი</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=blacklist">
+                            <a class="kodi-menu-item" href="/applecheck?type=blacklist">
                                 <img src="static/ico/4e28c4f2-541b-4a1b-8163-c79e6db5481c_20250627_012852_0000.png" 
-                                     class="menu-icon-img">
+                                     class="kodi-menu-icon-img">
                                 <span>შავი სია</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=mdm">
+                            <a class="kodi-menu-item" href="/applecheck?type=mdm">
                                 <img src="static/ico/275e6a62-c55e-48b9-8781-5b323ebcdce0_20250627_012946_0000.png" 
-                                     class="menu-icon-img">
+                                     class="kodi-menu-icon-img">
                                 <span>MDM ბლოკი</span>
                             </a>
-                            <a class="menu-item" href="/applecheck?type=premium">
+                            <a class="kodi-menu-item" href="/applecheck?type=premium">
                                 <img src="static/ico/84df4824-0564-447c-b5c4-e749442bdc19_20250627_013110_0000.png" 
-                                     class="menu-icon-img">
+                                     class="kodi-menu-icon-img">
                                 <span>პრემიუმ შემოწმება</span>
                             </a>
-                            <a class="menu-item" href="#" onclick="alert('სერვისი მომზადების პროცესშია');">
+                            <a class="kodi-menu-item" href="#" onclick="alert('სერვისი მომზადების პროცესშია');">
                                 <img src="static/ico/874fae5b-c0f5-42d8-9c37-679aa86360e6_20250627_013030_0000.png" 
-                                     class="menu-icon-img">
+                                     class="kodi-menu-icon-img">
                                 <span>MacBook</span>
                             </a>
-                            <div class="menu-item" onclick="closeAppleSubmenu()">
+                            <div class="kodi-menu-item" onclick="kodiCloseAppleMenu()">
                                 <i class="fas fa-arrow-left"></i>
                                 <span>უკან</span>
                             </div>
@@ -865,48 +763,48 @@
                 </div>
             </div>
 
-            <!-- Android Submenu Modal -->
-            <div class="mobile-menu-modal" id="androidSubmenuModal">
-                <button class="close-modal" onclick="closeAndroidSubmenu()">
+            <!-- Android Submenu -->
+            <div class="kodi-menu-modal" id="kodiAndroidMenu">
+                <button class="kodi-close-modal" onclick="kodiCloseAndroidMenu()">
                     <i class="fas fa-times"></i>
                 </button>
 
-                <div class="floating-avatar-container">
+                <div class="kodi-avatar-container">
                     ${userHTML}
                 </div>
                 
-                <div class="modal-content">
-                    <div class="modal-body">
-                        <div class="menu-grid">
-                            <a class="menu-item" href="/androidcheck">
+                <div class="kodi-circuit-board-bg">
+                    <div class="kodi-modal-body">
+                        <div class="kodi-menu-grid">
+                            <a class="kodi-menu-item" href="/androidcheck">
                                 <i class="fab fa-samsung"></i>
                                 <span>Samsung</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck">
+                            <a class="kodi-menu-item" href="/androidcheck">
                                 <i class="fas fa-bolt"></i>
                                 <span>Xiaomi</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck">
+                            <a class="kodi-menu-item" href="/androidcheck">
                                 <i class="fab fa-google"></i>
                                 <span>Pixel</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck">
+                            <a class="kodi-menu-item" href="/androidcheck">
                                 <i class="fab fa-huawei"></i>
                                 <span>Huawei</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck">
+                            <a class="kodi-menu-item" href="/androidcheck">
                                 <i class="fas fa-circle"></i>
                                 <span>Oppo</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck">
+                            <a class="kodi-menu-item" href="/androidcheck">
                                 <i class="fab fa-android"></i>
                                 <span>LG</span>
                             </a>
-                            <a class="menu-item" href="/androidcheck">
+                            <a class="kodi-menu-item" href="/androidcheck">
                                 <i class="fas fa-ellipsis-h"></i>
                                 <span>სხვა</span>
                             </a>
-                            <div class="menu-item" onclick="closeAndroidSubmenu()">
+                            <div class="kodi-menu-item" onclick="kodiCloseAndroidMenu()">
                                 <i class="fas fa-arrow-left"></i>
                                 <span>უკან</span>
                             </div>
@@ -917,140 +815,140 @@
         `;
     }
 
-    // Mobile menu functions
-    window.openMobileMenu = function() {
-        const modal = getElement('mobileMenuModal');
+    // Menu functions
+    window.kodiOpenMenu = function() {
+        const modal = getElement('kodiMainMenu');
         if (modal) {
-            document.body.classList.add('mobile-menu-open');
+            document.body.classList.add('kodi-menu-open');
             modal.style.display = 'flex';
             setTimeout(() => {
                 modal.classList.add('open');
             }, 10);
         } else {
             createMobileMenuStructure();
-            setTimeout(openMobileMenu, 50);
+            setTimeout(kodiOpenMenu, 50);
         }
     }
 
-    window.closeMobileMenu = function() {
-        const modal = getElement('mobileMenuModal');
+    window.kodiCloseMenu = function() {
+        const modal = getElement('kodiMainMenu');
         if (modal) {
             modal.classList.remove('open');
             setTimeout(() => {
                 if (modal.classList.contains('open')) return;
                 modal.style.display = 'none';
-                document.body.classList.remove('mobile-menu-open');
+                document.body.classList.remove('kodi-menu-open');
             }, 400);
         }
     }
 
-    window.openAppleSubmenu = function() {
-        closeMobileMenu();
+    window.kodiOpenAppleMenu = function() {
+        kodiCloseMenu();
         setTimeout(() => {
-            const appleModal = getElement('appleSubmenuModal');
+            const appleModal = getElement('kodiAppleMenu');
             if (appleModal) {
-                document.body.classList.add('mobile-menu-open');
+                document.body.classList.add('kodi-menu-open');
                 appleModal.style.display = 'flex';
                 setTimeout(() => {
                     appleModal.classList.add('open');
                 }, 10);
             } else {
                 createMobileMenuStructure();
-                setTimeout(openAppleSubmenu, 50);
+                setTimeout(kodiOpenAppleMenu, 50);
             }
         }, 50);
     }
 
-    window.closeAppleSubmenu = function() {
-        const appleModal = getElement('appleSubmenuModal');
+    window.kodiCloseAppleMenu = function() {
+        const appleModal = getElement('kodiAppleMenu');
         if (appleModal) {
             appleModal.classList.remove('open');
             setTimeout(() => {
                 if (appleModal.classList.contains('open')) return;
                 appleModal.style.display = 'none';
-                document.body.classList.remove('mobile-menu-open');
+                document.body.classList.remove('kodi-menu-open');
             }, 400);
         }
     }
 
-    window.openAndroidSubmenu = function() {
-        closeMobileMenu();
+    window.kodiOpenAndroidMenu = function() {
+        kodiCloseMenu();
         setTimeout(() => {
-            const androidModal = getElement('androidSubmenuModal');
+            const androidModal = getElement('kodiAndroidMenu');
             if (androidModal) {
-                document.body.classList.add('mobile-menu-open');
+                document.body.classList.add('kodi-menu-open');
                 androidModal.style.display = 'flex';
                 setTimeout(() => {
                     androidModal.classList.add('open');
                 }, 10);
             } else {
                 createMobileMenuStructure();
-                setTimeout(openAndroidSubmenu, 50);
+                setTimeout(kodiOpenAndroidMenu, 50);
             }
         }, 50);
     }
 
-    window.closeAndroidSubmenu = function() {
-        const androidModal = getElement('androidSubmenuModal');
+    window.kodiCloseAndroidMenu = function() {
+        const androidModal = getElement('kodiAndroidMenu');
         if (androidModal) {
             androidModal.classList.remove('open');
             setTimeout(() => {
                 if (androidModal.classList.contains('open')) return;
                 androidModal.style.display = 'none';
-                document.body.classList.remove('mobile-menu-open');
+                document.body.classList.remove('kodi-menu-open');
             }, 400);
         }
     }
 
-    window.closeAllMobileMenus = function() {
-        closeMobileMenu();
-        closeAppleSubmenu();
-        closeAndroidSubmenu();
-        document.body.classList.remove('mobile-menu-open');
+    window.kodiCloseAllMenus = function() {
+        kodiCloseMenu();
+        kodiCloseAppleMenu();
+        kodiCloseAndroidMenu();
+        document.body.classList.remove('kodi-menu-open');
     }
 
-    // Initialize mobile menu when the page loads
+    // Initialize menu
     document.addEventListener('DOMContentLoaded', () => {
         createMobileMenuStructure();
         
-        // Mobile menu button setup
-        const mobileMenuBtn = getElement('mobileMenuBtn');
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', function() {
+        // Menu button setup
+        const menuBtn = getElement('mobileMenuBtn');
+        if (menuBtn) {
+            menuBtn.addEventListener('click', function() {
                 createMobileMenuStructure();
-                setTimeout(openMobileMenu, 50);
+                setTimeout(kodiOpenMenu, 50);
             });
         }
 
         // Close menu when clicking outside
         document.addEventListener('click', (e) => {
-            const mobileMenuModal = getElement('mobileMenuModal');
-            const appleSubmenuModal = getElement('appleSubmenuModal');
-            const androidSubmenuModal = getElement('androidSubmenuModal');
-            const floatingAvatar = document.querySelector('.floating-avatar-container');
+            const mainMenu = getElement('kodiMainMenu');
+            const appleMenu = getElement('kodiAppleMenu');
+            const androidMenu = getElement('kodiAndroidMenu');
+            const avatarContainer = document.querySelector('.kodi-avatar-container');
             
-            // Проверка для основного меню
-            if (mobileMenuModal && mobileMenuModal.classList.contains('open') && 
-                !mobileMenuModal.contains(e.target) && 
+            // Main menu check
+            if (mainMenu && mainMenu.classList.contains('open') && 
+                !mainMenu.contains(e.target) && 
                 e.target.id !== 'mobileMenuBtn' &&
-                !(floatingAvatar && floatingAvatar.contains(e.target))) {
-                closeMobileMenu();
+                !(avatarContainer && avatarContainer.contains(e.target))) {
+                kodiCloseMenu();
             }
             
-            // Проверка для подменю Apple
-            if (appleSubmenuModal && appleSubmenuModal.classList.contains('open') && 
-                !appleSubmenuModal.contains(e.target) && 
+            // Apple menu check
+            if (appleMenu && appleMenu.classList.contains('open') && 
+                !appleMenu.contains(e.target) && 
                 e.target.id !== 'mobileMenuBtn' &&
-                !(floatingAvatar && floatingAvatar.contains(e.target))) {
-                closeAppleSubmenu();
+                !(avatarContainer && avatarContainer.contains(e.target))) {
+                kodiCloseAppleMenu();
             }
             
-            // Проверка для подменю Android
-            if (androidSubmenuModal && androidSubmenuModal.classList.contains('open') && 
-                !androidSubmenuModal.contains(e.target) && 
+            // Android menu check
+            if (androidMenu && androidMenu.classList.contains('open') && 
+                !androidMenu.contains(e.target) && 
                 e.target.id !== 'mobileMenuBtn' &&
-                !(floatingAvatar && floatingAvatar.contains(e.target))) {
-                closeAndroidSubmenu();
+                !(avatarContainer && avatarContainer.contains(e.target))) {
+                kodiCloseAndroidMenu();
             }
         });
     });
