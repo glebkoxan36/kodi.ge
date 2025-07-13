@@ -54,7 +54,7 @@
         }
         
         .mobile-menu-modal {
-            display: none;
+            display: flex;
             position: fixed;
             bottom: 0;
             left: 0;
