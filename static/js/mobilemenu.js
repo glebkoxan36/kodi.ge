@@ -16,7 +16,7 @@
         .mobile-menu-bottom {
             display: none;
             position: fixed;
-            bottom: 0;
+            bottom: -5;
             left: 0;
             right: 0;
             text-align: center;
@@ -137,7 +137,7 @@
         /* Кнопка закрытия */
         .close-modal {
             position: absolute;
-            top: 25px; /* Опущена ниже */
+            top: 35px; /* Опущена ниже */
             right: 15px;
             background: #ff6b6b;
             color: white;
@@ -164,7 +164,7 @@
         /* Позиционирование аватарки */
         .floating-avatar-container {
             position: absolute;
-            top: -35px;
+            top: -32px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
