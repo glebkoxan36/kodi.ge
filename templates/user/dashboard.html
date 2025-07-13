@@ -406,19 +406,30 @@
         }
         
         function showTopupModal() {
-            document.getElementById('topupModal').style.display = 'flex';
+            const modal = document.getElementById('topupModal');
+            modal.style.display = 'flex';
+            // Активируем анимацию через 10мс
+            setTimeout(() => {
+                modal.classList.add('active');
+            }, 10);
         }
         
         function closeModal() {
-            document.getElementById('topupModal').style.display = 'none';
-            document.getElementById('successModal').style.display = 'none';
+            const modals = document.querySelectorAll('.result-modal');
+            modals.forEach(modal => {
+                modal.classList.remove('active');
+                // Задержка для анимации перед скрытием
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
+            });
         }
         
         function closeModalAndReload() {
             closeModal();
             setTimeout(function() {
                 location.reload();
-            }, 100);
+            }, 400);
         }
         
         async function initiatePayment() {
@@ -484,7 +495,11 @@
             if (paymentStatus === 'success') {
                 const amount = urlParams.get('amount') || '10.00';
                 document.getElementById('successAmount').textContent = `${amount} ₾`;
-                document.getElementById('successModal').style.display = 'flex';
+                const successModal = document.getElementById('successModal');
+                successModal.style.display = 'flex';
+                setTimeout(() => {
+                    successModal.classList.add('active');
+                }, 10);
                 
                 setTimeout(function() {
                     location.reload();
@@ -497,4 +512,4 @@
         });
     </script>
 </body>
-</html>
+                                            </html>
