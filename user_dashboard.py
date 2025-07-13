@@ -5,7 +5,7 @@ from bson.errors import InvalidId
 from functools import wraps
 import os
 import stripe
-from .stripepay import StripePayment
+from stripepay import StripePayment
 from datetime import datetime
 
 # Инициализация Blueprint
