@@ -27,7 +27,7 @@
             right: 0;
             text-align: center;
             z-index: 1050;
-            padding-bottom: env(safe-area-inset-bottom, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 5px);
         }
         
         @media (max-width: 1024px) {
