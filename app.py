@@ -1,3 +1,4 @@
+
 import os
 import json
 import logging
@@ -27,6 +28,7 @@ from auth import auth_bp
 from ifreeapi import validate_imei, perform_api_check, parse_free_html
 from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection
 from stripepay import StripePayment
+from user_dashboard import user_bp  # Импортируем исправленный блюпринт
 
 app = Flask(__name__)
 CORS(app)
@@ -838,7 +840,8 @@ def reparse_imei():
         'server_response': BeautifulSoup(html_content, 'html.parser').get_text()
     })
 
-@app.route('/stripe_webhook', methods=['POST'])
+# Исправленный вебхук Stripe
+@app.route('/user/stripe-webhook', methods=['POST'])
 @csrf.exempt
 def stripe_webhook():
     payload = request.data
@@ -1054,226 +1057,6 @@ def upload_carousel_image():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# ======================================
-# User Blueprint (Личный кабинет пользователя)
-# ======================================
-
-user_bp = Blueprint('user', __name__, url_prefix='/user')
-
-@user_bp.route('/dashboard')
-@login_required
-def dashboard():
-    """Личный кабинет пользователя"""
-    user_id = session['user_id']
-    if not client:
-        flash('Database unavailable', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    user = get_user_data()
-    if not user:
-        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    # Получение баланса
-    balance = user.get('balance', 0)
-    
-    # Последние 5 проверок
-    last_checks = list(checks_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
-    
-    # Последние 5 платежей
-    last_payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1).limit(5))
-    
-    # Общее количество проверок
-    total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
-    
-    # Генерируем цвет аватара
-    avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
-    
-    return render_template(
-        'user/dashboard.html',
-        user=user,
-        balance=balance,
-        last_checks=last_checks,
-        last_payments=last_payments,
-        total_checks=total_checks,
-        stripe_public_key=STRIPE_PUBLIC_KEY,
-        avatar_color=avatar_color
-    )
-
-@user_bp.route('/settings')
-@login_required
-def settings():
-    """Страница настроек пользователя"""
-    user = get_user_data()
-    if not user:
-        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    avatar_color = generate_avatar_color(user.get('first_name', '') + ' ' + user.get('last_name', ''))
-    
-    return render_template(
-        'user/settings.html',
-        user=user,
-        avatar_color=avatar_color
-    )
-
-@user_bp.route('/topup', methods=['GET', 'POST'])
-@login_required
-@csrf.exempt
-def topup_balance():
-    """Пополнение баланса"""
-    if request.method == 'POST':
-        try:
-            amount = float(request.form.get('amount'))
-        except (TypeError, ValueError):
-            flash('არასწორი თანხის ფორმატი', 'danger')
-            return redirect(url_for('user.topup_balance'))
-            
-        if amount < 1:
-            flash('მინიმალური თანხა: 1 ₾', 'danger')
-            return redirect(url_for('user.topup_balance'))
-        
-        # Используем StripePayment для создания сессии пополнения
-        try:
-            base_url = request.host_url.rstrip('/')
-            success_url = f"{base_url}/user/topup/success?amount={amount}"
-            cancel_url = f"{base_url}/user/dashboard"
-            idempotency_key = secrets.token_hex(16)
-            
-            stripe_session = stripe_payment.create_topup_session(
-                user_id=str(session['user_id']),
-                amount=amount,
-                success_url=success_url,
-                cancel_url=cancel_url,
-                idempotency_key=idempotency_key
-            )
-            return redirect(stripe_session.url)
-        except Exception as e:
-            flash(f'გადახდის სესიის შექმნის შეცდომა: {str(e)}', 'danger')
-            return redirect(url_for('user.topup_balance'))
-    
-    return render_template('user/topup.html', stripe_public_key=STRIPE_PUBLIC_KEY)
-
-@user_bp.route('/topup/success')
-@login_required
-def topup_success():
-    """Успешное пополнение баланса"""
-    amount = request.args.get('amount', '0.00')
-    flash(f'გადახდა წარმატებით დასრულდა! თქვენი ბალანსი მალე განახლდება (+{amount} ₾).', 'success')
-    return redirect(url_for('user.dashboard'))
-
-@user_bp.route('/payment-methods')
-@login_required
-def payment_methods():
-    """Управление платежными методами"""
-    return render_template('user/payment_methods.html')
-
-@user_bp.route('/accounts', endpoint='accounts')
-@user_bp.route('/payment_history', endpoint='payment_history')
-@login_required
-def accounts():
-    """История платежей"""
-    user_id = session['user_id']
-    if not client:
-        flash('Database unavailable', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    user = get_user_data()
-    if not user:
-        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    # Получаем всю историю платежей
-    payments = list(payments_collection.find({'user_id': ObjectId(user_id)}).sort('timestamp', -1))
-    
-    return render_template(
-        'user/accounts.html',
-        user=user,
-        payments=payments
-    )
-
-@user_bp.route('/history/checks')
-@login_required
-def history_checks():
-    """История проверок IMEI"""
-    user = get_user_data()
-    if not user:
-        flash('მომხმარებელი ვერ მოიძებნა', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    balance = user.get('balance', 0)
-    
-    page = int(request.args.get('page', 1))
-    per_page = 20
-    
-    # Исправленный запрос с пагинацией
-    query = checks_collection.find({'user_id': ObjectId(user['_id'])})
-    query = query.sort('timestamp', -1)
-    query = query.skip((page - 1) * per_page).limit(per_page)
-    checks = list(query)
-    
-    total = checks_collection.count_documents({'user_id': ObjectId(user['_id'])})
-    
-    for check in checks:
-        check['timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M')
-    
-    return render_template(
-        'user/history_checks.html',
-        user=user,
-        balance=balance,
-        checks=checks,
-        page=page,
-        per_page=per_page,
-        total=total
-    )
-
-@user_bp.route('/check-details/<check_id>')
-@login_required
-def check_details(check_id):
-    """Возвращает детали проверки IMEI в формате JSON"""
-    try:
-        obj_id = ObjectId(check_id)
-    except InvalidId:
-        return jsonify({'error': 'არასწორი ID'}), 400
-
-    user_id = ObjectId(session['user_id'])
-    check = checks_collection.find_one({'_id': obj_id, 'user_id': user_id})
-
-    if not check:
-        return jsonify({'error': 'შემოწმება ვერ მოიძებნა'}), 404
-
-    # Определяем статус
-    status = check.get('status', 'unknown')
-    
-    # Собираем детали
-    details = {
-        'imei': check.get('imei', ''),
-        'timestamp': check['timestamp'].strftime('%Y-%m-%d %H:%M'),
-        'status': status,
-        'device_info': '',
-        'additional_info': ''
-    }
-
-    result = check.get('result')
-    if isinstance(result, dict):
-        # Получаем модель
-        model = result.get('model') or result.get('მოდელი') or result.get('device_model') or ''
-        details['device_info'] = model
-
-        # Собираем дополнительные поля, исключая некоторые
-        excluded_keys = ['status', 'სტატუსი', 'model', 'მოდელი', 'server_response', 'service_type', 'imei', 'device_model']
-        additional_info_parts = []
-        for key, value in result.items():
-            if key not in excluded_keys:
-                additional_info_parts.append(f"{key}: {value}")
-
-        details['additional_info'] = '\n'.join(additional_info_parts) or 'დამატებითი ინფორმაცია არ არის'
-    else:
-        # Если результат не словарь, то выводим как есть
-        details['additional_info'] = str(result) or 'დამატებითი ინფორმაცია არ არის'
-
-    return jsonify(details)
-
 # Заглушка для админ-панели
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -1283,7 +1066,7 @@ def admin_dashboard():
 
 # Регистрация блюпринтов
 app.register_blueprint(auth_bp)
-app.register_blueprint(user_bp)
+app.register_blueprint(user_bp)  # Исправленный блюпринт
 app.register_blueprint(admin_bp)
 
 # Установка CSRF-куки для AJAX
