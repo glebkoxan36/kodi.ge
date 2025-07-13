@@ -49,7 +49,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto;
+            margin: auto;
             transition: all 0.3s ease;
             margin-bottom: 0px;
         }
