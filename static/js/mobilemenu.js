@@ -59,7 +59,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 60vh;
+            height: 65vh;
             max-height: none;
             z-index: 1100;
             align-items: flex-end;
@@ -772,7 +772,7 @@
                                 <i class="fas fa-unlock-alt"></i>
                                 <span>განბლოკვა</span>
                             </div>
-                            <a class="menu-item" href="/compare">
+                            <a class="menu-item" href="/compares">
                                 <i class="fas fa-exchange-alt"></i>
                                 <span>შედარება</span>
                             </a>
