@@ -13,11 +13,10 @@
     const style = document.createElement('style');
     style.id = 'mobile-menu-styles';
     style.textContent = `
-    
         .html, body {
           margin: 0;
           padding: 0;
-          }
+        }
           
         .mobile-menu-bottom {
             display: none;
@@ -75,7 +74,6 @@
             overflow: visible;
             padding-top: 0;
             border-radius: 30px 30px 0 0;
-            
             box-sizing: border-box;
         }
         
@@ -101,7 +99,7 @@
             padding-bottom: env(safe-area-inset-bottom, 0);
         }
 
-        /* Enhanced circuit lines effect */
+        /* Эффект микросхемы */
         .modal-content::before {
             content: '';
             position: absolute;
@@ -109,63 +107,56 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-image: 
-                /* Main circuit paths */
-                linear-gradient(to right, 
-                    transparent 15%,
-                    rgba(0, 230, 255, 0.4) 16%,
-                    rgba(0, 230, 255, 0.4) 17%,
-                    transparent 18%,
-                    transparent 48%,
-                    rgba(0, 230, 255, 0.4) 49%,
-                    rgba(0, 230, 255, 0.4) 51%,
+            background: 
+                /* Горизонтальные дорожки */
+                linear-gradient(0deg, 
+                    transparent 24%, 
+                    rgba(0, 230, 255, 0.15) 25%,
+                    rgba(0, 230, 255, 0.15) 26%,
+                    transparent 27%,
+                    transparent 49%,
+                    rgba(0, 230, 255, 0.15) 50%,
+                    rgba(0, 230, 255, 0.15) 51%,
                     transparent 52%,
-                    transparent 82%,
-                    rgba(0, 230, 255, 0.4) 83%,
-                    rgba(0, 230, 255, 0.4) 84%,
-                    transparent 85%
+                    transparent 74%,
+                    rgba(0, 230, 255, 0.15) 75%,
+                    rgba(0, 230, 255, 0.15) 76%,
+                    transparent 77%
                 ),
-                /* Vertical connectors */
-                linear-gradient(to bottom, 
-                    transparent 25%,
-                    rgba(0, 230, 255, 0.3) 26%,
-                    rgba(0, 230, 255, 0.3) 27%,
-                    transparent 28%,
-                    transparent 75%,
-                    rgba(0, 230, 255, 0.3) 76%,
-                    rgba(0, 230, 255, 0.3) 77%,
-                    transparent 78%
+                /* Вертикальные дорожки */
+                linear-gradient(90deg, 
+                    transparent 19%, 
+                    rgba(0, 230, 255, 0.15) 20%,
+                    rgba(0, 230, 255, 0.15) 21%,
+                    transparent 22%,
+                    transparent 44%,
+                    rgba(0, 230, 255, 0.15) 45%,
+                    rgba(0, 230, 255, 0.15) 46%,
+                    transparent 47%,
+                    transparent 69%,
+                    rgba(0, 230, 255, 0.15) 70%,
+                    rgba(0, 230, 255, 0.15) 71%,
+                    transparent 72%,
+                    transparent 94%,
+                    rgba(0, 230, 255, 0.15) 95%,
+                    rgba(0, 230, 255, 0.15) 96%,
+                    transparent 97%
                 ),
-                /* Circuit dots/nodes */
-                radial-gradient(circle, rgba(0, 230, 255, 0.6) 2px, transparent 3px),
-                radial-gradient(circle, rgba(0, 230, 255, 0.6) 2px, transparent 3px);
-            
-            background-size: 
-                100% 5px,
-                5px 100%,
-                30px 30px,
-                60px 60px;
-            
-            background-position: 
-                0 35%,
-                20% 0,
-                0 0,
-                30px 30px;
-            
-            background-repeat: repeat;
-            opacity: 0.8;
+                /* Контактные точки */
+                radial-gradient(circle, rgba(0, 230, 255, 0.5) 2px, transparent 3px);
+            background-size: 100px 100px, 100px 100px, 30px 30px;
+            opacity: 0.7;
             z-index: 1;
-            animation: circuitGlow 3s infinite ease-in-out;
+            animation: circuitFlow 15s linear infinite;
         }
 
-        /* Animation for circuit effect */
-        @keyframes circuitGlow {
-            0% { opacity: 0.7; }
-            50% { opacity: 0.9; }
-            100% { opacity: 0.7; }
+        /* Анимация платы */
+        @keyframes circuitFlow {
+            0% { background-position: 0 0, 0 0, 0 0; }
+            100% { background-position: 0 100px, 100px 0, 30px 30px; }
         }
 
-        /* Additional glow effect */
+        /* Эффект свечения */
         .modal-content::after {
             content: '';
             position: absolute;
@@ -173,10 +164,17 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: radial-gradient(circle at center, 
-                rgba(0, 230, 255, 0.1) 0%, 
-                transparent 70%
-            );
+            background: 
+                radial-gradient(
+                    circle at 20% 30%,
+                    rgba(0, 150, 255, 0.1) 0%,
+                    transparent 40%
+                ),
+                radial-gradient(
+                    circle at 80% 70%,
+                    rgba(100, 0, 255, 0.1) 0%,
+                    transparent 40%
+                );
             z-index: 2;
             pointer-events: none;
         }
@@ -193,7 +191,7 @@
             z-index: 3;
         }
         
-        /* Кнопка закрытия - опущена ниже */
+        /* Кнопка закрытия */
         .close-modal {
             position: absolute;
             top: 5px;
@@ -397,7 +395,8 @@
             background: transparent;
             box-sizing: border-box;
             padding: 0;
-            margin-top: 60px;
+            /* ПОДНЯЛИ СЕТКУ ВЫШЕ */
+            margin-top: 30px;
         }
         
         .menu-item {
@@ -406,15 +405,16 @@
             align-items: center;
             justify-content: center;
             border-radius: 15px;
-            background: linear-gradient(135deg, #1a2138, #0e1321);
-            border: 1px solid rgba(0, 198, 255, 0.4);
+            background: linear-gradient(135deg, #1a2138cc, #0e1321cc);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(0, 198, 255, 0.6);
             aspect-ratio: 1 / 1;
             text-align: center;
             transition: all 0.3s ease;
             cursor: pointer;
             box-shadow: 
-                0 4px 12px rgba(0, 0, 0, 0.3),
-                inset 0 0 10px rgba(0, 198, 255, 0.1);
+                0 4px 12px rgba(0, 0, 0, 0.5),
+                inset 0 0 10px rgba(0, 198, 255, 0.15);
             min-width: 0;
             min-height: 0;
             padding: 12px 8px;
@@ -425,12 +425,12 @@
         }
         
         .menu-item:hover {
-            background: linear-gradient(135deg, #223056, #121a33);
+            background: linear-gradient(135deg, #223056cc, #121a33cc);
             transform: translateY(-7px);
             border-color: var(--accent-color);
             box-shadow: 
-                0 6px 16px rgba(0, 0, 0, 0.4),
-                inset 0 0 15px rgba(0, 198, 255, 0.2);
+                0 6px 16px rgba(0, 0, 0, 0.6),
+                inset 0 0 15px rgba(0, 198, 255, 0.25);
         }
         
         .menu-item span {
@@ -462,7 +462,8 @@
                 gap: 10px;
                 max-width: 380px;
                 height: 380px;
-                margin-top: 120px;
+                /* ПОДНЯЛИ СЕТКУ ВЫШЕ */
+                margin-top: 90px;
             }
             .menu-item {
                 padding: 10px 7px;
@@ -489,7 +490,8 @@
                 gap: 8px;
                 max-width: 340px;
                 height: 340px;
-                margin-top: 110px;
+                /* ПОДНЯЛИ СЕТКУ ВЫШЕ */
+                margin-top: 80px;
             }
             .menu-item i {
                 font-size: 36px !important;
@@ -512,7 +514,8 @@
                 gap: 6px;
                 max-width: 300px;
                 height: 300px;
-                margin-top: 100px;
+                /* ПОДНЯЛИ СЕТКУ ВЫШЕ */
+                margin-top: 70px;
             }
             .menu-item i {
                 font-size: 34px !important;
@@ -535,7 +538,8 @@
                 gap: 5px;
                 max-width: 280px;
                 height: 280px;
-                margin-top: 90px;
+                /* ПОДНЯЛИ СЕТКУ ВЫШЕ */
+                margin-top: 60px;
             }
             .menu-item i {
                 font-size: 32px !important;
@@ -570,7 +574,8 @@
             .menu-grid {
                 max-width: 420px;
                 height: 420px;
-                margin-top: 120px;
+                /* ПОДНЯЛИ СЕТКУ ВЫШЕ */
+                margin-top: 90px;
             }
             .menu-item i {
                 font-size: 38px !important;
