@@ -60,7 +60,7 @@
         }
         
         .mobile-menu-modal {
-            display: flex;
+            display: none;
             position: fixed;
             bottom: 0;
             left: 0;
