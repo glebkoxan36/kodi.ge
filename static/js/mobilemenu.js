@@ -69,7 +69,6 @@
             overflow: visible;
             padding-top: 0;
             border-radius: 30px 30px 0 0;
-            padding-bottom: env(safe-area-inset-bottom, 0);
             box-sizing: border-box;
         }
         
@@ -78,11 +77,10 @@
             display: flex;
         }
         
-        /* Улучшенный космический фон */
+        /* Circuit Board Background */
         .mobile-menu-modal .modal-content {
             background: 
-                radial-gradient(circle at 20% 30%, #0a0e17 0%, #1a2138 40%),
-                linear-gradient(135deg, #0a0e17, #1a2138);
+                linear-gradient(135deg, #0c0f1a 0%, #161b2e 100%);
             border: 3px solid rgba(0, 198, 255, 0.4);
             border-radius: 30px 30px 0 0;
             box-shadow: 
@@ -93,9 +91,10 @@
             width: 100%;
             height: 100%;
             z-index: 1;
+            padding-bottom: env(safe-area-inset-bottom, 0);
         }
 
-        /* Улучшенный звездный узор */
+        /* Circuit lines effect */
         .modal-content::before {
             content: '';
             position: absolute;
@@ -104,11 +103,22 @@
             right: 0;
             bottom: 0;
             background-image: 
-                radial-gradient(white 0.5px, transparent 1px),
-                radial-gradient(white 0.5px, transparent 1px);
-            background-size: 30px 30px;
-            background-position: 0 0, 15px 15px;
-            opacity: 0.15;
+                linear-gradient(to right, transparent 48%, rgba(0, 198, 255, 0.1) 49%, rgba(0, 198, 255, 0.1) 51%, transparent 52%),
+                linear-gradient(to right, transparent 8%, rgba(0, 198, 255, 0.1) 9%, rgba(0, 198, 255, 0.1) 11%, transparent 12%),
+                linear-gradient(to right, transparent 88%, rgba(0, 198, 255, 0.1) 89%, rgba(0, 198, 255, 0.1) 91%, transparent 92%),
+                radial-gradient(circle, rgba(0, 198, 255, 0.1) 1px, transparent 2px);
+            background-size: 
+                100% 3px,
+                100% 2px,
+                100% 2px,
+                20px 20px;
+            background-position: 
+                0 20%,
+                0 40%,
+                0 60%,
+                0 0;
+            background-repeat: no-repeat;
+            opacity: 0.3;
             z-index: 1;
         }
         
@@ -127,7 +137,7 @@
         /* Кнопка закрытия */
         .close-modal {
             position: absolute;
-            top: 15px;
+            top: 25px; /* Опущена ниже */
             right: 15px;
             background: #ff6b6b;
             color: white;
