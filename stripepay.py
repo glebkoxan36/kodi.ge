@@ -1,10 +1,23 @@
 import os
+import logging
 import stripe
 import time
 from datetime import datetime
 from bson import ObjectId
 from bson.errors import InvalidId
-from flask import url_for, current_app, jsonify
+
+# Настройка логгера
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+def init_logger():
+    """Инициализация логгера для модуля"""
+    handler = logging.FileHandler('logs/stripepay.log')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+init_logger()
 
 class StripePayment:
     def __init__(self, stripe_api_key, webhook_secret, users_collection, payments_collection, refunds_collection):
@@ -14,9 +27,11 @@ class StripePayment:
         self.payments_collection = payments_collection
         self.refunds_collection = refunds_collection
         stripe.api_key = stripe_api_key
+        logger.info("StripePayment initialized")
 
     def create_checkout_session(self, imei, service_type, amount, success_url, cancel_url, metadata=None, idempotency_key=None):
         try:
+            logger.info(f"Creating checkout session for IMEI: {imei}, service: {service_type}")
             if metadata is None:
                 metadata = {}
                 
@@ -45,11 +60,12 @@ class StripePayment:
                 idempotency_key=idempotency_key
             )
         except Exception as e:
-            current_app.logger.error(f"Stripe session error: {str(e)}")
+            logger.exception(f"Stripe session error: {str(e)}")
             raise
 
     def create_topup_session(self, user_id, amount, success_url, cancel_url, idempotency_key=None):
         try:
+            logger.info(f"Creating topup session for user: {user_id}, amount: {amount}")
             session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[{
@@ -86,18 +102,19 @@ class StripePayment:
             
             return session
         except Exception as e:
-            current_app.logger.error(f"Topup session error: {str(e)}")
+            logger.exception(f"Topup session error: {str(e)}")
             raise
 
     def deduct_balance(self, user_id, amount, service_type, imei, idempotency_key):
         try:
+            logger.info(f"Deducting balance for user: {user_id}, amount: {amount}")
             existing_payment = self.payments_collection.find_one({
                 'idempotency_key': idempotency_key,
                 'type': 'imei_check'
             })
             
             if existing_payment:
-                current_app.logger.warning(f"Duplicate idempotency key: {idempotency_key}")
+                logger.warning(f"Duplicate idempotency key: {idempotency_key}")
                 return False
                 
             result = self.users_collection.update_one(
@@ -112,7 +129,7 @@ class StripePayment:
             )
             
             if result.modified_count == 0:
-                current_app.logger.error(f"Balance deduction failed for user: {user_id}")
+                logger.error(f"Balance deduction failed for user: {user_id}")
                 return False
             
             payment_data = {
@@ -140,10 +157,11 @@ class StripePayment:
             }
             self.payments_collection.insert_one(audit_log)
             
+            logger.info(f"Balance deducted: user={user_id}, amount={amount}")
             return True
             
         except Exception as e:
-            current_app.logger.error(f"Balance deduction error: {str(e)}")
+            logger.exception(f"Balance deduction error: {str(e)}")
             
             audit_log = {
                 'action': 'balance_deduction',
@@ -161,13 +179,14 @@ class StripePayment:
 
     def create_refund(self, payment_id, amount, currency, reason, idempotency_key):
         try:
+            logger.info(f"Creating refund for payment: {payment_id}")
             existing_refund = self.refunds_collection.find_one({
                 'payment_id': ObjectId(payment_id),
                 'idempotency_key': idempotency_key
             })
             
             if existing_refund:
-                current_app.logger.warning(f"Duplicate refund attempt: {idempotency_key}")
+                logger.warning(f"Duplicate refund attempt: {idempotency_key}")
                 return {
                     'status': 'error',
                     'message': 'Refund already processed'
@@ -176,6 +195,7 @@ class StripePayment:
             payment = self.payments_collection.find_one({'_id': ObjectId(payment_id)})
             
             if not payment:
+                logger.warning(f"Payment not found: {payment_id}")
                 return {
                     'status': 'error',
                     'message': 'Payment not found'
@@ -188,6 +208,7 @@ class StripePayment:
                 )
                 
                 if result.modified_count == 0:
+                    logger.error(f"Balance refund failed for user: {payment['user_id']}")
                     return {
                         'status': 'error',
                         'message': 'Failed to refund to balance'
@@ -202,6 +223,7 @@ class StripePayment:
                 )
                 
                 if refund.status != 'succeeded':
+                    logger.error(f"Stripe refund failed: {refund.failure_reason}")
                     return {
                         'status': 'error',
                         'message': f'Stripe refund failed: {refund.failure_reason}'
@@ -224,13 +246,14 @@ class StripePayment:
                 {'$set': {'refund_status': 'refunded'}}
             )
             
+            logger.info(f"Refund processed: payment_id={payment_id}, amount={amount}")
             return {
                 'status': 'success',
                 'message': 'Refund processed successfully'
             }
             
         except Exception as e:
-            current_app.logger.error(f"Refund processing error: {str(e)}")
+            logger.exception(f"Refund processing error: {str(e)}")
             
             refund_data = {
                 'payment_id': ObjectId(payment_id),
@@ -253,7 +276,7 @@ class StripePayment:
     def handle_webhook(self, event):
         try:
             event_type = event['type']
-            current_app.logger.info(f"Processing Stripe event: {event_type}")
+            logger.info(f"Processing Stripe event: {event_type}")
             
             # Handle payment_intent.succeeded event
             if event_type == 'payment_intent.succeeded':
@@ -261,7 +284,7 @@ class StripePayment:
                 session_id = payment_intent.get('metadata', {}).get('session_id')
                 
                 if not session_id:
-                    current_app.logger.warning("No session_id in payment_intent metadata")
+                    logger.warning("No session_id in payment_intent metadata")
                     return event
                     
                 session = stripe.checkout.Session.retrieve(session_id)
@@ -273,7 +296,7 @@ class StripePayment:
                 metadata = session.get('metadata', {})
                 
                 if session.get('payment_status') != 'paid':
-                    current_app.logger.warning(f"Unpaid session: {session['id']}")
+                    logger.warning(f"Unpaid session: {session['id']}")
                     return event
                 
                 if metadata.get('type') == 'balance_topup':
@@ -285,7 +308,7 @@ class StripePayment:
                     amount = session['amount_total'] / 100
                     currency = session['currency']
                     
-                    current_app.logger.info(
+                    logger.info(
                         f"Payment received: imei={imei}, "
                         f"service={service_type}, session={session['id']}"
                     )
@@ -294,7 +317,7 @@ class StripePayment:
                         'stripe_session_id': session['id']
                     })
                     if existing_payment:
-                        current_app.logger.warning(f"Duplicate payment for session: {session['id']}")
+                        logger.warning(f"Duplicate payment for session: {session['id']}")
                         return event
                     
                     payment_record = {
@@ -313,14 +336,14 @@ class StripePayment:
                         try:
                             payment_record['user_id'] = ObjectId(metadata['user_id'])
                         except (TypeError, InvalidId):
-                            current_app.logger.error(f"Invalid user ID in metadata: {metadata['user_id']}")
+                            logger.error(f"Invalid user ID in metadata: {metadata['user_id']}")
                     
                     self.payments_collection.insert_one(payment_record)
             
             # Handle async payment status updates
             elif event_type == 'checkout.session.async_payment_succeeded':
                 session = event['data']['object']
-                current_app.logger.info(f"Payment succeeded: {session['id']}")
+                logger.info(f"Payment succeeded: {session['id']}")
                 
                 self.payments_collection.update_one(
                     {'stripe_session_id': session['id']},
@@ -332,7 +355,7 @@ class StripePayment:
             
             elif event_type == 'checkout.session.async_payment_failed':
                 session = event['data']['object']
-                current_app.logger.warning(f"Payment failed: {session['id']}")
+                logger.warning(f"Payment failed: {session['id']}")
                 
                 self.payments_collection.update_one(
                     {'stripe_session_id': session['id']},
@@ -345,7 +368,7 @@ class StripePayment:
             # Handle refunds
             elif event_type == 'charge.refunded':
                 charge = event['data']['object']
-                current_app.logger.info(f"Refund processed: {charge.id}")
+                logger.info(f"Refund processed: {charge.id}")
                 
                 refund_data = {
                     'stripe_charge_id': charge.id,
@@ -367,7 +390,7 @@ class StripePayment:
                     try:
                         user_id = ObjectId(user_id_str)
                     except (TypeError, InvalidId):
-                        current_app.logger.error(f"Invalid user ID in charge metadata: {user_id_str}")
+                        logger.error(f"Invalid user ID in charge metadata: {user_id_str}")
                         return event
                     
                     amount = charge.amount_refunded / 100
@@ -378,17 +401,17 @@ class StripePayment:
                     )
                     
                     if result.modified_count:
-                        current_app.logger.info(f"Adjusted balance for user {user_id}: -{amount} GEL")
+                        logger.info(f"Adjusted balance for user {user_id}: -{amount} GEL")
                     else:
-                        current_app.logger.error(f"Balance adjustment failed for user: {user_id}")
+                        logger.error(f"Balance adjustment failed for user: {user_id}")
             
             return event
         
         except stripe.error.StripeError as e:
-            current_app.logger.error(f"Stripe error in webhook: {e.user_message}")
+            logger.error(f"Stripe error in webhook: {e.user_message}")
             raise e
         except Exception as e:
-            current_app.logger.exception("Webhook processing error")
+            logger.exception("Webhook processing error")
             raise e
 
     def process_topup(self, session):
@@ -399,7 +422,7 @@ class StripePayment:
             try:
                 user_id = ObjectId(user_id_str)
             except (TypeError, InvalidId):
-                current_app.logger.error(f"Invalid user ID in metadata: {user_id_str}")
+                logger.error(f"Invalid user ID in metadata: {user_id_str}")
                 return session
             
             amount = session['amount_total'] / 100
@@ -409,17 +432,17 @@ class StripePayment:
                 'type': 'topup'
             })
             if existing_payment:
-                current_app.logger.warning(f"Duplicate topup for session: {session['id']}")
+                logger.warning(f"Duplicate topup for session: {session['id']}")
                 return session
             
-            current_app.logger.info(
+            logger.info(
                 f"Balance topup: user={user_id}, "
                 f"amount={amount}, session={session['id']}"
             )
             
             user = self.users_collection.find_one({'_id': user_id})
             if not user:
-                current_app.logger.error(f"User not found: {user_id}")
+                logger.error(f"User not found: {user_id}")
                 return session
             
             result = self.users_collection.update_one(
@@ -428,7 +451,7 @@ class StripePayment:
             )
             
             if not result.modified_count:
-                current_app.logger.error(f"Balance update failed for user: {user_id}")
+                logger.error(f"Balance update failed for user: {user_id}")
             
             self.payments_collection.insert_one({
                 'user_id': user_id,
@@ -441,5 +464,5 @@ class StripePayment:
                 'status': 'completed'
             })
             
-            current_app.logger.info(f"Balance topup success: user={user_id}, amount={amount}")
+            logger.info(f"Balance topup success: user={user_id}, amount={amount}")
         return session
