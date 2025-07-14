@@ -19,6 +19,12 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
+            # Добавляем отладочную информацию
+            current_app.logger.warning(
+                f"Unauthorized access attempt: "
+                f"session={dict(session)}, "
+                f"url={request.url}"
+            )
             return redirect(url_for('auth.admin_login', next=request.url))
         return f(*args, **kwargs)
     return decorated
