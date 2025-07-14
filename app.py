@@ -81,7 +81,10 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(days=7),
-    SESSION_REFRESH_EACH_REQUEST=True
+    SESSION_REFRESH_EACH_REQUEST=True,
+    
+    # Исключение админ-логина из CSRF-защиты
+    WTF_CSRF_EXEMPT_ROUTES = ['auth.admin_login']
 )
 Session(app)
 
