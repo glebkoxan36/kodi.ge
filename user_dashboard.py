@@ -120,7 +120,7 @@ def dashboard():
         payment['formatted_timestamp'] = payment['timestamp'].strftime('%d.%m.%Y %H:%M')
     
     return render_template(
-        'dashboard.html',
+        'user/dashboard.html',  # Исправленный путь
         user=user,
         balance=balance,
         last_checks=checks,
@@ -134,7 +134,7 @@ def dashboard():
 @login_required
 def settings():
     user = g.user
-    return render_template('settings.html', user=user)
+    return render_template('user/settings.html', user=user)  # Исправленный путь
 
 @user_bp.route('/history/checks')
 @login_required
@@ -165,7 +165,7 @@ def history_checks():
         check['formatted_timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M')
     
     return render_template(
-        'history_checks.html',
+        'user/history_checks.html',  # Исправленный путь
         user=user,
         balance=balance,
         checks=checks,
@@ -215,7 +215,7 @@ def accounts():
         payment['formatted_timestamp'] = payment['timestamp'].strftime('%d.%m.%Y %H:%M')
     
     return render_template(
-        'accounts.html',
+        'user/accounts.html',  # Исправленный путь
         user=user,
         payments=payments
     )
