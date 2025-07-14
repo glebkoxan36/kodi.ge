@@ -102,7 +102,6 @@ def register():
         session['role'] = 'user'
         # ФИКС: Делаем сессию постоянной
         session.permanent = True
-        session.modified = True
         
         return jsonify(success=True)
     
@@ -136,7 +135,6 @@ def login():
         session['role'] = user.get('role', 'user')
         # ФИКС: Делаем сессию постоянной
         session.permanent = True
-        session.modified = True
         
         return jsonify(success=True)
     
