@@ -166,6 +166,8 @@
         <form method="POST" action="{{ url_for('auth.admin_login') }}">
             <!-- CSRF Token -->
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <!-- Next URL -->
+            <input type="hidden" name="next" value="{{ next_url }}">
             
             <div class="input-group">
                 <label for="username">Имя пользователя:</label>
