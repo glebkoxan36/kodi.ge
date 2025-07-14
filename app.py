@@ -72,7 +72,7 @@ cache.init_app(app)
 app.config.update(
     SESSION_TYPE='mongodb',
     SESSION_MONGODB=client,
-    SESSION_MONGODB_DB='imeicheck',
+    SESSION_MONGODB_DB='imei_checker',
     SESSION_MONGODB_COLLECT='sessions',
     SESSION_COOKIE_NAME='imeicheck_session',
     SESSION_COOKIE_DOMAIN=os.getenv('SESSION_DOMAIN', None),
