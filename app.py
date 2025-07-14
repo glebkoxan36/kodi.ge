@@ -24,10 +24,11 @@ from bs4 import BeautifulSoup
 
 # Импорт модулей
 from auth import auth_bp
-from user_dashboard import user_bp  # Импорт исправленного blueprint
+from user_dashboard import user_bp
 from ifreeapi import validate_imei, perform_api_check, parse_free_html
-from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection
+from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection
 from stripepay import StripePayment
+from admin_routes import admin_bp  # Импорт админских роутов
 
 app = Flask(__name__)
 CORS(app)
@@ -174,7 +175,7 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
-            return redirect(url_for('auth.login', next=request.url))
+            return redirect(url_for('auth.admin_login', next=request.url))
         return f(*args, **kwargs)
     return decorated
 
@@ -937,17 +938,10 @@ def upload_carousel_image():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# Заглушка для админ-панели
-admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
-
-@admin_bp.route('/admin_dashboard')
-def admin_dashboard():
-    return "Admin Dashboard"
-
 # Регистрация блюпринтов
 app.register_blueprint(auth_bp)
-app.register_blueprint(user_bp)  # Добавлен user_bp
-app.register_blueprint(admin_bp)
+app.register_blueprint(user_bp)
+app.register_blueprint(admin_bp, url_prefix='/admin')
 
 # Установка CSRF-куки для AJAX
 @app.after_request
