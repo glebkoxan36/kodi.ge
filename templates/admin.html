@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -168,8 +169,8 @@
                     </ul>
                 </div>
             {% else %}
-                <a href="{{ url_for('auth.login', next=url_for('admin.admin_dashboard')) }}" class="btn btn-outline-primary">
-                    <i class="bi bi-box-arrow-in-right"></i> Login
+                <a href="{{ url_for('auth.admin_login') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-box-arrow-in-right"></i> Admin Login
                 </a>
             {% endif %}
         </div>
@@ -974,7 +975,7 @@
                                             </td>
                                             <td class="actions-cell">
                                                 {% if not key.revoked %}
-                                                <form method="POST" action="{{ url_for('admin.revoke_api_key', key_id=key._id) }}" class="d-inline">
+                                                <form method="POST" action="{{ url_for('admin.revoke_api_key', key_id=key._id) }}" class="d-inline me-1">
                                                     <button type="submit" class="btn btn-sm btn-warning me-1">
                                                         <i class="bi bi-x-circle"></i> Revoke
                                                     </button>
@@ -1189,4 +1190,4 @@
     });
 </script>
 </body>
-    </html>
+                            </html>
