@@ -129,7 +129,7 @@ else:
 def get_current_prices():
     """Возвращает текущие цены из базы данных"""
     logger.info("Fetching current prices")
-    if not client:
+    if client is None:  # Исправлено: явная проверка на None
         logger.warning("Using default prices - no MongoDB connection")
         return DEFAULT_PRICES
         
