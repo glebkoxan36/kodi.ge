@@ -7,6 +7,7 @@ import os
 import stripe
 from stripepay import StripePayment
 from datetime import datetime
+import logging
 
 # Инициализация Blueprint
 user_bp = Blueprint('user', __name__, url_prefix='/user')
@@ -55,8 +56,8 @@ def login_required(f):
 def load_user():
     try:
         # Исправление: преобразование строки в ObjectId
-        user_id = ObjectId(session['user_id'])
-        g.user = regular_users_collection.find_one({'_id': user_id})
+        user_id_str = session['user_id']
+        g.user = regular_users_collection.find_one({'_id': ObjectId(user_id_str)})
         
         if not g.user:
             flash('მომხმარებელი ვერ მოიძებნა', 'danger')
@@ -85,6 +86,10 @@ def generate_avatar_color(name):
 @user_bp.route('/dashboard')
 @login_required
 def dashboard():
+    # Проверка наличия пользователя
+    if not hasattr(g, 'user') or not g.user:
+        return redirect(url_for('auth.login'))
+    
     user = g.user
     user_id = user['_id']  # Используем ObjectId из g.user
     
@@ -254,11 +259,31 @@ def create_payment_session():
 @login_required
 def topup_success():
     amount = request.args.get('amount', '0.00')
+    
+    # Обновляем данные пользователя
+    try:
+        user_id_str = session['user_id']
+        g.user = regular_users_collection.find_one({'_id': ObjectId(user_id_str)})
+    except Exception as e:
+        current_app.logger.error(f"Failed to refresh user data: {str(e)}")
+    
     return redirect(url_for(
         'user.dashboard',
         payment='success',
         amount=amount
     ))
+
+@user_bp.route('/get-balance')
+@login_required
+def get_balance():
+    try:
+        user_id_str = session['user_id']
+        user = regular_users_collection.find_one({'_id': ObjectId(user_id_str)})
+        if user:
+            return jsonify({'balance': user.get('balance', 0.0)})
+        return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @user_bp.route('/stripe-webhook', methods=['POST'])
 def stripe_webhook():
