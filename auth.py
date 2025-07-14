@@ -7,7 +7,7 @@ from datetime import datetime
 import re
 
 # Используем импортированную коллекцию из db.py
-from db import regular_users_collection
+from db import regular_users_collection, admin_users_collection
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -139,6 +139,35 @@ def login():
         return jsonify(success=True)
     
     return render_template('login.html')
+
+@auth_bp.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    """Аутентификация администратора"""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if not username or not password:
+            return jsonify(success=False, message='გთხოვთ შეავსოთ ყველა ველი')
+        
+        # Поиск администратора по имени пользователя
+        admin = admin_users_collection.find_one({'username': username})
+        
+        if not admin:
+            return jsonify(success=False, message='არასწორი მომხმარებლის სახელი ან პაროლი')
+        
+        if not check_password_hash(admin['password'], password):
+            return jsonify(success=False, message='არასწორი მომხმარებლის სახელი ან პაროლი')
+        
+        # Успешная аутентификация
+        session['admin_id'] = str(admin['_id'])
+        session['role'] = admin['role']
+        session['username'] = admin['username']
+        session.permanent = True
+        
+        return jsonify(success=True, redirect_url=url_for('admin.admin_dashboard'))
+    
+    return render_template('admin_login.html')
 
 @auth_bp.route('/logout')
 def logout():
