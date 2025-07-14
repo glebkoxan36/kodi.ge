@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app, g
+# user_dashboard.py
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, g, jsonify
 from pymongo import MongoClient
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -119,7 +120,7 @@ def dashboard():
         payment['formatted_timestamp'] = payment['timestamp'].strftime('%d.%m.%Y %H:%M')
     
     return render_template(
-        'user/dashboard.html',
+        'dashboard.html',
         user=user,
         balance=balance,
         last_checks=checks,
@@ -133,7 +134,7 @@ def dashboard():
 @login_required
 def settings():
     user = g.user
-    return render_template('user/settings.html', user=user)
+    return render_template('settings.html', user=user)
 
 @user_bp.route('/history/checks')
 @login_required
@@ -164,7 +165,7 @@ def history_checks():
         check['formatted_timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M')
     
     return render_template(
-        'user/history_checks.html',
+        'history_checks.html',
         user=user,
         balance=balance,
         checks=checks,
@@ -214,7 +215,7 @@ def accounts():
         payment['formatted_timestamp'] = payment['timestamp'].strftime('%d.%m.%Y %H:%M')
     
     return render_template(
-        'user/accounts.html',
+        'accounts.html',
         user=user,
         payments=payments
     )
