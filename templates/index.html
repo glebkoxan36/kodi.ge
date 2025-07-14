@@ -428,10 +428,11 @@
     last_name: "{{ currentUser.last_name }}",
     balance: {{ currentUser.balance }},
     avatar_color: "{{ currentUser.avatar_color }}",
+    is_admin: {% if currentUser.is_admin %}true{% else %}false{% endif %},
     {% if currentUser.avatar_url %}
       avatar_url: "{{ currentUser.avatar_url }}"
     {% endif %}
-  }{% else %}undefined{% endif %};
+}{% else %}undefined{% endif %};
     </script>
     
     <!-- Bootstrap JS -->
