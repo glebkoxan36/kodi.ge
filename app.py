@@ -29,6 +29,7 @@ from ifreeapi import validate_imei, perform_api_check, parse_free_html
 from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection
 from stripepay import StripePayment
 from admin_routes import admin_bp  # Импорт админских роутов
+from test import test_bp  # Импорт тестового модуля
 
 # Создаем папку для логов
 if not os.path.exists('logs'):
@@ -1015,6 +1016,7 @@ def upload_carousel_image():
 app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(test_bp, url_prefix='/test')  # Регистрация тестового модуля
 
 # Установка CSRF-куки для AJAX
 @app.after_request
