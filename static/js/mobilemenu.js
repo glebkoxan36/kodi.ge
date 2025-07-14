@@ -9,6 +9,90 @@
         return cachedElements[id];
     }
 
+    // Генерация анимированного SVG фона
+    function generateCircuitSVG() {
+        return `
+            <svg class="kodi-circuit-svg" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="0.8" result="blur"/>
+                        <feColorMatrix type="matrix" values="
+                            0 0 0 0 0.1
+                            0 0 0 0 0.8
+                            0 0 0 0 0.9
+                            0 0 0 1 0"/>
+                    </filter>
+                    <linearGradient id="neon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#00c6ff" />
+                        <stop offset="100%" stop-color="#0072ff" />
+                    </linearGradient>
+                    <pattern id="grid-pattern" width="10" height="10" patternUnits="userSpaceOnUse">
+                        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(0, 230, 255, 0.15)" stroke-width="0.2"/>
+                    </pattern>
+                </defs>
+                
+                <!-- Фоновый паттерн -->
+                <rect width="100%" height="100%" fill="url(#grid-pattern)" opacity="0.5"/>
+                
+                <!-- Основные схемы подключения -->
+                <path d="M10,20 L40,20 L40,50 L70,50" filter="url(#neon-glow)" stroke="url(#neon-gradient)" stroke-width="0.4" fill="none" stroke-dasharray="6" stroke-dashoffset="0">
+                    <animate attributeName="stroke-dashoffset" from="0" to="-12" dur="1.2s" repeatCount="indefinite"/>
+                </path>
+                <path d="M25,70 L25,85 L60,85 L60,65" filter="url(#neon-glow)" stroke="url(#neon-gradient)" stroke-width="0.4" fill="none" stroke-dasharray="6" stroke-dashoffset="0">
+                    <animate attributeName="stroke-dashoffset" from="0" to="-12" dur="1.5s" repeatCount="indefinite"/>
+                </path>
+                <path d="M80,25 L80,40 L65,40 L65,60" filter="url(#neon-glow)" stroke="#00c6ff" stroke-width="0.4" fill="none" stroke-dasharray="6" stroke-dashoffset="0">
+                    <animate attributeName="stroke-dashoffset" from="0" to="-12" dur="1.8s" repeatCount="indefinite"/>
+                </path>
+                
+                <!-- Дополнительные анимированные линии -->
+                ${Array.from({length: 12}, (_, i) => {
+                    const startX = Math.floor(Math.random() * 100);
+                    const startY = Math.floor(Math.random() * 100);
+                    const segments = Math.floor(Math.random() * 3) + 2;
+                    let pathD = `M${startX},${startY}`;
+                    
+                    for (let s = 0; s < segments; s++) {
+                        const x = startX + (Math.random() * 30 + 10);
+                        const y = startY + (Math.random() * 20 - 10);
+                        pathD += ` L${x},${y}`;
+                    }
+                    
+                    return `
+                        <path d="${pathD}"
+                            filter="url(#neon-glow)" 
+                            stroke="rgba(0, 198, 255, ${0.4 + Math.random() * 0.4})" 
+                            stroke-width="${0.2 + Math.random() * 0.2}" 
+                            stroke-dasharray="8"
+                            stroke-dashoffset="0">
+                            <animate attributeName="stroke-dashoffset" from="0" to="-16" dur="${1 + Math.random() * 2}s" repeatCount="indefinite"/>
+                        </path>
+                    `;
+                }).join('')}
+                
+                <!-- Анимированные точки подключения -->
+                ${Array.from({length: 25}, (_, i) => {
+                    const cx = Math.floor(Math.random() * 100);
+                    const cy = Math.floor(Math.random() * 100);
+                    const r = 0.3 + Math.random() * 0.2;
+                    return `
+                        <circle cx="${cx}" cy="${cy}" r="${r}" fill="#00c6ff">
+                            <animate attributeName="r" values="${r};${r * 1.8};${r}" dur="${1 + Math.random() * 2}s" repeatCount="indefinite"/>
+                            <animate attributeName="opacity" values="0.7;1;0.7" dur="${1 + Math.random() * 2}s" repeatCount="indefinite"/>
+                        </circle>
+                    `;
+                }).join('')}
+                
+                <!-- Статические точки -->
+                ${Array.from({length: 15}, (_, i) => {
+                    const cx = Math.floor(Math.random() * 100);
+                    const cy = Math.floor(Math.random() * 100);
+                    return `<circle cx="${cx}" cy="${cy}" r="0.3" fill="#00c6ff" opacity="0.8"/>`;
+                }).join('')}
+            </svg>
+        `;
+    }
+
     // Добавляем стили
     const style = document.createElement('style');
     style.id = 'kodi-mobile-menu-styles';
@@ -91,7 +175,7 @@
             box-shadow: 
                 0 0 15px rgba(0, 198, 255, 0.3),
                 inset 0 0 20px rgba(0, 150, 200, 0.2);
-            overflow: visible;
+            overflow: hidden;
             position: relative;
             width: 100%;
             height: 100%;
@@ -99,52 +183,16 @@
             padding-bottom: env(safe-area-inset-bottom, 0);
         }
 
-        /* Unique circuit lines pattern */
-        .kodi-circuit-board-bg::before {
-            content: '';
+        /* SVG Circuit */
+        .kodi-circuit-svg {
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                /* Horizontal tracks */
-                linear-gradient(0deg, 
-                    transparent 24%, 
-                    rgba(0, 230, 255, 0.15) 25%,
-                    rgba(0, 230, 255, 0.15) 26%,
-                    transparent 27%,
-                    transparent 49%,
-                    rgba(0, 230, 255, 0.15) 50%,
-                    rgba(0, 230, 255, 0.15) 51%,
-                    transparent 52%,
-                    transparent 74%,
-                    rgba(0, 230, 255, 0.15) 75%,
-                    rgba(0, 230, 255, 0.15) 76%,
-                    transparent 77%
-                ),
-                /* Vertical tracks */
-                linear-gradient(90deg, 
-                    transparent 19%, 
-                    rgba(0, 230, 255, 0.15) 20%,
-                    rgba(0, 230, 255, 0.15) 21%,
-                    transparent 22%,
-                    transparent 44%,
-                    rgba(0, 230, 255, 0.15) 45%,
-                    rgba(0, 230, 255, 0.15) 46%,
-                    transparent 47%,
-                    transparent 69%,
-                    rgba(0, 230, 255, 0.15) 70%,
-                    rgba(0, 230, 255, 0.15) 71%,
-                    transparent 72%,
-                    transparent 94%,
-                    rgba(0, 230, 255, 0.15) 95%,
-                    rgba(0, 230, 255, 0.15) 96%,
-                    transparent 97%
-                );
-            background-size: 100px 100px, 100px 100px;
-            opacity: 0.7;
+            width: 100%;
+            height: 100%;
             z-index: 1;
+            opacity: 0.7;
+            will-change: transform;
         }
         
         .kodi-menu-modal .kodi-modal-body {
@@ -651,6 +699,7 @@
         container.innerHTML = `
             <div class="kodi-menu-modal" id="kodiMainMenu">
                 <div class="kodi-circuit-board-bg">
+                    ${generateCircuitSVG()}
                     <div class="modal-header">
                         <button class="kodi-close-modal" onclick="kodiCloseMenu()">
                             <i class="fas fa-times"></i>
@@ -702,6 +751,7 @@
                 </div>
                 
                 <div class="kodi-circuit-board-bg">
+                    ${generateCircuitSVG()}
                     <div class="kodi-modal-body">
                         <div class="kodi-menu-grid">
                             <a class="kodi-menu-item" href="/">
@@ -756,6 +806,7 @@
                 </div>
                 
                 <div class="kodi-circuit-board-bg">
+                    ${generateCircuitSVG()}
                     <div class="kodi-modal-body">
                         <div class="kodi-menu-grid">
                             <a class="kodi-menu-item" href="/applecheck?type=free">
@@ -813,6 +864,7 @@
                 </div>
                 
                 <div class="kodi-circuit-board-bg">
+                    ${generateCircuitSVG()}
                     <div class="kodi-modal-body">
                         <div class="kodi-menu-grid">
                             <a class="kodi-menu-item" href="/androidcheck">
