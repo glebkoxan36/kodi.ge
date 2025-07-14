@@ -193,8 +193,9 @@ def admin_login():
         password = request.form.get('password')
         
         if not username or not password:
+            flash('გთხოვთ შეავსოთ ყველა ველი', 'error')
             logger.warning("Missing admin credentials")
-            return jsonify(success=False, message='გთხოვთ შეავსოთ ყველა ველი')
+            return redirect(url_for('auth.admin_login'))
         
         logger.debug(f"Admin login attempt: {username}")
         
@@ -203,11 +204,13 @@ def admin_login():
         
         if not admin:
             logger.warning(f"Admin not found: {username}")
-            return jsonify(success=False, message='არასწორი მომხმარებლის სახელი ან პაროლი')
+            flash('არასწორი მომხმარებლის სახელი ან პაროლი', 'error')
+            return redirect(url_for('auth.admin_login'))
         
         if not check_password_hash(admin['password'], password):
             logger.warning(f"Invalid password for admin: {username}")
-            return jsonify(success=False, message='არასწორი მომხმარებლის სახელი ან პაროლი')
+            flash('არასწორი მომხმარებლის სახელი ან პაროლი', 'error')
+            return redirect(url_for('auth.admin_login'))
         
         # Успешная аутентификация
         session['admin_id'] = str(admin['_id'])
@@ -216,7 +219,8 @@ def admin_login():
         session.permanent = True
         
         logger.info(f"Admin logged in: {username}")
-        return jsonify(success=True, redirect_url=url_for('admin.admin_dashboard'))
+        flash('თქვენ წარმატებით შეხვედით სისტემაში', 'success')
+        return redirect(url_for('admin.admin_dashboard'))
     
     return render_template('admin_login.html')
 
