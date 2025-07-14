@@ -207,10 +207,12 @@ def check_history():
                 .limit(per_page)
             )
         
-        current_prices = get_current_prices()
+        # Получаем текущие цены
+        current_prices_doc = prices_collection.find_one({'type': 'current'})
+        current_prices = current_prices_doc['prices'] if current_prices_doc else {'paid': 0, 'premium': 0}
         formatted_prices = {
-            'paid': current_prices['paid'] / 100,
-            'premium': current_prices['premium'] / 100
+            'paid': current_prices.get('paid', 0) / 100,
+            'premium': current_prices.get('premium', 0) / 100
         }
         
         # Форматируем данные для отображения
@@ -220,6 +222,7 @@ def check_history():
                 check['amount'] = f"${check.get('amount', 0):.2f}"
             else:
                 check['amount'] = 'Free'
+            check['_id'] = str(check['_id'])
         
         return render_template(
             'admin.html',
@@ -310,7 +313,10 @@ def edit_document(collection_name, doc_id):
     try:
         doc = None
         if client:
-            doc = db[collection_name].find_one({'_id': ObjectId(doc_id)})
+            try:
+                doc = db[collection_name].find_one({'_id': ObjectId(doc_id)})
+            except:
+                doc = None
         if not doc:
             flash('Document not found', 'danger')
             return redirect(url_for('admin.collection_view', collection_name=collection_name))
@@ -433,7 +439,10 @@ def delete_user(user_id):
     try:
         # Нельзя удалить текущего пользователя или суперадмина
         current_username = session.get('username')
-        user = admin_users_collection.find_one({'_id': ObjectId(user_id)})
+        try:
+            user = admin_users_collection.find_one({'_id': ObjectId(user_id)})
+        except:
+            user = None
         
         if not user:
             flash('User not found', 'danger')
@@ -642,7 +651,7 @@ def system_status():
         # Делаем запрос к /health
         with current_app.test_client() as client:
             response = client.get('/health')
-            health_data = response.get_json()
+            health_data = response.get_json() or {}
         
         # Статистика использования
         stats = {
