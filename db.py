@@ -5,6 +5,7 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from bson import ObjectId
 from bson.errors import InvalidId
+from werkzeug.security import generate_password_hash
 
 # Цены по умолчанию
 DEFAULT_PRICES = {
