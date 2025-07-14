@@ -24,6 +24,7 @@ from bs4 import BeautifulSoup
 
 # Импорт модулей
 from auth import auth_bp
+from user_dashboard import user_bp  # Импорт исправленного blueprint
 from ifreeapi import validate_imei, perform_api_check, parse_free_html
 from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection
 from stripepay import StripePayment
@@ -823,7 +824,7 @@ def reparse_imei():
 @app.route('/user/get_balance', methods=['GET'])
 @login_required
 def get_balance():
-    """Возвращает текущий баланс пользователя в формате JSON"""
+    """Возвращает текущий баланс пользователя в формата JSON"""
     user_id = session.get('user_id')
     if not user_id:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -843,219 +844,6 @@ def get_balance():
     except Exception as e:
         app.logger.error(f"Error getting balance: {str(e)}")
         return jsonify({'error': 'Server error'}), 500
-
-# ======================================
-# Dashboard Routes
-# ======================================
-
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    """Основная страница личного кабинета"""
-    user_id = session['user_id']
-    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-    
-    if not user:
-        flash('User not found', 'danger')
-        return redirect(url_for('auth.logout'))
-    
-    # Генерируем цвет аватара
-    avatar_color = user.get('avatar_color')
-    if not avatar_color:
-        name_part = user.get('first_name') or user.get('email', 'user')
-        avatar_color = generate_avatar_color(name_part)
-    
-    # Получаем статистику
-    total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
-    last_checks = list(checks_collection.find(
-        {'user_id': ObjectId(user_id)},
-        sort=[('timestamp', -1)],
-        limit=5
-    ))
-    
-    last_payments = list(payments_collection.find(
-        {'user_id': ObjectId(user_id)},
-        sort=[('timestamp', -1)],
-        limit=5
-    ))
-    
-    # Форматируем даты
-    for check in last_checks:
-        check['formatted_timestamp'] = format_datetime_filter(check['timestamp'])
-    
-    for payment in last_payments:
-        payment['formatted_timestamp'] = format_datetime_filter(payment['timestamp'])
-    
-    return render_template(
-        'dashboard.html',
-        user=user,
-        balance=user.get('balance', 0),
-        avatar_color=avatar_color,
-        total_checks=total_checks,
-        last_checks=last_checks,
-        last_payments=last_payments,
-        stripe_public_key=STRIPE_PUBLIC_KEY
-    )
-
-@app.route('/user/create_payment_session', methods=['POST'])
-@login_required
-def create_payment_session():
-    try:
-        data = request.json
-        amount = float(data.get('amount', 10.0))
-        user_id = session['user_id']
-        
-        # Генерируем уникальный ключ идемпотентности
-        idempotency_key = f"topup_{user_id}_{datetime.utcnow().timestamp()}"
-        
-        base_url = request.host_url.rstrip('/')
-        success_url = f"{base_url}/dashboard?payment=success&amount={amount}"
-        cancel_url = f"{base_url}/dashboard"
-        
-        # Создаем сессию через StripePayment
-        stripe_session = stripe_payment.create_topup_session(
-            user_id=user_id,
-            amount=amount,
-            success_url=success_url,
-            cancel_url=cancel_url,
-            idempotency_key=idempotency_key
-        )
-        
-        return jsonify({
-            'sessionId': stripe_session.id
-        })
-    
-    except Exception as e:
-        app.logger.error(f"Payment session error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-# Исправленный вебхук Stripe
-@app.route('/user/stripe-webhook', methods=['POST'])
-@csrf.exempt
-def stripe_webhook():
-    payload = request.data
-    sig_header = request.headers.get('Stripe-Signature')
-
-    try:
-        # Верификация подписи
-        event = stripe.Webhook.construct_event(
-            payload,
-            sig_header,
-            STRIPE_WEBHOOK_SECRET
-        )
-        
-        # Обработка верифицированного события
-        stripe_payment.handle_webhook(event)
-        return jsonify({'status': 'success'}), 200
-    
-    except ValueError as e:
-        app.logger.error(f"Webhook value error: {str(e)}")
-        return jsonify({'error': 'Invalid payload'}), 400
-    except stripe.error.SignatureVerificationError as e:
-        app.logger.error(f"Webhook signature error: {str(e)}")
-        return jsonify({'error': 'Invalid signature'}), 400
-    except Exception as e:
-        app.logger.error(f"Webhook processing error: {str(e)}")
-        return jsonify({'error': 'Server error'}), 500
-
-@app.route('/refund_payment', methods=['POST'])
-@csrf.exempt
-@login_required
-def refund_payment():
-    try:
-        data = request.json
-        payment_id = data.get('payment_id')
-        amount = data.get('amount')
-        reason = data.get('reason', 'Customer request')
-        
-        if not payment_id or not amount:
-            return jsonify({'error': 'Missing required parameters'}), 400
-        
-        user_id = session['user_id']
-        
-        # Проверяем права пользователя на возврат
-        payment = payments_collection.find_one({
-            '_id': ObjectId(payment_id),
-            'user_id': ObjectId(user_id)
-        })
-        
-        if not payment:
-            return jsonify({'error': 'Payment not found or access denied'}), 404
-        
-        # Выполняем возврат через StripePayment
-        result = stripe_payment.create_refund(
-            payment_id=payment_id,
-            amount=amount,
-            currency=payment['currency'],
-            reason=reason,
-            idempotency_key=secrets.token_hex(16)
-        )
-        
-        return jsonify(result)
-    
-    except Exception as e:
-        app.logger.error(f"Refund error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template(
-        'error.html', 
-        code=404,
-        message="გვერდი ვერ მოიძებნა"
-    ), 404
-
-@app.errorhandler(500)
-def internal_server_error(e):
-    return render_template(
-        'error.html', 
-        code=500,
-        message="სერვერზე შეცდომა მოხდა"
-    ), 500
-
-# ======================================
-# Health Check
-# ======================================
-
-@app.route('/health')
-@cache.cached(timeout=30)  # Кеширование health check
-def health_check():
-    status = {
-        'status': 'OK',
-        'timestamp': datetime.utcnow().isoformat(),
-        'services': {}
-    }
-    
-    # Проверка MongoDB
-    if client:
-        try:
-            db = client.get_database()
-            db.command('ping')
-            status['services']['mongodb'] = 'OK'
-        except Exception as e:
-            status['services']['mongodb'] = f'ERROR: {str(e)}'
-            status['status'] = 'ERROR'
-    else:
-        status['services']['mongodb'] = 'DISABLED'
-        status['status'] = 'DEGRADED'
-    
-    # Проверка Stripe
-    try:
-        stripe.Balance.retrieve()
-        status['services']['stripe'] = 'OK'
-    except Exception as e:
-        status['services']['stripe'] = f'ERROR: {str(e)}'
-        status['status'] = 'ERROR'
-    
-    # Проверка внешнего API
-    try:
-        response = requests.get(API_URL, timeout=5)
-        status['services']['external_api'] = 'OK' if response.status_code == 200 else f'HTTP {response.status_code}'
-    except Exception as e:
-        status['services']['external_api'] = f'ERROR: {str(e)}'
-        status['status'] = 'ERROR'
-    
-    return jsonify(status), 200 if status['status'] == 'OK' else 500
 
 # ======================================
 # Webhook Manager
@@ -1158,6 +946,7 @@ def admin_dashboard():
 
 # Регистрация блюпринтов
 app.register_blueprint(auth_bp)
+app.register_blueprint(user_bp)  # Добавлен user_bp
 app.register_blueprint(admin_bp)
 
 # Установка CSRF-куки для AJAX
@@ -1189,6 +978,66 @@ def session_info():
         'role': session.get('role'),
         'session_id': session.sid
     })
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template(
+        'error.html', 
+        code=404,
+        message="გვერდი ვერ მოიძებნა"
+    ), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template(
+        'error.html', 
+        code=500,
+        message="სერვერზე შეცდომა მოხდა"
+    ), 500
+
+# ======================================
+# Health Check
+# ======================================
+
+@app.route('/health')
+@cache.cached(timeout=30)  # Кеширование health check
+def health_check():
+    status = {
+        'status': 'OK',
+        'timestamp': datetime.utcnow().isoformat(),
+        'services': {}
+    }
+    
+    # Проверка MongoDB
+    if client:
+        try:
+            db = client.get_database()
+            db.command('ping')
+            status['services']['mongodb'] = 'OK'
+        except Exception as e:
+            status['services']['mongodb'] = f'ERROR: {str(e)}'
+            status['status'] = 'ERROR'
+    else:
+        status['services']['mongodb'] = 'DISABLED'
+        status['status'] = 'DEGRADED'
+    
+    # Проверка Stripe
+    try:
+        stripe.Balance.retrieve()
+        status['services']['stripe'] = 'OK'
+    except Exception as e:
+        status['services']['stripe'] = f'ERROR: {str(e)}'
+        status['status'] = 'ERROR'
+    
+    # Проверка внешнего API
+    try:
+        response = requests.get(API_URL, timeout=5)
+        status['services']['external_api'] = 'OK' if response.status_code == 200 else f'HTTP {response.status_code}'
+    except Exception as e:
+        status['services']['external_api'] = f'ERROR: {str(e)}'
+        status['status'] = 'ERROR'
+    
+    return jsonify(status), 200 if status['status'] == 'OK' else 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
