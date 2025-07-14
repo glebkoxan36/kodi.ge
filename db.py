@@ -83,6 +83,11 @@ if client:
     prices_collection = db['prices']
     comparisons_collection = db['comparisons']
     phonebase_collection = db['phonebase']
+    admin_users_collection = db['admin_users']
+    parser_logs_collection = db['parser_logs']
+    audit_logs_collection = db['audit_logs']
+    api_keys_collection = db['api_keys']
+    webhooks_collection = db['webhooks']
     
     # Инициализация данных
     init_admin_user(db)
@@ -96,6 +101,11 @@ else:
     prices_collection = None
     comparisons_collection = None
     phonebase_collection = None
+    admin_users_collection = None
+    parser_logs_collection = None
+    audit_logs_collection = None
+    api_keys_collection = None
+    webhooks_collection = None
 
 def get_current_prices():
     """Возвращает текущие цены из базы данных"""
