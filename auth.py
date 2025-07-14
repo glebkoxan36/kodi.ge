@@ -188,6 +188,10 @@ def login():
 def admin_login():
     """Аутентификация администратора"""
     logger.info(f"Admin login request: {request.method}")
+    
+    # Получаем URL для перенаправления
+    next_url = request.args.get('next') or url_for('admin.admin_dashboard')
+    
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -195,7 +199,7 @@ def admin_login():
         if not username or not password:
             flash('გთხოვთ შეავსოთ ყველა ველი', 'error')
             logger.warning("Missing admin credentials")
-            return redirect(url_for('auth.admin_login'))
+            return redirect(url_for('auth.admin_login', next=next_url))
         
         logger.debug(f"Admin login attempt: {username}")
         
@@ -205,12 +209,12 @@ def admin_login():
         if not admin:
             logger.warning(f"Admin not found: {username}")
             flash('არასწორი მომხმარებლის სახელი ან პაროლი', 'error')
-            return redirect(url_for('auth.admin_login'))
+            return redirect(url_for('auth.admin_login', next=next_url))
         
         if not check_password_hash(admin['password'], password):
             logger.warning(f"Invalid password for admin: {username}")
             flash('არასწორი მომხმარებლის სახელი ან პაროლი', 'error')
-            return redirect(url_for('auth.admin_login'))
+            return redirect(url_for('auth.admin_login', next=next_url))
         
         # Успешная аутентификация
         session['admin_id'] = str(admin['_id'])
@@ -220,9 +224,9 @@ def admin_login():
         
         logger.info(f"Admin logged in: {username}")
         flash('თქვენ წარმატებით შეხვედით სისტემაში', 'success')
-        return redirect(url_for('admin.admin_dashboard'))
+        return redirect(next_url)
     
-    return render_template('admin_login.html')
+    return render_template('admin_login.html', next_url=next_url)
 
 @auth_bp.route('/logout')
 def logout():
