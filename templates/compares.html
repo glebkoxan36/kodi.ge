@@ -564,46 +564,23 @@
         
         // Переключение режимов - ИСПРАВЛЕННАЯ ВЕРСИЯ
         singleModeBtn.addEventListener('click', function() {
-            setActiveMode('single');
+            if (currentMode === 'single') {
+                resetMode();
+            } else {
+                setActiveMode('single');
+            }
         });
         
         compareModeBtn.addEventListener('click', function() {
-            setActiveMode('compare');
+            if (currentMode === 'compare') {
+                resetMode();
+            } else {
+                setActiveMode('compare');
+            }
         });
         
-        function setActiveMode(mode) {
-            // Если режим уже активен - сбрасываем его
-            if (currentMode === mode) {
-                resetMode();
-                return;
-            }
-            
-            // Устанавливаем новый режим
-            currentMode = mode;
-            
-            // Обновляем кнопки
-            singleModeBtn.classList.toggle('active', mode === 'single');
-            compareModeBtn.classList.toggle('active', mode === 'compare');
-            
-            // Показываем основной контент
-            mainContent.style.display = 'block';
-            
-            // Скрываем все подразделы
-            compareSelection.style.display = 'none';
-            searchResults.style.display = 'none';
-            phoneDetails.style.display = 'none';
-            compareDetails.style.display = 'none';
-            
-            // Показываем нужный раздел в зависимости от режима
-            if (mode === 'compare') {
-                compareSelection.style.display = 'block';
-            } else if (mode === 'single') {
-                searchResults.style.display = 'block';
-                phoneSearch.focus();
-            }
-        }
-        
         function resetMode() {
+            // Сбрасываем текущий режим
             currentMode = null;
             
             // Сбрасываем кнопки
@@ -628,6 +605,32 @@
                 </div>
             `;
             startCompareBtn.disabled = true;
+        }
+        
+        function setActiveMode(mode) {
+            // Устанавливаем новый режим
+            currentMode = mode;
+            
+            // Обновляем кнопки
+            singleModeBtn.classList.toggle('active', mode === 'single');
+            compareModeBtn.classList.toggle('active', mode === 'compare');
+            
+            // Показываем основной контент
+            mainContent.style.display = 'block';
+            
+            // Скрываем все подразделы
+            compareSelection.style.display = 'none';
+            searchResults.style.display = 'none';
+            phoneDetails.style.display = 'none';
+            compareDetails.style.display = 'none';
+            
+            // Показываем нужный раздел в зависимости от режима
+            if (mode === 'compare') {
+                compareSelection.style.display = 'block';
+            } else if (mode === 'single') {
+                searchResults.style.display = 'block';
+                phoneSearch.focus();
+            }
         }
         
         // Выбор телефона для сравнения
