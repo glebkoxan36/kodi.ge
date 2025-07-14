@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 from datetime import datetime
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
@@ -7,14 +8,28 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from werkzeug.security import generate_password_hash
 
+# Настройка логгера
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 # Цены по умолчанию
 DEFAULT_PRICES = {
     'paid': 499,
     'premium': 999
 }
 
+def init_logger():
+    """Инициализация логгера для модуля"""
+    handler = logging.FileHandler('logs/db.log')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+init_logger()
+
 def init_mongodb():
     """Инициализирует подключение к MongoDB с повторными попытками"""
+    logger.info("Initializing MongoDB connection")
     max_retries = 5
     retry_delay = 3  # seconds
     
@@ -30,19 +45,20 @@ def init_mongodb():
             )
             # Проверка подключения
             client.admin.command('ismaster')
-            print("Successfully connected to MongoDB")
+            logger.info("Successfully connected to MongoDB")
             return client
         except (ConnectionFailure, ServerSelectionTimeoutError) as e:
-            print(f"MongoDB connection attempt {attempt+1}/{max_retries} failed: {str(e)}")
+            logger.error(f"Connection attempt {attempt+1}/{max_retries} failed: {str(e)}")
             if attempt < max_retries - 1:
                 time.sleep(retry_delay)
     
-    print("Could not connect to MongoDB after multiple attempts")
+    logger.critical("Could not connect to MongoDB after multiple attempts")
     return None
 
 def init_admin_user(db):
     """Создает администратора по умолчанию если не существует"""
     try:
+        logger.info("Checking admin user existence")
         if not db.admin_users.find_one({'username': 'admin'}):
             admin_password = os.getenv('ADMIN_PASSWORD', 'securepassword')
             db.admin_users.insert_one({
@@ -51,13 +67,14 @@ def init_admin_user(db):
                 'role': 'superadmin',
                 'created_at': datetime.utcnow()
             })
-            print("Default admin user created")
+            logger.info("Default admin user created")
     except Exception as e:
-        print(f"Error creating admin user: {str(e)}")
+        logger.error(f"Error creating admin user: {str(e)}")
 
 def init_prices(db):
     """Инициализирует цены по умолчанию если не существуют"""
     try:
+        logger.info("Initializing prices")
         if db.prices.count_documents({}) == 0:
             db.prices.insert_one({
                 'type': 'current',
@@ -65,11 +82,12 @@ def init_prices(db):
                 'created_at': datetime.utcnow(),
                 'updated_at': datetime.utcnow()
             })
-            print("Default prices initialized")
+            logger.info("Default prices initialized")
     except Exception as e:
-        print(f"Error initializing prices: {str(e)}")
+        logger.error(f"Error initializing prices: {str(e)}")
 
 # Инициализация подключения
+logger.info("Initializing MongoDB client")
 client = init_mongodb()
 
 if client:
@@ -93,6 +111,7 @@ if client:
     init_admin_user(db)
     init_prices(db)
 else:
+    logger.error("MongoDB connection failed - using stubs")
     # Заглушки для случая ошибки подключения
     regular_users_collection = None
     checks_collection = None
@@ -109,7 +128,9 @@ else:
 
 def get_current_prices():
     """Возвращает текущие цены из базы данных"""
+    logger.info("Fetching current prices")
     if not client:
+        logger.warning("Using default prices - no MongoDB connection")
         return DEFAULT_PRICES
         
     try:
@@ -118,5 +139,5 @@ def get_current_prices():
             return price_doc['prices']
         return DEFAULT_PRICES
     except Exception as e:
-        print(f"Error getting prices: {str(e)}")
+        logger.error(f"Error getting prices: {str(e)}")
         return DEFAULT_PRICES
