@@ -56,14 +56,14 @@ def admin_dashboard():
             flash('Parser functionality is not implemented', 'info')
             return redirect(url_for('admin.admin_dashboard'))
         
-        # Статистика
-        total_checks = checks_collection.count_documents({}) if checks_collection else 0
-        paid_checks = checks_collection.count_documents({'paid': True}) if checks_collection else 0
+        # Статистика (Исправлено: явная проверка на None)
+        total_checks = checks_collection.count_documents({}) if checks_collection is not None else 0
+        paid_checks = checks_collection.count_documents({'paid': True}) if checks_collection is not None else 0
         free_checks = total_checks - paid_checks
         
-        # Выручка
+        # Выручка (Исправлено: явная проверка на None)
         total_revenue = 0
-        if checks_collection:
+        if checks_collection is not None:
             revenue_cursor = checks_collection.aggregate([
                 {"$match": {"paid": True}},
                 {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
@@ -71,9 +71,9 @@ def admin_dashboard():
             revenue_data = list(revenue_cursor)
             total_revenue = revenue_data[0]['total'] if revenue_data else 0
         
-        # Логи парсера
+        # Логи парсера (Исправлено: явная проверка на None)
         parser_logs = []
-        if parser_logs_collection:
+        if parser_logs_collection is not None:
             parser_logs = list(
                 parser_logs_collection.find()
                 .sort('timestamp', -1)
@@ -84,9 +84,9 @@ def admin_dashboard():
                 log['timestamp'] = log['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
                 log['_id'] = str(log['_id'])
         
-        # Статистика телефонов
-        total_phones = phonebase_collection.count_documents({}) if phonebase_collection else 0
-        brands = phonebase_collection.distinct("brand") if phonebase_collection else []
+        # Статистика телефонов (Исправлено: явная проверка на None)
+        total_phones = phonebase_collection.count_documents({}) if phonebase_collection is not None else 0
+        brands = phonebase_collection.distinct("brand") if phonebase_collection is not None else []
         
         return render_template(
             'admin.html',
@@ -197,9 +197,11 @@ def check_history():
         if imei_query:
             query['imei'] = {'$regex': f'^{imei_query}'}
         
-        total_checks = checks_collection.count_documents(query) if checks_collection else 0
+        # Исправлено: явная проверка на None
+        total_checks = checks_collection.count_documents(query) if checks_collection is not None else 0
+        
         checks = []
-        if checks_collection:
+        if checks_collection is not None:
             checks = list(
                 checks_collection.find(query)
                 .sort('timestamp', -1)
@@ -244,11 +246,14 @@ def check_history():
 def db_management():
     """Главная страница управления БД"""
     try:
-        collections = db.list_collection_names() if client else []
+        # Исправлено: явная проверка на None
+        collections = db.list_collection_names() if client is not None else []
+        
         # Создаем словарь с количеством документов для каждой коллекции
         collection_counts = {}
         for name in collections:
-            collection_counts[name] = db[name].count_documents({}) if client else 0
+            # Исправлено: явная проверка на None
+            collection_counts[name] = db[name].count_documents({}) if client is not None else 0
         
         return render_template(
             'admin.html',
@@ -269,7 +274,7 @@ def collection_view(collection_name):
         # Обработка удаления документов
         if request.method == 'POST':
             doc_id = request.form.get('doc_id')
-            if doc_id and client:
+            if doc_id and client is not None:
                 try:
                     db[collection_name].delete_one({'_id': ObjectId(doc_id)})
                     flash('Document deleted successfully', 'success')
@@ -285,7 +290,8 @@ def collection_view(collection_name):
         # Получение документов
         documents = []
         total = 0
-        if client and collection_name in db.list_collection_names():
+        # Исправлено: явная проверка на None
+        if client is not None and collection_name in db.list_collection_names():
             total = db[collection_name].count_documents({})
             cursor = db[collection_name].find().skip(skip).limit(per_page)
             for doc in cursor:
@@ -312,7 +318,8 @@ def edit_document(collection_name, doc_id):
     """Редактирование документа"""
     try:
         doc = None
-        if client:
+        # Исправлено: явная проверка на None
+        if client is not None:
             try:
                 doc = db[collection_name].find_one({'_id': ObjectId(doc_id)})
             except:
@@ -370,8 +377,12 @@ def add_document(collection_name):
                         form_data[field_name] = value
                 
                 # Вставка нового документа
-                result = db[collection_name].insert_one(form_data)
-                flash(f'Document added successfully with ID: {result.inserted_id}', 'success')
+                # Исправлено: явная проверка на None
+                if client is not None:
+                    result = db[collection_name].insert_one(form_data)
+                    flash(f'Document added successfully with ID: {result.inserted_id}', 'success')
+                else:
+                    flash('Database connection error', 'danger')
                 return redirect(url_for('admin.collection_view', collection_name=collection_name))
             except Exception as e:
                 flash(f'Error adding document: {str(e)}', 'danger')
@@ -494,8 +505,10 @@ def manage_api_keys():
             flash(f'API key created: {api_key}', 'success')
             return redirect(url_for('admin.manage_api_keys'))
         
-        # Получение всех ключей
-        api_keys = list(api_keys_collection.find().sort('created_at', -1))
+        # Получение всех ключей (Исправлено: явная проверка на None)
+        api_keys = []
+        if api_keys_collection is not None:
+            api_keys = list(api_keys_collection.find().sort('created_at', -1))
         
         # Преобразование ObjectId и дат
         for key in api_keys:
@@ -581,8 +594,10 @@ def manage_webhooks():
             flash('Webhook created successfully', 'success')
             return redirect(url_for('admin.manage_webhooks'))
         
-        # Получение всех вебхуков
-        webhooks = list(webhooks_collection.find().sort('created_at', -1))
+        # Получение всех вебхуков (Исправлено: явная проверка на None)
+        webhooks = []
+        if webhooks_collection is not None:
+            webhooks = list(webhooks_collection.find().sort('created_at', -1))
         
         # Преобразование данных
         for wh in webhooks:
@@ -653,17 +668,17 @@ def system_status():
             response = client.get('/health')
             health_data = response.get_json() or {}
         
-        # Статистика использования
+        # Статистика использования (Исправлено: явная проверка на None)
         stats = {
-            'total_checks': checks_collection.count_documents({}) if checks_collection else 0,
-            'active_webhooks': webhooks_collection.count_documents({'active': True}) if webhooks_collection else 0,
-            'valid_api_keys': api_keys_collection.count_documents({'revoked': False}) if api_keys_collection else 0,
-            'db_size': db.command('dbStats')['dataSize'] if client else 0
+            'total_checks': checks_collection.count_documents({}) if checks_collection is not None else 0,
+            'active_webhooks': webhooks_collection.count_documents({'active': True}) if webhooks_collection is not None else 0,
+            'valid_api_keys': api_keys_collection.count_documents({'revoked': False}) if api_keys_collection is not None else 0,
+            'db_size': db.command('dbStats')['dataSize'] if client is not None else 0
         }
         
-        # Последние события аудита
+        # Последние события аудита (Исправлено: явная проверка на None)
         audit_events = []
-        if audit_logs_collection:
+        if audit_logs_collection is not None:
             audit_events = list(audit_logs_collection.find()
                 .sort('timestamp', -1)
                 .limit(10))
