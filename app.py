@@ -10,7 +10,7 @@ import time
 import threading
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, g, Blueprint
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, g
 from flask_cors import CORS
 import stripe
 from functools import wraps, lru_cache
@@ -27,7 +27,6 @@ from auth import auth_bp
 from ifreeapi import validate_imei, perform_api_check, parse_free_html
 from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection
 from stripepay import StripePayment
-#from user_dashboard import user_bp  # Импортируем исправленный блюпринт
 
 app = Flask(__name__)
 CORS(app)
@@ -37,16 +36,20 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
 cache.init_app(app)
 
-# НОВЫЕ НАСТРОЙКИ СЕССИИ
+# Обновленная конфигурация сессии
 app.config.update(
     SESSION_TYPE='mongodb',
     SESSION_MONGODB=client,
     SESSION_MONGODB_DB='imeicheck',
     SESSION_MONGODB_COLLECT='sessions',
+    SESSION_COOKIE_NAME='imeicheck_session',
+    SESSION_COOKIE_DOMAIN=os.getenv('SESSION_DOMAIN', None),
+    SESSION_COOKIE_PATH='/',
     SESSION_COOKIE_SECURE=os.getenv('FLASK_ENV') == 'production',
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
-    PERMANENT_SESSION_LIFETIME=timedelta(days=7)
+    PERMANENT_SESSION_LIFETIME=timedelta(days=7),
+    SESSION_REFRESH_EACH_REQUEST=True
 )
 Session(app)
 
@@ -837,6 +840,91 @@ def get_balance():
         app.logger.error(f"Error getting balance: {str(e)}")
         return jsonify({'error': 'Server error'}), 500
 
+# ======================================
+# Dashboard Routes
+# ======================================
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    """Основная страница личного кабинета"""
+    user_id = session['user_id']
+    user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+    
+    if not user:
+        flash('User not found', 'danger')
+        return redirect(url_for('auth.logout'))
+    
+    # Генерируем цвет аватара
+    avatar_color = user.get('avatar_color')
+    if not avatar_color:
+        name_part = user.get('first_name') or user.get('email', 'user')
+        avatar_color = generate_avatar_color(name_part)
+    
+    # Получаем статистику
+    total_checks = checks_collection.count_documents({'user_id': ObjectId(user_id)})
+    last_checks = list(checks_collection.find(
+        {'user_id': ObjectId(user_id)},
+        sort=[('timestamp', -1)],
+        limit=5
+    ))
+    
+    last_payments = list(payments_collection.find(
+        {'user_id': ObjectId(user_id)},
+        sort=[('timestamp', -1)],
+        limit=5
+    ))
+    
+    # Форматируем даты
+    for check in last_checks:
+        check['formatted_timestamp'] = format_datetime_filter(check['timestamp'])
+    
+    for payment in last_payments:
+        payment['formatted_timestamp'] = format_datetime_filter(payment['timestamp'])
+    
+    return render_template(
+        'dashboard.html',
+        user=user,
+        balance=user.get('balance', 0),
+        avatar_color=avatar_color,
+        total_checks=total_checks,
+        last_checks=last_checks,
+        last_payments=last_payments,
+        stripe_public_key=STRIPE_PUBLIC_KEY
+    )
+
+@app.route('/user/create_payment_session', methods=['POST'])
+@login_required
+def create_payment_session():
+    try:
+        data = request.json
+        amount = float(data.get('amount', 10.0))
+        user_id = session['user_id']
+        
+        # Генерируем уникальный ключ идемпотентности
+        idempotency_key = f"topup_{user_id}_{datetime.utcnow().timestamp()}"
+        
+        base_url = request.host_url.rstrip('/')
+        success_url = f"{base_url}/dashboard?payment=success&amount={amount}"
+        cancel_url = f"{base_url}/dashboard"
+        
+        # Создаем сессию через StripePayment
+        stripe_session = stripe_payment.create_topup_session(
+            user_id=user_id,
+            amount=amount,
+            success_url=success_url,
+            cancel_url=cancel_url,
+            idempotency_key=idempotency_key
+        )
+        
+        return jsonify({
+            'sessionId': stripe_session.id
+        })
+    
+    except Exception as e:
+        app.logger.error(f"Payment session error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 # Исправленный вебхук Stripe
 @app.route('/user/stripe-webhook', methods=['POST'])
 @csrf.exempt
@@ -937,6 +1025,7 @@ def health_check():
     # Проверка MongoDB
     if client:
         try:
+            db = client.get_database()
             db.command('ping')
             status['services']['mongodb'] = 'OK'
         except Exception as e:
@@ -972,6 +1061,8 @@ def send_webhook_event(event_type, payload):
     if not client:
         return
         
+    # Получаем коллекцию вебхуков
+    webhooks_collection = client.imeicheck.webhooks
     active_webhooks = webhooks_collection.find({
         'active': True,
         'events': event_type
@@ -1063,7 +1154,6 @@ def admin_dashboard():
 
 # Регистрация блюпринтов
 app.register_blueprint(auth_bp)
-app.register_blueprint(user_bp)  # Исправленный блюпринт
 app.register_blueprint(admin_bp)
 
 # Установка CSRF-куки для AJAX
