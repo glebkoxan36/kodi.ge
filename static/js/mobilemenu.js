@@ -189,7 +189,7 @@
         /* Avatar positioning */
         .kodi-avatar-container {
             position: absolute;
-            top: -50px;
+            top: -47px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
