@@ -401,6 +401,28 @@
             padding: 0 2px;
         }
         
+        /* Стили для админской аватарки */
+        .kodi-admin-avatar .kodi-avatar-placeholder {
+            background: linear-gradient(135deg, #ff0000, #800000) !important;
+            color: white !important;
+            font-weight: bold !important;
+            font-size: 1.3rem;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7) !important;
+            animation: admin-pulse 2s infinite;
+        }
+        
+        /* Анимация для админской аватарки */
+        @keyframes admin-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+        
+        .kodi-admin-avatar {
+            border: 3px solid #ff0000 !important;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.7) !important;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .kodi-menu-grid {
@@ -541,31 +563,48 @@
         let html;
         
         if (userData.first_name && userData.last_name) {
-            const formattedBalance = (userData.balance || 0).toFixed(2);
-            const fullName = `${userData.first_name} ${userData.last_name}`;
-            
-            let avatarHTML;
-            if (userData.avatar_url) {
-                avatarHTML = `<img src="${userData.avatar_url}" alt="User Avatar" class="kodi-avatar-image">`;
+            // Проверка является ли пользователь администратором
+            if (userData.is_admin) {
+                // Шаблон для администратора
+                html = `
+                    <div class="kodi-floating-avatar kodi-admin-avatar" onclick="kodiGoToDashboard()">
+                        <div class="kodi-avatar-placeholder">ADMIN</div>
+                    </div>
+                    <div class="kodi-user-info-container">
+                        <div class="kodi-user-info" onclick="kodiGoToDashboard()">
+                            ადმინისტრაცია
+                        </div>
+                    </div>
+                `;
             } else {
-                const initials = `${userData.first_name.charAt(0)}${userData.last_name.charAt(0)}`;
-                avatarHTML = `<div class="kodi-avatar-placeholder" style="background-color: ${userData.avatar_color || '#1a2138'}">${initials}</div>`;
+                // Шаблон для обычного пользователя
+                const formattedBalance = (userData.balance || 0).toFixed(2);
+                const fullName = `${userData.first_name} ${userData.last_name}`;
+                
+                let avatarHTML;
+                if (userData.avatar_url) {
+                    avatarHTML = `<img src="${userData.avatar_url}" alt="User Avatar" class="kodi-avatar-image">`;
+                } else {
+                    const initials = `${userData.first_name.charAt(0)}${userData.last_name.charAt(0)}`;
+                    avatarHTML = `<div class="kodi-avatar-placeholder" style="background-color: ${userData.avatar_color || '#1a2138'}">${initials}</div>`;
+                }
+                
+                html = `
+                    <div class="kodi-floating-avatar" onclick="kodiGoToDashboard()">
+                        ${avatarHTML}
+                    </div>
+                    <div class="kodi-user-info-container">
+                        <div class="kodi-user-info" onclick="kodiGoToDashboard()">
+                            ${fullName}
+                        </div>
+                        <div class="kodi-user-balance" onclick="kodiGoToDashboard()">
+                            ბალანსი: ${formattedBalance}₾
+                        </div>
+                    </div>
+                `;
             }
-            
-            html = `
-                <div class="kodi-floating-avatar" onclick="kodiGoToDashboard()">
-                    ${avatarHTML}
-                </div>
-                <div class="kodi-user-info-container">
-                    <div class="kodi-user-info" onclick="kodiGoToDashboard()">
-                        ${fullName}
-                    </div>
-                    <div class="kodi-user-balance" onclick="kodiGoToDashboard()">
-                        ბალანსი: ${formattedBalance}₾
-                    </div>
-                </div>
-            `;
         } else {
+            // Шаблон для неаутентифицированного пользователя
             html = `
                 <div class="kodi-floating-avatar" onclick="kodiGoToLogin()">
                     <div class="kodi-avatar-placeholder">KODI.GE</div>
