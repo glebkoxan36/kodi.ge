@@ -8,14 +8,17 @@ import json
 from collections import OrderedDict
 
 # Настройка логирования
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("api_check.log"),
-        logging.StreamHandler()
-    ]
-)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+def init_logger():
+    """Инициализация логгера для модуля"""
+    handler = logging.FileHandler('logs/api.log')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+init_logger()
 
 API_URL = os.getenv('API_URL', "https://api.ifreeicloud.co.uk")
 API_KEY = os.getenv('API_KEY', '4KH-IFR-KW5-TSE-D7G-KWU-2SD-UCO')
@@ -144,12 +147,15 @@ TECHNICAL_FIELDS = [
 
 def validate_imei(imei: str) -> bool:
     """Проверяет валидность IMEI (14 или 15 цифр) с алгоритмом Луна для 15-значных"""
+    logger.debug(f"Validating IMEI: {imei}")
     # Проверка длины
     if len(imei) not in (14, 15):
+        logger.warning(f"Invalid IMEI length: {len(imei)}")
         return False
     
     # Проверка, что все символы - цифры
     if not imei.isdigit():
+        logger.warning(f"IMEI contains non-digit characters: {imei}")
         return False
     
     # Для 15-значных IMEI применяем алгоритм Луна
@@ -273,6 +279,7 @@ def parse_universal_response(response_content: str) -> dict:
         if 'error' in data and data['error']:
             error_text = data['error'].strip()
             error_code = API_ERRORS.get(error_text, 'api_error')
+            logger.warning(f"API error: {error_text}")
             return OrderedDict([
                 ('error', get_error_message(error_code)),
                 ('details', error_text),
@@ -330,7 +337,7 @@ def parse_universal_response(response_content: str) -> dict:
                     value = value.strip()
                     result[key] = value
         except Exception as e:
-            logging.error(f"Text parsing error: {str(e)}")
+            logger.error(f"Text parsing error: {str(e)}")
             result['შეცდომა'] = f'Text parsing error: {str(e)}'
     
     # Определение типа устройства
@@ -380,6 +387,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
     Возвращает чистые данные устройства без технических деталей на грузинском языке.
     Всегда показывает все полученные данные, даже если они неполные.
     """
+    logger.info(f"Performing API check: IMEI={imei}, service={service_type}")
     retries = 0
     last_response = None
     last_exception = None
@@ -391,7 +399,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         try:
             # Проверка валидности IMEI
             if not validate_imei(imei):
-                logging.warning(f"Invalid IMEI: {imei} for service {service_type}")
+                logger.warning(f"Invalid IMEI: {imei} for service {service_type}")
                 return OrderedDict([
                     ('error', get_error_message('invalid_imei')),
                     ('service_type', service_type)
@@ -399,7 +407,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             
             # Проверка поддерживаемого типа сервиса
             if service_type not in SERVICE_TYPES:
-                logging.error(f"Unsupported service: {service_type}")
+                logger.error(f"Unsupported service: {service_type}")
                 return OrderedDict([
                     ('error', get_error_message('unsupported_service')),
                     ('details', f'Requested service: {service_type}')
@@ -424,7 +432,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 
                 # Обрабатываем HTTP ошибки
                 if response.status_code != 200:
-                    logging.error(f"API error: {response.status_code} for IMEI {imei}, service {service_type}")
+                    logger.error(f"API error: {response.status_code} for IMEI {imei}, service {service_type}")
                     
                     # Для платных сервисов сразу возвращаем ошибку
                     if service_type != 'free':
@@ -438,7 +446,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                     # Для бесплатных сервисов пробуем повторить
                     if response.status_code >= 500 and retries < max_attempts:
                         retries += 1
-                        logging.info(f"Retrying ({retries}/{max_attempts}) for IMEI {imei}")
+                        logger.info(f"Retrying ({retries}/{max_attempts}) for IMEI {imei}")
                         time.sleep(RETRY_DELAY)
                         continue
                     
@@ -454,7 +462,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 
                 # Проверка на пустой ответ
                 if not last_response.strip():
-                    logging.warning(f"Empty API response for IMEI: {imei}")
+                    logger.warning(f"Empty API response for IMEI: {imei}")
                     
                     # Для платных сервисов сразу возвращаем ошибку
                     if service_type != 'free':
@@ -466,7 +474,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                     
                     if retries < max_attempts:
                         retries += 1
-                        logging.info(f"Retrying ({retries}/{max_attempts}) for empty response")
+                        logger.info(f"Retrying ({retries}/{max_attempts}) for empty response")
                         time.sleep(RETRY_DELAY)
                         continue
                     else:
@@ -477,7 +485,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                         ])
                 
                 # Логируем факт запроса
-                logging.info(f"API check for IMEI {imei}, service {service_type}. Time: {request_time:.2f}s")
+                logger.info(f"API check for IMEI {imei}, service {service_type}. Time: {request_time:.2f}s")
                 
                 # Парсим ответ
                 parsed_data = parse_universal_response(last_response)
@@ -493,14 +501,14 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 # Проверка на минимальное количество данных
                 useful_keys = [k for k in parsed_data.keys() if k not in ['imei', 'server_response', 'service_type']]
                 if len(useful_keys) < 2:
-                    logging.warning(f"Incomplete data for IMEI: {imei}. Keys: {useful_keys}")
+                    logger.warning(f"Incomplete data for IMEI: {imei}. Keys: {useful_keys}")
                     parsed_data['warning'] = get_error_message('incomplete_data')
                 
                 # Всегда возвращаем все полученные данные
                 return parsed_data
         
         except requests.exceptions.RequestException as e:
-            logging.error(f"Network error for IMEI {imei}: {str(e)}")
+            logger.error(f"Network error for IMEI {imei}: {str(e)}")
             last_exception = str(e)
             
             # Для платных сервисов сразу возвращаем ошибку
@@ -515,7 +523,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 retries += 1
                 # Увеличиваем задержку с каждой попыткой
                 current_delay = RETRY_DELAY * (retries + 1)
-                logging.info(f"Retrying ({retries}/{max_attempts}) after network error. Delay: {current_delay}s")
+                logger.info(f"Retrying ({retries}/{max_attempts}) after network error. Delay: {current_delay}s")
                 time.sleep(current_delay)
                 continue
             else:
@@ -526,7 +534,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 ])
                 
         except Exception as e:
-            logging.error(f"Unexpected error for IMEI {imei}: {str(e)}")
+            logger.error(f"Unexpected error for IMEI {imei}: {str(e)}")
             last_exception = str(e)
             return OrderedDict([
                 ('error', get_error_message('unknown_error')),
@@ -536,7 +544,7 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             ])
     
     # Если превышено количество попыток
-    logging.error(f"Max retries exceeded for IMEI: {imei}")
+    logger.error(f"Max retries exceeded for IMEI: {imei}")
     return OrderedDict([
         ('error', get_error_message('max_retries_exceeded')),
         ('details', f'After {max_attempts} retries'),
