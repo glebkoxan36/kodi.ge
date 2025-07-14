@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+from logging.handlers import RotatingFileHandler
 import re
 import hmac
 import secrets
@@ -9,8 +10,7 @@ import requests
 import time
 import threading
 from datetime import datetime, timedelta
-from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, g, Blueprint
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, g
 from flask_cors import CORS
 import stripe
 from functools import wraps, lru_cache
@@ -30,9 +30,39 @@ from db import client, regular_users_collection, checks_collection, payments_col
 from stripepay import StripePayment
 from admin_routes import admin_bp  # Импорт админских роутов
 
+# Создаем папку для логов
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+# Настройка корневого логгера
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+
+# Обработчик для записи в файл
+file_handler = RotatingFileHandler(
+    'logs/app.log', 
+    maxBytes=1024 * 1024 * 5,  # 5 MB
+    backupCount=3
+)
+file_handler.setFormatter(logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+))
+root_logger.addHandler(file_handler)
+
+# Обработчик для вывода в консоль
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+))
+root_logger.addHandler(console_handler)
+
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
+
+# Логгер для app.py
+logger = logging.getLogger(__name__)
+logger.info("Application starting")
 
 # Настройка кеширования
 cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
@@ -92,6 +122,7 @@ def get_current_prices():
     }
     
     if not client:
+        logger.warning("Using default prices - no MongoDB connection")
         return DEFAULT_PRICES
         
     try:
@@ -100,7 +131,7 @@ def get_current_prices():
             return price_doc['prices']
         return DEFAULT_PRICES
     except Exception as e:
-        app.logger.error(f"Error getting prices: {str(e)}")
+        logger.error(f"Error getting prices: {str(e)}")
         return DEFAULT_PRICES
 
 # Контекстный процессор для добавления данных пользователя во все шаблоны
@@ -131,22 +162,9 @@ def inject_user():
         except (TypeError, InvalidId):
             # Очищаем невалидную сессию
             session.pop('user_id', None)
+            logger.warning("Invalid user ID in session - cleared")
     
     return {'currentUser': user_data}
-
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
-app.logger.setLevel(logging.INFO)
-
-log_handler = RotatingFileHandler(
-    'app.log', 
-    maxBytes=1024 * 1024 * 5,
-    backupCount=3
-)
-log_handler.setFormatter(logging.Formatter(
-    '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
-))
-app.logger.addHandler(log_handler)
 
 # Конфигурация
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
@@ -175,6 +193,7 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
+            logger.warning("Unauthorized admin access attempt")
             return redirect(url_for('auth.admin_login', next=request.url))
         return f(*args, **kwargs)
     return decorated
@@ -183,6 +202,7 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'user_id' not in session:
+            logger.warning("Unauthorized access attempt")
             return redirect(url_for('auth.login', next=request.url))
         return f(*args, **kwargs)
     return decorated
@@ -193,6 +213,7 @@ def login_required(f):
 
 def render_common_template(template_name, **kwargs):
     """Общая функция для рендеринга шаблонов без данных пользователя"""
+    logger.debug(f"Rendering template: {template_name}")
     return render_template(template_name, **kwargs)
 
 # ======================================
@@ -202,6 +223,7 @@ def render_common_template(template_name, **kwargs):
 @app.route('/')
 @cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
 def index():
+    logger.info("Home page access")
     prices = get_current_prices()
     return render_common_template(
         'index.html',
@@ -214,12 +236,14 @@ def index():
 @cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
 def contacts_page():
     """Страница контактов"""
+    logger.info("Contacts page access")
     return render_common_template('contacts.html')
 
 @app.route('/knowledge-base')
 @cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
 def knowledge_base():
     """База знаний"""
+    logger.info("Knowledge base access")
     return render_common_template('knowledge-base.html')
 
 # ======================================
@@ -230,6 +254,7 @@ def knowledge_base():
 @cache.cached(timeout=300, unless=lambda: 'user_id' in session)
 def compares_page():
     """Страница сравнения спецификаций телефонов"""
+    logger.info("Compares page access")
     return render_common_template('compares.html')
 
 # ======================================
@@ -240,7 +265,9 @@ def compares_page():
 def compare_search():
     """Поиск телефонов для сравнения"""
     query = request.args.get('q', '').strip()
+    logger.info(f"Phone search: {query}")
     if not query or len(query) < 2:
+        logger.debug("Search query too short")
         return jsonify([])
 
     try:
@@ -263,18 +290,21 @@ def compare_search():
         for phone in phones:
             phone['_id'] = str(phone['_id'])
         
+        logger.debug(f"Found {len(phones)} phones for query: {query}")
         return jsonify(phones)
     
     except Exception as e:
-        app.logger.error(f"Phone search error: {str(e)}")
+        logger.error(f"Phone search error: {str(e)}")
         return jsonify({'error': 'Database error'}), 500
 
 @app.route('/compare/phone/<phone_id>')
 def get_phone_details(phone_id):
     """Получение деталей телефона по ID"""
+    logger.info(f"Phone details request: {phone_id}")
     try:
         phone = phonebase_collection.find_one({'_id': ObjectId(phone_id)})
         if not phone:
+            logger.warning(f"Phone not found: {phone_id}")
             return jsonify({'error': 'Phone not found'}), 404
         
         # Преобразуем ObjectId в строку
@@ -282,7 +312,7 @@ def get_phone_details(phone_id):
         return jsonify(phone)
     
     except Exception as e:
-        app.logger.error(f"Phone details error: {str(e)}")
+        logger.error(f"Phone details error: {str(e)}")
         return jsonify({'error': 'Invalid phone ID'}), 400
 
 # ======================================
@@ -292,6 +322,7 @@ def get_phone_details(phone_id):
 @app.route('/applecheck')
 @cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
 def apple_check():
+    logger.info("Apple check page access")
     # Определяем тип услуги из параметра URL
     service_type = request.args.get('type', 'free')
     
@@ -379,6 +410,7 @@ def apple_check():
 @cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
 def android_check():
     """Страница проверки Android устройств"""
+    logger.info("Android check page access")
     service_type = request.args.get('type', '')
     prices = get_current_prices()
     paid_price_gel = prices['paid'] / 100.0
@@ -482,7 +514,10 @@ def create_checkout_session():
         use_balance = data.get('use_balance', False)
         idempotency_key = data.get('idempotency_key', secrets.token_hex(16))
         
+        logger.info(f"Creating checkout session for IMEI: {imei}, service: {service_type}")
+        
         if not validate_imei(imei):
+            logger.warning(f"Invalid IMEI: {imei}")
             return jsonify({'error': 'არასწორი IMEI'}), 400
         
         # Маппинг типов услуг на цены
@@ -507,6 +542,7 @@ def create_checkout_session():
         }
         
         if service_type not in price_mapping:
+            logger.warning(f"Invalid service type: {service_type}")
             return jsonify({'error': 'არასწორი სერვისის ტიპი'}), 400
         
         prices = get_current_prices()
@@ -515,6 +551,7 @@ def create_checkout_session():
         
         # Для бесплатной проверки не создаем сессию
         if service_type == 'free':
+            logger.debug("Free service - no checkout needed")
             return jsonify({'error': 'უფასო შემოწმება არ საჭიროებს გადახდამ'}), 400
         
         # Если пользователь авторизован и выбрал оплату с баланса
@@ -551,12 +588,14 @@ def create_checkout_session():
                 }
                 if client:
                     checks_collection.insert_one(record)
+                    logger.info(f"Balance payment recorded for IMEI: {imei}")
                 
                 return jsonify({
                     'id': idempotency_key,
                     'payment_method': 'balance'
                 })
             else:
+                logger.warning(f"Balance deduction failed for user: {user_id}")
                 return jsonify({'error': 'ბალანსიდან გადახდა ვერ მოხერხდა'}), 500
         
         # Если не используем баланс (неавторизован или недостаточно средств), создаем сессию Stripe
@@ -589,13 +628,14 @@ def create_checkout_session():
             idempotency_key=idempotency_key
         )
         
+        logger.info(f"Stripe session created: {stripe_session.id}")
         return jsonify({
             'id': stripe_session.id,
             'payment_method': 'stripe'
         })
     
     except Exception as e:
-        app.logger.error(f"Error creating checkout session: {str(e)}")
+        logger.exception(f"Error creating checkout session: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/success')
@@ -604,7 +644,10 @@ def payment_success():
     imei = request.args.get('imei')
     service_type = request.args.get('service_type')
     
+    logger.info(f"Payment success: session_id={session_id}, imei={imei}, service={service_type}")
+    
     if not session_id or not imei or not service_type:
+        logger.warning("Missing parameters in payment success")
         return render_template('error.html', error="არასაკმარისი პარამეტრები"), 400
     
     # Если session_id начинается с "bal_", то это оплата с баланса
@@ -641,6 +684,7 @@ def payment_success():
                 record['user_id'] = ObjectId(session['user_id'])
             if client:
                 checks_collection.insert_one(record)
+                logger.info(f"Payment recorded: {session_id}")
             
             # Перенаправляем на страницу проверки с параметрами
             apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
@@ -650,16 +694,19 @@ def payment_success():
                 return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
         
         except Exception as e:
-            app.logger.error(f"Payment success error: {str(e)}")
+            logger.exception(f"Payment success error: {str(e)}")
             return render_template('error.html', error=str(e)), 500
 
 @app.route('/get_check_result')
 def get_check_result():
     session_id = request.args.get('session_id')
+    logger.info(f"Check result request: {session_id}")
     if not session_id:
+        logger.warning("Missing session_id in check result request")
         return jsonify({'error': 'სესიის ID არის მითითებული'}), 400
     
     if not client:
+        logger.error("Database unavailable")
         return jsonify({'error': 'Database unavailable'}), 500
     
     # Ищем как по session_id (баланс), так и по stripe_session_id (Stripe)
@@ -670,6 +717,7 @@ def get_check_result():
         ]
     })
     if not record:
+        logger.warning(f"Check result not found: {session_id}")
         return jsonify({'error': 'შედეგი ვერ მოიძებნა'}), 404
     
     return jsonify({
@@ -685,12 +733,14 @@ def perform_check():
         imei = data.get('imei')
         service_type = data.get('service_type')
         
-        app.logger.info(f"Check started for IMEI: {imei}, service: {service_type}")
+        logger.info(f"Check request: IMEI={imei}, service={service_type}")
         
         if not imei or not service_type:
+            logger.warning("Missing parameters in perform_check")
             return jsonify({'error': 'არასაკმარისი პარამეტრები'}), 400
         
         if not validate_imei(imei):
+            logger.warning(f"Invalid IMEI: {imei}")
             return jsonify({'error': 'IMEI-ის არასწორი ფორმატი'}), 400
         
         # Проверяем кеш для бесплатных запросов
@@ -698,12 +748,13 @@ def perform_check():
             cache_key = f"free_check_{imei}"
             cached_result = cache.get(cache_key)
             if cached_result:
+                logger.debug(f"Using cached result for IMEI: {imei}")
                 return jsonify(cached_result)
         
         # Пытаемся получить семафор с таймаутом
         acquired = REQUEST_SEMAPHORE.acquire(timeout=15)
         if not acquired:
-            app.logger.warning(f"Semaphore timeout for IMEI: {imei}")
+            logger.warning(f"Semaphore timeout for IMEI: {imei}")
             return jsonify({'error': 'სისტემა დატვირთულია, გთხოვთ სცადოთ მოგვიანებით'}), 503
         
         try:
@@ -741,9 +792,11 @@ def perform_check():
                         }), 500
         
             if not result:
+                logger.error(f"Empty API response for IMEI: {imei}")
                 return jsonify({'error': 'API-დან ცარიელი პასუხი'}), 500
             
             if 'error' in result:
+                logger.warning(f"API error for IMEI: {imei} - {result['error']}")
                 return jsonify(result), 400
             
             # Для сервисов, возвращающих HTML
@@ -780,21 +833,24 @@ def perform_check():
                 
                 # Кешируем результат на 10 минут
                 cache.set(f"free_check_{imei}", result, timeout=600)
+                logger.debug(f"Free check cached for IMEI: {imei}")
             
-            app.logger.info(f"Check completed for IMEI: {imei}")
+            logger.info(f"Check completed for IMEI: {imei}")
             return jsonify(result)
         
         finally:
             REQUEST_SEMAPHORE.release()
     
     except Exception as e:
-        app.logger.error(f'Check error: {str(e)}')
+        logger.exception(f'Check error: {str(e)}')
         return jsonify({'error': 'სერვერული შეცდომა'}), 500
 
 @app.route('/reparse_imei')
 def reparse_imei():
     imei = request.args.get('imei')
+    logger.info(f"Reparse request: {imei}")
     if not client:
+        logger.error("Database unavailable")
         return jsonify({'error': 'Database unavailable'}), 500
         
     # Ищем последнюю запись бесплатной проверки для этого IMEI
@@ -804,6 +860,7 @@ def reparse_imei():
     )
     
     if not record or 'result' not in record or 'html_content' not in record.get('result', {}):
+        logger.warning(f"No free check record found for IMEI: {imei}")
         return jsonify({'error': 'მონაცემები ვერ მოიძებნა'}), 404
     
     html_content = record['result']['html_content']
@@ -827,6 +884,7 @@ def reparse_imei():
 def get_balance():
     """Возвращает текущий баланс пользователя в формата JSON"""
     user_id = session.get('user_id')
+    logger.info(f"Balance request for user: {user_id}")
     if not user_id:
         return jsonify({'error': 'Unauthorized'}), 401
 
@@ -834,16 +892,20 @@ def get_balance():
         # Получаем пользователя из базы данных
         user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
         if not user:
+            logger.warning(f"User not found: {user_id}")
             return jsonify({'error': 'User not found'}), 404
 
+        balance = user.get('balance', 0)
+        logger.debug(f"Balance retrieved: {balance}")
         # Возвращаем баланс пользователя
         return jsonify({
-            'balance': user.get('balance', 0)
+            'balance': balance
         })
     except (TypeError, InvalidId) as e:
+        logger.error(f"Invalid user ID: {user_id} - {str(e)}")
         return jsonify({'error': 'Invalid user ID'}), 400
     except Exception as e:
-        app.logger.error(f"Error getting balance: {str(e)}")
+        logger.exception(f"Error getting balance: {str(e)}")
         return jsonify({'error': 'Server error'}), 500
 
 # ======================================
@@ -852,6 +914,7 @@ def get_balance():
 
 def send_webhook_event(event_type, payload):
     if not client:
+        logger.warning("Database unavailable for webhook")
         return
         
     # Получаем коллекцию вебхуков
@@ -886,8 +949,9 @@ def send_webhook_event(event_type, payload):
                     'last_status': response.status_code
                 }}
             )
+            logger.info(f"Webhook sent to {webhook['url']} - status {response.status_code}")
         except Exception as e:
-            app.logger.error(f"Webhook error for {webhook['url']}: {str(e)}")
+            logger.error(f"Webhook error for {webhook['url']}: {str(e)}")
             webhooks_collection.update_one(
                 {'_id': webhook['_id']},
                 {'$set': {
@@ -908,18 +972,22 @@ def create_carousel_folder():
     
     try:
         os.makedirs(path, exist_ok=True)
+        logger.info(f"Carousel folder created: {path}")
         return jsonify({'success': True})
     except Exception as e:
+        logger.error(f"Error creating carousel folder: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/upload-carousel-image', methods=['POST'])
 def upload_carousel_image():
     """Загружает изображение для карусели"""
     if 'carouselImage' not in request.files:
+        logger.warning("No file in carousel upload")
         return jsonify({'success': False, 'error': 'ფაილი არ არის ატვირთული'}), 400
     
     file = request.files['carouselImage']
     if file.filename == '':
+        logger.warning("Empty filename in carousel upload")
         return jsonify({'success': False, 'error': 'ფაილი არ არის არჩეული'}), 400
     
     try:
@@ -930,12 +998,14 @@ def upload_carousel_image():
         filename = f"carousel_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
         file_path = os.path.join(upload_folder, filename)
         file.save(file_path)
+        logger.info(f"Carousel image uploaded: {file_path}")
         
         return jsonify({
             'success': True, 
             'filePath': f'/{file_path}'
         })
     except Exception as e:
+        logger.error(f"Error uploading carousel image: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # Регистрация блюпринтов
@@ -961,12 +1031,13 @@ def set_csrf_cookie(response):
 # Обработчик ошибок CSRF
 @app.errorhandler(CSRFError)
 def handle_csrf_error(e):
-    app.logger.warning(f"CSRF error: {e.description}")
+    logger.warning(f"CSRF error: {e.description}")
     return jsonify({'error': f'CSRF token error: {e.description}'}), 400
 
 # Роут для отладки сессии
 @app.route('/session-info')
 def session_info():
+    logger.info("Session info request")
     return jsonify({
         'user_id': session.get('user_id'),
         'role': session.get('role'),
@@ -975,6 +1046,7 @@ def session_info():
 
 @app.errorhandler(404)
 def page_not_found(e):
+    logger.warning(f"404 error: {request.url}")
     return render_template(
         'error.html', 
         code=404,
@@ -983,6 +1055,7 @@ def page_not_found(e):
 
 @app.errorhandler(500)
 def internal_server_error(e):
+    logger.error(f"500 error: {str(e)}")
     return render_template(
         'error.html', 
         code=500,
@@ -996,6 +1069,7 @@ def internal_server_error(e):
 @app.route('/health')
 @cache.cached(timeout=30)  # Кеширование health check
 def health_check():
+    logger.info("Health check request")
     status = {
         'status': 'OK',
         'timestamp': datetime.utcnow().isoformat(),
@@ -1035,4 +1109,5 @@ def health_check():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
+    logger.info(f"Starting application on port {port}")
     app.run(host='0.0.0.0', port=port, debug=True)
