@@ -14,6 +14,15 @@ from db import (
 
 admin_bp = Blueprint('admin', __name__)
 
+# Декоратор для проверки прав администратора
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
+            return redirect(url_for('auth.admin_login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated
+
 # Вспомогательная функция для логирования аудита
 def log_audit_event(action, details, user_id=None, username=None):
     try:
