@@ -5,15 +5,28 @@ from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
 import secrets
-import threading
-from app import (
-    admin_required, get_current_prices, log_audit_event, health_check,
-    checks_collection, prices_collection, phones_collection, parser_logs_collection,
-    admin_users_collection, audit_logs_collection, api_keys_collection, webhooks_collection,
-    db, MONGODB_URI
+import requests
+from db import (
+    client, checks_collection, prices_collection, phonebase_collection, 
+    parser_logs_collection, admin_users_collection, audit_logs_collection, 
+    api_keys_collection, webhooks_collection, db
 )
 
 admin_bp = Blueprint('admin', __name__)
+
+# Вспомогательная функция для логирования аудита
+def log_audit_event(action, details, user_id=None, username=None):
+    try:
+        event = {
+            'action': action,
+            'details': details,
+            'timestamp': datetime.utcnow(),
+            'user_id': user_id,
+            'username': username
+        }
+        audit_logs_collection.insert_one(event)
+    except Exception as e:
+        current_app.logger.error(f"Audit log error: {str(e)}")
 
 # ======================================
 # Админ-панель
@@ -25,43 +38,40 @@ def admin_dashboard():
     """Главная панель администратора"""
     try:
         if request.method == 'POST' and 'run_parser' in request.form:
-            try:
-                from gsm_parser.scrap_specs import main as run_gsm_parser
-                thread = threading.Thread(target=run_gsm_parser, args=(MONGODB_URI,))
-                thread.start()
-                flash('Parser started in background', 'success')
-            except Exception as e:
-                current_app.logger.error(f"Parser error: {str(e)}")
-                flash(f'Error starting parser: {str(e)}', 'danger')
+            flash('Parser functionality is not implemented', 'info')
             return redirect(url_for('admin.admin_dashboard'))
         
         # Статистика
-        total_checks = checks_collection.count_documents({})
-        paid_checks = checks_collection.count_documents({'paid': True})
+        total_checks = checks_collection.count_documents({}) if checks_collection else 0
+        paid_checks = checks_collection.count_documents({'paid': True}) if checks_collection else 0
         free_checks = total_checks - paid_checks
         
         # Выручка
-        revenue_cursor = checks_collection.aggregate([
-            {"$match": {"paid": True}},
-            {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
-        ])
-        revenue_data = list(revenue_cursor)
-        total_revenue = revenue_data[0]['total'] if revenue_data else 0
+        total_revenue = 0
+        if checks_collection:
+            revenue_cursor = checks_collection.aggregate([
+                {"$match": {"paid": True}},
+                {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+            ])
+            revenue_data = list(revenue_cursor)
+            total_revenue = revenue_data[0]['total'] if revenue_data else 0
         
         # Логи парсера
-        parser_logs = list(
-            parser_logs_collection.find()
-            .sort('timestamp', -1)
-            .limit(10)
-        )
-        
-        for log in parser_logs:
-            log['timestamp'] = log['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
-            log['_id'] = str(log['_id'])
+        parser_logs = []
+        if parser_logs_collection:
+            parser_logs = list(
+                parser_logs_collection.find()
+                .sort('timestamp', -1)
+                .limit(10)
+            )
+            
+            for log in parser_logs:
+                log['timestamp'] = log['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+                log['_id'] = str(log['_id'])
         
         # Статистика телефонов
-        total_phones = phones_collection.count_documents({})
-        brands = phones_collection.distinct("brand")
+        total_phones = phonebase_collection.count_documents({}) if phonebase_collection else 0
+        brands = phonebase_collection.distinct("brand") if phonebase_collection else []
         
         return render_template(
             'admin.html',
@@ -87,7 +97,7 @@ def price_management():
             try:
                 # ИСПРАВЛЕНИЕ: правильное преобразование данных формы
                 paid_price = int(float(request.form.get('paid_price')) * 100)
-                premium_price = int(float(request.form.get('premium_price')) * 100)
+                premium_price = int(float(request.form.get('premium_price')) * 100
                 
                 current_doc = prices_collection.find_one({'type': 'current'})
                 current_prices = current_doc['prices']
@@ -118,7 +128,7 @@ def price_management():
                             'premium': premium_price / 100
                         }
                     },
-                    user_id=session.get('user_id'),
+                    user_id=session.get('admin_id'),
                     username=session.get('username')
                 )
                 
@@ -172,13 +182,15 @@ def check_history():
         if imei_query:
             query['imei'] = {'$regex': f'^{imei_query}'}
         
-        total_checks = checks_collection.count_documents(query)
-        checks = list(
-            checks_collection.find(query)
-            .sort('timestamp', -1)
-            .skip((page - 1) * per_page)
-            .limit(per_page)
-        )
+        total_checks = checks_collection.count_documents(query) if checks_collection else 0
+        checks = []
+        if checks_collection:
+            checks = list(
+                checks_collection.find(query)
+                .sort('timestamp', -1)
+                .skip((page - 1) * per_page)
+                .limit(per_page)
+            )
         
         current_prices = get_current_prices()
         formatted_prices = {
@@ -214,11 +226,11 @@ def check_history():
 def db_management():
     """Главная страница управления БД"""
     try:
-        collections = db.list_collection_names()
+        collections = db.list_collection_names() if client else []
         # Создаем словарь с количеством документов для каждой коллекции
         collection_counts = {}
         for name in collections:
-            collection_counts[name] = db[name].count_documents({})
+            collection_counts[name] = db[name].count_documents({}) if client else 0
         
         return render_template(
             'admin.html',
@@ -239,7 +251,7 @@ def collection_view(collection_name):
         # Обработка удаления документов
         if request.method == 'POST':
             doc_id = request.form.get('doc_id')
-            if doc_id:
+            if doc_id and client:
                 try:
                     db[collection_name].delete_one({'_id': ObjectId(doc_id)})
                     flash('Document deleted successfully', 'success')
@@ -254,13 +266,14 @@ def collection_view(collection_name):
         
         # Получение документов
         documents = []
-        cursor = db[collection_name].find().skip(skip).limit(per_page)
-        for doc in cursor:
-            doc['_id'] = str(doc['_id'])  # Конвертируем ObjectId в строку
-            documents.append(doc)
+        total = 0
+        if client and collection_name in db.list_collection_names():
+            total = db[collection_name].count_documents({})
+            cursor = db[collection_name].find().skip(skip).limit(per_page)
+            for doc in cursor:
+                doc['_id'] = str(doc['_id'])  # Конвертируем ObjectId в строку
+                documents.append(doc)
             
-        total = db[collection_name].count_documents({})
-        
         return render_template(
             'admin.html',
             active_section='db_management',
@@ -280,7 +293,9 @@ def collection_view(collection_name):
 def edit_document(collection_name, doc_id):
     """Редактирование документа"""
     try:
-        doc = db[collection_name].find_one({'_id': ObjectId(doc_id)})
+        doc = None
+        if client:
+            doc = db[collection_name].find_one({'_id': ObjectId(doc_id)})
         if not doc:
             flash('Document not found', 'danger')
             return redirect(url_for('admin.collection_view', collection_name=collection_name))
@@ -609,26 +624,29 @@ def delete_webhook(webhook_id):
 def system_status():
     """Страница статуса системы"""
     try:
-        # Получаем статус health check
-        health_response = health_check()
-        health_data = health_response[0].get_json()
+        # Делаем запрос к /health
+        with current_app.test_client() as client:
+            response = client.get('/health')
+            health_data = response.get_json()
         
         # Статистика использования
         stats = {
-            'total_checks': checks_collection.count_documents({}),
-            'active_webhooks': webhooks_collection.count_documents({'active': True}),
-            'valid_api_keys': api_keys_collection.count_documents({'revoked': False}),
-            'db_size': db.command('dbStats')['dataSize']
+            'total_checks': checks_collection.count_documents({}) if checks_collection else 0,
+            'active_webhooks': webhooks_collection.count_documents({'active': True}) if webhooks_collection else 0,
+            'valid_api_keys': api_keys_collection.count_documents({'revoked': False}) if api_keys_collection else 0,
+            'db_size': db.command('dbStats')['dataSize'] if client else 0
         }
         
         # Последние события аудита
-        audit_events = list(audit_logs_collection.find()
-            .sort('timestamp', -1)
-            .limit(10))
-        
-        for event in audit_events:
-            event['_id'] = str(event['_id'])
-            event['timestamp'] = event['timestamp'].strftime('%Y-%m-%d %H:%M')
+        audit_events = []
+        if audit_logs_collection:
+            audit_events = list(audit_logs_collection.find()
+                .sort('timestamp', -1)
+                .limit(10))
+            
+            for event in audit_events:
+                event['_id'] = str(event['_id'])
+                event['timestamp'] = event['timestamp'].strftime('%Y-%m-%d %H:%M')
         
         return render_template(
             'admin.html',
