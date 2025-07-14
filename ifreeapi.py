@@ -99,13 +99,19 @@ API_ERRORS = {
     "Invalid IMEI": "invalid_imei",
     "Invalid Key": "invalid_key",
     "Insufficient Funds": "insufficient_funds",
+    "Insufficient funds": "insufficient_funds",
+    "insufficient_funds": "insufficient_funds",
+    "Not enough funds": "insufficient_funds",
     "Service not available": "unsupported_service",
     "Service not found": "unsupported_service",
     "Server Error": "server_error",
     "Request Timeout": "timeout",
     "Device not found": "device_not_found",
     "Payment required": "payment_required",
-    "Payment failed": "payment_failed"
+    "Payment failed": "payment_failed",
+    "balance": "insufficient_funds",
+    "funds": "insufficient_funds",
+    "credit": "insufficient_funds",
 }
 
 # Словарь перевода ключей
@@ -278,7 +284,14 @@ def parse_universal_response(response_content: str) -> dict:
         # Обработка ошибок API
         if 'error' in data and data['error']:
             error_text = data['error'].strip()
-            error_code = API_ERRORS.get(error_text, 'api_error')
+            
+            # Специальная проверка для ошибок баланса
+            if any(keyword in error_text.lower() 
+                  for keyword in ['insufficient', 'funds', 'balance', 'credit']):
+                error_code = "insufficient_funds"
+            else:
+                error_code = API_ERRORS.get(error_text, 'api_error')
+            
             logger.warning(f"API error: {error_text}")
             return OrderedDict([
                 ('error', get_error_message(error_code)),
@@ -311,7 +324,7 @@ def parse_universal_response(response_content: str) -> dict:
                     'activation_date', 'warranty_expiry', 'locked_status', 
                     'find_my_iphone', 'icloud_status']:
             if key in data and key not in result:
-                result[key] = value
+                result[key] = data[key]
                 
     except json.JSONDecodeError:
         # Обработка текстового формата
@@ -434,6 +447,16 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 if response.status_code != 200:
                     logger.error(f"API error: {response.status_code} for IMEI {imei}, service {service_type}")
                     
+                    # Специальная проверка для ошибок баланса
+                    response_text = response.text.lower()
+                    balance_keywords = ['insufficient', 'funds', 'balance', 'credit']
+                    if any(keyword in response_text for keyword in balance_keywords):
+                        return OrderedDict([
+                            ('error', get_error_message('insufficient_funds')),
+                            ('status_code', response.status_code),
+                            ('service_type', service_type)
+                        ])
+                    
                     # Для платных сервисов сразу возвращаем ошибку
                     if service_type != 'free':
                         return OrderedDict([
@@ -494,6 +517,17 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 if 'error' in parsed_data:
                     return parsed_data
                 
+                # Дополнительная проверка на ошибку баланса
+                if 'server_response' in parsed_data:
+                    response_text = str(parsed_data['server_response']).lower()
+                    balance_keywords = ['insufficient', 'funds', 'balance', 'credit']
+                    if any(keyword in response_text for keyword in balance_keywords):
+                        return OrderedDict([
+                            ('error', get_error_message('insufficient_funds')),
+                            ('service_type', service_type),
+                            ('server_response', parsed_data['server_response'])
+                        ])
+                
                 # Добавляем IMEI для отслеживания
                 parsed_data['imei'] = imei
                 parsed_data['service_type'] = service_type
@@ -510,6 +544,16 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         except requests.exceptions.RequestException as e:
             logger.error(f"Network error for IMEI {imei}: {str(e)}")
             last_exception = str(e)
+            
+            # Специальная проверка для ошибок баланса
+            error_msg = str(e).lower()
+            balance_keywords = ['insufficient', 'funds', 'balance', 'credit']
+            if any(keyword in error_msg for keyword in balance_keywords):
+                return OrderedDict([
+                    ('error', get_error_message('insufficient_funds')),
+                    ('details', last_exception),
+                    ('service_type', service_type)
+                ])
             
             # Для платных сервисов сразу возвращаем ошибку
             if service_type != 'free':
@@ -536,6 +580,17 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         except Exception as e:
             logger.error(f"Unexpected error for IMEI {imei}: {str(e)}")
             last_exception = str(e)
+            
+            # Специальная проверка для ошибок баланса
+            error_msg = str(e).lower()
+            balance_keywords = ['insufficient', 'funds', 'balance', 'credit']
+            if any(keyword in error_msg for keyword in balance_keywords):
+                return OrderedDict([
+                    ('error', get_error_message('insufficient_funds')),
+                    ('details', last_exception),
+                    ('service_type', service_type)
+                ])
+            
             return OrderedDict([
                 ('error', get_error_message('unknown_error')),
                 ('details', last_exception),
