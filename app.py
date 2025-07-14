@@ -614,9 +614,9 @@ def payment_success():
         # Пока просто перенаправляем на страницу проверки с параметрами
         apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
         if service_type in apple_services:
-            return redirect(url_for('applecheck', type=service_type, imei=imei, session_id=session_id))
+            return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
         else:
-            return redirect(url_for('androidcheck', type=service_type, imei=imei, session_id=session_id))
+            return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
     else:
         # Это оплата через Stripe
         try:
@@ -643,9 +643,9 @@ def payment_success():
             # Перенаправляем на страницу проверки с параметрами
             apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
             if service_type in apple_services:
-                return redirect(url_for('applecheck', type=service_type, imei=imei, session_id=session_id))
+                return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
             else:
-                return redirect(url_for('androidcheck', type=service_type, imei=imei, session_id=session_id))
+                return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
         
         except Exception as e:
             app.logger.error(f"Payment success error: {str(e)}")
@@ -795,9 +795,13 @@ def reparse_imei():
     if not client:
         return jsonify({'error': 'Database unavailable'}), 500
         
-    record = checks_collection.find_one({'imei': imei, 'service_type': 'free'})
+    # Ищем последнюю запись бесплатной проверки для этого IMEI
+    record = checks_collection.find_one(
+        {'imei': imei, 'service_type': 'free'},
+        sort=[('timestamp', -1)]  # Берем последнюю запись
+    )
     
-    if not record or 'result' not in record or 'html_content' not in record['result']:
+    if not record or 'result' not in record or 'html_content' not in record.get('result', {}):
         return jsonify({'error': 'მონაცემები ვერ მოიძებნა'}), 404
     
     html_content = record['result']['html_content']
