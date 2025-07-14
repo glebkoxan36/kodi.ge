@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from functools import wraps
 from datetime import datetime
 from bson import ObjectId
@@ -21,7 +21,7 @@ def admin_required(f):
         if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
             # Добавляем отладочную информацию
             current_app.logger.warning(
-                f"Unauthorized access attempt: "
+                f"Unauthorized admin access attempt: "
                 f"session={dict(session)}, "
                 f"url={request.url}"
             )
