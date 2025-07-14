@@ -100,6 +100,7 @@
             border-radius: 8px;
             margin-bottom: 15px;
             text-align: center;
+            position: relative;
         }
         
         .flash-success {
@@ -125,6 +126,16 @@
             color: #856404;
             border: 1px solid #ffeeba;
         }
+        
+        .debug-info {
+            font-size: 0.8em;
+            margin-top: 5px;
+            padding: 5px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -141,23 +152,37 @@
                     {% for category, message in messages %}
                         <div class="flash-message flash-{{ category }}">
                             {{ message }}
+                            {% if config.DEBUG %}
+                            <div class="debug-info">
+                                Session: {{ session|tojson }}
+                            </div>
+                            {% endif %}
                         </div>
                     {% endfor %}
                 {% endif %}
             {% endwith %}
         </div>
 
-        <form method="POST" action="{{ url_for('admin_login') }}">
-            {{ form.hidden_tag() }}
-            
+        <form method="POST" action="{{ url_for('auth.admin_login') }}">
             <div class="input-group">
                 <label for="username">Имя пользователя:</label>
-                {{ form.username(id="username", class="form-control", required=True, autofocus=True) }}
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    required 
+                    autofocus
+                    placeholder="Введите ваш логин">
             </div>
             
             <div class="input-group">
                 <label for="password">Пароль:</label>
-                {{ form.password(id="password", class="form-control", required=True) }}
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required
+                    placeholder="Введите ваш пароль">
             </div>
             
             <button type="submit" class="btn-login">Войти</button>
