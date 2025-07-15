@@ -18,8 +18,8 @@ admin_bp = Blueprint('admin', __name__)
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
-            # Добавляем отладочную информацию
+        # Проверяем роль и наличие admin_id
+        if 'admin_id' not in session or 'role' not in session or session['role'] not in ['admin', 'superadmin']:
             current_app.logger.warning(
                 f"Unauthorized admin access attempt: "
                 f"session={dict(session)}, "
@@ -410,6 +410,7 @@ def manage_users():
             username = request.form.get('username')
             password = request.form.get('password')
             role = request.form.get('role', 'admin')
+            email = request.form.get('email', '')
             
             if not username or not password:
                 flash('Username and password are required', 'danger')
@@ -423,6 +424,7 @@ def manage_users():
                 'username': username,
                 'password': generate_password_hash(password),
                 'role': role,
+                'email': email,
                 'created_at': datetime.utcnow()
             })
             flash('User created successfully', 'success')
