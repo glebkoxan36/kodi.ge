@@ -240,20 +240,44 @@ def admin_login():
 
 @auth_bp.route('/logout')
 def logout():
-    # Очищаем пользовательскую сессию
-    user_id = session.pop('user_id', None)
-    session.pop('role', None)
+    """Выход только из пользовательской сессии"""
+    # Сохраняем данные администратора перед очисткой
+    admin_data = {
+        'admin_id': session.get('admin_id'),
+        'admin_role': session.get('admin_role'),
+        'admin_username': session.get('admin_username')
+    }
+    
+    # Очищаем всю сессию
     session.clear()
+    
+    # Восстанавливаем данные администратора
+    if admin_data['admin_id']:
+        session['admin_id'] = admin_data['admin_id']
+        session['admin_role'] = admin_data['admin_role']
+        session['admin_username'] = admin_data['admin_username']
+    
     flash('თქვენ გამოხვედით სისტემიდან', 'success')
-    logger.info(f"User logged out: user_id={user_id}")
+    logger.info(f"User logged out, admin session preserved: {session.get('admin_id')}")
     return redirect(url_for('auth.login'))
 
 @auth_bp.route('/admin/logout')
 def admin_logout():
-    # Очищаем административную сессию
-    admin_id = session.pop('admin_id', None)
-    session.pop('admin_role', None)
-    session.pop('admin_username', None)
+    """Выход только из административной сессии"""
+    # Сохраняем данные пользователя перед очисткой
+    user_data = {
+        'user_id': session.get('user_id'),
+        'role': session.get('role')
+    }
+    
+    # Очищаем всю сессию
+    session.clear()
+    
+    # Восстанавливаем данные пользователя
+    if user_data['user_id']:
+        session['user_id'] = user_data['user_id']
+        session['role'] = user_data['role']
+    
     flash('თქვენ გამოხვედით ადმინ პანელიდან', 'success')
-    logger.info(f"Admin logged out: admin_id={admin_id}")
+    logger.info(f"Admin logged out, user session preserved: {session.get('user_id')}")
     return redirect(url_for('auth.admin_login'))
