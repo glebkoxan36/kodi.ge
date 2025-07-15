@@ -152,7 +152,7 @@ def inject_user():
     # Проверяем администратора
     if 'admin_id' in session and 'admin_role' in session:
         try:
-            admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id']})
+            admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id'])})
             if admin:
                 is_admin = True
                 admin_role = session['admin_role']
@@ -169,7 +169,7 @@ def inject_user():
     # Проверяем обычного пользователя
     if 'user_id' in session:
         try:
-            user = regular_users_collection.find_one({'_id': ObjectId(session['user_id']})
+            user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
             if user:
                 name_part = user.get('first_name') or user.get('email', 'user')
                 avatar_color = user.get('avatar_color') or generate_avatar_color(name_part)
