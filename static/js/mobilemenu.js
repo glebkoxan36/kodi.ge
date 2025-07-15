@@ -53,13 +53,7 @@
             align-items: center;
             justify-content: center;
             margin: auto;
-            transition: all 0.3s ease;
             margin-bottom: 10px;
-        }
-        
-        .kodi-menu-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 25px rgba(0, 198, 255, 0.7);
         }
         
         .kodi-menu-modal {
@@ -79,10 +73,7 @@
             padding-top: 0;
             border-radius: 30px 30px 0 0;
             box-sizing: border-box;
-            /* Исправлено: убрана двойная граница */
-            border: 3px solid rgba(0, 198, 255, 0.8);
-            border-bottom: none;
-            /* Добавлено неоновое свечение */
+            border: none;
             box-shadow: 0 0 20px rgba(0, 198, 255, 0.7);
         }
         
@@ -101,7 +92,6 @@
             height: 100%;
             z-index: 1;
             padding-bottom: env(safe-area-inset-bottom, 0);
-            /* Исправлено: убрана дублирующая граница */
             box-sizing: border-box;
         }
         
@@ -134,14 +124,7 @@
             z-index: 2000;
             cursor: pointer;
             font-size: 18px;
-            transition: all 0.3s ease;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-        
-        .kodi-close-modal:hover {
-            background: #ff5252;
-            transform: scale(1.1);
-            box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
         }
         
         /* Avatar positioning */
@@ -258,17 +241,10 @@
             box-shadow: none !important;
             text-shadow: none !important;
             padding: 0 !important;
-            transition: all 0.3s ease;
             max-width: 180px;
             margin: 0 auto;
             margin-top: 5px;
             color: #00c6ff;
-        }
-        
-        .kodi-user-admin-username {
-            font-size: 0.85rem;
-            opacity: 0.8;
-            margin-top: 2px;
         }
         
         /* Menu icons */
@@ -279,7 +255,6 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            text-shadow: 0 0 8px rgba(0, 198, 255, 0.3);
         }
         
         .kodi-menu-icon-img {
@@ -331,18 +306,11 @@
             justify-content: center;
             border-radius: 15px;
             background: linear-gradient(135deg, #1a2138cc, #0e1321cc);
-            backdrop-filter: blur(5px);
-            /* Исправлено: убраны рамки ячеек */
+            backdrop-filter: none;
             border: none;
             aspect-ratio: 1 / 1;
             text-align: center;
-            transition: all 0.3s ease;
             cursor: pointer;
-            box-shadow: 
-                0 4px 12px rgba(0, 0, 0, 0.5),
-                inset 0 0 10px rgba(0, 198, 255, 0.5),
-                /* Усиленное неоновое свечение */
-                0 0 15px rgba(0, 198, 255, 0.8);
             min-width: 0;
             min-height: 0;
             padding: 12px 8px;
@@ -350,16 +318,6 @@
             color: white;
             position: relative;
             z-index: 5;
-        }
-        
-        .kodi-menu-item:hover {
-            background: linear-gradient(135deg, #223056cc, #121a33cc);
-            transform: translateY(-7px);
-            box-shadow: 
-                0 6px 16px rgba(0, 0, 0, 0.6),
-                inset 0 0 15px rgba(0, 198, 255, 0.5),
-                /* Усиленное свечение при наведении */
-                0 0 20px rgba(0, 198, 255, 0.9);
         }
         
         .kodi-menu-item span {
@@ -385,7 +343,6 @@
         /* FIX: Dashboard specific adjustments */
         .kodi-dashboard-grid .kodi-menu-item {
             background: linear-gradient(135deg, #1a2138dd, #0e1321dd);
-            /* Убраны рамки для дашборда */
             border: none;
         }
         
@@ -541,20 +498,22 @@
         
         if (userData.first_name && userData.last_name) {
             if (userData.is_admin) {
-                // Администратор
                 html = `
                     <div class="kodi-floating-avatar" onclick="kodiGoToAdminDashboard()">
                         <div class="kodi-avatar-placeholder">ADMIN</div>
                     </div>
                     <div class="kodi-user-info-container">
-                        <div class="kodi-user-info" onclick="kodiGoToAdminDashboard()">
-                            ადმინისტრატორი
+                        <div class="kodi-admin-links">
+                            <div class="kodi-user-info" onclick="kodiGoToAdminDashboard()">
+                                ადმინისტრაცია
+                            </div>
+                            <div class="kodi-user-info" onclick="kodiGoToUserDashboard()">
+                                იუზერ დაშბორდი
+                            </div>
                         </div>
-                        ${userData.username ? `<div class="kodi-user-admin-username" onclick="kodiGoToAdminDashboard()">(${userData.username})</div>` : ''}
                     </div>
                 `;
             } else {
-                // Обычный пользователь
                 const formattedBalance = (userData.balance || 0).toFixed(2);
                 const fullName = `${userData.first_name} ${userData.last_name}`;
                 
@@ -567,21 +526,20 @@
                 }
                 
                 html = `
-                    <div class="kodi-floating-avatar" onclick="kodiGoToUserDashboard()">
+                    <div class="kodi-floating-avatar" onclick="kodiGoToDashboard()">
                         ${avatarHTML}
                     </div>
                     <div class="kodi-user-info-container">
-                        <div class="kodi-user-info" onclick="kodiGoToUserDashboard()">
+                        <div class="kodi-user-info" onclick="kodiGoToDashboard()">
                             ${fullName}
                         </div>
-                        <div class="kodi-user-balance" onclick="kodiGoToUserDashboard()">
+                        <div class="kodi-user-balance" onclick="kodiGoToDashboard()">
                             ბალანსი: ${formattedBalance}₾
                         </div>
                     </div>
                 `;
             }
         } else {
-            // Неавторизованный пользователь
             html = `
                 <div class="kodi-floating-avatar" onclick="kodiGoToLogin()">
                     <div class="kodi-avatar-placeholder">KODI.GE</div>
@@ -644,7 +602,7 @@
                                 <i class="fas fa-cog"></i>
                                 <span>პარამეტრები</span>
                             </div>
-                            <div class="kodi-menu-item" onclick="window.location.href='/logout';">
+                            <div class="kodi-menu-item" onclick="window.location.href='/auth/logout';">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>გასვლა</span>
                             </div>
