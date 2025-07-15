@@ -143,13 +143,18 @@ def get_current_prices():
 def inject_user():
     """Добавляет данные текущего пользователя во все шаблоны"""
     user_data = None
+    is_admin = False
+    role = 'user'
     
     # Проверяем администратора
-    if 'admin_id' in session and 'role' in session:
+    if 'admin_id' in session and 'admin_role' in session:
         try:
             admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id'])})
             if admin:
-                # Проверяем, есть ли соответствующий обычный пользователь
+                is_admin = True
+                role = session['admin_role']
+                
+                # Если администратор также является пользователем
                 regular_user = regular_users_collection.find_one({
                     '$or': [
                         {'email': admin.get('email')},
@@ -169,8 +174,8 @@ def inject_user():
                         'balance': regular_user.get('balance', 0),
                         'avatar_color': avatar_color,
                         'avatar_url': regular_user.get('avatar_url'),
-                        'is_admin': True,
-                        'role': session['role']
+                        'is_admin': is_admin,
+                        'role': role
                     }
                 else:
                     # Создаем минимальный профиль для администратора
@@ -180,21 +185,25 @@ def inject_user():
                         'last_name': '',
                         'balance': 0,
                         'avatar_color': generate_avatar_color(admin.get('username')),
-                        'is_admin': True,
-                        'role': session['role']
+                        'is_admin': is_admin,
+                        'role': role
                     }
         except (TypeError, InvalidId):
             session.pop('admin_id', None)
-            session.pop('role', None)
+            session.pop('admin_role', None)
             logger.warning("Invalid admin ID in session - cleared")
     
-    # Если нет администратора, проверяем обычного пользователя
+    # Если нет данных пользователя от администратора, проверяем обычного пользователя
     if not user_data and 'user_id' in session:
         try:
             user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
             if user:
                 name_part = user.get('first_name') or user.get('email', 'user')
                 avatar_color = user.get('avatar_color') or generate_avatar_color(name_part)
+                
+                # Проверяем, является ли пользователь администратором
+                is_admin = 'admin_id' in session  # Если есть admin_id в сессии, то это админ
+                role = session.get('role', 'user')
                 
                 user_data = {
                     'id': str(user['_id']),
@@ -203,16 +212,29 @@ def inject_user():
                     'balance': user.get('balance', 0),
                     'avatar_color': avatar_color,
                     'avatar_url': user.get('avatar_url'),
-                    'is_admin': user.get('role') in ['admin', 'superadmin'],
-                    'role': user.get('role', 'user')
+                    'is_admin': is_admin,
+                    'role': role
                 }
         except (TypeError, InvalidId):
             session.pop('user_id', None)
             logger.warning("Invalid user ID in session - cleared")
     
-    # Обновляем роль в сессии
-    if user_data:
-        session['role'] = user_data['role']
+    # Если только администратор (без пользовательского аккаунта)
+    if not user_data and 'admin_id' in session:
+        try:
+            admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id'])})
+            if admin:
+                user_data = {
+                    'id': str(admin['_id']),
+                    'first_name': admin.get('name', 'Admin'),
+                    'last_name': '',
+                    'balance': 0,
+                    'avatar_color': generate_avatar_color(admin.get('username')),
+                    'is_admin': True,
+                    'role': session['admin_role']
+                }
+        except (TypeError, InvalidId):
+            pass
     
     return {'currentUser': user_data}
 
@@ -243,7 +265,7 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         # Проверяем роль в сессии и наличие admin_id
-        if 'role' not in session or session['role'] not in ['admin', 'superadmin'] or 'admin_id' not in session:
+        if 'admin_id' not in session or 'admin_role' not in session:
             logger.warning(f"Unauthorized admin access attempt: session={dict(session)}")
             return redirect(url_for('auth.admin_login', next=request.url))
         return f(*args, **kwargs)
@@ -252,7 +274,7 @@ def admin_required(f):
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if 'user_id' not in session:
+        if 'user_id' not in session and 'admin_id' not in session:
             logger.warning("Unauthorized access attempt")
             return redirect(url_for('auth.login', next=request.url))
         return f(*args, **kwargs)
@@ -1093,6 +1115,7 @@ def session_info():
     return jsonify({
         'user_id': session.get('user_id'),
         'admin_id': session.get('admin_id'),
+        'admin_role': session.get('admin_role'),
         'role': session.get('role'),
         'session_id': session.sid
     })
