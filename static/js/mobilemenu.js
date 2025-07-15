@@ -265,6 +265,12 @@
             color: #00c6ff;
         }
         
+        .kodi-user-admin-username {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+        
         /* Menu icons */
         .kodi-menu-item i {
             font-size: 40px !important;
@@ -535,22 +541,20 @@
         
         if (userData.first_name && userData.last_name) {
             if (userData.is_admin) {
+                // Администратор
                 html = `
                     <div class="kodi-floating-avatar" onclick="kodiGoToAdminDashboard()">
                         <div class="kodi-avatar-placeholder">ADMIN</div>
                     </div>
                     <div class="kodi-user-info-container">
-                        <div class="kodi-admin-links">
-                            <div class="kodi-user-info" onclick="kodiGoToAdminDashboard()">
-                                ადმინისტრაცია
-                            </div>
-                            <div class="kodi-user-info" onclick="kodiGoToUserDashboard()">
-                                იუზერ დაშბორდი
-                            </div>
+                        <div class="kodi-user-info" onclick="kodiGoToAdminDashboard()">
+                            ადმინისტრატორი
                         </div>
+                        ${userData.username ? `<div class="kodi-user-admin-username" onclick="kodiGoToAdminDashboard()">(${userData.username})</div>` : ''}
                     </div>
                 `;
             } else {
+                // Обычный пользователь
                 const formattedBalance = (userData.balance || 0).toFixed(2);
                 const fullName = `${userData.first_name} ${userData.last_name}`;
                 
@@ -563,20 +567,21 @@
                 }
                 
                 html = `
-                    <div class="kodi-floating-avatar" onclick="kodiGoToDashboard()">
+                    <div class="kodi-floating-avatar" onclick="kodiGoToUserDashboard()">
                         ${avatarHTML}
                     </div>
                     <div class="kodi-user-info-container">
-                        <div class="kodi-user-info" onclick="kodiGoToDashboard()">
+                        <div class="kodi-user-info" onclick="kodiGoToUserDashboard()">
                             ${fullName}
                         </div>
-                        <div class="kodi-user-balance" onclick="kodiGoToDashboard()">
+                        <div class="kodi-user-balance" onclick="kodiGoToUserDashboard()">
                             ბალანსი: ${formattedBalance}₾
                         </div>
                     </div>
                 `;
             }
         } else {
+            // Неавторизованный пользователь
             html = `
                 <div class="kodi-floating-avatar" onclick="kodiGoToLogin()">
                     <div class="kodi-avatar-placeholder">KODI.GE</div>
