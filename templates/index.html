@@ -50,6 +50,9 @@
                 {% if currentUser %}
                     {{ currentUser.first_name }} {{ currentUser.last_name }}
                     <div class="user-balance">ბალანსი: {{ '%.2f' % currentUser.balance }}₾</div>
+                    {% if currentUser.is_admin %}
+                        <div class="user-role">(ადმინისტრატორი)</div>
+                    {% endif %}
                 {% else %}
                     ლოგინი/რეგისტრაცია
                 {% endif %}
@@ -128,6 +131,14 @@
                     <span>დაბრუნების პოლიტიკა</span>
                 </a>
             </li>
+            {% if currentUser and currentUser.is_admin %}
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/dashboard">
+                    <i class="fas fa-cog"></i>
+                    <span>ადმინ პანელი</span>
+                </a>
+            </li>
+            {% endif %}
         </ul>
     </div>
     
@@ -423,16 +434,15 @@
     <div id="mobile-menu-container"></div>
     
     <script>
-  window.currentUser = {% if currentUser %}{
-    first_name: "{{ currentUser.first_name }}",
-    last_name: "{{ currentUser.last_name }}",
-    balance: {{ currentUser.balance }},
-    avatar_color: "{{ currentUser.avatar_color }}",
-    is_admin: {% if currentUser.is_admin %}true{% else %}false{% endif %},
-    {% if currentUser.avatar_url %}
-      avatar_url: "{{ currentUser.avatar_url }}"
-    {% endif %}
-}{% else %}undefined{% endif %};
+        window.currentUser = {% if currentUser %}{
+            id: "{{ currentUser.id }}",
+            first_name: "{{ currentUser.first_name }}",
+            last_name: "{{ currentUser.last_name }}",
+            balance: {{ currentUser.balance }},
+            avatar_color: "{{ currentUser.avatar_color }}",
+            is_admin: {% if currentUser.is_admin %}true{% else %}false{% endif %},
+            role: "{{ currentUser.role }}"
+        }{% else %}undefined{% endif %};
     </script>
     
     <!-- Bootstrap JS -->
@@ -446,7 +456,11 @@
         }
 
         window.goToDashboard = function() {
-            window.location.href = "/user/dashboard";
+            if (window.currentUser && window.currentUser.is_admin) {
+                window.location.href = "/admin/dashboard";
+            } else {
+                window.location.href = "/user/dashboard";
+            }
         }
         
         // Функции управления модальными окнами для бесплатной проверки
