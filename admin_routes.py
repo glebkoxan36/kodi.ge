@@ -18,8 +18,8 @@ admin_bp = Blueprint('admin', __name__)
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        # Проверяем роль и наличие admin_id
-        if 'admin_id' not in session or 'role' not in session or session['role'] not in ['admin', 'superadmin']:
+        # Проверяем наличие admin_id и admin_role
+        if 'admin_id' not in session or 'admin_role' not in session:
             current_app.logger.warning(
                 f"Unauthorized admin access attempt: "
                 f"session={dict(session)}, "
@@ -121,7 +121,7 @@ def price_management():
                     'type': 'history',
                     'prices': current_prices,
                     'changed_at': datetime.utcnow(),
-                    'changed_by': session.get('username', 'unknown')
+                    'changed_by': session.get('admin_username', 'unknown')
                 })
                 
                 prices_collection.update_one(
@@ -144,7 +144,7 @@ def price_management():
                         }
                     },
                     user_id=session.get('admin_id'),
-                    username=session.get('username')
+                    username=session.get('admin_username')
                 )
                 
                 flash('Prices updated successfully!', 'success')
@@ -451,7 +451,7 @@ def delete_user(user_id):
     """Удаление пользователя"""
     try:
         # Нельзя удалить текущего пользователя или суперадмина
-        current_username = session.get('username')
+        current_username = session.get('admin_username')
         try:
             user = admin_users_collection.find_one({'_id': ObjectId(user_id)})
         except:
