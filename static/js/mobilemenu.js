@@ -79,9 +79,11 @@
             padding-top: 0;
             border-radius: 30px 30px 0 0;
             box-sizing: border-box;
-            /* FIX: Add border to entire menu */
+            /* Исправлено: убрана двойная граница */
             border: 3px solid rgba(0, 198, 255, 0.8);
             border-bottom: none;
+            /* Добавлено неоновое свечение */
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.7);
         }
         
         .kodi-menu-modal.open {
@@ -99,9 +101,7 @@
             height: 100%;
             z-index: 1;
             padding-bottom: env(safe-area-inset-bottom, 0);
-            /* FIX: Add matching border */
-            border: 3px solid rgba(0, 198, 255, 0.8);
-            border-bottom: none;
+            /* Исправлено: убрана дублирующая граница */
             box-sizing: border-box;
         }
         
@@ -326,17 +326,17 @@
             border-radius: 15px;
             background: linear-gradient(135deg, #1a2138cc, #0e1321cc);
             backdrop-filter: blur(5px);
-            /* FIX: Enhanced border visibility */
-            border: 3px solid rgba(0, 198, 255, 0.9);
+            /* Исправлено: убраны рамки ячеек */
+            border: none;
             aspect-ratio: 1 / 1;
             text-align: center;
             transition: all 0.3s ease;
             cursor: pointer;
             box-shadow: 
                 0 4px 12px rgba(0, 0, 0, 0.5),
-                inset 0 0 15px rgba(0, 198, 255, 0.3),
-                /* FIX: Added outer glow */
-                0 0 10px rgba(0, 198, 255, 0.5);
+                inset 0 0 10px rgba(0, 198, 255, 0.5),
+                /* Усиленное неоновое свечение */
+                0 0 15px rgba(0, 198, 255, 0.8);
             min-width: 0;
             min-height: 0;
             padding: 12px 8px;
@@ -349,12 +349,11 @@
         .kodi-menu-item:hover {
             background: linear-gradient(135deg, #223056cc, #121a33cc);
             transform: translateY(-7px);
-            border-color: var(--accent-color);
             box-shadow: 
                 0 6px 16px rgba(0, 0, 0, 0.6),
-                inset 0 0 15px rgba(0, 198, 255, 0.4),
-                /* FIX: Enhanced glow on hover */
-                0 0 15px rgba(0, 198, 255, 0.8);
+                inset 0 0 15px rgba(0, 198, 255, 0.5),
+                /* Усиленное свечение при наведении */
+                0 0 20px rgba(0, 198, 255, 0.9);
         }
         
         .kodi-menu-item span {
@@ -380,6 +379,8 @@
         /* FIX: Dashboard specific adjustments */
         .kodi-dashboard-grid .kodi-menu-item {
             background: linear-gradient(135deg, #1a2138dd, #0e1321dd);
+            /* Убраны рамки для дашборда */
+            border: none;
         }
         
         /* Ensure background is visible on dashboard */
