@@ -218,8 +218,8 @@ def admin_login():
         
         # Успешная аутентификация
         session['admin_id'] = str(admin['_id'])
-        session['role'] = admin['role']
-        session['username'] = admin['username']
+        session['admin_role'] = admin['role']  # Используем отдельный ключ для роли администратора
+        session['admin_username'] = admin['username']
         session.permanent = True
         
         logger.info(f"Admin logged in: {username}")
@@ -230,9 +230,20 @@ def admin_login():
 
 @auth_bp.route('/logout')
 def logout():
-    user_id = session.get('user_id')
-    admin_id = session.get('admin_id')
+    # Очищаем пользовательскую сессию
+    user_id = session.pop('user_id', None)
+    session.pop('role', None)
     session.clear()
     flash('თქვენ გამოხვედით სისტემიდან', 'success')
-    logger.info(f"User logged out: user_id={user_id}, admin_id={admin_id}")
+    logger.info(f"User logged out: user_id={user_id}")
     return redirect(url_for('auth.login'))
+
+@auth_bp.route('/admin/logout')
+def admin_logout():
+    # Очищаем административную сессию
+    admin_id = session.pop('admin_id', None)
+    session.pop('admin_role', None)
+    session.pop('admin_username', None)
+    flash('თქვენ გამოხვედით ადმინ პანელიდან', 'success')
+    logger.info(f"Admin logged out: admin_id={admin_id}")
+    return redirect(url_for('auth.admin_login'))
