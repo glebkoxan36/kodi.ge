@@ -15,11 +15,22 @@ from db import (
 
 admin_bp = Blueprint('admin', __name__)
 
+# Декоратор для проверки авторизации
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # Проверяем наличие user_id или admin_id в сессии
+        if 'user_id' not in session and 'admin_id' not in session:
+            current_app.logger.warning("Unauthorized access attempt")
+            return redirect(url_for('auth.login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated
+
 # Декоратор для проверки прав администратора
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        # Проверяем наличие admin_id и admin_role
+        # Проверяем роль в сессии и наличие admin_id
         if 'admin_id' not in session or 'admin_role' not in session:
             current_app.logger.warning(
                 f"Unauthorized admin access attempt: "
