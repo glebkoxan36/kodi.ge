@@ -9,85 +9,79 @@
         return cachedElements[id];
     }
 
-    // Генерация анимированного SVG фона
+    // Генерация анимированного SVG фона (улучшенная версия)
     function generateCircuitSVG() {
         return `
             <svg class="kodi-circuit-svg" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
-                    <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
-                        <feGaussianBlur stdDeviation="0.8" result="blur"/>
-                        <feColorMatrix type="matrix" values="
-                            0 0 0 0 0.1
-                            0 0 0 0 0.8
-                            0 0 0 0 0.9
-                            0 0 0 1 0"/>
-                    </filter>
-                    <linearGradient id="neon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <!-- Улучшенные градиенты -->
+                    <linearGradient id="main-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#0a0e17" />
+                        <stop offset="100%" stop-color="#121a33" />
+                    </linearGradient>
+                    
+                    <linearGradient id="line-grad" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stop-color="#00c6ff" />
                         <stop offset="100%" stop-color="#0072ff" />
                     </linearGradient>
-                    <pattern id="grid-pattern" width="10" height="10" patternUnits="userSpaceOnUse">
-                        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(0, 230, 255, 0.15)" stroke-width="0.2"/>
+                    
+                    <!-- Минималистичный паттерн сетки -->
+                    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(0, 230, 255, 0.1)" stroke-width="0.1"/>
                     </pattern>
+                    
+                    <!-- Тонкий фильтр свечения -->
+                    <filter id="soft-glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="0.3" result="blur"/>
+                        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                    </filter>
                 </defs>
                 
-                <!-- Фоновый паттерн -->
-                <rect width="100%" height="100%" fill="url(#grid-pattern)" opacity="0.5"/>
+                <!-- Основной фон -->
+                <rect width="100%" height="100%" fill="url(#main-grad)"/>
                 
-                <!-- Основные схемы подключения -->
-                <path d="M10,20 L40,20 L40,50 L70,50" filter="url(#neon-glow)" stroke="url(#neon-gradient)" stroke-width="0.4" fill="none" stroke-dasharray="6" stroke-dashoffset="0">
-                    <animate attributeName="stroke-dashoffset" from="0" to="-12" dur="1.2s" repeatCount="indefinite"/>
-                </path>
-                <path d="M25,70 L25,85 L60,85 L60,65" filter="url(#neon-glow)" stroke="url(#neon-gradient)" stroke-width="0.4" fill="none" stroke-dasharray="6" stroke-dashoffset="0">
-                    <animate attributeName="stroke-dashoffset" from="0" to="-12" dur="1.5s" repeatCount="indefinite"/>
-                </path>
-                <path d="M80,25 L80,40 L65,40 L65,60" filter="url(#neon-glow)" stroke="#00c6ff" stroke-width="0.4" fill="none" stroke-dasharray="6" stroke-dashoffset="0">
-                    <animate attributeName="stroke-dashoffset" from="0" to="-12" dur="1.8s" repeatCount="indefinite"/>
+                <!-- Сетка -->
+                <rect width="100%" height="100%" fill="url(#grid)" opacity="0.3"/>
+                
+                <!-- Структурированные линии (более геометричные) -->
+                <path d="M20,20 L40,20 L40,40 L60,40" filter="url(#soft-glow)" stroke="url(#line-grad)" stroke-width="0.3" fill="none" stroke-dasharray="4" stroke-dashoffset="0">
+                    <animate attributeName="stroke-dashoffset" from="0" to="-8" dur="3s" repeatCount="indefinite"/>
                 </path>
                 
-                <!-- Дополнительные анимированные линии -->
+                <path d="M80,30 L80,50 L60,50" filter="url(#soft-glow)" stroke="url(#line-grad)" stroke-width="0.3" fill="none" stroke-dasharray="4" stroke-dashoffset="0">
+                    <animate attributeName="stroke-dashoffset" from="0" to="-8" dur="3.5s" repeatCount="indefinite" begin="0.5s"/>
+                </path>
+                
+                <path d="M30,70 L30,90 L50,90 L50,70" filter="url(#soft-glow)" stroke="#00c6ff" stroke-width="0.3" fill="none" stroke-dasharray="4" stroke-dashoffset="0">
+                    <animate attributeName="stroke-dashoffset" from="0" to="-8" dur="4s" repeatCount="indefinite" begin="1s"/>
+                </path>
+                
+                <!-- Геометричные элементы (чипы) -->
+                <rect x="25" y="25" width="8" height="8" fill="none" stroke="rgba(0, 198, 255, 0.5)" stroke-width="0.2">
+                    <animate attributeName="opacity" values="0.5;0.8;0.5" dur="3s" repeatCount="indefinite"/>
+                </rect>
+                
+                <rect x="65" y="65" width="6" height="6" fill="none" stroke="rgba(0, 114, 255, 0.6)" stroke-width="0.2" transform="rotate(45 68 68)">
+                    <animate attributeName="opacity" values="0.4;0.7;0.4" dur="2.5s" repeatCount="indefinite" begin="0.3s"/>
+                </rect>
+                
+                <!-- Упорядоченные точки -->
                 ${Array.from({length: 12}, (_, i) => {
-                    const startX = Math.floor(Math.random() * 100);
-                    const startY = Math.floor(Math.random() * 100);
-                    const segments = Math.floor(Math.random() * 3) + 2;
-                    let pathD = `M${startX},${startY}`;
-                    
-                    for (let s = 0; s < segments; s++) {
-                        const x = startX + (Math.random() * 30 + 10);
-                        const y = startY + (Math.random() * 20 - 10);
-                        pathD += ` L${x},${y}`;
-                    }
-                    
+                    const cx = 15 + (i % 4) * 25;
+                    const cy = 15 + Math.floor(i / 4) * 25;
+                    const r = 0.4;
                     return `
-                        <path d="${pathD}"
-                            filter="url(#neon-glow)" 
-                            stroke="rgba(0, 198, 255, ${0.4 + Math.random() * 0.4})" 
-                            stroke-width="${0.2 + Math.random() * 0.2}" 
-                            stroke-dasharray="8"
-                            stroke-dashoffset="0">
-                            <animate attributeName="stroke-dashoffset" from="0" to="-16" dur="${1 + Math.random() * 2}s" repeatCount="indefinite"/>
-                        </path>
-                    `;
-                }).join('')}
-                
-                <!-- Анимированные точки подключения -->
-                ${Array.from({length: 25}, (_, i) => {
-                    const cx = Math.floor(Math.random() * 100);
-                    const cy = Math.floor(Math.random() * 100);
-                    const r = 0.3 + Math.random() * 0.2;
-                    return `
-                        <circle cx="${cx}" cy="${cy}" r="${r}" fill="#00c6ff">
-                            <animate attributeName="r" values="${r};${r * 1.8};${r}" dur="${1 + Math.random() * 2}s" repeatCount="indefinite"/>
-                            <animate attributeName="opacity" values="0.7;1;0.7" dur="${1 + Math.random() * 2}s" repeatCount="indefinite"/>
+                        <circle cx="${cx}" cy="${cy}" r="${r}" fill="#00c6ff" opacity="0.7">
+                            <animate attributeName="r" values="${r};${r * 1.5};${r}" dur="${1.5 + Math.random()}" repeatCount="indefinite"/>
                         </circle>
                     `;
                 }).join('')}
                 
-                <!-- Статические точки -->
-                ${Array.from({length: 15}, (_, i) => {
-                    const cx = Math.floor(Math.random() * 100);
-                    const cy = Math.floor(Math.random() * 100);
-                    return `<circle cx="${cx}" cy="${cy}" r="0.3" fill="#00c6ff" opacity="0.8"/>`;
+                <!-- Статические элементы -->
+                ${Array.from({length: 8}, (_, i) => {
+                    const cx = 20 + (i % 3) * 30;
+                    const cy = 75 + Math.floor(i / 3) * 15;
+                    return `<circle cx="${cx}" cy="${cy}" r="0.3" fill="#0072ff" opacity="0.6"/>`;
                 }).join('')}
             </svg>
         `;
@@ -170,7 +164,7 @@
         .kodi-circuit-board-bg {
             background: 
                 linear-gradient(135deg, #0a0e17 0%, #121a33 100%);
-            border: 3px solid rgba(0, 198, 255, 0.4);
+            border: 2px solid rgba(0, 198, 255, 0.3); /* Более тонкая граница */
             border-radius: 30px 30px 0 0;
             box-shadow: 
                 0 0 15px rgba(0, 198, 255, 0.3),
@@ -191,7 +185,7 @@
             width: 100%;
             height: 100%;
             z-index: 1;
-            opacity: 0.7;
+            opacity: 0.8; /* Увеличил прозрачность для лучшей читаемости */
             will-change: transform;
         }
         
