@@ -231,7 +231,8 @@ def admin_login():
 @auth_bp.route('/logout')
 def logout():
     user_id = session.get('user_id')
+    admin_id = session.get('admin_id')
     session.clear()
     flash('თქვენ გამოხვედით სისტემიდან', 'success')
-    logger.info(f"User logged out: {user_id}")
+    logger.info(f"User logged out: user_id={user_id}, admin_id={admin_id}")
     return redirect(url_for('auth.login'))
