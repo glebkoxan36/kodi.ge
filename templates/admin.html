@@ -1,188 +1,113 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - IMEI Checker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .top-bar {
-            background-color: #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 10px 20px;
-            z-index: 1000;
-        }
-        .main-container {
-            display: flex;
-            flex: 1;
-            padding: 20px;
-        }
-        .sidebar {
-            width: 250px;
-            background-color: #343a40;
-            color: white;
-            padding: 20px 0;
-            border-radius: 10px;
-            margin-right: 20px;
-            height: fit-content;
-        }
-        .sidebar-sticky {
-            position: sticky;
-            top: 20px;
-        }
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.75);
-            padding: 10px 20px;
-            border-left: 3px solid transparent;
-            transition: all 0.3s;
-        }
-        .sidebar .nav-link:hover {
-            color: white;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .sidebar .nav-link.active {
-            color: white;
-            border-left: 3px solid #3498db;
-            background-color: rgba(255, 255, 255, 0.15);
-        }
-        .sidebar .nav-link i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-        }
-        .main-content {
-            flex: 1;
-        }
-        .container {
-            max-width: 1400px;
-        }
-        .card {
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        .card-header {
-            background-color: #3498db;
-            color: white;
-            font-weight: bold;
-            border-radius: 10px 10px 0 0 !important;
-            padding: 12px 20px;
-        }
-        .stat-card {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .stat-value {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        .stat-label {
-            color: #7f8c8d;
-            font-size: 1rem;
-        }
-        .revenue {
-            color: #27ae60;
-        }
-        .table th {
-            background-color: #e9ecef;
-        }
-        .price-form {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-left: 4px solid #3498db;
-        }
-        .price-history {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .history-item {
-            border-left: 3px solid #3498db;
-            padding: 10px 15px;
-            margin-bottom: 10px;
-            background: #f8f9fa;
-        }
-        .paid-price {
-            color: #27ae60;
-            font-weight: bold;
-        }
-        .premium-price {
-            color: #2980b9;
-            font-weight: bold;
-        }
-        .history-meta {
-            color: #7f8c8d;
-            font-size: 0.85rem;
-        }
-        .form-section {
-            margin-bottom: 25px;
-        }
-        .input-group-price {
-            max-width: 250px;
-        }
-        .paid-badge {
-            background-color: #27ae60;
-        }
-        .free-badge {
-            background-color: #7f8c8d;
-        }
-        .field-group {
-            margin-bottom: 15px;
-            padding: 10px;
-            border: 1px solid #e0e0e0;
-            border-radius: 5px;
-        }
-        .actions-cell {
-            white-space: nowrap;
-        }
-        .document-id {
-            font-family: monospace;
-            font-size: 0.85rem;
-        }
-        .balance-form {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="admindashboard.css">
 </head>
 <body>
     <!-- Top navigation bar with user info -->
     <div class="top-bar">
-        <div class="d-flex justify-content-end py-2">
-            {% if 'username' in session %}
-                <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-person-fill"></i> {{ session.username }}
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
-                    </ul>
-                </div>
-            {% else %}
-                <a href="{{ url_for('auth.admin_login') }}" class="btn btn-outline-primary">
-                    <i class="bi bi-box-arrow-in-right"></i> Admin Login
-                </a>
-            {% endif %}
+        <div class="d-flex justify-content-between align-items-center py-2">
+            <button class="btn btn-outline-secondary d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
+                <i class="bi bi-list"></i>
+            </button>
+            <h1 class="h4 mb-0 d-none d-md-block">Admin Panel</h1>
+            <div>
+                {% if 'username' in session %}
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-fill"></i> {{ session.username }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('auth.admin_login') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-box-arrow-in-right"></i> Admin Login
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </div>
 
     <div class="main-container">
-        <div class="sidebar">
+        <!-- Offcanvas sidebar for mobile -->
+        <div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="sidebarMenuLabel">Admin Menu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body p-0">
+                <div class="sidebar">
+                    <div class="sidebar-sticky">
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'admin.admin_dashboard' %}active{% endif %}" 
+                                   href="{{ url_for('admin.admin_dashboard') }}">
+                                    <i class="bi bi-speedometer2"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'admin.price_management' %}active{% endif %}" 
+                                   href="{{ url_for('admin.price_management') }}">
+                                    <i class="bi bi-currency-dollar"></i> Price Management
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'admin.check_history' %}active{% endif %}" 
+                                   href="{{ url_for('admin.check_history') }}">
+                                    <i class="bi bi-clock-history"></i> Check History
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint in ['admin.db_management', 'admin.collection_view', 'admin.edit_document', 'admin.add_document'] %}active{% endif %}" 
+                                   href="{{ url_for('admin.db_management') }}">
+                                    <i class="bi bi-database"></i> Database Management
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'admin.manage_users' %}active{% endif %}" 
+                                   href="{{ url_for('admin.manage_users') }}">
+                                    <i class="bi bi-people"></i> Admin Users
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'admin.manage_regular_users' %}active{% endif %}" 
+                                   href="{{ url_for('admin.manage_regular_users') }}">
+                                    <i class="bi bi-people-fill"></i> User Management
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'admin.system_status' %}active{% endif %}" 
+                                   href="{{ url_for('admin.system_status') }}">
+                                    <i class="bi bi-heart-pulse"></i> System Status
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'admin.manage_api_keys' %}active{% endif %}" 
+                                   href="{{ url_for('admin.manage_api_keys') }}">
+                                    <i class="bi bi-key"></i> API Keys
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'admin.manage_webhooks' %}active{% endif %}" 
+                                   href="{{ url_for('admin.manage_webhooks') }}">
+                                    <i class="bi bi-send"></i> Webhooks
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Permanent sidebar for desktop -->
+        <div class="sidebar d-none d-lg-block">
             <div class="sidebar-sticky">
                 <ul class="nav flex-column">
                     <li class="nav-item">
@@ -246,31 +171,31 @@
         <div class="main-content">
             <div class="container">
                 <!-- Content block -->
-                <div class="container mt-4">
+                <div class="container mt-3 mt-md-4">
                     {% if request.endpoint == 'admin.admin_dashboard' %}
                         <!-- ========================================== -->
                         <!-- Dashboard Section -->
                         <!-- ========================================== -->
-                        <div class="row">
-                            <div class="col-md-3">
+                        <div class="row g-3">
+                            <div class="col-md-3 col-6">
                                 <div class="stat-card">
                                     <div class="stat-value">{{ total_checks }}</div>
                                     <div class="stat-label">Total Checks</div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 col-6">
                                 <div class="stat-card">
                                     <div class="stat-value text-success">{{ paid_checks }}</div>
                                     <div class="stat-label">Paid Checks</div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 col-6">
                                 <div class="stat-card">
                                     <div class="stat-value">{{ free_checks }}</div>
                                     <div class="stat-label">Free Checks</div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 col-6">
                                 <div class="stat-card">
                                     <div class="stat-value revenue">${{ "%.2f"|format(total_revenue) }}</div>
                                     <div class="stat-label">Total Revenue</div>
@@ -282,8 +207,8 @@
                         <!-- ========================================== -->
                         <!-- Price Management Section -->
                         <!-- ========================================== -->
-                        <div class="row">
-                            <div class="col-md-6">
+                        <div class="row g-3">
+                            <div class="col-lg-6">
                                 <div class="card">
                                     <div class="card-header">
                                         <h5 class="mb-0">Price Management</h5>
@@ -333,7 +258,7 @@
                                 </div>
                             </div>
                             
-                            <div class="col-md-6">
+                            <div class="col-lg-6">
                                 <div class="card">
                                     <div class="card-header">
                                         <h5 class="mb-0">Price Change History</h5>
@@ -371,15 +296,15 @@
                         <!-- Check History Section -->
                         <!-- ========================================== -->
                         <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Check History</h5>
+                            <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                                <h5 class="mb-2 mb-md-0">Check History</h5>
                                 <div>
                                     <span class="badge paid-badge me-1">Paid: ${{ "%.2f"|format(current_prices.paid) }}</span>
                                     <span class="badge bg-primary">Premium: ${{ "%.2f"|format(current_prices.premium) }}</span>
                                 </div>
                             </div>
                             <div class="card-body">
-                                <form class="row g-3 mb-4" method="get">
+                                <form class="row g-2 mb-3" method="get">
                                     <div class="col-md-8">
                                         <input type="text" class="form-control" name="imei" 
                                                placeholder="Search by IMEI..." value="{{ imei_query }}">
@@ -438,7 +363,7 @@
                                 </div>
                                 
                                 <nav>
-                                    <ul class="pagination justify-content-center">
+                                    <ul class="pagination justify-content-center flex-wrap">
                                         {% if page > 1 %}
                                             <li class="page-item">
                                                 <a class="page-link" href="?page={{ page-1 }}&imei={{ imei_query }}">Previous</a>
@@ -486,22 +411,22 @@
                         <!-- ========================================== -->
                         <!-- Database Management - Collection View -->
                         <!-- ========================================== -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h2>{{ collection_name }} Collection</h2>
-                            <div>
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                            <h2 class="mb-3 mb-md-0">{{ collection_name }} Collection</h2>
+                            <div class="d-flex gap-2">
                                 <a href="{{ url_for('admin.add_document', collection_name=collection_name) }}" class="btn btn-success">
                                     <i class="bi bi-plus-circle me-1"></i> Add Document
                                 </a>
                                 <a href="{{ url_for('admin.db_management') }}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-arrow-left me-1"></i> Back to Collections
+                                    <i class="bi bi-arrow-left me-1"></i> Back
                                 </a>
                             </div>
                         </div>
                         
                         <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
+                            <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center">
                                 <span>Documents ({{ total }} total)</span>
-                                <form class="d-flex" method="get">
+                                <form class="d-flex mt-2 mt-md-0" method="get">
                                     <input type="text" class="form-control me-2" placeholder="Search..." name="q" value="{{ search_query }}">
                                     <button type="submit" class="btn btn-primary">Search</button>
                                 </form>
@@ -559,7 +484,7 @@
                                                     <form method="POST" action="{{ url_for('admin.collection_view', collection_name=collection_name) }}" 
                                                           class="d-inline">
                                                         <input type="hidden" name="doc_id" value="{{ doc._id }}">
-                                                        <button type="submit" class="btn btn-sm btn-danger" 
+                                                        <button type="submit" class="btn btn-sm btn-danger ms-1" 
                                                                 onclick="return confirm('Are you sure you want to delete this document?')">
                                                             <i class="bi bi-trash"></i>
                                                         </button>
@@ -575,9 +500,9 @@
                                     </table>
                                 </div>
                                 
-                                <!-- Пагинация -->
+                                <!-- Pagination -->
                                 <nav>
-                                    <ul class="pagination justify-content-center">
+                                    <ul class="pagination justify-content-center flex-wrap">
                                         {% if page > 1 %}
                                         <li class="page-item">
                                             <a class="page-link" href="?page={{ page - 1 }}&q={{ search_query }}">Previous</a>
@@ -606,8 +531,8 @@
                         <!-- ========================================== -->
                         <!-- Database Management - Edit Document -->
                         <!-- ========================================== -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h2>Edit Document</h2>
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                            <h2 class="mb-3 mb-md-0">Edit Document</h2>
                             <div>
                                 <a href="{{ url_for('admin.collection_view', collection_name=collection_name) }}" class="btn btn-outline-secondary">
                                     <i class="bi bi-arrow-left me-1"></i> Back to Collection
@@ -667,8 +592,8 @@
                         <!-- ========================================== -->
                         <!-- Database Management - Add Document -->
                         <!-- ========================================== -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h2>Add New Document</h2>
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                            <h2 class="mb-3 mb-md-0">Add New Document</h2>
                             <div>
                                 <a href="{{ url_for('admin.collection_view', collection_name=collection_name) }}" class="btn btn-outline-secondary">
                                     <i class="bi bi-arrow-left me-1"></i> Back to Collection
@@ -696,16 +621,16 @@
                                 <form method="POST">
                                     <div id="fields-container">
                                         <div class="field-group">
-                                            <div class="row">
-                                                <div class="col-md-5">
+                                            <div class="row g-2">
+                                                <div class="col-md-5 col-5">
                                                     <input type="text" class="form-control" 
                                                            placeholder="Field name" name="field_names[]" required>
                                                 </div>
-                                                <div class="col-md-6">
+                                                <div class="col-md-6 col-6">
                                                     <input type="text" class="form-control" 
                                                            placeholder="Value" name="field_values[]" required>
                                                 </div>
-                                                <div class="col-md-1">
+                                                <div class="col-md-1 col-1">
                                                     <button type="button" class="btn btn-danger remove-field w-100">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
@@ -714,13 +639,13 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="d-flex justify-content-between mt-3">
-                                        <button type="button" id="add-field" class="btn btn-secondary">
+                                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mt-3">
+                                        <button type="button" id="add-field" class="btn btn-secondary mb-2 mb-md-0">
                                             <i class="bi bi-plus-circle me-1"></i> Add Field
                                         </button>
                                         
-                                        <div>
-                                            <button type="submit" class="btn btn-success me-2">
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-success">
                                                 <i class="bi bi-check-circle me-1"></i> Create Document
                                             </button>
                                             <a href="{{ url_for('admin.collection_view', collection_name=collection_name) }}" 
@@ -737,17 +662,17 @@
                         <!-- ========================================== -->
                         <!-- Manage Users Section -->
                         <!-- ========================================== -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h2>Admin Users Management</h2>
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                            <h2 class="mb-3 mb-md-0">Admin Users Management</h2>
                             <a href="{{ url_for('admin.db_management') }}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-1"></i> Back to Collections
                             </a>
                         </div>
                         
                         <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
+                            <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center">
                                 <span>Administrators</span>
-                                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                                <button type="button" class="btn btn-success mt-2 mt-md-0" data-bs-toggle="modal" data-bs-target="#addUserModal">
                                     <i class="bi bi-plus-circle me-1"></i> Add User
                                 </button>
                             </div>
@@ -808,7 +733,7 @@
                         </div>
                     </div>
                     
-                    <!-- Модальное окно добавления пользователя -->
+                    <!-- Add User Modal -->
                     <div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">
@@ -845,9 +770,9 @@
                     
                     {% elif request.endpoint == 'admin.manage_regular_users' %}
                     <!-- User Management Section -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2>User Management</h2>
-                        <form class="d-flex" method="get">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                        <h2 class="mb-3 mb-md-0">User Management</h2>
+                        <form class="d-flex mt-2 mt-md-0" method="get">
                             <input type="text" class="form-control me-2" placeholder="Search users..." name="search" value="{{ search_query }}">
                             <button type="submit" class="btn btn-primary">Search</button>
                         </form>
@@ -888,14 +813,14 @@
                                                 {% endif %}
                                             </td>
                                             <td>{{ user.created_at }}</td>
-                                            <td>
+                                            <td class="actions-cell">
                                                 <a href="{{ url_for('admin.view_regular_user', user_id=user._id) }}" 
                                                    class="btn btn-sm btn-primary me-1">
-                                                    <i class="bi bi-eye"></i> View
+                                                    <i class="bi bi-eye"></i>
                                                 </a>
                                                 <a href="{{ url_for('admin.edit_regular_user', user_id=user._id) }}" 
                                                    class="btn btn-sm btn-warning">
-                                                    <i class="bi bi-pencil"></i> Edit
+                                                    <i class="bi bi-pencil"></i>
                                                 </a>
                                             </td>
                                         </tr>
@@ -908,9 +833,9 @@
                                 </table>
                             </div>
                             
-                            <!-- Пагинация -->
+                            <!-- Pagination -->
                             <nav>
-                                <ul class="pagination justify-content-center">
+                                <ul class="pagination justify-content-center flex-wrap">
                                     {% if page > 1 %}
                                     <li class="page-item">
                                         <a class="page-link" href="?page={{ page-1 }}&search={{ search_query }}">Previous</a>
@@ -937,8 +862,8 @@
 
                     {% elif request.endpoint == 'admin.view_regular_user' %}
                     <!-- View User Section -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2>User: {{ user.username }}</h2>
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                        <h2 class="mb-3 mb-md-0">User: {{ user.username }}</h2>
                         <a href="{{ url_for('admin.manage_regular_users') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left me-1"></i> Back to Users
                         </a>
@@ -991,7 +916,7 @@
                                         <div class="col-4 fw-bold">Joined:</div>
                                         <div class="col-8">{{ user.created_at }}</div>
                                     </div>
-                                    <div class="mt-4">
+                                    <div class="mt-4 d-flex flex-wrap gap-2">
                                         <a href="{{ url_for('admin.edit_regular_user', user_id=user._id) }}" class="btn btn-primary me-2">
                                             <i class="bi bi-pencil me-1"></i> Edit Profile
                                         </a>
@@ -1017,7 +942,7 @@
                                 <div class="card-header">Adjust Balance</div>
                                 <div class="card-body">
                                     <form method="POST" action="{{ url_for('admin.adjust_user_balance', user_id=user._id) }}">
-                                        <div class="input-group mb-3">
+                                        <div class="input-group">
                                             <input type="number" step="0.01" min="0" class="form-control" 
                                                    name="amount" placeholder="Amount" required>
                                             <select class="form-select" name="operation">
@@ -1080,8 +1005,8 @@
 
                     {% elif request.endpoint == 'admin.edit_regular_user' %}
                     <!-- Edit User Section -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2>Edit User: {{ user.username }}</h2>
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                        <h2 class="mb-3 mb-md-0">Edit User: {{ user.username }}</h2>
                         <a href="{{ url_for('admin.view_regular_user', user_id=user._id) }}" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left me-1"></i> Back to User
                         </a>
@@ -1159,25 +1084,25 @@
                         </div>
                         <div class="card-body">
                             <div class="row mb-4">
-                                <div class="col-md-3">
+                                <div class="col-md-3 col-6">
                                     <div class="stat-card">
                                         <div class="stat-value">{{ system_stats.total_checks }}</div>
                                         <div class="stat-label">Total Checks</div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-3 col-6">
                                     <div class="stat-card">
                                         <div class="stat-value">{{ system_stats.active_webhooks }}</div>
                                         <div class="stat-label">Active Webhooks</div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-3 col-6">
                                     <div class="stat-card">
                                         <div class="stat-value">{{ system_stats.valid_api_keys }}</div>
                                         <div class="stat-label">Valid API Keys</div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-3 col-6">
                                     <div class="stat-card">
                                         <div class="stat-value">{{ (system_stats.db_size / 1024 / 1024)|round(2) }} MB</div>
                                         <div class="stat-label">Database Size</div>
@@ -1244,9 +1169,9 @@
                     {% elif request.endpoint == 'admin.manage_api_keys' %}
                     <!-- API Keys Management -->
                     <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center">
                             <h3 class="mb-0">API Keys Management</h3>
-                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addApiKeyModal">
+                            <button type="button" class="btn btn-success mt-2 mt-md-0" data-bs-toggle="modal" data-bs-target="#addApiKeyModal">
                                 <i class="bi bi-plus-circle me-1"></i> Add API Key
                             </button>
                         </div>
@@ -1356,9 +1281,9 @@
                     {% elif request.endpoint == 'admin.manage_webhooks' %}
                     <!-- Webhooks Management -->
                     <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center">
                             <h3 class="mb-0">Webhooks Management</h3>
-                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addWebhookModal">
+                            <button type="button" class="btn btn-success mt-2 mt-md-0" data-bs-toggle="modal" data-bs-target="#addWebhookModal">
                                 <i class="bi bi-plus-circle me-1"></i> Add Webhook
                             </button>
                         </div>
@@ -1467,46 +1392,55 @@
                         </div>
                     </div>
                 {% endif %}
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Добавление нового поля в формах управления БД
-        document.getElementById('add-field')?.addEventListener('click', function() {
-            const container = document.getElementById('fields-container');
-            const newField = document.createElement('div');
-            newField.className = 'field-group';
-            newField.innerHTML = `
-                <div class="row">
-                    <div class="col-md-5">
-                        <input type="text" class="form-control" 
-                               placeholder="Field name" name="field_names[]" required>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add new field in DB management forms
+            document.getElementById('add-field')?.addEventListener('click', function() {
+                const container = document.getElementById('fields-container');
+                const newField = document.createElement('div');
+                newField.className = 'field-group';
+                newField.innerHTML = `
+                    <div class="row g-2">
+                        <div class="col-5 col-md-5">
+                            <input type="text" class="form-control" 
+                                   placeholder="Field name" name="field_names[]" required>
+                        </div>
+                        <div class="col-6 col-md-6">
+                            <input type="text" class="form-control" 
+                                   placeholder="Value" name="field_values[]" required>
+                        </div>
+                        <div class="col-1 col-md-1">
+                            <button type="button" class="btn btn-danger remove-field w-100">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <input type="text" class="form-control" 
-                               placeholder="Value" name="field_values[]" required>
-                    </div>
-                    <div class="col-md-1">
-                        <button type="button" class="btn btn-danger remove-field w-100">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            container.appendChild(newField);
-        });
+                `;
+                container.appendChild(newField);
+            });
 
-        // Удаление поля в формах управления БД
-        document.addEventListener('click', function(e) {
-            if (e.target && e.target.classList.contains('remove-field')) {
-                e.target.closest('.field-group').remove();
-            }
+            // Remove field in DB management forms
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.classList.contains('remove-field')) {
+                    e.target.closest('.field-group').remove();
+                }
+            });
+            
+            // Auto close mobile menu after click
+            const navLinks = document.querySelectorAll('.offcanvas-body .nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('sidebarMenu'));
+                    offcanvas.hide();
+                });
+            });
         });
-    });
-</script>
+    </script>
 </body>
     </html>
