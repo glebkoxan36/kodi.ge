@@ -943,20 +943,16 @@ def switch_user(user_id):
             'admin_username': session.get('admin_username')
         }
         
-        # Очищаем сессию
-        session.clear()
-        
         # Устанавливаем пользовательскую сессию
         user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
         if user:
             session['user_id'] = str(user['_id'])
             session['role'] = user.get('role', 'user')
             
-            # Восстанавливаем админскую сессию
-            if admin_session['admin_id']:
-                session['admin_id'] = admin_session['admin_id']
-                session['admin_role'] = admin_session['admin_role']
-                session['admin_username'] = admin_session['admin_username']
+            # Сохраняем админскую сессию
+            session['admin_id'] = admin_session['admin_id']
+            session['admin_role'] = admin_session['admin_role']
+            session['admin_username'] = admin_session['admin_username']
             
             flash(f'Switched to user: {user.get("email")}', 'success')
             return redirect(url_for('user_dashboard.dashboard'))
@@ -980,7 +976,7 @@ def switch_back():
             'admin_username': session.get('admin_username')
         }
         
-        # Очищаем сессию
+        # Очищаем всю сессию
         session.clear()
         
         # Восстанавливаем только админскую сессию
