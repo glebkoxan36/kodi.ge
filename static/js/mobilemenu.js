@@ -639,7 +639,7 @@
                                 <i class="fas fa-cog"></i>
                                 <span>პარამეტრები</span>
                             </div>
-                            <div class="kodi-menu-item" onclick="window.location.href='/auth/logout';">
+                            <div class="kodi-menu-item" onclick="window.location.href='/logout';">
                                 <i class="fas fa-sign-out-alt"></i>
                                 <span>გასვლა</span>
                             </div>
