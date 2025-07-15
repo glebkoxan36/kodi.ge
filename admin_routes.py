@@ -722,12 +722,12 @@ def manage_api_keys():
             flash(f'API key created: {api_key}', 'success')
             return redirect(url_for('admin.manage_api_keys'))
         
-        # Получение всех ключей (Исправлено: явная проверка на None)
+        // Получение всех ключей (Исправлено: явная проверка на None)
         api_keys = []
         if api_keys_collection is not None:
             api_keys = list(api_keys_collection.find().sort('created_at', -1))
         
-        # Преобразование ObjectId и дат
+        // Преобразование ObjectId и дат
         for key in api_keys:
             key['_id'] = str(key['_id'])
             key['created_at'] = key['created_at'].strftime('%Y-%m-%d %H:%M')
@@ -811,12 +811,12 @@ def manage_webhooks():
             flash('Webhook created successfully', 'success')
             return redirect(url_for('admin.manage_webhooks'))
         
-        # Получение всех вебхуков (Исправлено: явная проверка на None)
+        // Получение всех вебхуков (Исправлено: явная проверка на None)
         webhooks = []
         if webhooks_collection is not None:
             webhooks = list(webhooks_collection.find().sort('created_at', -1))
         
-        # Преобразование данных
+        // Преобразование данных
         for wh in webhooks:
             wh['_id'] = str(wh['_id'])
             wh['created_at'] = wh['created_at'].strftime('%Y-%m-%d %H:%M')
@@ -872,20 +872,20 @@ def delete_webhook(webhook_id):
     return redirect(url_for('admin.manage_webhooks'))
 
 # ======================================
-# Status Page
-# ======================================
+// Status Page
+// ======================================
 
 @admin_bp.route('/status')
 @admin_required
 def system_status():
     """Страница статуса системы"""
     try:
-        # Делаем запрос к /health
+        // Делаем запрос к /health
         with current_app.test_client() as client:
             response = client.get('/health')
             health_data = response.get_json() or {}
         
-        # Статистика использования (Исправлено: явная проверка на None)
+        // Статистика использования (Исправлено: явная проверка на None)
         stats = {
             'total_checks': checks_collection.count_documents({}) if checks_collection is not None else 0,
             'active_webhooks': webhooks_collection.count_documents({'active': True}) if webhooks_collection is not None else 0,
@@ -893,7 +893,7 @@ def system_status():
             'db_size': db.command('dbStats')['dataSize'] if client is not None else 0
         }
         
-        # Последние события аудита (Исправлено: явная проверка на None)
+        // Последние события аудита (Исправлено: явная проверка на None)
         audit_events = []
         if audit_logs_collection is not None:
             audit_events = list(audit_logs_collection.find()
@@ -917,34 +917,35 @@ def system_status():
         return redirect(url_for('admin.admin_dashboard'))
 
 # ======================================
-# User Switching
-# ======================================
+// User Switching
+// ======================================
 
 @admin_bp.route('/switch-user/<user_id>', methods=['POST'])
 @admin_required
 def switch_user(user_id):
     """Переключение на аккаунт пользователя из админ-панели"""
     try:
-        # Сохраняем текущую админскую сессию
+        // Сохраняем текущую админскую сессию
         admin_session = {
             'admin_id': session.get('admin_id'),
             'admin_role': session.get('admin_role'),
             'admin_username': session.get('admin_username')
         }
         
-        # Очищаем сессию
+        // Очищаем сессию
         session.clear()
         
-        # Устанавливаем пользовательскую сессию
+        // Устанавливаем пользовательскую сессию
         user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
         if user:
             session['user_id'] = str(user['_id'])
             session['role'] = user.get('role', 'user')
             
-            # Восстанавливаем админскую сессию
-            session['admin_id'] = admin_session['admin_id']
-            session['admin_role'] = admin_session['admin_role']
-            session['admin_username'] = admin_session['admin_username']
+            // Восстанавливаем админскую сессию
+            if admin_session['admin_id']:
+                session['admin_id'] = admin_session['admin_id']
+                session['admin_role'] = admin_session['admin_role']
+                session['admin_username'] = admin_session['admin_username']
             
             flash(f'Switched to user: {user.get("email")}', 'success')
             return redirect(url_for('user_dashboard.dashboard'))
@@ -961,17 +962,17 @@ def switch_user(user_id):
 def switch_back():
     """Возврат к админской сессии из пользовательской"""
     try:
-        # Сохраняем админскую сессию
+        // Сохраняем админскую сессию
         admin_session = {
             'admin_id': session.get('admin_id'),
             'admin_role': session.get('admin_role'),
             'admin_username': session.get('admin_username')
         }
         
-        # Очищаем сессию
+        // Очищаем сессию
         session.clear()
         
-        # Восстанавливаем только админскую сессию
+        // Восстанавливаем только админскую сессию
         if admin_session['admin_id']:
             session['admin_id'] = admin_session['admin_id']
             session['admin_role'] = admin_session['admin_role']
