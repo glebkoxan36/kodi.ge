@@ -203,6 +203,10 @@ def admin_login():
         
         logger.debug(f"Admin login attempt: {username}")
         
+        # Сохраняем текущую пользовательскую сессию
+        user_id = session.get('user_id')
+        user_role = session.get('role')
+        
         # Поиск администратора по имени пользователя
         admin = admin_users_collection.find_one({'username': username})
         
@@ -220,6 +224,12 @@ def admin_login():
         session['admin_id'] = str(admin['_id'])
         session['admin_role'] = admin['role']  # Используем отдельный ключ для роли администратора
         session['admin_username'] = admin['username']
+        
+        # Восстанавливаем пользовательскую сессию
+        if user_id:
+            session['user_id'] = user_id
+            session['role'] = user_role
+        
         session.permanent = True
         
         logger.info(f"Admin logged in: {username}")
