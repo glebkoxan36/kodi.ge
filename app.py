@@ -154,13 +154,25 @@ def inject_user():
             if admin:
                 is_admin = True
                 admin_role = session['admin_role']
+                # Если есть сессия администратора, но нет пользовательской
+                if 'user_id' not in session:
+                    user_data = {
+                        'id': str(admin['_id']),
+                        'first_name': admin.get('name', 'Admin'),
+                        'last_name': '',
+                        'balance': 0,
+                        'avatar_color': generate_avatar_color(admin.get('username')),
+                        'is_admin': True,
+                        'role': session['admin_role'],
+                        'admin_role': session['admin_role']
+                    }
         except (TypeError, InvalidId):
             session.pop('admin_id', None)
             session.pop('admin_role', None)
             logger.warning("Invalid admin ID in session - cleared")
     
-    # Проверяем обычного пользователя
-    if 'user_id' in session:
+    # Проверяем обычного пользователя (только если нет активной админской сессии)
+    if 'user_id' in session and not user_data:
         try:
             user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
             if user:
@@ -176,29 +188,11 @@ def inject_user():
                     'avatar_url': user.get('avatar_url'),
                     'is_admin': is_admin,
                     'role': session.get('role', 'user'),
-                    'admin_role': admin_role  # Добавляем роль администратора
+                    'admin_role': admin_role
                 }
         except (TypeError, InvalidId):
             session.pop('user_id', None)
             logger.warning("Invalid user ID in session - cleared")
-    
-    # Если нет данных пользователя от администратора, проверяем только администратора
-    if not user_data and 'admin_id' in session:
-        try:
-            admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id'])})
-            if admin:
-                user_data = {
-                    'id': str(admin['_id']),
-                    'first_name': admin.get('name', 'Admin'),
-                    'last_name': '',
-                    'balance': 0,
-                    'avatar_color': generate_avatar_color(admin.get('username')),
-                    'is_admin': True,
-                    'role': session['admin_role'],
-                    'admin_role': session['admin_role']
-                }
-        except (TypeError, InvalidId):
-            pass
     
     return {'currentUser': user_data}
 
