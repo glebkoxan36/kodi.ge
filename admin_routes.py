@@ -26,18 +26,26 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# Декоратор для проверки прав администратора
+# Улучшенный декоратор для проверки прав администратора
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        # Проверяем роль в сессии и наличие admin_id
+        # Проверяем наличие административной сессии
         if 'admin_id' not in session or 'admin_role' not in session:
-            current_app.logger.warning(
-                f"Unauthorized admin access attempt: "
-                f"session={dict(session)}, "
-                f"url={request.url}"
-            )
+            current_app.logger.warning("Unauthorized admin access attempt")
             return redirect(url_for('auth.admin_login', next=request.url))
+        
+        # Проверяем существование администратора в базе
+        try:
+            admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id'])})
+            if not admin or admin.get('role') not in ['admin', 'superadmin']:
+                flash('Administrator account not found or invalid', 'danger')
+                session.clear()
+                return redirect(url_for('auth.admin_login'))
+        except:
+            session.clear()
+            return redirect(url_for('auth.admin_login'))
+            
         return f(*args, **kwargs)
     return decorated
 
@@ -946,13 +954,22 @@ def switch_user(user_id):
         # Устанавливаем пользовательскую сессию
         user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
         if user:
+            # Очищаем только пользовательскую часть сессии
+            session.pop('user_id', None)
+            session.pop('role', None)
+            
+            # Устанавливаем новые пользовательские данные
             session['user_id'] = str(user['_id'])
             session['role'] = user.get('role', 'user')
+            session.permanent = True
             
-            # Сохраняем админскую сессию
+            # Восстанавливаем админскую сессию
             session['admin_id'] = admin_session['admin_id']
             session['admin_role'] = admin_session['admin_role']
             session['admin_username'] = admin_session['admin_username']
+            
+            # Помечаем сессию как измененную
+            session.modified = True
             
             flash(f'Switched to user: {user.get("email")}', 'success')
             return redirect(url_for('user_dashboard.dashboard'))
@@ -984,6 +1001,8 @@ def switch_back():
             session['admin_id'] = admin_session['admin_id']
             session['admin_role'] = admin_session['admin_role']
             session['admin_username'] = admin_session['admin_username']
+            session.permanent = True
+            session.modified = True
             
             flash('Switched back to admin session', 'success')
             return redirect(url_for('admin.admin_dashboard'))
