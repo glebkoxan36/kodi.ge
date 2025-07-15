@@ -1,0 +1,378 @@
+/* Base styles */
+body {
+    background-color: #f8f9fa;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.top-bar {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 10px 15px;
+    z-index: 1000;
+    position: sticky;
+    top: 0;
+}
+
+.main-container {
+    display: flex;
+    flex: 1;
+    padding: 15px;
+    gap: 20px;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #343a40;
+    color: white;
+    border-radius: 10px;
+    height: fit-content;
+    flex-shrink: 0;
+}
+
+.sidebar-sticky {
+    position: sticky;
+    top: 20px;
+}
+
+.sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.75);
+    padding: 12px 20px;
+    border-left: 3px solid transparent;
+    transition: all 0.3s;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar .nav-link:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+    color: white;
+    border-left: 3px solid #3498db;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar .nav-link i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.main-content {
+    flex: 1;
+    width: 100%;
+}
+
+.container {
+    max-width: 1400px;
+    padding: 0 10px;
+}
+
+.card {
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    background-color: #fff;
+    border: none;
+}
+
+.card-header {
+    background-color: #3498db;
+    color: white;
+    font-weight: bold;
+    border-radius: 10px 10px 0 0 !important;
+    padding: 12px 20px;
+    font-size: 1.05rem;
+    border: none;
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-value {
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: #2c3e50;
+    line-height: 1.2;
+}
+
+.stat-label {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.revenue {
+    color: #27ae60;
+}
+
+.table th {
+    background-color: #e9ecef;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.table td {
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+.price-form {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #3498db;
+}
+
+.price-history {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.history-item {
+    border-left: 3px solid #3498db;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.paid-price {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+.premium-price {
+    color: #2980b9;
+    font-weight: bold;
+}
+
+.history-meta {
+    color: #7f8c8d;
+    font-size: 0.8rem;
+}
+
+.form-section {
+    margin-bottom: 20px;
+}
+
+.input-group-price {
+    max-width: 250px;
+}
+
+.paid-badge {
+    background-color: #27ae60;
+}
+
+.free-badge {
+    background-color: #7f8c8d;
+}
+
+.field-group {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    background: white;
+}
+
+.actions-cell {
+    white-space: nowrap;
+}
+
+.actions-cell .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.document-id {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.balance-form {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.offcanvas-header {
+    background-color: #343a40;
+    color: white;
+    padding: 15px 20px;
+}
+
+.offcanvas-body .sidebar {
+    border-radius: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.offcanvas-body .nav-link {
+    padding: 10px 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1199.98px) {
+    .sidebar {
+        width: 220px;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .main-container {
+        flex-direction: column;
+        padding: 10px;
+        gap: 15px;
+    }
+    
+    .sidebar {
+        width: 100%;
+        border-radius: 0;
+        margin: 0;
+    }
+    
+    .stat-card {
+        padding: 12px;
+    }
+    
+    .stat-value {
+        font-size: 1.4rem;
+    }
+    
+    .input-group-price {
+        max-width: 100%;
+    }
+    
+    .actions-cell .btn {
+        margin-bottom: 5px;
+    }
+    
+    .card-header h5 {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .top-bar {
+        padding: 8px 10px;
+    }
+    
+    .container {
+        padding: 0 5px;
+    }
+    
+    .row > [class*="col-"] {
+        margin-bottom: 10px;
+    }
+    
+    .table-responsive {
+        border: none;
+        margin-bottom: 15px;
+    }
+    
+    .history-item {
+        padding: 8px 12px;
+    }
+    
+    .form-section h6 {
+        font-size: 0.95rem;
+    }
+    
+    .field-group .row > div {
+        margin-bottom: 5px;
+    }
+    
+    .document-id {
+        font-size: 0.75rem;
+    }
+    
+    .btn {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    .card-header {
+        padding: 10px 15px;
+    }
+    
+    .stat-value {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .stat-card {
+        padding: 10px;
+    }
+    
+    .stat-value {
+        font-size: 1.2rem;
+    }
+    
+    .price-form,
+    .balance-form {
+        padding: 15px;
+    }
+    
+    .pagination .page-item .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .table th, 
+    .table td {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .d-flex.justify-content-between > div {
+        width: 100%;
+    }
+    
+    .actions-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .form-section {
+        margin-bottom: 15px;
+    }
+    
+    .history-meta {
+        font-size: 0.75rem;
+    }
+      }
