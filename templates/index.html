@@ -7,6 +7,14 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
+    <style>
+        /* Добавленные стили */
+        .user-admin-username {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+    </style>
 </head>
 <body>
     <!-- Gradient background elements -->
@@ -40,7 +48,11 @@
             <div class="user-avatar-container">
                 <div class="user-avatar" {% if currentUser %}style="background-color: {{ currentUser.avatar_color }}"{% endif %}>
                     {% if currentUser %}
-                        {{ currentUser.first_name|first }}{{ currentUser.last_name|first }}
+                        {% if currentUser.is_admin %}
+                            ADMIN
+                        {% else %}
+                            {{ currentUser.first_name|first }}{{ currentUser.last_name|first }}
+                        {% endif %}
                     {% else %}
                         <i class="fas fa-user"></i>
                     {% endif %}
@@ -48,10 +60,15 @@
             </div>
             <div class="user-name">
                 {% if currentUser %}
-                    {{ currentUser.first_name }} {{ currentUser.last_name }}
-                    <div class="user-balance">ბალანსი: {{ '%.2f' % currentUser.balance }}₾</div>
                     {% if currentUser.is_admin %}
-                        <div class="user-role">(ადმინისტრატორი)</div>
+                        ადმინისტრატორი
+                        <div class="user-admin-username">({{ currentUser.username }})</div>
+                    {% else %}
+                        {{ currentUser.first_name }} {{ currentUser.last_name }}
+                        <div class="user-balance">ბალანსი: {{ '%.2f' % currentUser.balance }}₾</div>
+                        {% if currentUser.is_admin %}
+                            <div class="user-role">(ადმინისტრატორი)</div>
+                        {% endif %}
                     {% endif %}
                 {% else %}
                     ლოგინი/რეგისტრაცია
@@ -441,6 +458,7 @@
             balance: {{ currentUser.balance }},
             avatar_color: "{{ currentUser.avatar_color }}",
             is_admin: {% if currentUser.is_admin %}true{% else %}false{% endif %},
+            username: "{{ currentUser.username }}",
             role: "{{ currentUser.role }}"
         }{% else %}undefined{% endif %};
     </script>
@@ -704,4 +722,4 @@
         });
     </script>
 </body>
-</html>
+                                                           </html>
