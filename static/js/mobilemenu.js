@@ -1,4 +1,8 @@
 (function() {
+    // Preload background image
+    const bgImage = new Image();
+    bgImage.src = 'static/ConnectingNetworks-ezgif.com-optiwebp.webp';
+
     // Кеширование DOM элементов
     let cachedElements = {};
     
@@ -50,7 +54,7 @@
             justify-content: center;
             margin: auto;
             transition: all 0.3s ease;
-            margin-bottom: 0px;
+            margin-bottom: 10px;
         }
         
         .kodi-menu-btn:hover {
@@ -87,7 +91,6 @@
             background: url('static/ConnectingNetworks-ezgif.com-optiwebp.webp') no-repeat center center;
             background-size: cover;
             border-radius: 30px 30px 0 0;
-            overflow: hidden;
             position: relative;
             width: 100%;
             height: 100%;
@@ -300,6 +303,8 @@
             box-sizing: border-box;
             padding: 0;
             margin-top: 100px;
+            position: relative;
+            z-index: 10;
         }
         
         .kodi-dashboard-grid {
@@ -314,14 +319,14 @@
             border-radius: 15px;
             background: linear-gradient(135deg, #1a2138cc, #0e1321cc);
             backdrop-filter: blur(5px);
-            border: 1px solid rgba(0, 198, 255, 0.6);
+            border: 2px solid rgba(0, 198, 255, 0.8);
             aspect-ratio: 1 / 1;
             text-align: center;
             transition: all 0.3s ease;
             cursor: pointer;
             box-shadow: 
                 0 4px 12px rgba(0, 0, 0, 0.5),
-                inset 0 0 10px rgba(0, 198, 255, 0.15);
+                inset 0 0 15px rgba(0, 198, 255, 0.3);
             min-width: 0;
             min-height: 0;
             padding: 12px 8px;
@@ -337,7 +342,7 @@
             border-color: var(--accent-color);
             box-shadow: 
                 0 6px 16px rgba(0, 0, 0, 0.6),
-                inset 0 0 15px rgba(0, 198, 255, 0.25);
+                inset 0 0 15px rgba(0, 198, 255, 0.4);
         }
         
         .kodi-menu-item span {
@@ -482,30 +487,22 @@
     // Navigation functions
     window.kodiGoToLogin = function() {
         kodiCloseAllMenus();
-        setTimeout(() => {
-            window.location.href = "/login";
-        }, 100);
+        window.location.href = "/login";
     }
 
     window.kodiGoToDashboard = function() {
         kodiCloseAllMenus();
-        setTimeout(() => {
-            window.location.href = "/user/dashboard";
-        }, 100);
+        window.location.href = "/user/dashboard";
     }
     
     window.kodiGoToAdminDashboard = function() {
         kodiCloseAllMenus();
-        setTimeout(() => {
-            window.location.href = "/admin/dashboard";
-        }, 100);
+        window.location.href = "/admin/dashboard";
     }
     
     window.kodiGoToUserDashboard = function() {
         kodiCloseAllMenus();
-        setTimeout(() => {
-            window.location.href = "/user/dashboard";
-        }, 100);
+        window.location.href = "/user/dashboard";
     }
 
     // Generate user HTML
@@ -514,9 +511,7 @@
         let html;
         
         if (userData.first_name && userData.last_name) {
-            // Проверка является ли пользователь администратором
             if (userData.is_admin) {
-                // Шаблон для администратора
                 html = `
                     <div class="kodi-floating-avatar" onclick="kodiGoToAdminDashboard()">
                         <div class="kodi-avatar-placeholder">ADMIN</div>
@@ -533,7 +528,6 @@
                     </div>
                 `;
             } else {
-                // Шаблон для обычного пользователя
                 const formattedBalance = (userData.balance || 0).toFixed(2);
                 const fullName = `${userData.first_name} ${userData.last_name}`;
                 
@@ -560,7 +554,6 @@
                 `;
             }
         } else {
-            // Шаблон для неаутентифицированного пользователя
             html = `
                 <div class="kodi-floating-avatar" onclick="kodiGoToLogin()">
                     <div class="kodi-avatar-placeholder">KODI.GE</div>
@@ -578,32 +571,24 @@
 
     // Create mobile menu structure
     function createMobileMenuStructure() {
-        // Remove old container if exists
-        const oldContainer = getElement('kodi-menu-container');
-        if (oldContainer) {
-            oldContainer.remove();
-            delete cachedElements['kodi-menu-container'];
-            delete cachedElements['kodiMainMenu'];
-            delete cachedElements['kodiAppleMenu'];
-            delete cachedElements['kodiAndroidMenu'];
+        const container = getElement('kodi-menu-container') || document.createElement('div');
+        container.id = 'kodi-menu-container';
+        if (!document.body.contains(container)) {
+            document.body.appendChild(container);
         }
-        
-        const mobileMenuContainer = document.createElement('div');
-        mobileMenuContainer.id = 'kodi-menu-container';
-        document.body.appendChild(mobileMenuContainer);
-        cachedElements['kodi-menu-container'] = mobileMenuContainer;
+        cachedElements['kodi-menu-container'] = container;
         
         const isDashboard = window.location.pathname.includes('dashboard');
         const userHTML = isDashboard ? '' : generateUserHTML();
 
         if (isDashboard) {
-            createDashboardMenu(mobileMenuContainer);
+            createDashboardMenu(container, userHTML);
         } else {
-            createMainMenu(mobileMenuContainer, userHTML);
+            createMainMenu(container, userHTML);
         }
     }
 
-    function createDashboardMenu(container) {
+    function createDashboardMenu(container, userHTML) {
         container.innerHTML = `
             <div class="kodi-menu-modal" id="kodiMainMenu">
                 <div class="kodi-bg-image">
@@ -813,12 +798,10 @@
         if (modal) {
             document.body.classList.add('kodi-menu-open');
             modal.style.display = 'flex';
-            setTimeout(() => {
-                modal.classList.add('open');
-            }, 10);
+            setTimeout(() => modal.classList.add('open'), 10);
         } else {
             createMobileMenuStructure();
-            setTimeout(kodiOpenMenu, 50);
+            setTimeout(() => kodiOpenMenu(), 50);
         }
     }
 
@@ -827,7 +810,6 @@
         if (modal) {
             modal.classList.remove('open');
             setTimeout(() => {
-                if (modal.classList.contains('open')) return;
                 modal.style.display = 'none';
                 document.body.classList.remove('kodi-menu-open');
             }, 400);
@@ -841,12 +823,7 @@
             if (appleModal) {
                 document.body.classList.add('kodi-menu-open');
                 appleModal.style.display = 'flex';
-                setTimeout(() => {
-                    appleModal.classList.add('open');
-                }, 10);
-            } else {
-                createMobileMenuStructure();
-                setTimeout(kodiOpenAppleMenu, 50);
+                setTimeout(() => appleModal.classList.add('open'), 10);
             }
         }, 50);
     }
@@ -856,7 +833,6 @@
         if (appleModal) {
             appleModal.classList.remove('open');
             setTimeout(() => {
-                if (appleModal.classList.contains('open')) return;
                 appleModal.style.display = 'none';
                 document.body.classList.remove('kodi-menu-open');
             }, 400);
@@ -870,12 +846,7 @@
             if (androidModal) {
                 document.body.classList.add('kodi-menu-open');
                 androidModal.style.display = 'flex';
-                setTimeout(() => {
-                    androidModal.classList.add('open');
-                }, 10);
-            } else {
-                createMobileMenuStructure();
-                setTimeout(kodiOpenAndroidMenu, 50);
+                setTimeout(() => androidModal.classList.add('open'), 10);
             }
         }, 50);
     }
@@ -885,7 +856,6 @@
         if (androidModal) {
             androidModal.classList.remove('open');
             setTimeout(() => {
-                if (androidModal.classList.contains('open')) return;
                 androidModal.style.display = 'none';
                 document.body.classList.remove('kodi-menu-open');
             }, 400);
@@ -906,10 +876,7 @@
         // Menu button setup
         const menuBtn = getElement('kodiMenuBtn');
         if (menuBtn) {
-            menuBtn.addEventListener('click', function() {
-                createMobileMenuStructure();
-                setTimeout(kodiOpenMenu, 50);
-            });
+            menuBtn.addEventListener('click', kodiOpenMenu);
         }
 
         // Close menu when clicking outside
@@ -917,29 +884,23 @@
             const mainMenu = getElement('kodiMainMenu');
             const appleMenu = getElement('kodiAppleMenu');
             const androidMenu = getElement('kodiAndroidMenu');
-            const avatarContainer = document.querySelector('.kodi-avatar-container');
+            const menuBtn = getElement('kodiMenuBtn');
             
-            // Main menu check
             if (mainMenu && mainMenu.classList.contains('open') && 
                 !mainMenu.contains(e.target) && 
-                e.target.id !== 'kodiMenuBtn' &&
-                !(avatarContainer && avatarContainer.contains(e.target))) {
+                e.target !== menuBtn) {
                 kodiCloseMenu();
             }
             
-            // Apple menu check
             if (appleMenu && appleMenu.classList.contains('open') && 
                 !appleMenu.contains(e.target) && 
-                e.target.id !== 'kodiMenuBtn' &&
-                !(avatarContainer && avatarContainer.contains(e.target))) {
+                e.target !== menuBtn) {
                 kodiCloseAppleMenu();
             }
             
-            // Android menu check
             if (androidMenu && androidMenu.classList.contains('open') && 
                 !androidMenu.contains(e.target) && 
-                e.target.id !== 'kodiMenuBtn' &&
-                !(avatarContainer && avatarContainer.contains(e.target))) {
+                e.target !== menuBtn) {
                 kodiCloseAndroidMenu();
             }
         });
