@@ -146,36 +146,30 @@ def inject_user():
     is_admin = False
     role = 'user'
     admin_role = None
+    admin_username = None
+    is_impersonation = False
     
     # Проверяем администратора
     if 'admin_id' in session and 'admin_role' in session:
         try:
-            admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id'])})
+            admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id']})
             if admin:
                 is_admin = True
                 admin_role = session['admin_role']
-                # Если есть сессия администратора, но нет пользовательской
-                if 'user_id' not in session:
-                    user_data = {
-                        'id': str(admin['_id']),
-                        'first_name': admin.get('name', 'Admin'),
-                        'last_name': '',
-                        'balance': 0,
-                        'avatar_color': generate_avatar_color(admin.get('username')),
-                        'is_admin': True,
-                        'role': session['admin_role'],
-                        'admin_role': session['admin_role'],
-                        'admin_username': admin.get('username')  # Добавлено новое поле
-                    }
+                admin_username = admin.get('username')
+                # Если есть user_id - это режим имперсонации
+                if 'user_id' in session:
+                    is_impersonation = True
+                    role = 'impersonation'
         except (TypeError, InvalidId):
             session.pop('admin_id', None)
             session.pop('admin_role', None)
             logger.warning("Invalid admin ID in session - cleared")
     
-    # Проверяем обычного пользователя (только если нет активной админской сессии)
-    if 'user_id' in session and not user_data:
+    # Проверяем обычного пользователя
+    if 'user_id' in session:
         try:
-            user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
+            user = regular_users_collection.find_one({'_id': ObjectId(session['user_id']})
             if user:
                 name_part = user.get('first_name') or user.get('email', 'user')
                 avatar_color = user.get('avatar_color') or generate_avatar_color(name_part)
@@ -188,12 +182,16 @@ def inject_user():
                     'avatar_color': avatar_color,
                     'avatar_url': user.get('avatar_url'),
                     'is_admin': is_admin,
-                    'role': session.get('role', 'user'),
-                    'admin_role': admin_role
+                    'role': role,
+                    'admin_role': admin_role,
+                    'admin_username': admin_username,
+                    'is_impersonation': is_impersonation
                 }
         except (TypeError, InvalidId):
             session.pop('user_id', None)
             logger.warning("Invalid user ID in session - cleared")
+        except Exception as e:
+            logger.exception(f"Error getting user: {str(e)}")
     
     return {'currentUser': user_data}
 
@@ -233,6 +231,7 @@ def admin_required(f):
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        # Разрешаем доступ если есть user_id ИЛИ admin_id
         if 'user_id' not in session and 'admin_id' not in session:
             logger.warning("Unauthorized access attempt")
             return redirect(url_for('auth.login', next=request.url))
@@ -816,7 +815,7 @@ def perform_check():
                     attempts += 1
                     if attempts < max_attempts:
                         time.sleep(delay)
-                        delay *= 2  # Экспоненциальная задержка
+                        delay *= 2  # Экспონенциальная задержка
                     else:
                         return jsonify({
                             'error': f'Request failed after {max_attempts} attempts',
