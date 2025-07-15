@@ -82,50 +82,17 @@
             display: flex;
         }
         
-        /* Неоновый хай-тек фон без сетки */
-        .kodi-neon-tech-bg {
-            background: 
-                linear-gradient(135deg, #0a0a2a 0%, #1a1a4a 50%, #2a075e 100%);
-            border: 2px solid rgba(0, 198, 255, 0.3);
+        /* Фоновое изображение */
+        .kodi-bg-image {
+            background: url('static/1_iBVj1kRLNw-kzuoMMYO7TA.gif') no-repeat center center;
+            background-size: cover;
             border-radius: 30px 30px 0 0;
-            box-shadow: 
-                0 0 20px rgba(90, 20, 255, 0.5),
-                inset 0 0 30px rgba(0, 100, 255, 0.3);
             overflow: hidden;
             position: relative;
             width: 100%;
             height: 100%;
             z-index: 1;
             padding-bottom: env(safe-area-inset-bottom, 0);
-        }
-        
-        /* Статический шум в неоновом стиле */
-        .kodi-neon-tech-bg::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 800 800'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
-            pointer-events: none;
-            z-index: 2;
-        }
-        
-        /* Эффект углового свечения */
-        .kodi-neon-tech-bg::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, 
-                rgba(0, 198, 255, 0.8), 
-                rgba(90, 20, 255, 0.8), 
-                rgba(0, 198, 255, 0.8));
-            box-shadow: 0 0 15px rgba(0, 198, 255, 0.7);
-            z-index: 3;
         }
         
         .kodi-menu-modal .kodi-modal-body {
@@ -332,8 +299,11 @@
             background: transparent;
             box-sizing: border-box;
             padding: 0;
-            /* Опускаем сетку ниже */
             margin-top: 100px;
+        }
+        
+        .kodi-dashboard-grid {
+            margin-top: 0 !important;
         }
         
         .kodi-menu-item {
@@ -383,26 +353,11 @@
             padding: 0 2px;
         }
         
-        /* Стили для админской аватарки */
-        .kodi-admin-avatar .kodi-avatar-placeholder {
-            background: linear-gradient(135deg, #ff0000, #800000) !important;
-            color: white !important;
-            font-weight: bold !important;
-            font-size: 1.3rem;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7) !important;
-            animation: admin-pulse 2s infinite;
-        }
-        
-        /* Анимация для админской аватарки */
-        @keyframes admin-pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
-        }
-        
-        .kodi-admin-avatar {
-            border: 3px solid #ff0000 !important;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.7) !important;
+        .kodi-admin-links {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-top: 5px;
         }
         
         /* Responsive adjustments */
@@ -411,7 +366,6 @@
                 gap: 10px;
                 max-width: 380px;
                 height: 380px;
-                /* Опускаем сетку ниже для мобильных */
                 margin-top: 120px;
             }
             .kodi-menu-item {
@@ -435,7 +389,6 @@
                 gap: 8px;
                 max-width: 340px;
                 height: 340px;
-                /* Опускаем сетку ниже для мобильных */
                 margin-top: 110px;
             }
             .kodi-menu-item i {
@@ -451,7 +404,6 @@
                 gap: 6px;
                 max-width: 300px;
                 height: 300px;
-                /* Опускаем сетку ниже для мобильных */
                 margin-top: 100px;
             }
             .kodi-menu-item i {
@@ -467,7 +419,6 @@
                 gap: 5px;
                 max-width: 280px;
                 height: 280px;
-                /* Опускаем сетку ниже для мобильных */
                 margin-top: 90px;
             }
             .kodi-menu-item i {
@@ -499,7 +450,6 @@
             .kodi-menu-grid {
                 max-width: 420px;
                 height: 420px;
-                /* Опускаем сетку ниже для планшетов */
                 margin-top: 140px;
             }
             .kodi-menu-item i {
@@ -543,6 +493,20 @@
             window.location.href = "/user/dashboard";
         }, 100);
     }
+    
+    window.kodiGoToAdminDashboard = function() {
+        kodiCloseAllMenus();
+        setTimeout(() => {
+            window.location.href = "/admin/dashboard";
+        }, 100);
+    }
+    
+    window.kodiGoToUserDashboard = function() {
+        kodiCloseAllMenus();
+        setTimeout(() => {
+            window.location.href = "/user/dashboard";
+        }, 100);
+    }
 
     // Generate user HTML
     function generateUserHTML() {
@@ -554,12 +518,17 @@
             if (userData.is_admin) {
                 // Шаблон для администратора
                 html = `
-                    <div class="kodi-floating-avatar kodi-admin-avatar" onclick="kodiGoToDashboard()">
+                    <div class="kodi-floating-avatar" onclick="kodiGoToAdminDashboard()">
                         <div class="kodi-avatar-placeholder">ADMIN</div>
                     </div>
                     <div class="kodi-user-info-container">
-                        <div class="kodi-user-info" onclick="kodiGoToDashboard()">
-                            ადმინისტრაცია
+                        <div class="kodi-admin-links">
+                            <div class="kodi-user-info" onclick="kodiGoToAdminDashboard()">
+                                ადმინისტრაცია
+                            </div>
+                            <div class="kodi-user-info" onclick="kodiGoToUserDashboard()">
+                                იუზერ დაშბორდი
+                            </div>
                         </div>
                     </div>
                 `;
@@ -625,19 +594,19 @@
         cachedElements['kodi-menu-container'] = mobileMenuContainer;
         
         const isDashboard = window.location.pathname.includes('dashboard');
-        const userHTML = generateUserHTML();
+        const userHTML = isDashboard ? '' : generateUserHTML();
 
         if (isDashboard) {
-            createDashboardMenu(mobileMenuContainer, userHTML);
+            createDashboardMenu(mobileMenuContainer);
         } else {
             createMainMenu(mobileMenuContainer, userHTML);
         }
     }
 
-    function createDashboardMenu(container, userHTML) {
+    function createDashboardMenu(container) {
         container.innerHTML = `
             <div class="kodi-menu-modal" id="kodiMainMenu">
-                <div class="kodi-neon-tech-bg">
+                <div class="kodi-bg-image">
                     <div class="modal-header">
                         <button class="kodi-close-modal" onclick="kodiCloseMenu()">
                             <i class="fas fa-times"></i>
@@ -645,10 +614,7 @@
                     </div>
                     
                     <div class="kodi-modal-body">
-                        <div class="kodi-avatar-container">
-                            ${userHTML}
-                        </div>
-                        <div class="kodi-menu-grid">
+                        <div class="kodi-menu-grid kodi-dashboard-grid">
                             <div class="kodi-menu-item" onclick="window.location.href='/';">
                                 <i class="fas fa-home"></i>
                                 <span>მთავარი</span>
@@ -688,7 +654,7 @@
                     ${userHTML}
                 </div>
                 
-                <div class="kodi-neon-tech-bg">
+                <div class="kodi-bg-image">
                     <div class="kodi-modal-body">
                         <div class="kodi-menu-grid">
                             <a class="kodi-menu-item" href="/">
@@ -723,7 +689,7 @@
                                 <i class="fas fa-shield-alt"></i>
                                 <span>კონფიდენციალურობა</span>
                             </div>
-                            <div class="kodi-menu-item">
+                            <div class="kodi-menu-item" onclick="kodiCloseMenu()">
                                 <i class="fas fa-undo"></i>
                                 <span>დაბრუნება</span>
                             </div>
@@ -742,7 +708,7 @@
                     ${userHTML}
                 </div>
                 
-                <div class="kodi-neon-tech-bg">
+                <div class="kodi-bg-image">
                     <div class="kodi-modal-body">
                         <div class="kodi-menu-grid">
                             <a class="kodi-menu-item" href="/applecheck?type=free">
@@ -799,7 +765,7 @@
                     ${userHTML}
                 </div>
                 
-                <div class="kodi-neon-tech-bg">
+                <div class="kodi-bg-image">
                     <div class="kodi-modal-body">
                         <div class="kodi-menu-grid">
                             <a class="kodi-menu-item" href="/androidcheck">
