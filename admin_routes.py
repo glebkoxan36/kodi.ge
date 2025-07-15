@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, jsonify
 from functools import wraps
 from datetime import datetime
 from bson import ObjectId
@@ -915,3 +915,74 @@ def system_status():
         current_app.logger.error(f"System status error: {str(e)}")
         flash(f'Error: {str(e)}', 'danger')
         return redirect(url_for('admin.admin_dashboard'))
+
+# ======================================
+# User Switching
+# ======================================
+
+@admin_bp.route('/switch-user/<user_id>', methods=['POST'])
+@admin_required
+def switch_user(user_id):
+    """Переключение на аккаунт пользователя из админ-панели"""
+    try:
+        # Сохраняем текущую админскую сессию
+        admin_session = {
+            'admin_id': session.get('admin_id'),
+            'admin_role': session.get('admin_role'),
+            'admin_username': session.get('admin_username')
+        }
+        
+        # Очищаем сессию
+        session.clear()
+        
+        # Устанавливаем пользовательскую сессию
+        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+        if user:
+            session['user_id'] = str(user['_id'])
+            session['role'] = user.get('role', 'user')
+            
+            # Восстанавливаем админскую сессию
+            session['admin_id'] = admin_session['admin_id']
+            session['admin_role'] = admin_session['admin_role']
+            session['admin_username'] = admin_session['admin_username']
+            
+            flash(f'Switched to user: {user.get("email")}', 'success')
+            return redirect(url_for('user_dashboard.dashboard'))
+        else:
+            flash('User not found', 'danger')
+            return redirect(url_for('admin.manage_regular_users'))
+    except Exception as e:
+        current_app.logger.error(f"Switch user error: {str(e)}")
+        flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('admin.manage_regular_users'))
+
+@admin_bp.route('/switch-back', methods=['GET'])
+@login_required
+def switch_back():
+    """Возврат к админской сессии из пользовательской"""
+    try:
+        # Сохраняем админскую сессию
+        admin_session = {
+            'admin_id': session.get('admin_id'),
+            'admin_role': session.get('admin_role'),
+            'admin_username': session.get('admin_username')
+        }
+        
+        # Очищаем сессию
+        session.clear()
+        
+        # Восстанавливаем только админскую сессию
+        if admin_session['admin_id']:
+            session['admin_id'] = admin_session['admin_id']
+            session['admin_role'] = admin_session['admin_role']
+            session['admin_username'] = admin_session['admin_username']
+            
+            flash('Switched back to admin session', 'success')
+            return redirect(url_for('admin.admin_dashboard'))
+        else:
+            flash('No admin session found', 'danger')
+            return redirect(url_for('auth.admin_login'))
+    except Exception as e:
+        current_app.logger.error(f"Switch back error: {str(e)}")
+        flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('user_dashboard.dashboard'))
