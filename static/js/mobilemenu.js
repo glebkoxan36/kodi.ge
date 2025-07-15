@@ -84,7 +84,7 @@
         
         /* Фоновое изображение */
         .kodi-bg-image {
-            background: url('static/1_iBVj1kRLNw-kzuoMMYO7TA.gif') no-repeat center center;
+            background: url('static/ConnectingNetworks-ezgif.com-optiwebp.webp') no-repeat center center;
             background-size: cover;
             border-radius: 30px 30px 0 0;
             overflow: hidden;
