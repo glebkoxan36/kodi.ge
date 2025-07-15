@@ -9,84 +9,6 @@
         return cachedElements[id];
     }
 
-    // Генерация анимированного SVG фона (улучшенная версия)
-    function generateCircuitSVG() {
-        return `
-            <svg class="kodi-circuit-svg" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <!-- Улучшенные градиенты -->
-                    <linearGradient id="main-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#0a0e17" />
-                        <stop offset="100%" stop-color="#121a33" />
-                    </linearGradient>
-                    
-                    <linearGradient id="line-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#00c6ff" />
-                        <stop offset="100%" stop-color="#0072ff" />
-                    </linearGradient>
-                    
-                    <!-- Минималистичный паттерн сетки -->
-                    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(0, 230, 255, 0.1)" stroke-width="0.1"/>
-                    </pattern>
-                    
-                    <!-- Тонкий фильтр свечения -->
-                    <filter id="soft-glow" x="-20%" y="-20%" width="140%" height="140%">
-                        <feGaussianBlur stdDeviation="0.3" result="blur"/>
-                        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-                    </filter>
-                </defs>
-                
-                <!-- Основной фон -->
-                <rect width="100%" height="100%" fill="url(#main-grad)"/>
-                
-                <!-- Сетка -->
-                <rect width="100%" height="100%" fill="url(#grid)" opacity="0.3"/>
-                
-                <!-- Структурированные линии (более геометричные) -->
-                <path d="M20,20 L40,20 L40,40 L60,40" filter="url(#soft-glow)" stroke="url(#line-grad)" stroke-width="0.3" fill="none" stroke-dasharray="4" stroke-dashoffset="0">
-                    <animate attributeName="stroke-dashoffset" from="0" to="-8" dur="3s" repeatCount="indefinite"/>
-                </path>
-                
-                <path d="M80,30 L80,50 L60,50" filter="url(#soft-glow)" stroke="url(#line-grad)" stroke-width="0.3" fill="none" stroke-dasharray="4" stroke-dashoffset="0">
-                    <animate attributeName="stroke-dashoffset" from="0" to="-8" dur="3.5s" repeatCount="indefinite" begin="0.5s"/>
-                </path>
-                
-                <path d="M30,70 L30,90 L50,90 L50,70" filter="url(#soft-glow)" stroke="#00c6ff" stroke-width="0.3" fill="none" stroke-dasharray="4" stroke-dashoffset="0">
-                    <animate attributeName="stroke-dashoffset" from="0" to="-8" dur="4s" repeatCount="indefinite" begin="1s"/>
-                </path>
-                
-                <!-- Геометричные элементы (чипы) -->
-                <rect x="25" y="25" width="8" height="8" fill="none" stroke="rgba(0, 198, 255, 0.5)" stroke-width="0.2">
-                    <animate attributeName="opacity" values="0.5;0.8;0.5" dur="3s" repeatCount="indefinite"/>
-                </rect>
-                
-                <rect x="65" y="65" width="6" height="6" fill="none" stroke="rgba(0, 114, 255, 0.6)" stroke-width="0.2" transform="rotate(45 68 68)">
-                    <animate attributeName="opacity" values="0.4;0.7;0.4" dur="2.5s" repeatCount="indefinite" begin="0.3s"/>
-                </rect>
-                
-                <!-- Упорядоченные точки -->
-                ${Array.from({length: 12}, (_, i) => {
-                    const cx = 15 + (i % 4) * 25;
-                    const cy = 15 + Math.floor(i / 4) * 25;
-                    const r = 0.4;
-                    return `
-                        <circle cx="${cx}" cy="${cy}" r="${r}" fill="#00c6ff" opacity="0.7">
-                            <animate attributeName="r" values="${r};${r * 1.5};${r}" dur="${1.5 + Math.random()}" repeatCount="indefinite"/>
-                        </circle>
-                    `;
-                }).join('')}
-                
-                <!-- Статические элементы -->
-                ${Array.from({length: 8}, (_, i) => {
-                    const cx = 20 + (i % 3) * 30;
-                    const cy = 75 + Math.floor(i / 3) * 15;
-                    return `<circle cx="${cx}" cy="${cy}" r="0.3" fill="#0072ff" opacity="0.6"/>`;
-                }).join('')}
-            </svg>
-        `;
-    }
-
     // Добавляем стили
     const style = document.createElement('style');
     style.id = 'kodi-mobile-menu-styles';
@@ -160,33 +82,43 @@
             display: flex;
         }
         
-        /* Unique Circuit Board Background */
-        .kodi-circuit-board-bg {
+        /* Неоновый хай-тек фон */
+        .kodi-neon-tech-bg {
             background: 
-                linear-gradient(135deg, #0a0e17 0%, #121a33 100%);
-            border: 2px solid rgba(0, 198, 255, 0.3); /* Более тонкая граница */
+                linear-gradient(135deg, #0a0a2a 0%, #1a1a4a 50%, #2a075e 100%);
+            border: 2px solid rgba(0, 198, 255, 0.3);
             border-radius: 30px 30px 0 0;
             box-shadow: 
-                0 0 15px rgba(0, 198, 255, 0.3),
-                inset 0 0 20px rgba(0, 150, 200, 0.2);
+                0 0 20px rgba(90, 20, 255, 0.5),
+                inset 0 0 30px rgba(0, 100, 255, 0.3);
             overflow: hidden;
             position: relative;
             width: 100%;
             height: 100%;
             z-index: 1;
             padding-bottom: env(safe-area-inset-bottom, 0);
+            
+            /* Эффект цифровой сетки */
+            background-image: 
+                linear-gradient(rgba(0, 198, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 198, 255, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
         }
-
-        /* SVG Circuit */
-        .kodi-circuit-svg {
+        
+        /* Эффект углового свечения */
+        .kodi-neon-tech-bg::before {
+            content: '';
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            opacity: 0.8; /* Увеличил прозрачность для лучшей читаемости */
-            will-change: transform;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, 
+                rgba(0, 198, 255, 0.8), 
+                rgba(90, 20, 255, 0.8), 
+                rgba(0, 198, 255, 0.8));
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.7);
+            z-index: 2;
         }
         
         .kodi-menu-modal .kodi-modal-body {
@@ -393,7 +325,8 @@
             background: transparent;
             box-sizing: border-box;
             padding: 0;
-            margin-top: 50px;
+            /* Опускаем сетку ниже */
+            margin-top: 100px;
         }
         
         .kodi-menu-item {
@@ -471,7 +404,8 @@
                 gap: 10px;
                 max-width: 380px;
                 height: 380px;
-                margin-top: 90px;
+                /* Опускаем сетку ниже для мобильных */
+                margin-top: 120px;
             }
             .kodi-menu-item {
                 padding: 10px 7px;
@@ -494,7 +428,8 @@
                 gap: 8px;
                 max-width: 340px;
                 height: 340px;
-                margin-top: 80px;
+                /* Опускаем сетку ниже для мобильных */
+                margin-top: 110px;
             }
             .kodi-menu-item i {
                 font-size: 36px !important;
@@ -509,7 +444,8 @@
                 gap: 6px;
                 max-width: 300px;
                 height: 300px;
-                margin-top: 70px;
+                /* Опускаем сетку ниже для мобильных */
+                margin-top: 100px;
             }
             .kodi-menu-item i {
                 font-size: 34px !important;
@@ -524,7 +460,8 @@
                 gap: 5px;
                 max-width: 280px;
                 height: 280px;
-                margin-top: 60px;
+                /* Опускаем сетку ниже для мобильных */
+                margin-top: 90px;
             }
             .kodi-menu-item i {
                 font-size: 32px !important;
@@ -555,7 +492,8 @@
             .kodi-menu-grid {
                 max-width: 420px;
                 height: 420px;
-                margin-top: 90px;
+                /* Опускаем сетку ниже для планшетов */
+                margin-top: 140px;
             }
             .kodi-menu-item i {
                 font-size: 38px !important;
@@ -692,8 +630,7 @@
     function createDashboardMenu(container, userHTML) {
         container.innerHTML = `
             <div class="kodi-menu-modal" id="kodiMainMenu">
-                <div class="kodi-circuit-board-bg">
-                    ${generateCircuitSVG()}
+                <div class="kodi-neon-tech-bg">
                     <div class="modal-header">
                         <button class="kodi-close-modal" onclick="kodiCloseMenu()">
                             <i class="fas fa-times"></i>
@@ -744,8 +681,7 @@
                     ${userHTML}
                 </div>
                 
-                <div class="kodi-circuit-board-bg">
-                    ${generateCircuitSVG()}
+                <div class="kodi-neon-tech-bg">
                     <div class="kodi-modal-body">
                         <div class="kodi-menu-grid">
                             <a class="kodi-menu-item" href="/">
@@ -799,8 +735,7 @@
                     ${userHTML}
                 </div>
                 
-                <div class="kodi-circuit-board-bg">
-                    ${generateCircuitSVG()}
+                <div class="kodi-neon-tech-bg">
                     <div class="kodi-modal-body">
                         <div class="kodi-menu-grid">
                             <a class="kodi-menu-item" href="/applecheck?type=free">
@@ -857,8 +792,7 @@
                     ${userHTML}
                 </div>
                 
-                <div class="kodi-circuit-board-bg">
-                    ${generateCircuitSVG()}
+                <div class="kodi-neon-tech-bg">
                     <div class="kodi-modal-body">
                         <div class="kodi-menu-grid">
                             <a class="kodi-menu-item" href="/androidcheck">
