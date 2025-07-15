@@ -1,3 +1,5 @@
+[file name]: app - 2025-07-15T230637.547.py
+[file content begin]
 import os
 import json
 import logging
@@ -164,7 +166,8 @@ def inject_user():
                         'avatar_color': generate_avatar_color(admin.get('username')),
                         'is_admin': True,
                         'role': session['admin_role'],
-                        'admin_role': session['admin_role']
+                        'admin_role': session['admin_role'],
+                        'admin_username': admin.get('username')  # Добавлено новое поле
                     }
         except (TypeError, InvalidId):
             session.pop('admin_id', None)
@@ -1145,3 +1148,4 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting application on port {port}")
     app.run(host='0.0.0.0', port=port, debug=True)
+[file content end]
