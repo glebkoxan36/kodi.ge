@@ -82,7 +82,7 @@
             display: flex;
         }
         
-        /* Неоновый хай-тек фон */
+        /* Неоновый хай-тек фон без сетки */
         .kodi-neon-tech-bg {
             background: 
                 linear-gradient(135deg, #0a0a2a 0%, #1a1a4a 50%, #2a075e 100%);
@@ -97,12 +97,19 @@
             height: 100%;
             z-index: 1;
             padding-bottom: env(safe-area-inset-bottom, 0);
-            
-            /* Эффект цифровой сетки */
-            background-image: 
-                linear-gradient(rgba(0, 198, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 198, 255, 0.05) 1px, transparent 1px);
-            background-size: 20px 20px;
+        }
+        
+        /* Статический шум в неоновом стиле */
+        .kodi-neon-tech-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 800 800'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 2;
         }
         
         /* Эффект углового свечения */
@@ -118,7 +125,7 @@
                 rgba(90, 20, 255, 0.8), 
                 rgba(0, 198, 255, 0.8));
             box-shadow: 0 0 15px rgba(0, 198, 255, 0.7);
-            z-index: 2;
+            z-index: 3;
         }
         
         .kodi-menu-modal .kodi-modal-body {
@@ -130,7 +137,7 @@
             justify-content: center;
             height: 100%;
             position: relative;
-            z-index: 3;
+            z-index: 4;
         }
         
         /* Close button */
@@ -351,7 +358,7 @@
             box-sizing: border-box;
             color: white;
             position: relative;
-            z-index: 3;
+            z-index: 5;
         }
         
         .kodi-menu-item:hover {
