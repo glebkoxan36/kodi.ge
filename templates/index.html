@@ -48,7 +48,9 @@
             <div class="user-avatar-container">
                 <div class="user-avatar" {% if currentUser %}style="background-color: {{ currentUser.avatar_color }}"{% endif %}>
                     {% if currentUser %}
-                        {% if currentUser.is_admin %}
+                        {% if currentUser.is_impersonation %}
+                            <i class="fas fa-user-secret"></i>
+                        {% elif currentUser.is_admin %}
                             ADMIN
                         {% else %}
                             {{ currentUser.first_name|first }}{{ currentUser.last_name|first }}
@@ -60,15 +62,17 @@
             </div>
             <div class="user-name">
                 {% if currentUser %}
-                    {% if currentUser.is_admin %}
+                    {% if currentUser.is_impersonation %}
+                        {{ currentUser.first_name }} {{ currentUser.last_name }}
+                        <div class="user-admin-username">
+                            (Admin: {{ currentUser.admin_username }})
+                        </div>
+                    {% elif currentUser.is_admin %}
                         ადმინისტრატორი
-                        <div class="user-admin-username">({{ currentUser.username }})</div>
+                        <div class="user-admin-username">({{ currentUser.admin_username }})</div>
                     {% else %}
                         {{ currentUser.first_name }} {{ currentUser.last_name }}
                         <div class="user-balance">ბალანსი: {{ '%.2f' % currentUser.balance }}₾</div>
-                        {% if currentUser.is_admin %}
-                            <div class="user-role">(ადმინისტრატორი)</div>
-                        {% endif %}
                     {% endif %}
                 {% else %}
                     ლოგინი/რეგისტრაცია
@@ -458,8 +462,10 @@
             balance: {{ currentUser.balance }},
             avatar_color: "{{ currentUser.avatar_color }}",
             is_admin: {% if currentUser.is_admin %}true{% else %}false{% endif %},
+            is_impersonation: {% if currentUser.is_impersonation %}true{% else %}false{% endif %},
             username: "{{ currentUser.username }}",
-            role: "{{ currentUser.role }}"
+            role: "{{ currentUser.role }}",
+            admin_username: "{{ currentUser.admin_username }}"
         }{% else %}undefined{% endif %};
     </script>
     
@@ -474,7 +480,9 @@
         }
 
         window.goToDashboard = function() {
-            if (window.currentUser && window.currentUser.is_admin) {
+            if (window.currentUser && window.currentUser.is_impersonation) {
+                window.location.href = "/admin/switch-back";
+            } else if (window.currentUser && window.currentUser.is_admin) {
                 window.location.href = "/admin/dashboard";
             } else {
                 window.location.href = "/user/dashboard";
@@ -722,4 +730,4 @@
         });
     </script>
 </body>
-                                                           </html>
+</html>
