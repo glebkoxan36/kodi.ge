@@ -225,6 +225,18 @@ def admin_required(f):
         if 'admin_id' not in session or 'admin_role' not in session:
             logger.warning(f"Unauthorized admin access attempt: session={dict(session)}")
             return redirect(url_for('auth.admin_login', next=request.url))
+        
+        # Проверяем существование администратора в базе
+        try:
+            admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id'])})
+            if not admin or admin.get('role') not in ['admin', 'superadmin']:
+                flash('Administrator account not found or invalid', 'danger')
+                session.clear()
+                return redirect(url_for('auth.admin_login'))
+        except:
+            session.clear()
+            return redirect(url_for('auth.admin_login'))
+            
         return f(*args, **kwargs)
     return decorated
 
@@ -237,6 +249,48 @@ def login_required(f):
             return redirect(url_for('auth.login', next=request.url))
         return f(*args, **kwargs)
     return decorated
+
+# ======================================
+# Обработчики для управления сессиями
+# ======================================
+
+@app.before_request
+def refresh_session():
+    """Автоматически обновляет срок действия сессии"""
+    if 'user_id' in session or 'admin_id' in session:
+        session.modified = True
+        session.permanent = True
+
+@app.before_request
+def check_session_timeout():
+    """Проверяет тайм-аут сессии"""
+    last_activity = session.get('last_activity')
+    if last_activity:
+        last_active = datetime.fromisoformat(last_activity)
+        if (datetime.utcnow() - last_active).seconds > 3600:  # 1 час
+            session.clear()
+            flash('Your session has expired due to inactivity', 'warning')
+            return redirect(url_for('auth.login'))
+    
+    # Обновляем время последней активности
+    session['last_activity'] = datetime.utcnow().isoformat()
+
+@app.before_request
+def check_session_integrity():
+    """Проверяет целостность сессии администратора"""
+    if 'admin_id' in session:
+        try:
+            admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id'])})
+            if not admin or admin.get('role') not in ['admin', 'superadmin']:
+                session.pop('admin_id', None)
+                session.pop('admin_role', None)
+                session.pop('admin_username', None)
+                flash('Administrator session is invalid', 'danger')
+                return redirect(url_for('auth.admin_login'))
+        except:
+            session.pop('admin_id', None)
+            session.pop('admin_role', None)
+            session.pop('admin_username', None)
 
 # ======================================
 # Вспомогательные функции
@@ -815,7 +869,7 @@ def perform_check():
                     attempts += 1
                     if attempts < max_attempts:
                         time.sleep(delay)
-                        delay *= 2  # Экспონенциальная задержка
+                        delay *= 2  # Экспоненциальная задержка
                     else:
                         return jsonify({
                             'error': f'Request failed after {max_attempts} attempts',
@@ -1144,4 +1198,4 @@ def health_check():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting application on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True
