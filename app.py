@@ -143,17 +143,58 @@ def get_current_prices():
 def inject_user():
     """Добавляет данные текущего пользователя во все шаблоны"""
     user_data = None
-    user_id = session.get('user_id')
     
-    if user_id:
+    # Проверяем администратора
+    if 'admin_id' in session and 'role' in session:
         try:
-            user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
-            if user:
-                # Генерируем цвет аватара если его нет
-                avatar_color = user.get('avatar_color')
-                if not avatar_color:
-                    name_part = user.get('first_name') or user.get('email', 'user')
+            admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id'])})
+            if admin:
+                # Проверяем, есть ли соответствующий обычный пользователь
+                regular_user = regular_users_collection.find_one({
+                    '$or': [
+                        {'email': admin.get('email')},
+                        {'username': admin.get('username')}
+                    ]
+                })
+                
+                if regular_user:
+                    # Используем данные обычного пользователя
+                    name_part = regular_user.get('first_name') or regular_user.get('email', 'user')
                     avatar_color = generate_avatar_color(name_part)
+                    
+                    user_data = {
+                        'id': str(regular_user['_id']),
+                        'first_name': regular_user.get('first_name', ''),
+                        'last_name': regular_user.get('last_name', ''),
+                        'balance': regular_user.get('balance', 0),
+                        'avatar_color': avatar_color,
+                        'avatar_url': regular_user.get('avatar_url'),
+                        'is_admin': True,
+                        'role': session['role']
+                    }
+                else:
+                    # Создаем минимальный профиль для администратора
+                    user_data = {
+                        'id': str(admin['_id']),
+                        'first_name': admin.get('name', 'Admin'),
+                        'last_name': '',
+                        'balance': 0,
+                        'avatar_color': generate_avatar_color(admin.get('username')),
+                        'is_admin': True,
+                        'role': session['role']
+                    }
+        except (TypeError, InvalidId):
+            session.pop('admin_id', None)
+            session.pop('role', None)
+            logger.warning("Invalid admin ID in session - cleared")
+    
+    # Если нет администратора, проверяем обычного пользователя
+    if not user_data and 'user_id' in session:
+        try:
+            user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
+            if user:
+                name_part = user.get('first_name') or user.get('email', 'user')
+                avatar_color = user.get('avatar_color') or generate_avatar_color(name_part)
                 
                 user_data = {
                     'id': str(user['_id']),
@@ -161,12 +202,17 @@ def inject_user():
                     'last_name': user.get('last_name', ''),
                     'balance': user.get('balance', 0),
                     'avatar_color': avatar_color,
-                    'avatar_url': user.get('avatar_url')
+                    'avatar_url': user.get('avatar_url'),
+                    'is_admin': user.get('role') in ['admin', 'superadmin'],
+                    'role': user.get('role', 'user')
                 }
         except (TypeError, InvalidId):
-            # Очищаем невалидную сессию
             session.pop('user_id', None)
             logger.warning("Invalid user ID in session - cleared")
+    
+    # Обновляем роль в сессии
+    if user_data:
+        session['role'] = user_data['role']
     
     return {'currentUser': user_data}
 
@@ -196,8 +242,9 @@ stripe_payment = StripePayment(
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if 'role' not in session or session['role'] not in ['admin', 'superadmin']:
-            logger.warning("Unauthorized admin access attempt")
+        # Проверяем роль в сессии и наличие admin_id
+        if 'role' not in session or session['role'] not in ['admin', 'superadmin'] or 'admin_id' not in session:
+            logger.warning(f"Unauthorized admin access attempt: session={dict(session)}")
             return redirect(url_for('auth.admin_login', next=request.url))
         return f(*args, **kwargs)
     return decorated
@@ -225,7 +272,7 @@ def render_common_template(template_name, **kwargs):
 # ======================================
 
 @app.route('/')
-@cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
+@cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)  # Кеширование для гостей
 def index():
     logger.info("Home page access")
     prices = get_current_prices()
@@ -237,14 +284,14 @@ def index():
     )
 
 @app.route('/contacts')
-@cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
+@cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)  # Кеширование для гостей
 def contacts_page():
     """Страница контактов"""
     logger.info("Contacts page access")
     return render_common_template('contacts.html')
 
 @app.route('/knowledge-base')
-@cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
+@cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)  # Кеширование для гостей
 def knowledge_base():
     """База знаний"""
     logger.info("Knowledge base access")
@@ -255,7 +302,7 @@ def knowledge_base():
 # ======================================
 
 @app.route('/compares')
-@cache.cached(timeout=300, unless=lambda: 'user_id' in session)
+@cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)
 def compares_page():
     """Страница сравнения спецификаций телефонов"""
     logger.info("Compares page access")
@@ -324,7 +371,7 @@ def get_phone_details(phone_id):
 # ======================================
 
 @app.route('/applecheck')
-@cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
+@cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)  # Кеширование для гостей
 def apple_check():
     logger.info("Apple check page access")
     # Определяем тип услуги из параметра URL
@@ -411,7 +458,7 @@ def apple_check():
 # ======================================
 
 @app.route('/androidcheck')
-@cache.cached(timeout=300, unless=lambda: 'user_id' in session)  # Кеширование для гостей
+@cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)  # Кеширование для гостей
 def android_check():
     """Страница проверки Android устройств"""
     logger.info("Android check page access")
@@ -1045,6 +1092,7 @@ def session_info():
     logger.info("Session info request")
     return jsonify({
         'user_id': session.get('user_id'),
+        'admin_id': session.get('admin_id'),
         'role': session.get('role'),
         'session_id': session.sid
     })
