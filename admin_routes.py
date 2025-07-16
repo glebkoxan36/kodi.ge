@@ -12,6 +12,7 @@ from db import (
     api_keys_collection, webhooks_collection, db, regular_users_collection,
     payments_collection
 )
+from price import get_current_prices, DEFAULT_PRICES  # Добавлено
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -126,17 +127,22 @@ def admin_dashboard():
 @admin_bp.route('/price', methods=['GET', 'POST'])
 @admin_required
 def price_management():
-    """Управление ценами"""
+    """Управление ценами для всех сервисов"""
     try:
         if request.method == 'POST':
             try:
-                # ИСПРАВЛЕНИЕ: правильное преобразование данных формы
-                paid_price = int(float(request.form.get('paid_price')) * 100)
-                premium_price = int(float(request.form.get('premium_price')) * 100)
+                # Собираем новые цены для всех сервисов
+                new_prices = {}
+                for service in DEFAULT_PRICES.keys():
+                    # Конвертируем в центы
+                    price_value = float(request.form.get(service, 0))
+                    new_prices[service] = int(price_value * 100)
                 
+                # Получаем текущие цены для истории
                 current_doc = prices_collection.find_one({'type': 'current'})
-                current_prices = current_doc['prices']
+                current_prices = current_doc['prices'] if current_doc else {}
                 
+                # Сохраняем историю изменений
                 prices_collection.insert_one({
                     'type': 'history',
                     'prices': current_prices,
@@ -144,25 +150,20 @@ def price_management():
                     'changed_by': session.get('admin_username', 'unknown')
                 })
                 
+                # Обновляем текущие цены
                 prices_collection.update_one(
                     {'type': 'current'},
                     {'$set': {
-                        'prices.paid': paid_price,
-                        'prices.premium': premium_price,
+                        'prices': new_prices,
                         'updated_at': datetime.utcnow()
-                    }}
+                    }},
+                    upsert=True
                 )
                 
                 # Аудит изменения цен
                 log_audit_event(
                     action='price_change',
-                    details={
-                        'old_prices': current_prices,
-                        'new_prices': {
-                            'paid': paid_price / 100,
-                            'premium': premium_price / 100
-                        }
-                    },
+                    details={'new_prices': new_prices},
                     user_id=session.get('admin_id'),
                     username=session.get('admin_username')
                 )
@@ -174,11 +175,12 @@ def price_management():
                 flash(f'Error updating prices: {str(e)}', 'danger')
         
         # Получаем текущие цены
-        current_prices_doc = prices_collection.find_one({'type': 'current'})
-        current_prices = current_prices_doc['prices']
+        current_prices = get_current_prices()
+        
+        # Форматируем для отображения (в лари)
         formatted_prices = {
-            'paid': current_prices['paid'] / 100,
-            'premium': current_prices['premium'] / 100
+            service: price / 100 
+            for service, price in current_prices.items()
         }
         
         # Получаем историю изменений цен
@@ -186,15 +188,33 @@ def price_management():
             .sort('changed_at', -1)
             .limit(5))
         
+        # Форматируем историю
         for item in price_history:
             item['changed_at'] = item['changed_at'].strftime('%Y-%m-%d %H:%M')
-            item['paid'] = item['prices']['paid'] / 100
-            item['premium'] = item['prices']['premium'] / 100
+            item['prices'] = {
+                service: price / 100 
+                for service, price in item['prices'].items()
+            }
+        
+        # Группируем сервисы для отображения
+        apple_services = [
+            'fmi', 'blacklist', 'sim_lock', 
+            'activation', 'carrier', 'mdm'
+        ]
+        
+        android_services = [
+            'samsung_v1', 'samsung_v2', 'samsung_knox',
+            'xiaomi', 'google_pixel', 'huawei_v1',
+            'huawei_v2', 'motorola', 'oppo', 'frp',
+            'sim_lock_android'
+        ]
         
         return render_template(
             'admin.html',
             current_prices=formatted_prices,
             price_history=price_history,
+            apple_services=apple_services,
+            android_services=android_services,
             active_section='price_management'
         )
     
@@ -230,12 +250,10 @@ def check_history():
             )
         
         # Получаем текущие цены
-        current_prices_doc = prices_collection.find_one({'type': 'current'})
-        current_prices = current_prices_doc['prices'] if current_prices_doc else {'paid': 0, 'premium': 0}
-        formatted_prices = {
-            'paid': current_prices.get('paid', 0) / 100,
-            'premium': current_prices.get('premium', 0) / 100
-        }
+        current_prices = get_current_prices()
+        # Для отображения в шаблоне нам нужны только две цены: paid и premium, но они больше не используются для отображения в таблице истории.
+        # Вместо этого мы будем использовать индивидуальные цены для каждого сервиса, но в истории они уже сохранены.
+        # Поэтому в шаблоне мы просто отобразим сохраненную сумму.
         
         # Форматируем данные для отображения
         for check in checks:
@@ -253,7 +271,6 @@ def check_history():
             imei_query=imei_query,
             page=page,
             per_page=per_page,
-            current_prices=formatted_prices,
             active_section='check_history'
         )
     except Exception as e:
