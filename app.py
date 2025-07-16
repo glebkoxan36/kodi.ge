@@ -299,8 +299,6 @@ def index():
     return render_common_template(
         'index.html',
         stripe_public_key=STRIPE_PUBLIC_KEY,
-        paid_price=prices['paid'] / 100,
-        premium_price=prices['premium'] / 100
     )
 
 @app.route('/contacts')
