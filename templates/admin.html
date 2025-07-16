@@ -17,13 +17,21 @@
             </button>
             <h1 class="h4 mb-0 d-none d-md-block">Admin Panel</h1>
             <div>
-                {% if 'username' in session %}
+                {% if 'admin_username' in session or (currentUser and currentUser.admin_username) %}
                     <div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-fill"></i> {{ session.username }}
+                            <i class="bi bi-person-fill"></i> 
+                            {{ session.admin_username if 'admin_username' in session else currentUser.admin_username }}
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                            {% if currentUser and currentUser.is_impersonation %}
+                                <li><a class="dropdown-item" href="{{ url_for('admin.switch_back') }}">
+                                    <i class="bi bi-arrow-left-right me-1"></i> Switch Back
+                                </a></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="{{ url_for('auth.admin_logout') }}">
+                                <i class="bi bi-box-arrow-right me-1"></i> Logout
+                            </a></li>
                         </ul>
                     </div>
                 {% else %}
@@ -1443,4 +1451,4 @@
         });
     </script>
 </body>
-    </html>
+                                                    </html>
