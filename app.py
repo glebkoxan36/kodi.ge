@@ -86,7 +86,8 @@ app.config.update(
     SESSION_REFRESH_EACH_REQUEST=True,
     
     # Исключение админ-логина из CSRF-защиты
-    WTF_CSRF_EXEMPT_ROUTES = ['auth.admin_login']
+    WTF_CSRF_EXEMPT_ROUTES = ['auth.admin_login'],
+    WTF_CSRF_ENABLED = True  # Явное включение CSRF защиты
 )
 Session(app)
 
