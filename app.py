@@ -193,7 +193,7 @@ def inject_user():
         except Exception as e:
             logger.exception(f"Error getting user: {str(e)}")
     
-    return {'currentUser': user_data}
+    return {'currentUser': user_data, 'admin_username': admin_username}
 
 # Конфигурация
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
@@ -1128,6 +1128,7 @@ def session_info():
         'user_id': session.get('user_id'),
         'admin_id': session.get('admin_id'),
         'admin_role': session.get('admin_role'),
+        'admin_username': session.get('admin_username'),
         'role': session.get('role'),
         'session_id': session.sid
     })
