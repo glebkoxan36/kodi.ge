@@ -8,15 +8,12 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from werkzeug.security import generate_password_hash
 
+# Импортируем функции для работы с ценами
+from price import init_prices  # Добавлено
+
 # Настройка логгера
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-# Цены по умолчанию
-DEFAULT_PRICES = {
-    'paid': 499,
-    'premium': 999
-}
 
 def init_logger():
     """Инициализация логгера для модуля"""
@@ -71,21 +68,6 @@ def init_admin_user(db):
     except Exception as e:
         logger.error(f"Error creating admin user: {str(e)}")
 
-def init_prices(db):
-    """Инициализирует цены по умолчанию если не существуют"""
-    try:
-        logger.info("Initializing prices")
-        if db.prices.count_documents({}) == 0:
-            db.prices.insert_one({
-                'type': 'current',
-                'prices': DEFAULT_PRICES,
-                'created_at': datetime.utcnow(),
-                'updated_at': datetime.utcnow()
-            })
-            logger.info("Default prices initialized")
-    except Exception as e:
-        logger.error(f"Error initializing prices: {str(e)}")
-
 # Инициализация подключения
 logger.info("Initializing MongoDB client")
 client = init_mongodb()
@@ -109,7 +91,7 @@ if client:
     
     # Инициализация данных
     init_admin_user(db)
-    init_prices(db)
+    init_prices(db)  # Обновлено - используем новую функцию
 else:
     logger.error("MongoDB connection failed - using stubs")
     # Заглушки для случая ошибки подключения
@@ -125,19 +107,3 @@ else:
     audit_logs_collection = None
     api_keys_collection = None
     webhooks_collection = None
-
-def get_current_prices():
-    """Возвращает текущие цены из базы данных"""
-    logger.info("Fetching current prices")
-    if client is None:  # Исправлено: явная проверка на None
-        logger.warning("Using default prices - no MongoDB connection")
-        return DEFAULT_PRICES
-        
-    try:
-        price_doc = prices_collection.find_one({'type': 'current'})
-        if price_doc:
-            return price_doc['prices']
-        return DEFAULT_PRICES
-    except Exception as e:
-        logger.error(f"Error getting prices: {str(e)}")
-        return DEFAULT_PRICES
