@@ -26,10 +26,11 @@ from bs4 import BeautifulSoup
 from auth import auth_bp
 from user_dashboard import user_bp
 from ifreeapi import validate_imei, perform_api_check, parse_free_html
-from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection
+from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection, db
 from stripepay import StripePayment
 from admin_routes import admin_bp  # Импорт админских роутов
 from test import test_bp  # Импорт тестового модуля
+from price import get_current_prices, get_service_price  # Добавлено
 
 # Создаем папку для логов
 if not os.path.exists('logs'):
@@ -119,24 +120,9 @@ def format_datetime_filter(value, format='%d.%m.%Y %H:%M'):
 
 # Кешируемая функция получения цен
 @cache.memoize(timeout=300)  # Кеширование на 5 минут
-def get_current_prices():
-    DEFAULT_PRICES = {
-        'paid': 100,  # 1.00 GEL в центах
-        'premium': 200  # 2.00 GEL в центах
-    }
-    
-    if not client:
-        logger.warning("Using default prices - no MongoDB connection")
-        return DEFAULT_PRICES
-        
-    try:
-        price_doc = prices_collection.find_one({'type': 'current'})
-        if price_doc:
-            return price_doc['prices']
-        return DEFAULT_PRICES
-    except Exception as e:
-        logger.error(f"Error getting prices: {str(e)}")
-        return DEFAULT_PRICES
+def get_current_prices_cached():
+    """Кешированная версия получения текущих цен"""
+    return get_current_prices()
 
 # Контекстный процессор для добавления данных пользователя во все шаблоны
 @app.context_processor
@@ -309,7 +295,7 @@ def render_common_template(template_name, **kwargs):
 @cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)  # Кеширование для гостей
 def index():
     logger.info("Home page access")
-    prices = get_current_prices()
+    prices = get_current_prices_cached()
     return render_common_template(
         'index.html',
         stripe_public_key=STRIPE_PUBLIC_KEY,
@@ -411,20 +397,18 @@ def apple_check():
     # Определяем тип услуги из параметра URL
     service_type = request.args.get('type', 'free')
     
-    # Получаем текущие цены и конвертируем в лари
-    prices = get_current_prices()
-    paid_price_gel = prices['paid'] / 100.0
-    premium_price_gel = prices['premium'] / 100.0
+    # Получаем текущие цены
+    prices = get_current_prices_cached()
     
     # Создаем словарь цен для каждого типа услуги
     service_prices = {
         'free': 'უფასო',
-        'fmi': f"{paid_price_gel:.2f}₾",
-        'blacklist': f"{paid_price_gel:.2f}₾",
-        'sim_lock': f"{premium_price_gel:.2f}₾",
-        'activation': f"{paid_price_gel:.2f}₾",
-        'carrier': f"{paid_price_gel:.2f}₾",
-        'mdm': f"{premium_price_gel:.2f}₾"
+        'fmi': f"{prices['fmi'] / 100:.2f}₾",
+        'blacklist': f"{prices['blacklist'] / 100:.2f}₾",
+        'sim_lock': f"{prices['sim_lock'] / 100:.2f}₾",
+        'activation': f"{prices['activation'] / 100:.2f}₾",
+        'carrier': f"{prices['carrier'] / 100:.2f}₾",
+        'mdm': f"{prices['mdm'] / 100:.2f}₾"
     }
 
     # Создаем список услуг с данными для передачи в шаблон
@@ -497,22 +481,20 @@ def android_check():
     """Страница проверки Android устройств"""
     logger.info("Android check page access")
     service_type = request.args.get('type', '')
-    prices = get_current_prices()
-    paid_price_gel = prices['paid'] / 100.0
-    premium_price_gel = prices['premium'] / 100.0
+    prices = get_current_prices_cached()
 
     service_prices = {
-        'samsung_v1': f"{paid_price_gel:.2f}₾",
-        'samsung_v2': f"{paid_price_gel:.2f}₾",
-        'samsung_knox': f"{premium_price_gel:.2f}₾",
-        'xiaomi': f"{paid_price_gel:.2f}₾",
-        'google_pixel': f"{paid_price_gel:.2f}₾",
-        'huawei_v1': f"{paid_price_gel:.2f}₾",
-        'huawei_v2': f"{paid_price_gel:.2f}₾",
-        'motorola': f"{paid_price_gel:.2f}₾",
-        'oppo': f"{paid_price_gel:.2f}₾",
-        'frp': f"{paid_price_gel:.2f}₾",
-        'sim_lock_android': f"{paid_price_gel:.2f}₾",
+        'samsung_v1': f"{prices['samsung_v1'] / 100:.2f}₾",
+        'samsung_v2': f"{prices['samsung_v2'] / 100:.2f}₾",
+        'samsung_knox': f"{prices['samsung_knox'] / 100:.2f}₾",
+        'xiaomi': f"{prices['xiaomi'] / 100:.2f}₾",
+        'google_pixel': f"{prices['google_pixel'] / 100:.2f}₾",
+        'huawei_v1': f"{prices['huawei_v1'] / 100:.2f}₾",
+        'huawei_v2': f"{prices['huawei_v2'] / 100:.2f}₾",
+        'motorola': f"{prices['motorola'] / 100:.2f}₾",
+        'oppo': f"{prices['oppo'] / 100:.2f}₾",
+        'frp': f"{prices['frp'] / 100:.2f}₾",
+        'sim_lock_android': f"{prices['sim_lock_android'] / 100:.2f}₾",
     }
 
     # Данные сервисов
@@ -605,34 +587,8 @@ def create_checkout_session():
             logger.warning(f"Invalid IMEI: {imei}")
             return jsonify({'error': 'არასწორი IMEI'}), 400
         
-        # Маппинг типов услуг на цены
-        price_mapping = {
-            'fmi': 'paid',
-            'blacklist': 'paid',
-            'sim_lock': 'premium',
-            'activation': 'paid',
-            'carrier': 'paid',
-            'mdm': 'premium',
-            'samsung_v1': 'paid',
-            'samsung_v2': 'paid',
-            'samsung_knox': 'premium',
-            'xiaomi': 'paid',
-            'google_pixel': 'paid',
-            'huawei_v1': 'paid',
-            'huawei_v2': 'paid',
-            'motorola': 'paid',
-            'oppo': 'paid',
-            'frp': 'paid',
-            'sim_lock_android': 'paid'
-        }
-        
-        if service_type not in price_mapping:
-            logger.warning(f"Invalid service type: {service_type}")
-            return jsonify({'error': 'არასწორი სერვისის ტიპი'}), 400
-        
-        prices = get_current_prices()
-        price_key = price_mapping[service_type]
-        amount = prices[price_key]  # в центах
+        # Получаем цену для сервиса
+        amount = get_service_price(service_type)
         
         # Для бесплатной проверки не создаем сессию
         if service_type == 'free':
@@ -642,7 +598,7 @@ def create_checkout_session():
         # Если пользователь авторизован и выбрал оплату с баланса
         if use_balance and 'user_id' in session:
             user_id = session['user_id']
-            # Конвертируем сумму в лари (amount в центах, поэтому делим на 100, чтобы получить лари)
+            # Конвертируем сумму в лари
             amount_gel = amount / 100.0
             
             # Генерируем уникальный ключ идемпотентности
