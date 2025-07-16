@@ -3,13 +3,9 @@ import time
 import logging
 from datetime import datetime
 from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError, PyMongoError
 from bson import ObjectId
-from bson.errors import InvalidId
 from werkzeug.security import generate_password_hash
-
-# Импортируем функции для работы с ценами
-from price import init_prices  # Добавлено
 
 # Настройка логгера
 logger = logging.getLogger(__name__)
@@ -17,6 +13,8 @@ logger.setLevel(logging.INFO)
 
 def init_logger():
     """Инициализация логгера для модуля"""
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
     handler = logging.FileHandler('logs/db.log')
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
@@ -48,6 +46,10 @@ def init_mongodb():
             logger.error(f"Connection attempt {attempt+1}/{max_retries} failed: {str(e)}")
             if attempt < max_retries - 1:
                 time.sleep(retry_delay)
+        except Exception as e:
+            logger.error(f"Unexpected error during connection: {str(e)}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
     
     logger.critical("Could not connect to MongoDB after multiple attempts")
     return None
@@ -65,36 +67,58 @@ def init_admin_user(db):
                 'created_at': datetime.utcnow()
             })
             logger.info("Default admin user created")
+    except PyMongoError as e:
+        logger.error(f"MongoDB error creating admin user: {str(e)}")
     except Exception as e:
-        logger.error(f"Error creating admin user: {str(e)}")
+        logger.error(f"Unexpected error creating admin user: {str(e)}")
 
 # Инициализация подключения
 logger.info("Initializing MongoDB client")
 client = init_mongodb()
 
-if client:
-    db = client['imei_checker']
+# Инициализация коллекций даже если подключение не удалось
+try:
+    if client:
+        db = client['imei_checker']
+        
+        # Основные коллекции
+        regular_users_collection = db['users']
+        checks_collection = db['results']
+        payments_collection = db['payments']
+        refunds_collection = db['refunds']
+        prices_collection = db['prices']
+        comparisons_collection = db['comparisons']
+        phonebase_collection = db['phonebase']
+        admin_users_collection = db['admin_users']
+        parser_logs_collection = db['parser_logs']
+        audit_logs_collection = db['audit_logs']
+        api_keys_collection = db['api_keys']
+        webhooks_collection = db['webhooks']
+        
+        # Инициализация данных
+        init_admin_user(db)
+    else:
+        raise Exception("MongoDB connection failed")
+        
+except PyMongoError as e:
+    logger.error(f"MongoDB initialization error: {str(e)}")
+    # Создаем заглушки для коллекций
+    regular_users_collection = None
+    checks_collection = None
+    payments_collection = None
+    refunds_collection = None
+    prices_collection = None
+    comparisons_collection = None
+    phonebase_collection = None
+    admin_users_collection = None
+    parser_logs_collection = None
+    audit_logs_collection = None
+    api_keys_collection = None
+    webhooks_collection = None
     
-    # Основные коллекции
-    regular_users_collection = db['users']
-    checks_collection = db['results']
-    payments_collection = db['payments']
-    refunds_collection = db['refunds']
-    prices_collection = db['prices']
-    comparisons_collection = db['comparisons']
-    phonebase_collection = db['phonebase']
-    admin_users_collection = db['admin_users']
-    parser_logs_collection = db['parser_logs']
-    audit_logs_collection = db['audit_logs']
-    api_keys_collection = db['api_keys']
-    webhooks_collection = db['webhooks']
-    
-    # Инициализация данных
-    init_admin_user(db)
-    init_prices(db)  # Обновлено - используем новую функцию
-else:
-    logger.error("MongoDB connection failed - using stubs")
-    # Заглушки для случая ошибки подключения
+except Exception as e:
+    logger.error(f"Unexpected initialization error: {str(e)}")
+    # Создаем заглушки для коллекций
     regular_users_collection = None
     checks_collection = None
     payments_collection = None
