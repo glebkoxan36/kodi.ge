@@ -225,7 +225,7 @@ def admin_login():
         # Успешная аутентификация
         session['admin_id'] = str(admin['_id'])
         session['admin_role'] = admin['role']  # Используем отдельный ключ для роли администратора
-        session['admin_username'] = admin['username']
+        session['admin_username'] = admin['username']  # Сохраняем имя администратора
         session.permanent = True
         session.modified = True
         
