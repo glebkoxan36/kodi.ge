@@ -126,6 +126,20 @@
             max-width: 800px;
         }
         
+        /* Добавленные стили для статуса баланса */
+        .balance-sufficient { 
+            color: var(--success-color); 
+            font-weight: bold; 
+        }
+        .balance-insufficient { 
+            color: var(--danger-color); 
+            font-weight: bold; 
+        }
+        .balance-error { 
+            color: var(--warning-color); 
+            font-weight: bold; 
+        }
+        
         @media (max-width: 768px) {
             .result-modal .modal-content {
                 width: 100%;
@@ -529,12 +543,10 @@
             
             currentImei = imei;
             currentServiceType = serviceType;
-            
-            // Блокируем кнопку
             checkBtn.disabled = true;
             
-            // ავტორიზებული მომხმარებლებისთვის
-            if ({{ 'true' if user else 'false' }}) {
+            // Для авторизованных пользователей показываем выбор оплаты
+            if (window.currentUser) {
                 fetchUserBalance().then(balance => {
                     const service = services.find(s => s.id === serviceType);
                     const priceText = service.price;
@@ -558,13 +570,13 @@
                     checkBtn.disabled = false;
                 });
             } else {
-                // არაავტორიზებული მომხმარებლებისთვის
+                // Для неавторизованных сразу создаем сессию Stripe
                 processPayment(false);
             }
         }
         
         function fetchUserBalance() {
-            return fetch('/user/dashboard/data')
+            return fetch('/user/get_balance')
                 .then(response => {
                     if (!response.ok) throw new Error('Failed to fetch balance');
                     return response.json();
@@ -592,7 +604,7 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`HTTP შეცდომა! სტატუსი: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.json();
             })
@@ -605,7 +617,6 @@
                     errorElement.style.display = 'block';
                 } else {
                     if (data.payment_method === 'balance') {
-                        // Show success modal for balance payment
                         openModal('payment-success-modal');
                         fetchResultForSession(data.id);
                     } else if (data.payment_method === 'stripe') {
@@ -613,7 +624,7 @@
                             .then(result => {
                                 if (result.error) {
                                     document.getElementById('payment-error-message').textContent = 
-                                        `Stripe შეცდომა: ${result.error.message}`;
+                                        `Stripe error: ${result.error.message}`;
                                     openModal('payment-error-modal');
                                 }
                             });
@@ -623,9 +634,9 @@
             .catch(error => {
                 document.getElementById('spinner').style.display = 'none';
                 document.getElementById('payment-error-message').textContent = 
-                    'გადახდის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.';
+                    'Payment error. Please try again later.';
                 openModal('payment-error-modal');
-                console.error('გადახდის შეცდომა:', error);
+                console.error('Payment error:', error);
             });
         }
         
@@ -928,4 +939,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
