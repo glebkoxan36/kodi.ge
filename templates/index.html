@@ -15,6 +15,34 @@
             opacity: 0.8;
             margin-top: 2px;
         }
+        .instruction-section {
+            margin-top: 40px;
+            margin-bottom: 30px;
+        }
+        .instruction-images {
+            max-height: 200px;
+            object-fit: contain;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .device-instruction {
+            padding: 20px;
+            background: rgba(30, 40, 60, 0.5);
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -232,8 +260,87 @@
             </div>
         </div>
         
+        <!-- IMEI Check Section -->
+        <div id="imei-check-section" class="card mt-5">
+            <div class="card-header">
+                <i class="fas fa-shield-check me-2"></i>
+                <span>შეამოწმეთ თქვენი ტელეფონის ორიგინალურობა</span>
+            </div>
+            <div class="card-body">
+                <div class="instruction-section">
+                    <h3 class="text-center mb-4">როგორ მოვძებნოთ IMEI კოდი?</h3>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="device-instruction">
+                                <h4><i class="fab fa-apple me-2"></i>iPhone-ისთვის</h4>
+                                <p>
+                                    <span class="step-number">1</span>
+                                    აკრიფეთ თქვენს ტელეფონზე: <code>*#06#</code>
+                                </p>
+                                <img src="static/img/Index_page_img/Rogor_vnaxot_imei_iphone.png" alt="iPhone IMEI" class="img-fluid instruction-images">
+                                
+                                <p class="mt-4">
+                                    <span class="step-number">2</span>
+                                    ან შეგიძლიათ იხილოთ SIM-ბარაბის ქვედა მხარეს:
+                                </p>
+                                <img src="static/img/Index_page_img/Rogor_vnaxot_imei_iphone_simlotok.png" alt="iPhone SIM Tray" class="img-fluid instruction-images">
+                                
+                                <p class="mt-4">
+                                    <span class="step-number">3</span>
+                                    ან მენიუში: <br>Settings > General > About
+                                </p>
+                                <img src="static/img/Index_page_img/Rogor_vnaxot_imei_iphone_menu.png" alt="iPhone Menu" class="img-fluid instruction-images">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="device-instruction">
+                                <h4><i class="fab fa-android me-2"></i>Android-ისთვის</h4>
+                                <p>
+                                    <span class="step-number">1</span>
+                                    აკრიფეთ თქვენს ტელეფონზე: <code>*#06#</code>
+                                </p>
+                                <img src="static/img/Index_page_img/Rogor_vnaxot_imei_android.png" alt="Android IMEI" class="img-fluid instruction-images">
+                                
+                                <p class="mt-4">
+                                    <span class="step-number">2</span>
+                                    ან მენიუში: <br>Settings > About phone > Status
+                                </p>
+                                <img src="static/img/Index_page_img/Rogor_vnaxot_imei_android_menu.jpeg" alt="Android Menu" class="img-fluid instruction-images">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <p><strong>შენიშვნა:</strong> ზოგიერთ მოდელზე კომბინაცია <code>*#06#</code> არ მუშაობს. ამ შემთხვევაში გამოიყენეთ ალტერნატიული მეთოდები.</p>
+                        
+                        <div class="mt-4 mb-4">
+                            <i class="fas fa-arrow-down fa-2x text-accent"></i>
+                        </div>
+                        
+                        <p>მოძებნილი IMEI ჩასვით ქვემოთ მოცემულ ველში და დააჭირეთ ღილაკს "შემოწმება":</p>
+                    </div>
+                </div>
+                
+                <div class="form-group mt-4">
+                    <label class="form-label">შეიყვანეთ IMEI ან სერიული ნომერი:</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
+                        <input type="text" class="form-control" id="free-imei-input" 
+                               placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
+                    </div>
+                    <div class="error-message" id="free-imei-error"></div>
+                </div>
+                
+                <button class="btn-primary mt-3 w-100" id="free-check-btn">
+                    <i class="fas fa-shield-check me-2"></i>უფასო შემოწმება
+                </button>
+            </div>
+        </div>
+        
         <!-- About Section -->
-        <div id="about" class="card">
+        <div id="about" class="card mt-5">
             <div class="card-header">
                 <i class="fas fa-info-circle me-2"></i>
                 Kodi.ge-ს შესახებ
@@ -260,61 +367,6 @@
                     <li>გაიგოთ მოწყობილობის სტატუსი (ქულდებაში, მოპარული, უკანონო)</li>
                     <li>გაიგოთ ტელეფონის მოდელი და სერიული ნომერი</li>
                 </ul>
-            </div>
-        </div>
-        
-        <!-- Free IMEI Check Section -->
-        <div id="free-check-section" class="card mt-5">
-            <div class="card-header">
-                <i class="fas fa-shield-check me-2"></i>
-                <span>უფასო IMEI შემოწმება ორიგინალობაზე</span>
-            </div>
-            <div class="card-body">
-                <div class="authenticity-check">
-                    <i class="fas fa-mobile-alt authenticity-icon"></i>
-                    <h3 class="authenticity-label">შეამოწმეთ თქვენი ტელეფონის ორიგინალურობა</h3>
-                    <p class="text-muted">ჩვენი უფასო შემოწმება გაგცემთ ინფორმაციას თქვენი მოწყობილობის ორიგინალურობის შესახებ</p>
-                </div>
-                
-                <div class="check-features">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-search"></i>
-                        </div>
-                        <h5>ავთენტურობის შემოწმება</h5>
-                        <p>გაიგეთ არის თუ არა თქვენი მოწყობილობა ორიგინალური</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-info-circle"></i>
-                        </div>
-                        <h5>ძირითადი ინფორმაცია</h5>
-                        <p>მიიღეთ მწარმოებლის და მოდელის შესახებ ინფორმაცია</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-arrow-right"></i>
-                        </div>
-                        <h5>სრული შემოწმება</h5>
-                        <p>გადადით სრულ შემოწმებაზე დამატებითი დეტალებისთვის</p>
-                    </div>
-                </div>
-                
-                <div class="form-group mt-4">
-                    <label class="form-label">შეიყვანეთ IMEI ან სერიული ნომერი:</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
-                        <input type="text" class="form-control" id="free-imei-input" 
-                               placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
-                    </div>
-                    <div class="error-message" id="free-imei-error"></div>
-                </div>
-                
-                <button class="btn-primary mt-3 w-100" id="free-check-btn">
-                    <i class="fas fa-shield-check me-2"></i>უფასო შემოწმება
-                </button>
             </div>
         </div>
         
