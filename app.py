@@ -21,6 +21,7 @@ from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_session import Session
 from flask_caching import Cache
 from bs4 import BeautifulSoup
+from pymongo.errors import PyMongoError
 
 # Импорт модулей
 from auth import auth_bp
@@ -745,25 +746,37 @@ def get_check_result():
         logger.warning("Missing session_id in check result request")
         return jsonify({'error': 'სესიის ID არის მითითებული'}), 400
     
-    if not client:
-        logger.error("Database unavailable")
-        return jsonify({'error': 'Database unavailable'}), 500
+    try:
+        # Ищем как по session_id (баланс), так и по stripe_session_id (Stripe)
+        record = checks_collection.find_one({
+            '$or': [
+                {'session_id': session_id},
+                {'stripe_session_id': session_id}
+            ]
+        })
+        if not record:
+            logger.warning(f"Check result not found: {session_id}")
+            return jsonify({'error': 'შედეგი ვერ მოიძებნა'}), 404
+        
+        # Проверяем наличие результата
+        if 'result' not in record:
+            logger.info(f"Check result not ready for session: {session_id}")
+            return jsonify({
+                'status': 'pending',
+                'message': 'შემოწმება მიმდინარეობს, გთხოვთ მოიცადოთ'
+            }), 202
+        
+        return jsonify({
+            'imei': record['imei'],
+            'result': record['result']
+        })
     
-    # Ищем как по session_id (баланс), так и по stripe_session_id (Stripe)
-    record = checks_collection.find_one({
-        '$or': [
-            {'session_id': session_id},
-            {'stripe_session_id': session_id}
-        ]
-    })
-    if not record:
-        logger.warning(f"Check result not found: {session_id}")
-        return jsonify({'error': 'შედეგი ვერ მოიძებნა'}), 404
-    
-    return jsonify({
-        'imei': record['imei'],
-        'result': record['result']
-    })
+    except PyMongoError as e:
+        logger.error(f"Database error: {str(e)}")
+        return jsonify({'error': 'მონაცემთა ბაზა დროებით მიუწვდომელია'}), 503
+    except Exception as e:
+        logger.exception(f"Error retrieving check result: {str(e)}")
+        return jsonify({'error': 'შეცდომა მონაცემების მოძიებაში'}), 500
 
 @app.route('/perform_check', methods=['POST'])
 @csrf.exempt
@@ -944,6 +957,9 @@ def get_balance():
     except (TypeError, InvalidId) as e:
         logger.error(f"Invalid user ID: {user_id} - {str(e)}")
         return jsonify({'error': 'Invalid user ID'}), 400
+    except PyMongoError as e:
+        logger.error(f"MongoDB error: {str(e)}")
+        return jsonify({'error': 'Database unavailable'}), 503
     except Exception as e:
         logger.exception(f"Error getting balance: {str(e)}")
         return jsonify({'error': 'Server error'}), 500
@@ -1105,6 +1121,26 @@ def internal_server_error(e):
         code=500,
         message="სერვერზე შეცდომა მოხდა"
     ), 500
+
+# Глобальный обработчик ошибок
+@app.errorhandler(Exception)
+def handle_unexpected_error(e):
+    """Глобальный обработчик непредвиденных ошибок"""
+    logger.exception(f"Unexpected error: {str(e)}")
+    
+    # Определяем тип ошибки для пользователя
+    error_type = "internal"
+    if isinstance(e, KeyError):
+        error_type = "data_missing"
+    elif isinstance(e, PyMongoError):
+        error_type = "database"
+    
+    return jsonify({
+        'error': 'Internal server error',
+        'error_type': error_type,
+        'request_id': secrets.token_hex(8),
+        'message': 'Please try again later or contact support'
+    }), 500
 
 # ======================================
 # Health Check
