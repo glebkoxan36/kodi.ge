@@ -8,144 +8,26 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <style>
-        /* Блокировка прокрутки при открытых модальных окнах */
-        body.modal-open {
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-        }
-        
-        /* Затемнение фона для модальных окон */
-        .modal-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 2999;
-            display: none;
-        }
-        
-        /* Центрирование и анимации для модальных окон */
-        .result-modal, 
-        .payment-method-modal, 
-        .payment-status-modal {
-            transition: 
-                opacity 0.3s ease, 
-                transform 0.3s ease;
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        
+        /* Стили остаются без изменений */
+        body.modal-open { overflow: hidden; position: fixed; width: 100%; }
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 2999; display: none; }
+        .result-modal, .payment-method-modal, .payment-status-modal { transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: translateY(-20px); }
         .status-error { color: var(--danger-color); }
         .status-warning { color: var(--warning-color); }
         .status-success { color: var(--success-color); }
-        
-        .result-actions { 
-            display: flex; 
-            justify-content: center;
-            margin: 20px 0;
-        }
-        
+        .result-actions { display: flex; justify-content: center; margin: 20px 0; }
         .card-footer { padding: 20px; }
-        
-        /* Стили для ошибок */
-        .error-card {
-            background: var(--danger-bg);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            text-align: center;
-        }
-        .error-card h4 {
-            margin-bottom: 15px;
-            color: var(--danger-color);
-        }
-        .error-details {
-            background: rgba(255,255,255,0.1);
-            padding: 10px;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-size: 0.9em;
-        }
-        
-        /* Android ошибка */
-        .android-error {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: #f8d7da;
-            border-radius: 8px;
-            border-left: 4px solid #dc3545;
-        }
-        
-        .android-error i {
-            font-size: 2.5rem;
-            color: #3ddc84;
-        }
-        
-        .android-error div {
-            flex: 1;
-        }
-        
-        .android-error a {
-            color: #0d6efd;
-            text-decoration: underline;
-        }
-        
-        /* Предупреждение о Android */
-        .android-warning {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 15px;
-            background: #fff3cd;
-            border-radius: 8px;
-            border-left: 4px solid #ffc107;
-        }
-        
-        .android-warning i {
-            color: #ffc107;
-            font-size: 1.5rem;
-        }
-        
-        .android-warning a {
-            color: #0d6efd;
-            text-decoration: underline;
-        }
-        
-        /* Адаптивное модальное окно */
-        .result-modal .modal-content {
-            max-height: 90vh;
-            overflow-y: auto;
-            width: 95%;
-            max-width: 800px;
-        }
-        
-        /* Добавленные стили для статуса баланса */
-        .balance-sufficient { 
-            color: var(--success-color); 
-            font-weight: bold; 
-        }
-        .balance-insufficient { 
-            color: var(--danger-color); 
-            font-weight: bold; 
-        }
-        .balance-error { 
-            color: var(--warning-color); 
-            font-weight: bold; 
-        }
-        
-        @media (max-width: 768px) {
-            .result-modal .modal-content {
-                width: 100%;
-                margin: 10px;
-            }
-        }
+        .error-card { background: var(--danger-bg); border-radius: 12px; padding: 20px; margin-top: 20px; text-align: center; }
+        .error-card h4 { margin-bottom: 15px; color: var(--danger-color); }
+        .error-details { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin: 10px 0; font-size: 0.9em; }
+        .android-error { display: flex; align-items: center; gap: 15px; padding: 15px; background: #f8d7da; border-radius: 8px; border-left: 4px solid #dc3545; }
+        .android-error i { font-size: 2.5rem; color: #3ddc84; }
+        .android-warning { display: flex; align-items: center; gap: 15px; max-width: 800px; margin: 20px auto; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107; }
+        .result-modal .modal-content { max-height: 90vh; overflow-y: auto; width: 95%; max-width: 800px; }
+        .balance-sufficient { color: var(--success-color); font-weight: bold; }
+        .balance-insufficient { color: var(--danger-color); font-weight: bold; }
+        .balance-error { color: var(--warning-color); font-weight: bold; }
+        @media (max-width: 768px) { .result-modal .modal-content { width: 100%; margin: 10px; } }
     </style>
 </head>
 <body>
@@ -153,8 +35,7 @@
     <div class="gradient-bg gradient-2"></div>
     <div class="modal-backdrop" id="modal-backdrop"></div>
     
-        <!-- Bottom mobile menu button -->
-        <div class="mobile-menu-bottom" id="mobileMenuBottom">
+    <div class="mobile-menu-bottom" id="mobileMenuBottom">
         <button class="mobile-menu-btn" id="mobileMenuBtn">
             <i class="fas fa-bars"></i>
         </button>
@@ -190,7 +71,7 @@
         </div>
         
         <div id="services-container" class="services-grid">
-            <!-- JavaScript will generate service cards -->
+            <!-- JavaScript сгенерирует карточки сервисов -->
         </div>
         
         <div id="selected-service-container" class="selected-service-container">
@@ -309,26 +190,20 @@
             admin_username: "{{ currentUser.admin_username }}"
         }{% else %}undefined{% endif %};
     </script>
-        <div id="mobile-menu-container"></div>
+    <div id="mobile-menu-container"></div>
     <script src="https://js.stripe.com/v3/"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="static/js/mobilemenu.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="static/js/mobilemenu.js"></script>
     <script>
-        // Функция для получения CSRF-токена
         function getCSRFToken() {
             return document.querySelector('meta[name="csrf-token"]').content;
         }
         
-        // ინიციალიზაცია Stripe-ის გამოყენებით საჯარო გასაღების
         const stripe = Stripe('{{ stripe_public_key }}');
-        
-        // ვიყენებთ სერვერიდან მიღებულ მონაცემებს სტატიკური დეკლარაციის ნაცვლად
         const services = {{ services_data | tojson | safe }};
-        
         let currentImei = '';
         let currentServiceType = '';
         
-        // Функции управления модальными окнами
         function openModal(modalId) {
             const modal = document.getElementById(modalId);
             const backdrop = document.getElementById('modal-backdrop');
@@ -359,23 +234,19 @@
         
         document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('services-container');
+            if (!container) return;
             
-            // ვამოწმებთ კონტეინერის არსებობას
-            if (!container) {
-                console.error('სერვისების კონტეინერი ვერ მოიძებნა');
-                return;
-            }
+            container.innerHTML = '';
             
-            container.innerHTML = ''; // ვასუფთავებთ კონტეინერს
+            // Фильтруем бесплатные сервисы
+            const paidServices = services.filter(service => service.price !== 'უფასო');
             
-            // თუ სერვისები არ არის, ვაჩვენებთ შეტყობინებას
-            if (!services || services.length === 0) {
+            if (!paidServices || paidServices.length === 0) {
                 container.innerHTML = '<p>სერვისები დროებით მიუწვდომელია</p>';
                 return;
             }
             
-            // ვქმნით სერვისების ბარათებს
-            services.forEach(service => {
+            paidServices.forEach(service => {
                 const card = document.createElement('div');
                 card.className = 'service-card';
                 card.setAttribute('data-service', service.id);
@@ -398,12 +269,10 @@
             const imeiParam = urlParams.get('imei');
             const sessionParam = urlParams.get('session_id');
             
-            // URL-დან სერვისის ავტომატური არჩევა
-            if (serviceParam && services.some(s => s.id === serviceParam)) {
+            if (serviceParam && paidServices.some(s => s.id === serviceParam)) {
                 selectService(serviceParam);
             }
             
-            // თუ IMEI და სესია არსებობს, ვაჩვენებთ შედეგს
             if (imeiParam && sessionParam) {
                 currentImei = imeiParam;
                 currentServiceType = serviceParam;
@@ -441,7 +310,6 @@
                 closeModal('result-modal');
             });
             
-            // Глобальный обработчик клика по подложке
             document.getElementById('modal-backdrop').addEventListener('click', function() {
                 closeModal('result-modal');
                 closeModal('payment-method-modal');
@@ -449,7 +317,6 @@
                 closeModal('payment-error-modal');
             });
             
-            // გადახდის მოდალის დამმუშავებლები
             document.getElementById('balance-option').addEventListener('click', () => {
                 processPayment(true);
             });
@@ -462,7 +329,6 @@
                 closeModal('payment-method-modal');
             });
             
-            // Payment status modal handlers
             document.getElementById('retry-payment').addEventListener('click', () => {
                 closeModal('payment-error-modal');
                 processPayment(false);
@@ -482,28 +348,20 @@
             document.getElementById('selected-service-description').textContent = service.description;
             document.getElementById('selected-service-container').style.display = 'block';
             
-            // Задержка для корректного фокуса
             setTimeout(() => {
                 document.getElementById('imei-input').focus();
             }, 100);
         }
         
-        // Функция проверки IMEI по алгоритму Луна
         function validateImei(imei) {
-            // Разрешаем только цифры и буквы
             if (!/^[\dA-Za-z]+$/.test(imei)) return false;
-            
-            // Проверяем длину (14 для серийных номеров, 15 для IMEI)
             if (imei.length !== 14 && imei.length !== 15) return false;
-            
-            // Для 14-значных серийных номеров пропускаем проверку
             if (imei.length === 14) return true;
             
-            // Алгоритм Луна для 15-значных IMEI
             let sum = 0;
             for (let i = 0; i < 14; i++) {
                 let digit = parseInt(imei[i]);
-                if (i % 2 === 1) { // Четные позиции (по индексу, начиная с 0)
+                if (i % 2 === 1) {
                     digit *= 2;
                     if (digit > 9) digit -= 9;
                 }
@@ -524,7 +382,6 @@
                 return;
             }
             
-            // Валидация IMEI
             if (!validateImei(imei)) {
                 errorElement.textContent = 'შეიყვანეთ სწორი IMEI ნომერი (14 ან 15 ციფრი)';
                 errorElement.style.display = 'block';
@@ -545,7 +402,6 @@
             currentServiceType = serviceType;
             checkBtn.disabled = true;
             
-            // Для авторизованных пользователей показываем выбор оплаты
             if (window.currentUser) {
                 fetchUserBalance().then(balance => {
                     const service = services.find(s => s.id === serviceType);
@@ -570,7 +426,6 @@
                     checkBtn.disabled = false;
                 });
             } else {
-                // Для неавторизованных сразу создаем сессию Stripe
                 processPayment(false);
             }
         }
@@ -642,8 +497,8 @@
         
         function fetchResultForSession(sessionId, attempt = 1) {
             const maxAttempts = 10;
-            const delay = 2000; // 2 seconds between attempts
-            const timeoutDuration = 10000; // 10 seconds timeout
+            const delay = 2000;
+            const timeoutDuration = 10000;
             
             if (attempt > maxAttempts) {
                 document.getElementById('spinner').style.display = 'none';
@@ -657,14 +512,12 @@
             
             document.getElementById('spinner').style.display = 'flex';
             
-            // Создаем промис для таймаута
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => {
                     reject(new Error('Request timeout'));
                 }, timeoutDuration);
             });
             
-            // Основной промис запроса
             const fetchPromise = fetch('/get_check_result?session_id=' + sessionId)
                 .then(response => {
                     if (!response.ok) {
@@ -673,7 +526,6 @@
                     return response.json();
                 });
             
-            // Используем Promise.race для обработки таймаута
             Promise.race([fetchPromise, timeoutPromise])
                 .then(data => {
                     document.getElementById('spinner').style.display = 'none';
@@ -690,7 +542,6 @@
                 })
                 .catch(error => {
                     if (error.message === 'Request timeout' || error.message.includes('ქსელის')) {
-                        // Повторяем запрос через задержку
                         setTimeout(() => {
                             fetchResultForSession(sessionId, attempt + 1);
                         }, delay);
@@ -708,7 +559,19 @@
         function displayResults(imei, serviceType, data) {
             const resultContent = document.getElementById('result-content');
             
-            // Проверка типа устройства - разрешаем только Apple
+            // Если есть ошибка - показываем ее
+            if (data.error) {
+                resultContent.innerHTML = `
+                    <div class="error-card">
+                        <h3 class="status-error">შეცდომა</h3>
+                        <p>${data.error}</p>
+                    </div>
+                `;
+                openModal('result-modal');
+                return;
+            }
+            
+            // Проверка типа устройства
             const deviceType = (data.device_type || '').toLowerCase();
             if (deviceType === 'android' || deviceType === 'unknown') {
                 resultContent.innerHTML = `
@@ -725,7 +588,7 @@
                 return;
             }
             
-            // Если устройство Apple - показываем результаты
+            // Форматирование результатов из JSON
             let resultsHTML = `
                 <div class="text-center mb-4">
                     <i class="fas fa-check-circle text-success" style="font-size: 4rem; color: var(--success-color);"></i>
@@ -733,210 +596,70 @@
                     <p>IMEI: <strong>${imei}</strong></p>
                     <p>შემოწმების ტიპი: <strong>${services.find(s => s.id === serviceType).title}</strong></p>
                 </div>
+                <div class="free-check-results">
+                    <div class="result-card">
+                        <h3 class="card-title">სრული შედეგები</h3>
+                        <div class="card-body">
             `;
             
-            // Показать предупреждение, если данные были перепарсены
-            if (data.original_html) {
-                resultsHTML += `
-                    <div class="warning-banner">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        ზოგიერთი მონაცემი შეიძლება არ იყოს ამოღებული
-                    </div>`;
-            }
-
-            // Отобразить необработанные данные сервера
-            if (data.server_response) {
-                resultsHTML += `
-                    <div class="raw-results">
-                        <h4>სერვერის სრული პასუხი:</h4>
-                        <pre>${data.server_response}</pre>
-                    </div>`;
-            } 
-            // Отобразить таблицу результатов
-            else if (data && Object.keys(data).length > 0) {
-                // Определяем ключевые параметры для отображения
-                const keyFields = {
-                    'brand': 'მწარმოებელი',
-                    'modelName': 'მოდელის სახელი',
-                    'model': 'მოდელი',
-                    'manufacture': 'წარმოების თარიღი',
-                    'state': 'მდგომარეობა',
-                    'activation_status': 'აქტივაციის სტატუსი',
-                    'fmi_status': 'FMI სტატუსი',
-                    'sim_lock': 'SIM ლოკი',
-                    'blacklist_status': 'შავი სია',
-                    'carrier': 'ოპერატორი',
-                    'warranty_status': 'გარანტია'
-                };
+            // Основные поля для отображения
+            const keyFields = {
+                'brand': 'მწარმოებელი',
+                'model': 'მოდელი',
+                'status': 'სტატუსი',
+                'fmi_status': 'FMI სტატუსი',
+                'blacklist_status': 'შავი სია',
+                'sim_lock': 'SIM ლოკი',
+                'activation_status': 'აქტივაციის სტატუსი',
+                'carrier': 'ოპერატორი',
+                'mdm_status': 'MDM სტატუსი',
+                'warranty_status': 'გარანტია'
+            };
+            
+            // Фильтруем существующие поля
+            const existingFields = Object.keys(keyFields).filter(field => data[field]);
+            
+            // Форматируем основные параметры
+            existingFields.forEach(field => {
+                const value = data[field];
+                let statusClass = '';
+                const valStr = String(value).toLowerCase();
                 
-                // Фильтруем только существующие поля
-                const existingFields = Object.keys(keyFields).filter(field => data[field]);
-                
-                // Форматируем основные параметры
-                resultsHTML += `
-                    <div class="free-check-results">
-                        <div class="result-card">
-                            <h3 class="card-title">სრული შედეგები</h3>
-                            <div class="card-body">
-                `;
-                
-                // Добавляем отформатированные строки
-                existingFields.forEach(field => {
-                    const value = data[field];
-                    let statusClass = '';
-                    const valStr = String(value).toLowerCase();
-                    
-                    if (valStr.includes('unlocked') || 
-                        valStr.includes('clean') || 
-                        valStr.includes('off') ||
-                        valStr.includes('active') ||
-                        valStr.includes('valid')) {
-                        statusClass = 'status-success';
-                    } else if (valStr.includes('locked') || 
-                               valStr.includes('blacklist') || 
-                               valStr.includes('on') ||
-                               valStr.includes('inactive') ||
-                               valStr.includes('expired')) {
-                        statusClass = 'status-warning';
-                    } else if (valStr.includes('error') || 
-                               valStr.includes('fail') || 
-                               valStr.includes('invalid')) {
-                        statusClass = 'status-error';
-                    }
-                    
-                    resultsHTML += `
-                        <div class="result-row">
-                            <span class="result-label">${keyFields[field]}:</span>
-                            <span class="result-value ${statusClass}">${value}</span>
-                        </div>
-                    `;
-                });
-                
-                resultsHTML += `
-                            </div>
-                        </div>
-                `;
-                
-                // Добавляем кнопку для просмотра всех параметров
-                resultsHTML += `
-                    <div class="more-results">
-                        <button class="btn-toggle-details" onclick="toggleDetails(this)">
-                            <i class="fas fa-chevron-down"></i> ყველა მონაცემის ნახვა
-                        </button>
-                        <div class="full-details" style="display:none;">
-                            <h4>ყველა მონაცემი</h4>
-                            <table class="history-table">
-                                <tr>
-                                    <th>პარამეტრი</th>
-                                    <th>მნიშვნელობა</th>
-                                </tr>
-                `;
-                
-                // Добавляем все параметры в таблицу
-                for (const [key, value] of Object.entries(data)) {
-                    if (key === 'error' || 
-                        key === 'html' || 
-                        key === 'details' || 
-                        key === 'original_html' || 
-                        key === 'device_type' ||
-                        key === 'object' ||
-                        key === 'response') continue;
-                    
-                    let statusClass = '';
-                    const valStr = String(value).toLowerCase();
-                    
-                    if (valStr.includes('unlocked') || 
-                        valStr.includes('clean') || 
-                        valStr.includes('off') ||
-                        valStr.includes('active') ||
-                        valStr.includes('valid')) {
-                        statusClass = 'status-success';
-                    } else if (valStr.includes('locked') || 
-                               valStr.includes('blacklist') || 
-                               valStr.includes('on') ||
-                               valStr.includes('inactive') ||
-                               valStr.includes('expired')) {
-                        statusClass = 'status-warning';
-                    } else if (valStr.includes('error') || 
-                               valStr.includes('fail') || 
-                               valStr.includes('invalid')) {
-                        statusClass = 'status-error';
-                    }
-                    
-                    // Пропускаем уже отображенные поля
-                    if (existingFields.includes(key)) continue;
-                    
-                    resultsHTML += `
-                        <tr>
-                            <td>${key}</td>
-                            <td class="${statusClass}">${value}</td>
-                        </tr>
-                    `;
+                if (valStr.includes('unlocked') || 
+                    valStr.includes('clean') || 
+                    valStr.includes('off') ||
+                    valStr.includes('active') ||
+                    valStr.includes('valid')) {
+                    statusClass = 'status-success';
+                } else if (valStr.includes('locked') || 
+                           valStr.includes('blacklist') || 
+                           valStr.includes('on') ||
+                           valStr.includes('inactive') ||
+                           valStr.includes('expired')) {
+                    statusClass = 'status-warning';
+                } else if (valStr.includes('error') || 
+                           valStr.includes('fail') || 
+                           valStr.includes('invalid')) {
+                    statusClass = 'status-error';
                 }
                 
                 resultsHTML += `
-                            </table>
+                    <div class="result-row">
+                        <span class="result-label">${keyFields[field]}:</span>
+                        <span class="result-value ${statusClass}">${value}</span>
+                    </div>
+                `;
+            });
+            
+            resultsHTML += `
                         </div>
                     </div>
                 </div>
-                `;
-            } else {
-                resultsHTML += `
-                    <div class="error-card">
-                        <h4>მონაცემების დამუშავება ვერ მოხერხდა</h4>
-                        <p>გთხოვთ სცადოთ მოგვიანებით ან დაგვიკავშირდეთ მხარდაჭერაზე</p>
-                    </div>`;
-            }
-            
-            // Добавляем кнопку ручного парсинга, если есть оригинальный HTML
-            if (data.original_html) {
-                resultsHTML += `
-                    <div class="reparse-section text-center" style="margin-top:20px;">
-                        <button class="btn-primary" onclick="retryParse('${imei}')">
-                            <i class="fas fa-sync-alt"></i> ხელით დამუშავება
-                        </button>
-                    </div>
-                `;
-            }
+            `;
             
             resultContent.innerHTML = resultsHTML;
             openModal('result-modal');
         }
-        
-        // Функция повторного парсинга
-        function retryParse(imei) {
-            document.getElementById('spinner').style.display = 'flex';
-            document.getElementById('check-btn').disabled = true;
-            
-            fetch(`/reparse_imei?imei=${imei}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('spinner').style.display = 'none';
-                    document.getElementById('check-btn').disabled = false;
-                    displayResults(imei, currentServiceType, data);
-                })
-                .catch(error => {
-                    document.getElementById('spinner').style.display = 'none';
-                    document.getElementById('check-btn').disabled = false;
-                    const errorElement = document.getElementById('imei-error');
-                    errorElement.textContent = 'ხელახლა დამუშავების შეცდომა';
-                    errorElement.style.display = 'block';
-                });
-        }
-        
-        // Функция для показа/скрытия дополнительных деталей
-        function toggleDetails(button) {
-            const detailsContainer = button.parentElement.querySelector('.full-details');
-            const icon = button.querySelector('i');
-            
-            if (detailsContainer.style.display === 'none') {
-                detailsContainer.style.display = 'block';
-                button.innerHTML = '<i class="fas fa-chevron-up"></i> დეტალების დამალვა';
-            } else {
-                detailsContainer.style.display = 'none';
-                button.innerHTML = '<i class="fas fa-chevron-down"></i> ყველა მონაცემის ნახვა';
-            }
-        }
     </script>
 </body>
-    </html>
+</html>
