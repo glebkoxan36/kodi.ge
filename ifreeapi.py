@@ -118,7 +118,4 @@ def perform_api_check(imei: str, service_type: str) -> dict:
     except Exception as e:
         logger.error(f"API processing error: {str(e)}")
         return {'error': ERROR_MESSAGES['api_error']}
-        def perform_api_check(imei: str, service_type: str) -> dict:
-
-        response = requests.post(API_URL, data=payload, timeout=30)
-        logger.info(f"API response: {response.status_code}, {response.text[:200]}"
+        
