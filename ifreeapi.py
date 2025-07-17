@@ -47,10 +47,18 @@ def validate_imei(imei: str) -> bool:
 def perform_api_check(imei: str, service_type: str) -> dict:
     """Perform API check and return parsed results"""
     if not validate_imei(imei):
-        return {'error': ERROR_MESSAGES['invalid_imei']}
+        return {
+            'success': False,
+            'error': ERROR_MESSAGES['invalid_imei'],
+            'error_type': 'invalid_input'
+        }
     
     if service_type not in SERVICE_CODES:
-        return {'error': ERROR_MESSAGES['invalid_service']}
+        return {
+            'success': False,
+            'error': ERROR_MESSAGES['invalid_service'],
+            'error_type': 'invalid_service'
+        }
     
     try:
         payload = {
@@ -60,25 +68,45 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         }
         
         response = requests.post(API_URL, data=payload, timeout=30)
+        http_code = response.status_code
         
-        if response.status_code != 200:
+        # Обработка HTTP ошибок
+        if http_code != 200:
+            error_msg = f"HTTP Error: {http_code}"
+            if http_code >= 500:
+                error_type = 'server_error'
+            elif http_code == 401:
+                error_type = 'authentication_error'
+            else:
+                error_type = 'http_error'
+            
             return {
-                'error': ERROR_MESSAGES['server_error'],
-                'http_code': response.status_code
+                'success': False,
+                'error': f"{ERROR_MESSAGES['server_error']} - {error_msg}",
+                'http_code': http_code,
+                'error_type': error_type
             }
         
         data = response.json()
         
         if not data.get('success', False):
             error = data.get('error', 'Unknown error')
+            error_type = 'api_error'
             
             # Handle specific errors
             if 'insufficient' in error.lower():
-                return {'error': ERROR_MESSAGES['insufficient_funds']}
+                error_type = 'insufficient_funds'
+                error = ERROR_MESSAGES['insufficient_funds']
             elif 'not found' in error.lower():
-                return {'error': ERROR_MESSAGES['device_not_found']}
+                error_type = 'device_not_found'
+                error = ERROR_MESSAGES['device_not_found']
             
-            return {'error': f"{ERROR_MESSAGES['api_error']}: {error}"}
+            return {
+                'success': False,
+                'error': f"{ERROR_MESSAGES['api_error']}: {error}",
+                'api_error': error,
+                'error_type': error_type
+            }
         
         # Extract device information
         device_info = data.get('object', {})
@@ -113,9 +141,14 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         return result
         
     except requests.exceptions.RequestException as e:
-        logger.error(f"Network error: {str(e)}")
-        return {'error': ERROR_MESSAGES['network_error']}
+        return {
+            'success': False,
+            'error': f"{ERROR_MESSAGES['network_error']}: {str(e)}",
+            'error_type': 'network_error'
+        }
     except Exception as e:
-        logger.error(f"API processing error: {str(e)}")
-        return {'error': ERROR_MESSAGES['api_error']}
-        
+        return {
+            'success': False,
+            'error': f"{ERROR_MESSAGES['api_error']}: {str(e)}",
+            'error_type': 'processing_error'
+        }
