@@ -38,7 +38,8 @@ ERROR_MESSAGES = {
     'insufficient_funds': 'არასაკმარისი თანხა ანგარიშზე',
     'device_not_found': 'მოწყობილობა ვერ მოიძებნა'
 }
-
+def perform_api_check(imei: str, service_type: str) -> dict:
+    
 def validate_imei(imei: str) -> bool:
     """Validate IMEI format (14-15 digits)"""
     clean_imei = re.sub(r'\D', '', imei)
@@ -118,3 +119,6 @@ def perform_api_check(imei: str, service_type: str) -> dict:
     except Exception as e:
         logger.error(f"API processing error: {str(e)}")
         return {'error': ERROR_MESSAGES['api_error']}
+        
+        response = requests.post(API_URL, data=payload, timeout=30)
+        logger.info(f"API response: {response.status_code}, {response.text[:200]}"
