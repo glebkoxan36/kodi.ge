@@ -563,14 +563,13 @@ def perform_background_check(imei, service_type, session_id):
         logger.info(f"Background check started for session: {session_id}")
         result = perform_api_check(imei, service_type)
         
-        # Обновляем запись в базе
+        # Всегда сохраняем полный результат
         update_data = {
             'result': result,
-            'status': 'completed',
+            'status': 'completed' if result.get('success') else 'failed',
             'completed_at': datetime.utcnow()
         }
         
-        # Используем глобальную checks_collection
         if checks_collection is not None:
             checks_collection.update_one(
                 {'session_id': session_id},
@@ -579,8 +578,23 @@ def perform_background_check(imei, service_type, session_id):
             logger.info(f"Background check completed for session: {session_id}")
         else:
             logger.error("Checks collection is not available")
+            
     except Exception as e:
         logger.exception(f"Background check failed: {str(e)}")
+        # Сохраняем ошибку в базу
+        error_result = {
+            'success': False,
+            'error': f"Background processing error: {str(e)}",
+            'error_type': 'internal_error'
+        }
+        checks_collection.update_one(
+            {'session_id': session_id},
+            {'$set': {
+                'result': error_result,
+                'status': 'failed',
+                'completed_at': datetime.utcnow()
+            }}
+        )
 
 @app.route('/create-checkout-session', methods=['POST'])
 @csrf.exempt
@@ -776,25 +790,33 @@ def get_check_result():
             logger.warning(f"Check result not found: {session_id}")
             return jsonify({'error': 'შედეგი ვერ მოიძებნა'}), 404
         
-        # Проверяем наличие результата
-        if 'result' not in record:
-            logger.info(f"Check result not ready for session: {session_id}")
-            return jsonify({
-                'status': 'pending',
-                'message': 'შემოწმება მიმდინარეობს, გთხოვთ მოიცადოთ'
-            }), 202
+        # Возвращаем все данные проверки
+        response_data = {
+            'imei': record.get('imei'),
+            'service_type': record.get('service_type'),
+            'status': record.get('status', 'pending'),
+            'timestamp': record.get('timestamp'),
+            'completed_at': record.get('completed_at')
+        }
         
-        return jsonify({
-            'imei': record['imei'],
-            'result': record['result']
-        })
+        # Добавляем результат если есть
+        if 'result' in record:
+            response_data['result'] = record['result']
+        
+        return jsonify(response_data)
     
     except PyMongoError as e:
         logger.error(f"Database error: {str(e)}")
-        return jsonify({'error': 'მონაცემთა ბაზა დროებით მიუწვდომელია'}), 503
+        return jsonify({
+            'error': 'მონაცემთა ბაზა დროებით მიუწვდომელია',
+            'details': str(e)
+        }), 503
     except Exception as e:
         logger.exception(f"Error retrieving check result: {str(e)}")
-        return jsonify({'error': 'შეცდომა მონაცემების მოძიებაში'}), 500
+        return jsonify({
+            'error': 'შეცდომა მონაცემების მოძიებაში',
+            'details': str(e)
+        }), 500
 
 @app.route('/perform_check', methods=['POST'])
 @csrf.exempt
