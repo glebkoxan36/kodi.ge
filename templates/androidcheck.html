@@ -71,6 +71,13 @@
             text-align: center; 
             border-left: 4px solid #dc3545;
         }
+        .server-error-card {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
         .android-error { 
             display: flex; 
             align-items: center; 
@@ -574,7 +581,7 @@
             );
             
             if (!service) {
-                errorElement.textContent = 'Invalid service selected';
+                errorElement.textContent = 'არასწორი სერვისია არჩეული';
                 errorElement.style.display = 'block';
                 return;
             }
@@ -622,7 +629,7 @@
         function fetchUserBalance() {
             return fetch('/user/get_balance')
                 .then(response => {
-                    if (!response.ok) throw new Error('Failed to fetch balance');
+                    if (!response.ok) throw new Error('ბალანსის მიღება ვერ მოხერხდა');
                     return response.json();
                 })
                 .then(data => data.balance)
@@ -649,7 +656,7 @@
             .then(response => {
                 return response.json().then(data => {
                     if (!response.ok) {
-                        throw Object.assign(new Error('Payment failed'), { details: data });
+                        throw Object.assign(new Error('გადახდა ვერ მოხერხდა'), { details: data });
                     }
                     return data;
                 });
@@ -669,7 +676,7 @@
                         .then(result => {
                             if (result.error) {
                                 document.getElementById('payment-error-message').textContent = 
-                                    `Stripe error: ${result.error.message}`;
+                                    `Stripe შეცდომა: ${result.error.message}`;
                                 openModal('payment-error-modal');
                             }
                         });
@@ -678,16 +685,22 @@
             .catch(error => {
                 document.getElementById('spinner').style.display = 'none';
                 
-                let errorMessage = error.message || 'Unknown payment error';
+                let errorMessage = 'გადახდის დროს მოხდა შეცდომა';
                 
-                if (error.details && error.details.error) {
-                    errorMessage = error.details.error;
-                    if (error.details.details) {
-                        errorMessage += ` (${error.details.details})`;
-                    }
+                // Специальная обработка internal error
+                if (error.details && error.details.error_type === 'internal') {
+                    errorMessage = `
+                        <div class="server-error-card">
+                            <p><strong>${error.details.error || 'სერვერზე შეცდომა'}</strong></p>
+                            <p>${error.details.message || 'გთხოვთ სცადოთ მოგვიანებით ან დაგვიკავშირდეთ'}</p>
+                            ${error.details.request_id ? `<p>მოთხოვნის ID: ${error.details.request_id}</p>` : ''}
+                        </div>
+                    `;
+                } else if (error.details) {
+                    errorMessage = error.details.error || error.details.message || 'უცნობი შეცდომა';
                 }
                 
-                document.getElementById('payment-error-message').textContent = errorMessage;
+                document.getElementById('payment-error-message').innerHTML = errorMessage;
                 openModal('payment-error-modal');
                 console.error('Payment error:', error);
             });
@@ -709,7 +722,7 @@
                 })
             })
             .then(response => {
-                if (!response.ok) throw new Error('Network error');
+                if (!response.ok) throw new Error('ქსელის შეცდომა');
                 return response.json();
             })
             .then(data => {
@@ -742,7 +755,7 @@
             
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => {
-                    reject(new Error('Request timeout'));
+                    reject(new Error('მოთხოვნის დრო ამოიწურა'));
                 }, timeoutDuration);
             });
             
@@ -779,7 +792,7 @@
                     document.getElementById('spinner').style.display = 'none';
                     closeModal('payment-success-modal');
                     
-                    if (error.message === 'Request timeout') {
+                    if (error.message === 'მოთხოვნის დრო ამოიწურა') {
                         if (attempt < maxAttempts) {
                             setTimeout(() => {
                                 fetchResultForSession(sessionId, attempt + 1);
@@ -809,6 +822,23 @@
         
         function displayResults(imei, serviceType, data) {
             const resultContent = document.getElementById('result-content');
+            
+            // Handle server errors
+            if (data.error_type === 'internal') {
+                resultContent.innerHTML = `
+                    <div class="server-error-card">
+                        <h3 class="status-error">სერვერზე შეცდომა</h3>
+                        <p>${data.error || 'Internal server error'}</p>
+                        <p>${data.message || 'გთხოვთ სცადოთ მოგვიანებით ან დაგვიკავშირდეთ'}</p>
+                        ${data.request_id ? `<p>მოთხოვნის ID: ${data.request_id}</p>` : ''}
+                        <div class="result-actions">
+                            <button class="btn-primary" onclick="window.location.reload()">სცადეთ ხელახლა</button>
+                        </div>
+                    </div>
+                `;
+                openModal('result-modal');
+                return;
+            }
             
             // Handle API errors
             if (data.error) {
@@ -856,7 +886,7 @@
                     </div>
                     <div class="raw-results">
                         <h4>სერვერის პასუხი:</h4>
-                        <pre>${data.server_response || 'No data available'}</pre>
+                        <pre>${data.server_response || 'მონაცემები ხელმისაწვდომი არაა'}</pre>
                     </div>`;
             } 
             else if (data && Object.keys(data).length > 0) {
