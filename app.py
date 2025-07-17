@@ -709,7 +709,12 @@ def create_checkout_session():
     
     except Exception as e:
         logger.exception(f"Error creating checkout session: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        # Возвращаем детализированную ошибку
+        return jsonify({
+            'error': 'გადახდის შეცდომა',
+            'details': str(e),
+            'error_type': 'server_error'
+        }), 500
 
 @app.route('/success')
 def payment_success():
