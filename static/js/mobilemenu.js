@@ -1,9 +1,31 @@
 (function() {
-    // Preload background image
-    const bgImage = new Image();
-    bgImage.src = 'static/ConnectingNetworks-ezgif.com-optiwebp.webp';
+    // Проверка и добавление FontAwesome
+    if (!document.querySelector('link[href*="font-awesome"]')) {
+        const fontAwesomeLink = document.createElement('link');
+        fontAwesomeLink.rel = 'stylesheet';
+        fontAwesomeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css';
+        document.head.appendChild(fontAwesomeLink);
+    }
 
-    // Кеширование DOM элементов
+    // Предзагрузка и кеширование всех иконок
+    const iconUrls = [
+        'static/ico/8f1197c9-19f4-4923-8030-4f7b88c9d697_20250627_012614_0000.png',
+        'static/ico/f9a07c0e-e427-4a1a-aab9-948ba60f1b6a_20250627_012716_0000.png',
+        'static/ico/957afe67-7a27-48cb-9622-6c557b220b71_20250627_012808_0000.png',
+        'static/ico/4e28c4f2-541b-4a1b-8163-c79e6db5481c_20250627_012852_0000.png',
+        'static/ico/275e6a62-c55e-48b9-8781-5b323ebcdce0_20250627_012946_0000.png',
+        'static/ico/84df4824-0564-447c-b5c4-e749442bdc19_20250627_013110_0000.png',
+        'static/ico/874fae5b-c0f5-42d8-9c37-679aa86360e6_20250627_013030_0000.png'
+    ];
+
+    const iconCache = {};
+    iconUrls.forEach(url => {
+        const img = new Image();
+        img.src = url;
+        iconCache[url] = img;
+    });
+
+    // Оптимизация: кеширование DOM элементов
     let cachedElements = {};
     
     function getElement(id) {
@@ -13,24 +35,17 @@
         return cachedElements[id];
     }
 
-    // Добавляем стили с изменениями
+    // Оптимизация: упрощенные стили
     const style = document.createElement('style');
     style.id = 'kodi-mobile-menu-styles';
     style.textContent = `
-        /* Pulsing neon border animation */
+        /* Упрощенная анимация */
         @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0px rgba(255, 255, 255, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 3px rgba(255, 255, 255, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0px rgba(255, 255, 255, 0);
-            }
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.3); }
+            50% { box-shadow: 0 0 0 3px rgba(255,255,255,0); }
         }
         
-        /* Button scroll behavior */
+        /* Оптимизированные стили */
         .kodi-menu-bottom {
             position: fixed;
             bottom: 0;
@@ -40,26 +55,21 @@
             z-index: 1050;
             padding-bottom: env(safe-area-inset-bottom, 5px);
             transform: translateY(0);
-            transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+            transition: transform 0.4s ease;
         }
         
         .kodi-menu-bottom.hidden {
             transform: translateY(100px);
         }
         
-        /* Dashboard background fix */
-        .kodi-dashboard-grid .kodi-menu-item {
-            background: linear-gradient(135deg, #1a2138dd, #0e1321dd);
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
-        }
-        
-        /* Pulsing border for menu items */
         .kodi-menu-item {
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            background: linear-gradient(135deg, #1a2138dd, #0e1321dd);
+            border: 1px solid rgba(255,255,255,0.3) !important;
             animation: pulse 2s infinite;
+            will-change: transform, box-shadow;
         }
         
-        /* Existing styles remain unchanged */
+        /* Остальные стили остаются без изменений */
         .html, body {
           margin: 0;
           padding: 0;
@@ -97,9 +107,8 @@
             height: 70vh;
             max-height: none;
             z-index: 1100;
-            align-items: flex-end;
             transform: translateY(100%);
-            transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+            transition: transform 0.4s ease;
             opacity: 1;
             overflow: visible;
             padding-top: 0;
@@ -107,6 +116,7 @@
             box-sizing: border-box;
             border: 2px solid #00c6ff;
             box-shadow: 0 0 20px rgba(0, 198, 255, 0.7);
+            background: linear-gradient(135deg, #1a2138, #0e1321);
         }
         
         .kodi-menu-modal.open {
@@ -114,19 +124,7 @@
             display: flex;
         }
         
-        .kodi-bg-image {
-            background: url('static/ConnectingNetworks-ezgif.com-optiwebp.webp') no-repeat center center;
-            background-size: cover;
-            border-radius: 30px 30px 0 0;
-            position: relative;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            padding-bottom: env(safe-area-inset-bottom, 0);
-            box-sizing: border-box;
-        }
-        
-        .kodi-menu-modal .kodi-modal-body {
+        .kodi-modal-body {
             flex: 1;
             overflow: hidden;
             padding-bottom: 0;
@@ -331,7 +329,6 @@
             align-items: center;
             justify-content: center;
             border-radius: 15px;
-            background: linear-gradient(135deg, #1a2138cc, #0e1321cc);
             backdrop-filter: none;
             aspect-ratio: 1 / 1;
             text-align: center;
@@ -369,6 +366,7 @@
             background-color: transparent !important;
         }
         
+        /* Оптимизированные медиа-запросы */
         @media (max-width: 768px) {
             .kodi-menu-grid {
                 gap: 10px;
@@ -599,35 +597,31 @@
     function createDashboardMenu(container, userHTML) {
         container.innerHTML = `
             <div class="kodi-menu-modal" id="kodiMainMenu">
-                <div class="kodi-bg-image">
-                    <div class="modal-header">
-                        <button class="kodi-close-modal" onclick="kodiCloseMenu()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="kodi-modal-body">
-                        <div class="kodi-menu-grid kodi-dashboard-grid">
-                            <div class="kodi-menu-item" onclick="window.location.href='/';">
-                                <i class="fas fa-home"></i>
-                                <span>მთავარი</span>
-                            </div>
-                            <div class="kodi-menu-item" onclick="window.location.href='/user/accounts';">
-                                <i class="fas fa-wallet"></i>
-                                <span>ანგარიშები</span>
-                            </div>
-                            <div class="kodi-menu-item" onclick="window.location.href='/user/history_checks';">
-                                <i class="fas fa-history"></i>
-                                <span>IMEI ისტორია</span>
-                            </div>
-                            <div class="kodi-menu-item" onclick="window.location.href='/user/settings';">
-                                <i class="fas fa-cog"></i>
-                                <span>პარამეტრები</span>
-                            </div>
-                            <div class="kodi-menu-item" onclick="window.location.href='/auth/logout';">
-                                <i class="fas fa-sign-out-alt"></i>
-                                <span>გასვლა</span>
-                            </div>
+                <div class="kodi-close-modal" onclick="kodiCloseMenu()">
+                    <i class="fas fa-times"></i>
+                </div>
+                
+                <div class="kodi-modal-body">
+                    <div class="kodi-menu-grid kodi-dashboard-grid">
+                        <div class="kodi-menu-item" onclick="window.location.href='/';">
+                            <i class="fas fa-home"></i>
+                            <span>მთავარი</span>
+                        </div>
+                        <div class="kodi-menu-item" onclick="window.location.href='/user/accounts';">
+                            <i class="fas fa-wallet"></i>
+                            <span>ანგარიშები</span>
+                        </div>
+                        <div class="kodi-menu-item" onclick="window.location.href='/user/history_checks';">
+                            <i class="fas fa-history"></i>
+                            <span>IMEI ისტორია</span>
+                        </div>
+                        <div class="kodi-menu-item" onclick="window.location.href='/user/settings';">
+                            <i class="fas fa-cog"></i>
+                            <span>პარამეტრები</span>
+                        </div>
+                        <div class="kodi-menu-item" onclick="window.location.href='/auth/logout';">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>გასვლა</span>
                         </div>
                     </div>
                 </div>
@@ -646,45 +640,43 @@
                     ${userHTML}
                 </div>
                 
-                <div class="kodi-bg-image">
-                    <div class="kodi-modal-body">
-                        <div class="kodi-menu-grid">
-                            <a class="kodi-menu-item" href="/">
-                                <i class="fas fa-home"></i>
-                                <span>მთავარი</span>
-                            </a>
-                            <div class="kodi-menu-item" onclick="kodiOpenAppleMenu()">
-                                <i class="fab fa-apple"></i>
-                                <span>Apple</span>
-                            </div>
-                            <div class="kodi-menu-item" onclick="kodiOpenAndroidMenu()">
-                                <i class="fab fa-android"></i>
-                                <span>Android</span>
-                            </div>
-                            <div class="kodi-menu-item disabled">
-                                <i class="fas fa-unlock-alt"></i>
-                                <span>განბლოკვა</span>
-                            </div>
-                            <a class="kodi-menu-item" href="/compares">
-                                <i class="fas fa-exchange-alt"></i>
-                                <span>შედარება</span>
-                            </a>
-                            <a class="kodi-menu-item" href="/knowledge-base">
-                                <i class="fas fa-book"></i>
-                                <span>ცოდნის ბაზა</span>
-                            </a>
-                            <a class="kodi-menu-item" href="/contacts">
-                                <i class="fas fa-address-card"></i>
-                                <span>კონტაქტი</span>
-                            </a>
-                            <div class="kodi-menu-item">
-                                <i class="fas fa-shield-alt"></i>
-                                <span>კონფიდენციალურობა</span>
-                            </div>
-                            <div class="kodi-menu-item" onclick="kodiCloseMenu()">
-                                <i class="fas fa-undo"></i>
-                                <span>დაბრუნება</span>
-                            </div>
+                <div class="kodi-modal-body">
+                    <div class="kodi-menu-grid">
+                        <a class="kodi-menu-item" href="/">
+                            <i class="fas fa-home"></i>
+                            <span>მთავარი</span>
+                        </a>
+                        <div class="kodi-menu-item" onclick="kodiOpenAppleMenu()">
+                            <i class="fab fa-apple"></i>
+                            <span>Apple</span>
+                        </div>
+                        <div class="kodi-menu-item" onclick="kodiOpenAndroidMenu()">
+                            <i class="fab fa-android"></i>
+                            <span>Android</span>
+                        </div>
+                        <div class="kodi-menu-item disabled">
+                            <i class="fas fa-unlock-alt"></i>
+                            <span>განბლოკვა</span>
+                        </div>
+                        <a class="kodi-menu-item" href="/compares">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span>შედარება</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/knowledge-base">
+                            <i class="fas fa-book"></i>
+                            <span>ცოდნის ბაზა</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/contacts">
+                            <i class="fas fa-address-card"></i>
+                            <span>კონტაქტი</span>
+                        </a>
+                        <div class="kodi-menu-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>კონფიდენციალურობა</span>
+                        </div>
+                        <div class="kodi-menu-item" onclick="kodiCloseMenu()">
+                            <i class="fas fa-undo"></i>
+                            <span>დაბრუნება</span>
                         </div>
                     </div>
                 </div>
@@ -699,48 +691,46 @@
                     ${userHTML}
                 </div>
                 
-                <div class="kodi-bg-image">
-                    <div class="kodi-modal-body">
-                        <div class="kodi-menu-grid">
-                            <a class="kodi-menu-item" href="/applecheck?type=free">
-                                <img src="static/ico/8f1197c9-19f4-4923-8030-4f7b88c9d697_20250627_012614_0000.png" 
-                                     class="kodi-menu-icon-img">
-                                <span>უფასო შემოწმება</span>
-                            </a>
-                            <a class="kodi-menu-item" href="/applecheck?type=fmi">
-                                <img src="static/ico/f9a07c0e-e427-4a1a-aab9-948ba60f1b6a_20250627_012716_0000.png" 
-                                     class="kodi-menu-icon-img">
-                                <span>FMI iCloud</span>
-                            </a>
-                            <a class="kodi-menu-item" href="/applecheck?type=sim_lock">
-                                <img src="static/ico/957afe67-7a27-48cb-9622-6c557b220b71_20250627_012808_0000.png" 
-                                     class="kodi-menu-icon-img">
-                                <span>SIM ლოკი</span>
-                            </a>
-                            <a class="kodi-menu-item" href="/applecheck?type=blacklist">
-                                <img src="static/ico/4e28c4f2-541b-4a1b-8163-c79e6db5481c_20250627_012852_0000.png" 
-                                     class="kodi-menu-icon-img">
-                                <span>შავი სია</span>
-                            </a>
-                            <a class="kodi-menu-item" href="/applecheck?type=mdm">
-                                <img src="static/ico/275e6a62-c55e-48b9-8781-5b323ebcdce0_20250627_012946_0000.png" 
-                                     class="kodi-menu-icon-img">
-                                <span>MDM ბლოკი</span>
-                            </a>
-                            <a class="kodi-menu-item" href="/applecheck?type=premium">
-                                <img src="static/ico/84df4824-0564-447c-b5c4-e749442bdc19_20250627_013110_0000.png" 
-                                     class="kodi-menu-icon-img">
-                                <span>პრემიუმ შემოწმება</span>
-                            </a>
-                            <a class="kodi-menu-item" href="#" onclick="alert('სერვისი მომზადების პროცესშია');">
-                                <img src="static/ico/874fae5b-c0f5-42d8-9c37-679aa86360e6_20250627_013030_0000.png" 
-                                     class="kodi-menu-icon-img">
-                                <span>MacBook</span>
-                            </a>
-                            <div class="kodi-menu-item" onclick="kodiCloseAppleMenu()">
-                                <i class="fas fa-arrow-left"></i>
-                                <span>უკან</span>
-                            </div>
+                <div class="kodi-modal-body">
+                    <div class="kodi-menu-grid">
+                        <a class="kodi-menu-item" href="/applecheck?type=free">
+                            <img src="static/ico/8f1197c9-19f4-4923-8030-4f7b88c9d697_20250627_012614_0000.png" 
+                                 class="kodi-menu-icon-img">
+                            <span>უფასო შემოწმება</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/applecheck?type=fmi">
+                            <img src="static/ico/f9a07c0e-e427-4a1a-aab9-948ba60f1b6a_20250627_012716_0000.png" 
+                                 class="kodi-menu-icon-img">
+                            <span>FMI iCloud</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/applecheck?type=sim_lock">
+                            <img src="static/ico/957afe67-7a27-48cb-9622-6c557b220b71_20250627_012808_0000.png" 
+                                 class="kodi-menu-icon-img">
+                            <span>SIM ლოკი</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/applecheck?type=blacklist">
+                            <img src="static/ico/4e28c4f2-541b-4a1b-8163-c79e6db5481c_20250627_012852_0000.png" 
+                                 class="kodi-menu-icon-img">
+                            <span>შავი სია</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/applecheck?type=mdm">
+                            <img src="static/ico/275e6a62-c55e-48b9-8781-5b323ebcdce0_20250627_012946_0000.png" 
+                                 class="kodi-menu-icon-img">
+                            <span>MDM ბლოკი</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/applecheck?type=premium">
+                            <img src="static/ico/84df4824-0564-447c-b5c4-e749442bdc19_20250627_013110_0000.png" 
+                                 class="kodi-menu-icon-img">
+                            <span>პრემიუმ შემოწმება</span>
+                        </a>
+                        <a class="kodi-menu-item" href="#" onclick="alert('სერვისი მომზადების პროცესშია');">
+                            <img src="static/ico/874fae5b-c0f5-42d8-9c37-679aa86360e6_20250627_013030_0000.png" 
+                                 class="kodi-menu-icon-img">
+                            <span>MacBook</span>
+                        </a>
+                        <div class="kodi-menu-item" onclick="kodiCloseAppleMenu()">
+                            <i class="fas fa-arrow-left"></i>
+                            <span>უკან</span>
                         </div>
                     </div>
                 </div>
@@ -755,41 +745,39 @@
                     ${userHTML}
                 </div>
                 
-                <div class="kodi-bg-image">
-                    <div class="kodi-modal-body">
-                        <div class="kodi-menu-grid">
-                            <a class="kodi-menu-item" href="/androidcheck">
-                                <i class="fab fa-samsung"></i>
-                                <span>Samsung</span>
-                            </a>
-                            <a class="kodi-menu-item" href="/androidcheck">
-                                <i class="fas fa-bolt"></i>
-                                <span>Xiaomi</span>
-                            </a>
-                            <a class="kodi-menu-item" href="/androidcheck">
-                                <i class="fab fa-google"></i>
-                                <span>Pixel</span>
-                            </a>
-                            <a class="kodi-menu-item" href="/androidcheck">
-                                <i class="fab fa-huawei"></i>
-                                <span>Huawei</span>
-                            </a>
-                            <a class="kodi-menu-item" href="/androidcheck">
-                                <i class="fas fa-circle"></i>
-                                <span>Oppo</span>
-                            </a>
-                            <a class="kodi-menu-item" href="/androidcheck">
-                                <i class="fab fa-android"></i>
-                                <span>LG</span>
-                            </a>
-                            <a class="kodi-menu-item" href="/androidcheck">
-                                <i class="fas fa-ellipsis-h"></i>
-                                <span>სხვა</span>
-                            </a>
-                            <div class="kodi-menu-item" onclick="kodiCloseAndroidMenu()">
-                                <i class="fas fa-arrow-left"></i>
-                                <span>უკან</span>
-                            </div>
+                <div class="kodi-modal-body">
+                    <div class="kodi-menu-grid">
+                        <a class="kodi-menu-item" href="/androidcheck">
+                            <i class="fab fa-samsung"></i>
+                            <span>Samsung</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/androidcheck">
+                            <i class="fas fa-bolt"></i>
+                            <span>Xiaomi</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/androidcheck">
+                            <i class="fab fa-google"></i>
+                            <span>Pixel</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/androidcheck">
+                            <i class="fab fa-huawei"></i>
+                            <span>Huawei</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/androidcheck">
+                            <i class="fas fa-circle"></i>
+                            <span>Oppo</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/androidcheck">
+                            <i class="fab fa-android"></i>
+                            <span>LG</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/androidcheck">
+                            <i class="fas fa-ellipsis-h"></i>
+                            <span>სხვა</span>
+                        </a>
+                        <div class="kodi-menu-item" onclick="kodiCloseAndroidMenu()">
+                            <i class="fas fa-arrow-left"></i>
+                            <span>უკან</span>
                         </div>
                     </div>
                 </div>
