@@ -496,9 +496,9 @@
         }
         
         function fetchResultForSession(sessionId, attempt = 1) {
-            const maxAttempts = 10;
-            const delay = 2000;
-            const timeoutDuration = 10000;
+            const maxAttempts = 15;
+            const delay = 3000;
+            const timeoutDuration = 15000;
             
             if (attempt > maxAttempts) {
                 document.getElementById('spinner').style.display = 'none';
@@ -519,7 +519,9 @@
             const fetchPromise = fetch('/get_check_result?session_id=' + sessionId)
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('ქსელის პასუხი არასწორია');
+                        return response.json().then(err => {
+                            throw new Error(err.error || 'ქსელის პასუხი არასწორია');
+                        });
                     }
                     return response.json();
                 });
@@ -529,34 +531,42 @@
                     document.getElementById('spinner').style.display = 'none';
                     closeModal('payment-success-modal');
                     
+                    // Обработка ошибок сервера
                     if (data.error) {
                         displayError(data.error);
                         return;
                     }
                     
+                    // Обработка pending статуса
                     if (data.status === 'pending') {
-                        // Повторяем запрос через некоторое время
                         setTimeout(() => {
                             fetchResultForSession(sessionId, attempt + 1);
                         }, delay);
-                    } else {
-                        // Отображаем результаты
-                        displayResults(currentImei, currentServiceType, data);
+                        return;
                     }
+                    
+                    // Отображение результатов
+                    displayResults(currentImei, currentServiceType, data);
                     
                     document.getElementById('check-btn').disabled = false;
                 })
                 .catch(error => {
-                    if (error.message === 'Request timeout' || error.message.includes('ქსელის')) {
-                        setTimeout(() => {
-                            fetchResultForSession(sessionId, attempt + 1);
-                        }, delay);
+                    document.getElementById('spinner').style.display = 'none';
+                    closeModal('payment-success-modal');
+                    
+                    if (error.message === 'Request timeout') {
+                        if (attempt < maxAttempts) {
+                            setTimeout(() => {
+                                fetchResultForSession(sessionId, attempt + 1);
+                            }, delay);
+                        } else {
+                            displayError('მოთხოვნის დრო ამოიწურა. სცადეთ ხელახლა.');
+                        }
                     } else {
-                        document.getElementById('spinner').style.display = 'none';
-                        closeModal('payment-success-modal');
-                        displayError('შედეგის მიღების შეცდომა: ' + error.message);
-                        document.getElementById('check-btn').disabled = false;
+                        displayError('შეცდომა: ' + error.message);
                     }
+                    
+                    document.getElementById('check-btn').disabled = false;
                 });
         }
         
@@ -564,8 +574,11 @@
             const resultContent = document.getElementById('result-content');
             resultContent.innerHTML = `
                 <div class="error-card">
-                    <h3 class="status-error">შეცდომა</h3>
+                    <h4 class="status-error">შეცდომა</h4>
                     <p>${message}</p>
+                    <div class="result-actions">
+                        <button class="btn-primary" onclick="window.location.reload()">კვლავ ცდა</button>
+                    </div>
                 </div>
             `;
             openModal('result-modal');
@@ -577,13 +590,24 @@
         function displayResults(imei, serviceType, data) {
             const resultContent = document.getElementById('result-content');
             
-            // Если есть ошибка - показываем ее
-            if (data.error) {
-                displayError(data.error);
+            // Показ ошибок API
+            if (data.result && data.result.error) {
+                resultContent.innerHTML = `
+                    <div class="error-card">
+                        <h3 class="status-error">API შეცდომა</h3>
+                        <div class="error-details">
+                            <p><strong>კოდი:</strong> ${data.result.error_type || 'უცნობი'}</p>
+                            <p><strong>აღწერა:</strong> ${data.result.error}</p>
+                            ${data.result.http_code ? `<p><strong>HTTP კოდი:</strong> ${data.result.http_code}</p>` : ''}
+                        </div>
+                        <button class="btn-primary mt-3" onclick="window.location.reload()">კვლავ ცდა</button>
+                    </div>
+                `;
+                openModal('result-modal');
                 return;
             }
             
-            // Проверка типа устройства
+            // Обработка типа устройства
             const deviceType = (data.device_type || '').toLowerCase();
             if (deviceType === 'android' || deviceType === 'unknown') {
                 resultContent.innerHTML = `
@@ -629,11 +653,11 @@
             };
             
             // Фильтруем существующие поля
-            const existingFields = Object.keys(keyFields).filter(field => data[field]);
+            const existingFields = Object.keys(keyFields).filter(field => data.result && data.result[field]);
             
             // Форматируем основные параметры
             existingFields.forEach(field => {
-                const value = data[field];
+                const value = data.result[field];
                 let statusClass = '';
                 const valStr = String(value).toLowerCase();
                 
