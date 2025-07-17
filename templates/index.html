@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="static/styles.css">
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
         /* Добавленные стили */
         .user-admin-username {
@@ -41,6 +42,20 @@
             text-align: center;
             line-height: 30px;
             margin-right: 10px;
+            font-weight: bold;
+        }
+        .authenticity-original {
+            color: #28a745;
+        }
+        .authenticity-not-original {
+            color: #dc3545;
+        }
+        .authenticity-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        .authenticity-label {
+            font-size: 1.2rem;
             font-weight: bold;
         }
     </style>
@@ -579,69 +594,34 @@
             return imei.length === 14 || imei.length === 15;
         }
 
-        // Функция для получения значения по альтернативным ключам
-        function getValue(data, keys) {
-            for (const key of keys) {
-                if (data[key] !== undefined && data[key] !== '') {
-                    return data[key];
-                }
-            }
-            return 'უცნობი';
-        }
-
         // Функция для отображения результатов
         function displayFreeResults(data) {
             const resultContent = document.getElementById('free-result-content');
-            let resultsHTML = '';
-            const imeiValue = document.getElementById('free-imei-input').value.trim();
-
+            
             if (data.error) {
-                resultsHTML = `
+                resultContent.innerHTML = `
                     <div class="error-card">
                         <h3 class="status-error">${data.error}</h3>
-                        ${data.details ? `<div class="error-details">${data.details}</div>` : ''}
                     </div>
                 `;
             } else {
-                // Извлечение данных с поддержкой мультиязычных ключей
-                const brand = getValue(data, [
-                    'brand', 'ბრენდი', 'manufacturer', 'მწარმოებელი'
-                ]);
-                
-                const model = getValue(data, [
-                    'model', 'მოდელი', 'device_model'
-                ]);
-                
-                const deviceType = getValue(data, [
-                    'device_type', 'type', 'მოწყობილობის ტიპი'
-                ]).toLowerCase();
-
                 // Определение типа устройства
-                const isApple = deviceType.includes('apple') || 
-                               deviceType.includes('iphone') || 
-                               deviceType.includes('ipad') || 
-                               brand.toLowerCase().includes('apple');
-                
-                const isAndroid = deviceType.includes('android') || 
-                                 brand.toLowerCase().includes('samsung') || 
-                                 brand.toLowerCase().includes('xiaomi') || 
-                                 brand.toLowerCase().includes('huawei');
-
-                // Определение оригинальности устройства
+                const isApple = data.device_type === 'Apple';
+                const isAndroid = data.device_type === 'Android';
                 const isOriginal = isApple || isAndroid;
                 
                 // Блок проверки оригинальности
                 let authenticityHTML = '';
                 if (isOriginal) {
                     authenticityHTML = `
-                        <div class="authenticity-check">
+                        <div class="authenticity-check text-center">
                             <i class="fas fa-check-circle authenticity-icon authenticity-original"></i>
                             <div class="authenticity-label authenticity-original">თქვენი ტელეფონი ორიგინალურია</div>
                         </div>
                     `;
                 } else {
                     authenticityHTML = `
-                        <div class="authenticity-check">
+                        <div class="authenticity-check text-center">
                             <i class="fas fa-times-circle authenticity-icon authenticity-not-original"></i>
                             <div class="authenticity-label authenticity-not-original">თქვენი ტელეფონი არ არის ორიგინალური</div>
                         </div>
@@ -652,13 +632,14 @@
                 const deviceInfoHTML = `
                     <div class="text-center mb-4">
                         <h3 class="mt-3">შემოწმება დასრულებულია</h3>
-                        <p>IMEI: <strong>${imeiValue}</strong></p>
-                        <p>მწარმოებელი: <strong>${brand}</strong></p>
-                        <p>მოდელი: <strong>${model}</strong></p>
+                        <p>IMEI: <strong>${data.imei}</strong></p>
+                        <p>მწარმოებელი: <strong>${data.brand || 'უცნობი'}</strong></p>
+                        <p>მოდელი: <strong>${data.model || 'უცნობი'}</strong></p>
+                        <p>სტატუსი: <strong>${data.status || 'უცნობი'}</strong></p>
                     </div>
                 `;
                 
-                // Блок с описанием и кнопками для дополнительной проверки
+                // Блок с кнопками для дополнительной проверки
                 let actionSectionHTML = '';
                 if (isApple) {
                     actionSectionHTML = `
@@ -672,7 +653,7 @@
                                 <li>მიიღეთ ინფორმაცია გარანტიის სტატუსზე</li>
                             </ul>
                         </div>
-                        <div class="result-actions">
+                        <div class="result-actions text-center">
                             <a href="/applecheck" class="btn-primary">Apple-ის სრული შემოწმება</a>
                         </div>
                     `;
@@ -688,21 +669,20 @@
                                 <li>მიიღეთ ინფორმაცია მოწყობილობის ბლოკირების სტატუსზე</li>
                             </ul>
                         </div>
-                        <div class="result-actions">
+                        <div class="result-actions text-center">
                             <a href="/androidcheck" class="btn-primary">Android-ის სრული შემოწმება</a>
                         </div>
                     `;
                 }
                 
                 // Сборка всего контента
-                resultsHTML = `
+                resultContent.innerHTML = `
                     ${authenticityHTML}
                     ${deviceInfoHTML}
                     ${actionSectionHTML}
                 `;
             }
 
-            resultContent.innerHTML = resultsHTML;
             openFreeModal();
         }
 
