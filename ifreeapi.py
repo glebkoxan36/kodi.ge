@@ -73,39 +73,22 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         # Обработка HTTP ошибок
         if http_code != 200:
             error_msg = f"HTTP Error: {http_code}"
-            if http_code >= 500:
-                error_type = 'server_error'
-            elif http_code == 401:
-                error_type = 'authentication_error'
-            else:
-                error_type = 'http_error'
-            
             return {
                 'success': False,
-                'error': f"{ERROR_MESSAGES['server_error']} - {error_msg}",
+                'error': f"API server error: {http_code}",
                 'http_code': http_code,
-                'error_type': error_type
+                'error_type': 'server_error'
             }
         
         data = response.json()
         
         if not data.get('success', False):
-            error = data.get('error', 'Unknown error')
-            error_type = 'api_error'
-            
-            # Handle specific errors
-            if 'insufficient' in error.lower():
-                error_type = 'insufficient_funds'
-                error = ERROR_MESSAGES['insufficient_funds']
-            elif 'not found' in error.lower():
-                error_type = 'device_not_found'
-                error = ERROR_MESSAGES['device_not_found']
-            
+            error = data.get('error', 'Unknown API error')
             return {
                 'success': False,
-                'error': f"{ERROR_MESSAGES['api_error']}: {error}",
+                'error': error,
                 'api_error': error,
-                'error_type': error_type
+                'error_type': 'api_error'
             }
         
         # Extract device information
