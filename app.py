@@ -1023,8 +1023,8 @@ def set_csrf_cookie(response):
         )
     return response
 
-# Обработчик ошибок CSRF
-@csrf.error_handler
+# Обработчик ошибок CSRF (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+@app.errorhandler(CSRFError)
 def handle_csrf_error(e):
     logger.error(f"CSRF Validation Error: {e.description}")
     return jsonify({'error': f'CSRF token error: {e.description}'}), 400
