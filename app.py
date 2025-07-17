@@ -26,7 +26,7 @@ from pymongo.errors import PyMongoError
 # Импорт модулей
 from auth import auth_bp
 from user_dashboard import user_bp
-from ifreeapi import validate_imei, perform_api_check, parse_free_html
+from ifreeapi import validate_imei, perform_api_check
 from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection, db
 from stripepay import StripePayment
 from admin_routes import admin_bp  # Импорт админских роутов
@@ -66,10 +66,6 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 # Логгер для app.py
 logger = logging.getLogger(__name__)
 logger.info("Application starting")
-
-# Настройка кеширования
-cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
-cache.init_app(app)
 
 # Обновленная конфигурация сессии
 app.config.update(
@@ -119,12 +115,6 @@ def format_datetime_filter(value, format='%d.%m.%Y %H:%M'):
         return dt.strftime(format)
     except:
         return value  # Возвращаем как есть, если не удалось преобразовать
-
-# Кешируемая функция получения цен
-@cache.memoize(timeout=300)  # Кеширование на 5 минут
-def get_current_prices_cached():
-    """Кешированная версия получения текущих цен"""
-    return get_current_prices()
 
 # Контекстный процессор для добавления данных пользователя во все шаблоны
 @app.context_processor
@@ -294,24 +284,21 @@ def render_common_template(template_name, **kwargs):
 # ======================================
 
 @app.route('/')
-@cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)  # Кеширование для гостей
 def index():
     logger.info("Home page access")
-    prices = get_current_prices_cached()
+    prices = get_current_prices()
     return render_common_template(
         'index.html',
         stripe_public_key=STRIPE_PUBLIC_KEY,
     )
 
 @app.route('/contacts')
-@cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)  # Кеширование для гостей
 def contacts_page():
     """Страница контактов"""
     logger.info("Contacts page access")
     return render_common_template('contacts.html')
 
 @app.route('/knowledge-base')
-@cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)  # Кеширование для гостей
 def knowledge_base():
     """База знаний"""
     logger.info("Knowledge base access")
@@ -322,7 +309,6 @@ def knowledge_base():
 # ======================================
 
 @app.route('/compares')
-@cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)
 def compares_page():
     """Страница сравнения спецификаций телефонов"""
     logger.info("Compares page access")
@@ -391,14 +377,13 @@ def get_phone_details(phone_id):
 # ======================================
 
 @app.route('/applecheck')
-@cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)  # Кеширование для гостей
 def apple_check():
     logger.info("Apple check page access")
     # Определяем тип услуги из параметра URL
     service_type = request.args.get('type', 'free')
     
     # Получаем текущие цены
-    prices = get_current_prices_cached()
+    prices = get_current_prices()
     
     # Создаем словарь цен для каждого типа услуги
     service_prices = {
@@ -476,12 +461,11 @@ def apple_check():
 # ======================================
 
 @app.route('/androidcheck')
-@cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)  # Кеширование для гостей
 def android_check():
     """Страница проверки Android устройств"""
     logger.info("Android check page access")
     service_type = request.args.get('type', '')
-    prices = get_current_prices_cached()
+    prices = get_current_prices()
 
     service_prices = {
         'samsung_v1': f"{prices['samsung_v1'] / 100:.2f}₾",
@@ -796,137 +780,27 @@ def perform_check():
             logger.warning(f"Invalid IMEI: {imei}")
             return jsonify({'error': 'IMEI-ის არასწორი ფორმატი'}), 400
         
-        # Проверяем кеш для бесплатных запросов
-        if service_type == 'free':
-            cache_key = f"free_check_{imei}"
-            cached_result = cache.get(cache_key)
-            if cached_result:
-                logger.debug(f"Using cached result for IMEI: {imei}")
-                return jsonify(cached_result)
+        # Выполняем проверку
+        result = perform_api_check(imei, service_type)
         
-        # Пытаемся получить семафор с таймаутом
-        acquired = REQUEST_SEMAPHORE.acquire(timeout=15)
-        if not acquired:
-            logger.warning(f"Semaphore timeout for IMEI: {imei}")
-            return jsonify({'error': 'სისტემა დატვირთულია, გთხოვთ სცადოთ მოგვიანებით'}), 503
+        # Сохраняем результат в базу данных
+        if client:
+            record = {
+                'imei': imei,
+                'service_type': service_type,
+                'timestamp': datetime.utcnow(),
+                'result': result
+            }
+            if 'user_id' in session:
+                record['user_id'] = ObjectId(session['user_id'])
+            checks_collection.insert_one(record)
         
-        try:
-            # Выполняем проверку
-            time.sleep(1)  # Искусственная задержка перед запросом
-            
-            attempts = 0
-            max_attempts = 3
-            delay = 2  # seconds
-            result = None
-            
-            while attempts < max_attempts:
-                try:
-                    result = perform_api_check(imei, service_type)
-                    
-                    # Искусственная задержка для обработки ответа
-                    time.sleep(0.5)
-                    
-                    if result and 'error' not in result:
-                        break
-                    
-                    # Повторная попытка при ошибках сервера
-                    if result and 'error' in result and 'სერვერის' in result['error']:
-                        raise Exception(f"Server error: {result['error']}")
-                        
-                except Exception as e:
-                    attempts += 1
-                    if attempts < max_attempts:
-                        time.sleep(delay)
-                        delay *= 2  # Экспоненциальная задержка
-                    else:
-                        return jsonify({
-                            'error': f'Request failed after {max_attempts} attempts',
-                            'details': str(e)
-                        }), 500
-        
-            if not result:
-                logger.error(f"Empty API response for IMEI: {imei}")
-                return jsonify({'error': 'API-დან ცარიელი პასუხი'}), 500
-            
-            if 'error' in result:
-                logger.warning(f"API error for IMEI: {imei} - {result['error']}")
-                return jsonify(result), 400
-            
-            # Для сервисов, возвращающих HTML
-            if 'html_content' in result:
-                parsed_data = parse_free_html(result['html_content'])
-                
-                if parsed_data:
-                    # Сохраняем оригинальный HTML как резерв
-                    parsed_data['original_html'] = result['html_content'][:500] + '...' 
-                    result = parsed_data
-                else:
-                    # Fallback: возвращаем очищенный текст
-                    soup = BeautifulSoup(result['html_content'], 'html.parser')
-                    result = {'server_response': soup.get_text(separator='\n', strip=True)}
-            
-            # Сохраняем результат для бесплатных проверок
-            if service_type == 'free' and client:
-                # Извлекаем статус из результата
-                status = 'unknown'
-                if isinstance(result, dict):
-                    status = result.get('status') or result.get('სტატუსი', 'unknown')
-                
-                record = {
-                    'imei': imei,
-                    'service_type': service_type,
-                    'paid': False,
-                    'status': status,   # сохраняем статус
-                    'timestamp': datetime.utcnow(),
-                    'result': result
-                }
-                if 'user_id' in session:
-                    record['user_id'] = ObjectId(session['user_id'])
-                checks_collection.insert_one(record)
-                
-                # Кешируем результат на 10 минут
-                cache.set(f"free_check_{imei}", result, timeout=600)
-                logger.debug(f"Free check cached for IMEI: {imei}")
-            
-            logger.info(f"Check completed for IMEI: {imei}")
-            return jsonify(result)
-        
-        finally:
-            REQUEST_SEMAPHORE.release()
+        logger.info(f"Check completed for IMEI: {imei}")
+        return jsonify(result)
     
     except Exception as e:
         logger.exception(f'Check error: {str(e)}')
         return jsonify({'error': 'სერვერული შეცდომა'}), 500
-
-@app.route('/reparse_imei')
-def reparse_imei():
-    imei = request.args.get('imei')
-    logger.info(f"Reparse request: {imei}")
-    if not client:
-        logger.error("Database unavailable")
-        return jsonify({'error': 'Database unavailable'}), 500
-        
-    # Ищем последнюю запись бесплатной проверки для этого IMEI
-    record = checks_collection.find_one(
-        {'imei': imei, 'service_type': 'free'},
-        sort=[('timestamp', -1)]  # Берем последнюю запись
-    )
-    
-    if not record or 'result' not in record or 'html_content' not in record.get('result', {}):
-        logger.warning(f"No free check record found for IMEI: {imei}")
-        return jsonify({'error': 'მონაცემები ვერ მოიძებნა'}), 404
-    
-    html_content = record['result']['html_content']
-    parsed_data = parse_free_html(html_content)
-    
-    if parsed_data:
-        parsed_data['reparsed'] = True
-        return jsonify(parsed_data)
-    
-    return jsonify({
-        'error': 'დამუშავება ვერ მოხერხდა',
-        'server_response': BeautifulSoup(html_content, 'html.parser').get_text()
-    })
 
 # ======================================
 # Роут для получения баланса пользователя
@@ -1147,7 +1021,6 @@ def handle_unexpected_error(e):
 # ======================================
 
 @app.route('/health')
-@cache.cached(timeout=30)  # Кеширование health check
 def health_check():
     logger.info("Health check request")
     status = {
