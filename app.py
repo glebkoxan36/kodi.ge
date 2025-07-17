@@ -83,7 +83,12 @@ app.config.update(
     SESSION_REFRESH_EACH_REQUEST=True,
     
     # Исключение админ-логина из CSRF-защиты
-    WTF_CSRF_EXEMPT_ROUTES = ['auth.admin_login'],
+    WTF_CSRF_EXEMPT_ROUTES = [
+        'auth.admin_login',
+        'create_checkout_session',
+        'get_check_result',
+        'perform_check'
+    ],
     WTF_CSRF_ENABLED = True  # Явное включение CSRF защиты
 )
 Session(app)
@@ -597,7 +602,6 @@ def perform_background_check(imei, service_type, session_id):
         )
 
 @app.route('/create-checkout-session', methods=['POST'])
-@csrf.exempt
 def create_checkout_session():
     try:
         data = request.json
@@ -824,7 +828,6 @@ def get_check_result():
         }), 500
 
 @app.route('/perform_check', methods=['POST'])
-@csrf.exempt
 def perform_check():
     try:
         data = request.get_json()
@@ -1009,7 +1012,7 @@ app.register_blueprint(test_bp, url_prefix='/test')  # Регистрация т
 @app.after_request
 def set_csrf_cookie(response):
     # Не устанавливаем CSRF для статики и API
-    if not request.path.startswith(('/static', '/api')):
+    if not request.path.startswith(('/static', '/api', '/create-checkout-session', '/get_check_result', '/perform_check')):
         secure = app.config['SESSION_COOKIE_SECURE']
         response.set_cookie(
             'csrf_token', 
@@ -1021,9 +1024,9 @@ def set_csrf_cookie(response):
     return response
 
 # Обработчик ошибок CSRF
-@app.errorhandler(CSRFError)
+@csrf.error_handler
 def handle_csrf_error(e):
-    logger.warning(f"CSRF error: {e.description}")
+    logger.error(f"CSRF Validation Error: {e.description}")
     return jsonify({'error': f'CSRF token error: {e.description}'}), 400
 
 # Роут для отладки сессии
