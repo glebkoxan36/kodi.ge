@@ -555,6 +555,33 @@ def android_check():
         stripe_public_key=STRIPE_PUBLIC_KEY
     )
 
+def perform_background_check(imei, service_type, session_id):
+    """Выполняет проверку в фоновом режиме и обновляет запись в базе"""
+    from ifreeapi import perform_api_check
+    from datetime import datetime
+    try:
+        logger.info(f"Background check started for session: {session_id}")
+        result = perform_api_check(imei, service_type)
+        
+        # Обновляем запись в базе
+        update_data = {
+            'result': result,
+            'status': 'completed',
+            'completed_at': datetime.utcnow()
+        }
+        
+        # Используем глобальную checks_collection
+        if checks_collection is not None:
+            checks_collection.update_one(
+                {'session_id': session_id},
+                {'$set': update_data}
+            )
+            logger.info(f"Background check completed for session: {session_id}")
+        else:
+            logger.error("Checks collection is not available")
+    except Exception as e:
+        logger.exception(f"Background check failed: {str(e)}")
+
 @app.route('/create-checkout-session', methods=['POST'])
 @csrf.exempt
 def create_checkout_session():
@@ -614,6 +641,13 @@ def create_checkout_session():
                 if client:
                     checks_collection.insert_one(record)
                     logger.info(f"Balance payment recorded for IMEI: {imei}")
+                
+                # Запускаем фоновую проверку
+                threading.Thread(
+                    target=perform_background_check,
+                    args=(imei, service_type, idempotency_key),
+                    daemon=True
+                ).start()
                 
                 return jsonify({
                     'id': idempotency_key,
