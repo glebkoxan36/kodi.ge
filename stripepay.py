@@ -59,9 +59,13 @@ class StripePayment:
                 cancel_url=cancel_url,
                 idempotency_key=idempotency_key
             )
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe API error: {e.user_message}")
+            # Пробрасываем исключение с сообщением для пользователя
+            raise Exception(f"Stripe error: {e.user_message}") from e
         except Exception as e:
-            logger.exception(f"Stripe session error: {str(e)}")
-            raise
+            logger.exception("Stripe session creation failed")
+            raise Exception("Payment processing error") from e
 
     def create_topup_session(self, user_id, amount, success_url, cancel_url, idempotency_key=None):
         try:
