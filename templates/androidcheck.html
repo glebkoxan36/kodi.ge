@@ -709,7 +709,7 @@
         function performCheck(imei, serviceType) {
             document.getElementById('spinner').style.display = 'flex';
             
-            fetch('/perform_android_check', {
+            fetch('/perform_check', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
