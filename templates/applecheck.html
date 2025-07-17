@@ -458,38 +458,51 @@
                 })
             })
             .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
+                // Читаем ответ как JSON, даже если статус не 200
+                return response.json().then(data => {
+                    if (!response.ok) {
+                        // Если ответ не успешный, бросаем ошибку с данными из ответа
+                        throw Object.assign(new Error('Payment failed'), { details: data });
+                    }
+                    return data;
+                });
             })
             .then(data => {
                 document.getElementById('spinner').style.display = 'none';
                 
                 if (data.error) {
-                    const errorElement = document.getElementById('imei-error');
-                    errorElement.textContent = data.error;
-                    errorElement.style.display = 'block';
-                } else {
-                    if (data.payment_method === 'balance') {
-                        openModal('payment-success-modal');
-                        fetchResultForSession(data.id);
-                    } else if (data.payment_method === 'stripe') {
-                        stripe.redirectToCheckout({ sessionId: data.id })
-                            .then(result => {
-                                if (result.error) {
-                                    document.getElementById('payment-error-message').textContent = 
-                                        `Stripe error: ${result.error.message}`;
-                                    openModal('payment-error-modal');
-                                }
-                            });
-                    }
+                    // Если в ответе есть ошибка (например, от сервера)
+                    throw new Error(data.error);
+                }
+                
+                if (data.payment_method === 'balance') {
+                    openModal('payment-success-modal');
+                    fetchResultForSession(data.id);
+                } else if (data.payment_method === 'stripe') {
+                    stripe.redirectToCheckout({ sessionId: data.id })
+                        .then(result => {
+                            if (result.error) {
+                                document.getElementById('payment-error-message').textContent = 
+                                    `Stripe error: ${result.error.message}`;
+                                openModal('payment-error-modal');
+                            }
+                        });
                 }
             })
             .catch(error => {
                 document.getElementById('spinner').style.display = 'none';
-                document.getElementById('payment-error-message').textContent = 
-                    'Payment error. Please try again later.';
+                
+                let errorMessage = error.message || 'Unknown payment error';
+                
+                // Если есть детали в ошибке (например, от сервера)
+                if (error.details && error.details.error) {
+                    errorMessage = error.details.error;
+                    if (error.details.details) {
+                        errorMessage += ` (${error.details.details})`;
+                    }
+                }
+                
+                document.getElementById('payment-error-message').textContent = errorMessage;
                 openModal('payment-error-modal');
                 console.error('Payment error:', error);
             });
