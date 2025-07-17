@@ -503,9 +503,7 @@
             if (attempt > maxAttempts) {
                 document.getElementById('spinner').style.display = 'none';
                 closeModal('payment-success-modal');
-                // Создаем объект с ошибкой для передачи в displayResults
-                const errorData = { error: 'შედეგის მიღება ვერ მოხერხდა. სცადეთ ხელახლა მოგვიანებით.' };
-                displayResults(currentImei, currentServiceType, errorData);
+                displayError('შედეგის მიღება ვერ მოხერხდა. სცადეთ ხელახლა მოგვიანებით.');
                 document.getElementById('check-btn').disabled = false;
                 return;
             }
@@ -530,8 +528,22 @@
                 .then(data => {
                     document.getElementById('spinner').style.display = 'none';
                     closeModal('payment-success-modal');
-                    // Передаем данные в displayResults, независимо от наличия ошибки
-                    displayResults(currentImei, currentServiceType, data);
+                    
+                    if (data.error) {
+                        displayError(data.error);
+                        return;
+                    }
+                    
+                    if (data.status === 'pending') {
+                        // Повторяем запрос через некоторое время
+                        setTimeout(() => {
+                            fetchResultForSession(sessionId, attempt + 1);
+                        }, delay);
+                    } else {
+                        // Отображаем результаты
+                        displayResults(currentImei, currentServiceType, data);
+                    }
+                    
                     document.getElementById('check-btn').disabled = false;
                 })
                 .catch(error => {
@@ -542,12 +554,24 @@
                     } else {
                         document.getElementById('spinner').style.display = 'none';
                         closeModal('payment-success-modal');
-                        // Создаем объект с ошибкой
-                        const errorData = { error: 'შედეგის მიღების შეცდომა: ' + error.message };
-                        displayResults(currentImei, currentServiceType, errorData);
+                        displayError('შედეგის მიღების შეცდომა: ' + error.message);
                         document.getElementById('check-btn').disabled = false;
                     }
                 });
+        }
+        
+        function displayError(message) {
+            const resultContent = document.getElementById('result-content');
+            resultContent.innerHTML = `
+                <div class="error-card">
+                    <h3 class="status-error">შეცდომა</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+            openModal('result-modal');
+            document.getElementById('spinner').style.display = 'none';
+            closeModal('payment-success-modal');
+            document.getElementById('check-btn').disabled = false;
         }
         
         function displayResults(imei, serviceType, data) {
@@ -555,13 +579,7 @@
             
             // Если есть ошибка - показываем ее
             if (data.error) {
-                resultContent.innerHTML = `
-                    <div class="error-card">
-                        <h3 class="status-error">შეცდომა</h3>
-                        <p>${data.error}</p>
-                    </div>
-                `;
-                openModal('result-modal');
+                displayError(data.error);
                 return;
             }
             
