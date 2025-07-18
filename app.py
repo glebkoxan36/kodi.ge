@@ -69,6 +69,11 @@ app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 
+# Добавляем конфигурацию Facebook
+app.config['FACEBOOK_OAUTH_CLIENT_ID'] = os.getenv('FACEBOOK_APP_ID')
+app.config['FACEBOOK_OAUTH_CLIENT_SECRET'] = os.getenv('FACEBOOK_APP_SECRET')
+FACEBOOK_REDIRECT_URI = os.getenv('FACEBOOK_REDIRECT_URI', 'http://localhost:5000/auth/facebook/callback')
+
 # Инициализация PyMongo
 app.config["MONGO_URI"] = os.getenv('MONGODB_URI')
 mongo = PyMongo(app)
