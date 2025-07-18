@@ -1,0 +1,15 @@
+[MASTER]
+disable=
+    C0114,  # Missing module docstring
+    C0115,  # Missing class docstring
+    C0116,  # Missing function docstring
+    R0903,  # Too few public methods
+    R0913,  # Too many arguments
+    R0914,  # Too many local variables
+    W1203,  # Logging f-string interpolation
+    C0103,  # Invalid name (переменные в верхнем регистре)
+    W0613,  # Unused argument
+    E0401   # Unable to import (ложные срабатывания)
+
+[MESSAGES CONTROL]
+max-line-length=160
