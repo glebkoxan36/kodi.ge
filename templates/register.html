@@ -49,6 +49,22 @@
             width: 100%;
             display: block;
             text-align: center;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .social-btn.facebook {
+            background-color: #3b5998;
+            color: white;
+            border: none;
+        }
+        .social-btn.facebook:hover {
+            background-color: #344e86;
         }
         .social-divider {
             display: flex;
@@ -125,6 +141,38 @@
         }
         .password-requirements ul {
             padding-left: 20px;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .calendar-grid-btn {
+            padding: 10px;
+            text-align: center;
+            background-color: #1d3d7a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .calendar-grid-btn:hover {
+            background-color: #00e5ff;
+            color: black;
+        }
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .calendar-nav-btn {
+            background: none;
+            border: none;
+            color: #00e5ff;
+            font-size: 16px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -270,46 +318,83 @@
     </div>
 
     <script>
-        function generateCalendar(year, month) {
-            const calendar = document.getElementById('datepicker');
-            calendar.innerHTML = '';
+        let selectedDate = null;
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth();
+        let currentStep = 'years';
+        
+        function showYearSelector() {
+            const container = document.getElementById('datepicker');
+            container.innerHTML = '';
             
             const header = document.createElement('div');
             header.className = 'calendar-header';
+            header.innerHTML = '<h3>აირჩიეთ წელი</h3>';
+            container.appendChild(header);
             
-            const prevBtn = document.createElement('button');
-            prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
-            prevBtn.addEventListener('click', () => {
-                if (month === 0) {
-                    month = 11;
-                    year--;
-                } else {
-                    month--;
-                }
-                generateCalendar(year, month);
-            });
+            const yearGrid = document.createElement('div');
+            yearGrid.className = 'calendar-grid';
             
-            const nextBtn = document.createElement('button');
-            nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
-            nextBtn.addEventListener('click', () => {
-                if (month === 11) {
-                    month = 0;
-                    year++;
-                } else {
-                    month++;
-                }
-                generateCalendar(year, month);
-            });
+            const startYear = currentYear - 50;
+            const endYear = currentYear + 10;
             
-            const monthYear = document.createElement('span');
+            for (let year = endYear; year >= startYear; year--) {
+                const yearBtn = document.createElement('button');
+                yearBtn.className = 'calendar-grid-btn';
+                yearBtn.textContent = year;
+                yearBtn.addEventListener('click', () => {
+                    currentYear = year;
+                    showMonthSelector();
+                });
+                yearGrid.appendChild(yearBtn);
+            }
+            
+            container.appendChild(yearGrid);
+            currentStep = 'years';
+        }
+        
+        function showMonthSelector() {
+            const container = document.getElementById('datepicker');
+            container.innerHTML = '';
+            
+            const header = document.createElement('div');
+            header.className = 'calendar-header';
+            header.innerHTML = `<h3>აირჩიეთ თვე (${currentYear})</h3>`;
+            container.appendChild(header);
+            
+            const monthGrid = document.createElement('div');
+            monthGrid.className = 'calendar-grid';
+            
             const months = ['იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი', 
                           'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი'];
-            monthYear.textContent = `${months[month]} ${year}`;
             
-            header.appendChild(prevBtn);
-            header.appendChild(monthYear);
-            header.appendChild(nextBtn);
-            calendar.appendChild(header);
+            months.forEach((month, index) => {
+                const monthBtn = document.createElement('button');
+                monthBtn.className = 'calendar-grid-btn';
+                monthBtn.textContent = month;
+                monthBtn.addEventListener('click', () => {
+                    currentMonth = index;
+                    showDaySelector();
+                });
+                monthGrid.appendChild(monthBtn);
+            });
+            
+            container.appendChild(monthGrid);
+            currentStep = 'months';
+        }
+        
+        function showDaySelector() {
+            const container = document.getElementById('datepicker');
+            container.innerHTML = '';
+            
+            const nav = document.createElement('div');
+            nav.className = 'calendar-nav';
+            nav.innerHTML = `
+                <button class="calendar-nav-btn" id="prev-year"><i class="fas fa-chevron-left"></i></button>
+                <h3>${currentYear} - ${getMonthName(currentMonth)}</h3>
+                <button class="calendar-nav-btn" id="next-year"><i class="fas fa-chevron-right"></i></button>
+            `;
+            container.appendChild(nav);
             
             const weekdays = ['ორ', 'სამ', 'ოთხ', 'ხუთ', 'პარ', 'შაბ', 'კვ'];
             const weekdayRow = document.createElement('div');
@@ -319,35 +404,70 @@
                 dayElem.textContent = day;
                 weekdayRow.appendChild(dayElem);
             });
-            calendar.appendChild(weekdayRow);
+            container.appendChild(weekdayRow);
             
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const daysRow = document.createElement('div');
-            daysRow.className = 'calendar-days';
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            
+            const daysGrid = document.createElement('div');
+            daysGrid.className = 'calendar-days';
             
             for (let i = 0; i < firstDay; i++) {
                 const emptyCell = document.createElement('div');
                 emptyCell.className = 'calendar-day empty';
-                daysRow.appendChild(emptyCell);
+                daysGrid.appendChild(emptyCell);
             }
             
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayCell = document.createElement('div');
                 dayCell.className = 'calendar-day';
                 dayCell.textContent = day;
+                
+                if (selectedDate && 
+                    selectedDate.getDate() === day && 
+                    selectedDate.getMonth() === currentMonth && 
+                    selectedDate.getFullYear() === currentYear) {
+                    dayCell.classList.add('selected');
+                }
+                
                 dayCell.addEventListener('click', () => {
                     document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
                     dayCell.classList.add('selected');
-                    selectedDate = new Date(year, month, day);
+                    selectedDate = new Date(currentYear, currentMonth, day);
                 });
-                daysRow.appendChild(dayCell);
+                
+                daysGrid.appendChild(dayCell);
             }
             
-            calendar.appendChild(daysRow);
+            container.appendChild(daysGrid);
+            currentStep = 'days';
+            
+            document.getElementById('prev-year').addEventListener('click', () => {
+                if (currentMonth === 0) {
+                    currentMonth = 11;
+                    currentYear--;
+                } else {
+                    currentMonth--;
+                }
+                showDaySelector();
+            });
+            
+            document.getElementById('next-year').addEventListener('click', () => {
+                if (currentMonth === 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                } else {
+                    currentMonth++;
+                }
+                showDaySelector();
+            });
         }
         
-        let selectedDate = null;
+        function getMonthName(monthIndex) {
+            const months = ['იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი', 
+                          'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი'];
+            return months[monthIndex];
+        }
         
         const dateModal = document.getElementById('datepicker-modal');
         const dateInput = document.getElementById('birth_date');
@@ -357,8 +477,10 @@
         datepickerToggle.addEventListener('click', showDatePicker);
         
         function showDatePicker() {
-            const today = new Date();
-            generateCalendar(today.getFullYear(), today.getMonth());
+            selectedDate = null;
+            currentYear = new Date().getFullYear();
+            currentMonth = new Date().getMonth();
+            showYearSelector();
             dateModal.classList.add('show');
         }
         
