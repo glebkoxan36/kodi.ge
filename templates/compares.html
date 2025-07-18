@@ -124,6 +124,119 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // === ИСПРАВЛЕННАЯ СЕКЦИЯ: ПЕРЕМЕЩЕНО В НАЧАЛО ===
+        // Текущий режим
+        let currentMode = null;
+        
+        // Элементы интерфейса
+        const mainContent = document.getElementById('mainContent');
+        const singleModeBtn = document.getElementById('singleModeBtn');
+        const compareModeBtn = document.getElementById('compareModeBtn');
+        const compareSelection = document.getElementById('compareSelection');
+        const searchResults = document.getElementById('searchResults');
+        const phoneDetails = document.getElementById('phoneDetails');
+        const compareDetails = document.getElementById('compareDetails');
+        const phoneSearch = document.getElementById('phoneSearch');
+        const phoneTitle = document.getElementById('phoneTitle');
+        const phoneImage = document.getElementById('phoneImage');
+        const specsContainer = document.getElementById('specsContainer');
+        const backToResults = document.getElementById('backToResults');
+        const startCompareBtn = document.getElementById('startCompareBtn');
+        const clearCompareBtn = document.getElementById('clearCompareBtn');
+        const selectPhoneBtns = document.querySelectorAll('.select-phone-btn');
+        const backFromCompare = document.getElementById('backFromCompare');
+        const compareTitle1 = document.getElementById('compareTitle1');
+        const compareTitle2 = document.getElementById('compareTitle2');
+        const compareImage1 = document.getElementById('compareImage1');
+        const compareImage2 = document.getElementById('compareImage2');
+        const compareSpecs = document.getElementById('compareSpecs');
+        
+        // Элементы превью телефонов
+        const phonePreviews = {
+            1: document.getElementById('phonePreview1'),
+            2: document.getElementById('phonePreview2')
+        };
+        
+        // Выбранные для сравнения телефоны
+        let selectedPhones = {
+            1: null,
+            2: null
+        };
+        
+        // Функции для работы с режимами
+        function resetMode() {
+            // Сбрасываем текущий режим
+            currentMode = null;
+            
+            // Сбрасываем кнопки
+            singleModeBtn.classList.remove('active');
+            compareModeBtn.classList.remove('active');
+            
+            // Скрываем основной контент
+            mainContent.style.display = 'none';
+            
+            // Сбрасываем выбранные телефоны
+            selectedPhones = { 1: null, 2: null };
+            phonePreviews[1].innerHTML = `
+                <div class="placeholder">
+                    <i class="fas fa-plus"></i>
+                    <p>Выберите телефон</p>
+                </div>
+            `;
+            phonePreviews[2].innerHTML = `
+                <div class="placeholder">
+                    <i class="fas fa-plus"></i>
+                    <p>Выберите телефон</p>
+                </div>
+            `;
+            startCompareBtn.disabled = true;
+        }
+        
+        function setActiveMode(mode) {
+            // Устанавливаем новый режим
+            currentMode = mode;
+            
+            // Обновляем кнопки
+            singleModeBtn.classList.toggle('active', mode === 'single');
+            compareModeBtn.classList.toggle('active', mode === 'compare');
+            
+            // Показываем основной контент
+            mainContent.style.display = 'block';
+            
+            // Скрываем все подразделы
+            compareSelection.style.display = 'none';
+            searchResults.style.display = 'none';
+            phoneDetails.style.display = 'none';
+            compareDetails.style.display = 'none';
+            
+            // Показываем нужный раздел в зависимости от режима
+            if (mode === 'compare') {
+                compareSelection.style.display = 'block';
+            } else if (mode === 'single') {
+                searchResults.style.display = 'block';
+                phoneSearch.focus();
+            }
+        }
+        
+        // Обработчики переключения режимов
+        singleModeBtn.addEventListener('click', function() {
+            if (currentMode === 'single') {
+                resetMode();
+            } else {
+                setActiveMode('single');
+            }
+        });
+        
+        compareModeBtn.addEventListener('click', function() {
+            if (currentMode === 'compare') {
+                resetMode();
+            } else {
+                setActiveMode('compare');
+            }
+        });
+        
+        // === КОНЕЦ ИСПРАВЛЕННОЙ СЕКЦИИ ===
+        
         // Весовые коэффициенты для групп характеристик
         const groupWeights = {
             "Основные": 0.05,
@@ -453,47 +566,6 @@
             compareContainer.appendChild(resultsContainer);
         }
 
-        // Элементы интерфейса
-        const mainContent = document.getElementById('mainContent');
-        const modeSwitcher = document.querySelector('.mode-switcher');
-        const phoneSearch = document.getElementById('phoneSearch');
-        const searchResults = document.getElementById('searchResults');
-        const phoneDetails = document.getElementById('phoneDetails');
-        const phoneTitle = document.getElementById('phoneTitle');
-        const phoneImage = document.getElementById('phoneImage');
-        const specsContainer = document.getElementById('specsContainer');
-        const backToResults = document.getElementById('backToResults');
-        
-        // Режимы работы
-        const singleModeBtn = document.getElementById('singleModeBtn');
-        const compareModeBtn = document.getElementById('compareModeBtn');
-        const compareSelection = document.getElementById('compareSelection');
-        
-        // Сравнение
-        const compareDetails = document.getElementById('compareDetails');
-        const backFromCompare = document.getElementById('backFromCompare');
-        const startCompareBtn = document.getElementById('startCompareBtn');
-        const clearCompareBtn = document.getElementById('clearCompareBtn');
-        const selectPhoneBtns = document.querySelectorAll('.select-phone-btn');
-        const phonePreviews = {
-            1: document.getElementById('phonePreview1'),
-            2: document.getElementById('phonePreview2')
-        };
-        const compareTitle1 = document.getElementById('compareTitle1');
-        const compareTitle2 = document.getElementById('compareTitle2');
-        const compareImage1 = document.getElementById('compareImage1');
-        const compareImage2 = document.getElementById('compareImage2');
-        const compareSpecs = document.getElementById('compareSpecs');
-        
-        // Текущий режим
-        let currentMode = null;
-        
-        // Выбранные для сравнения телефоны
-        let selectedPhones = {
-            1: null,
-            2: null
-        };
-        
         // Кэш данных телефонов
         let phoneCache = {};
         
@@ -561,77 +633,6 @@
                 "Стартовая цена (руб)", "Текущая цена (руб)", "Доступность", "Гарантия (мес)"
             ]
         };
-        
-        // Переключение режимов - ИСПРАВЛЕННАЯ ВЕРСИЯ
-        singleModeBtn.addEventListener('click', function() {
-            if (currentMode === 'single') {
-                resetMode();
-            } else {
-                setActiveMode('single');
-            }
-        });
-        
-        compareModeBtn.addEventListener('click', function() {
-            if (currentMode === 'compare') {
-                resetMode();
-            } else {
-                setActiveMode('compare');
-            }
-        });
-        
-        function resetMode() {
-            // Сбрасываем текущий режим
-            currentMode = null;
-            
-            // Сбрасываем кнопки
-            singleModeBtn.classList.remove('active');
-            compareModeBtn.classList.remove('active');
-            
-            // Скрываем основной контент
-            mainContent.style.display = 'none';
-            
-            // Сбрасываем выбранные телефоны
-            selectedPhones = { 1: null, 2: null };
-            phonePreviews[1].innerHTML = `
-                <div class="placeholder">
-                    <i class="fas fa-plus"></i>
-                    <p>Выберите телефон</p>
-                </div>
-            `;
-            phonePreviews[2].innerHTML = `
-                <div class="placeholder">
-                    <i class="fas fa-plus"></i>
-                    <p>Выберите телефон</p>
-                </div>
-            `;
-            startCompareBtn.disabled = true;
-        }
-        
-        function setActiveMode(mode) {
-            // Устанавливаем новый режим
-            currentMode = mode;
-            
-            // Обновляем кнопки
-            singleModeBtn.classList.toggle('active', mode === 'single');
-            compareModeBtn.classList.toggle('active', mode === 'compare');
-            
-            // Показываем основной контент
-            mainContent.style.display = 'block';
-            
-            // Скрываем все подразделы
-            compareSelection.style.display = 'none';
-            searchResults.style.display = 'none';
-            phoneDetails.style.display = 'none';
-            compareDetails.style.display = 'none';
-            
-            // Показываем нужный раздел в зависимости от режима
-            if (mode === 'compare') {
-                compareSelection.style.display = 'block';
-            } else if (mode === 'single') {
-                searchResults.style.display = 'block';
-                phoneSearch.focus();
-            }
-        }
         
         // Выбор телефона для сравнения
         selectPhoneBtns.forEach(btn => {
