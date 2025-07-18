@@ -29,9 +29,9 @@ from user_dashboard import user_bp
 from ifreeapi import validate_imei, perform_api_check
 from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection, db
 from stripepay import StripePayment
-from admin_routes import admin_bp  # Импорт админских роутов
-from test import test_bp  # Импорт тестового модуля
-from price import get_current_prices, get_service_price  # Добавлено
+from admin_routes import admin_bp
+from test import test_bp
+from price import get_current_prices, get_service_price
 
 # Создаем папку для логов
 if not os.path.exists('logs'):
@@ -59,9 +59,18 @@ console_handler.setFormatter(logging.Formatter(
 ))
 root_logger.addHandler(console_handler)
 
+# Уровень логирования для production
+if os.getenv('FLASK_ENV') == 'production':
+    root_logger.setLevel(logging.WARNING)
+    logging.getLogger('werkzeug').setLevel(logging.WARNING)
+
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
+
+# Инициализация кэширования
+cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
+cache.init_app(app)
 
 # Логгер для app.py
 logger = logging.getLogger(__name__)
@@ -82,24 +91,28 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(days=7),
     SESSION_REFRESH_EACH_REQUEST=True,
     
-    # Исключение админ-логина из CSRF-защиты
+    # Корректная конфигурация CSRF
+    WTF_CSRF_ENABLED=True,
+    WTF_CSRF_CHECK_DEFAULT=True,
+    WTF_CSRF_SSL_STRICT=False,
+    WTF_CSRF_TIME_LIMIT=3600,
     WTF_CSRF_EXEMPT_ROUTES = [
-        'auth.admin_login',
-        'create_checkout_session',
+        'stripe_webhook',
         'get_check_result',
-        'perform_check'
-    ],
-    WTF_CSRF_ENABLED = True  # Явное включение CSRF защиты
+        'health'
+    ]
 )
 Session(app)
 
 # Инициализация CSRF защиты
 csrf = CSRFProtect(app)
+csrf.exempt(auth_bp)  # Исключаем auth blueprint
 
 # Семафор для ограничения запросов
-REQUEST_SEMAPHORE = threading.BoundedSemaphore(3)
+REQUEST_SEMAPHORE = threading.BoundedSemaphore(10)
 
 # Функция для генерации цвета аватара
+@lru_cache(maxsize=512)
 def generate_avatar_color(name):
     """Генерирует HEX-цвет на основе хеша имени пользователя"""
     if not name:
@@ -115,11 +128,10 @@ def format_datetime_filter(value, format='%d.%m.%Y %H:%M'):
     if isinstance(value, datetime):
         return value.strftime(format)
     try:
-        # Попытка преобразовать строку в datetime
         dt = datetime.strptime(value, '%Y-%m-%d %H:%M:%S.%f')
         return dt.strftime(format)
     except:
-        return value  # Возвращаем как есть, если не удалось преобразовать
+        return value
 
 # Контекстный процессор для добавления данных пользователя во все шаблоны
 @app.context_processor
@@ -133,13 +145,18 @@ def inject_user():
     is_impersonation = False
     
     # Проверяем администратора
-    if 'admin_id' in session and 'admin_role' in session:
+    if 'admin_id' in session:
         try:
-            admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id'])})
+            admin = admin_users_collection.find_one(
+                {'_id': ObjectId(session['admin_id'])},
+                projection={'username': 1, 'role': 1}
+            )
             if admin:
                 is_admin = True
-                admin_role = session['admin_role']
+                admin_role = admin.get('role')
                 admin_username = admin.get('username')
+                session['admin_role'] = admin_role
+                
                 # Если есть user_id - это режим имперсонации
                 if 'user_id' in session:
                     is_impersonation = True
@@ -150,9 +167,12 @@ def inject_user():
             logger.warning("Invalid admin ID in session - cleared")
     
     # Проверяем обычного пользователя
-    if 'user_id' in session:
+    if 'user_id' in session and not is_impersonation:
         try:
-            user = regular_users_collection.find_one({'_id': ObjectId(session['user_id'])})
+            user = regular_users_collection.find_one(
+                {'_id': ObjectId(session['user_id'])},
+                projection={'first_name': 1, 'last_name': 1, 'balance': 1, 'avatar_color': 1, 'avatar_url': 1, 'email': 1}
+            )
             if user:
                 name_part = user.get('first_name') or user.get('email', 'user')
                 avatar_color = user.get('avatar_color') or generate_avatar_color(name_part)
@@ -204,14 +224,15 @@ stripe_payment = StripePayment(
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        # Проверяем роль в сессии и наличие admin_id
         if 'admin_id' not in session or 'admin_role' not in session:
             logger.warning(f"Unauthorized admin access attempt: session={dict(session)}")
             return redirect(url_for('auth.admin_login', next=request.url))
         
-        # Проверяем существование администратора в базе
         try:
-            admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id'])})
+            admin = admin_users_collection.find_one(
+                {'_id': ObjectId(session['admin_id'])},
+                projection={'role': 1}
+            )
             if not admin or admin.get('role') not in ['admin', 'superadmin']:
                 flash('Administrator account not found or invalid', 'danger')
                 session.clear()
@@ -226,7 +247,6 @@ def admin_required(f):
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        # Разрешаем доступ если есть user_id ИЛИ admin_id
         if 'user_id' not in session and 'admin_id' not in session:
             logger.warning("Unauthorized access attempt")
             return redirect(url_for('auth.login', next=request.url))
@@ -249,13 +269,15 @@ def check_session_timeout():
     """Проверяет тайм-аут сессии"""
     last_activity = session.get('last_activity')
     if last_activity:
-        last_active = datetime.fromisoformat(last_activity)
-        if (datetime.utcnow() - last_active).seconds > 3600:  # 1 час
-            session.clear()
-            flash('Your session has expired due to inactivity', 'warning')
-            return redirect(url_for('auth.login'))
+        try:
+            last_active = datetime.fromisoformat(last_activity)
+            if (datetime.utcnow() - last_active).total_seconds() > 3600:  # 1 час
+                session.clear()
+                flash('Your session has expired due to inactivity', 'warning')
+                return redirect(url_for('auth.login'))
+        except:
+            session['last_activity'] = datetime.utcnow().isoformat()
     
-    # Обновляем время последней активности
     session['last_activity'] = datetime.utcnow().isoformat()
 
 @app.before_request
@@ -263,7 +285,10 @@ def check_session_integrity():
     """Проверяет целостность сессии администратора"""
     if 'admin_id' in session:
         try:
-            admin = admin_users_collection.find_one({'_id': ObjectId(session['admin_id'])})
+            admin = admin_users_collection.find_one(
+                {'_id': ObjectId(session['admin_id'])},
+                projection={'role': 1}
+            )
             if not admin or admin.get('role') not in ['admin', 'superadmin']:
                 session.pop('admin_id', None)
                 session.pop('admin_role', None)
@@ -289,6 +314,7 @@ def render_common_template(template_name, **kwargs):
 # ======================================
 
 @app.route('/')
+@cache.cached(timeout=300)
 def index():
     logger.info("Home page access")
     prices = get_current_prices()
@@ -298,12 +324,14 @@ def index():
     )
 
 @app.route('/contacts')
+@cache.cached(timeout=3600)
 def contacts_page():
     """Страница контактов"""
     logger.info("Contacts page access")
     return render_common_template('contacts.html')
 
 @app.route('/knowledge-base')
+@cache.cached(timeout=3600)
 def knowledge_base():
     """База знаний"""
     logger.info("Knowledge base access")
@@ -314,6 +342,7 @@ def knowledge_base():
 # ======================================
 
 @app.route('/compares')
+@cache.cached(timeout=3600)
 def compares_page():
     """Страница сравнения спецификаций телефонов"""
     logger.info("Compares page access")
@@ -333,10 +362,8 @@ def compare_search():
         return jsonify([])
 
     try:
-        # Используем regex для нечеткого поиска
         regex_query = re.compile(f'.*{re.escape(query)}.*', re.IGNORECASE)
         
-        # Ищем по бренду и модели
         results = phonebase_collection.find({
             '$or': [
                 {'Бренд': regex_query},
@@ -348,7 +375,6 @@ def compare_search():
         
         phones = list(results)
         
-        # Преобразуем ObjectId в строки
         for phone in phones:
             phone['_id'] = str(phone['_id'])
         
@@ -369,7 +395,6 @@ def get_phone_details(phone_id):
             logger.warning(f"Phone not found: {phone_id}")
             return jsonify({'error': 'Phone not found'}), 404
         
-        # Преобразуем ObjectId в строку
         phone['_id'] = str(phone['_id'])
         return jsonify(phone)
     
@@ -381,17 +406,10 @@ def get_phone_details(phone_id):
 # Роут для страницы проверки Apple IMEI
 # ======================================
 
-@app.route('/applecheck')
-def apple_check():
-    logger.info("Apple check page access")
-    # Определяем тип услуги из параметра URL
-    service_type = request.args.get('type', 'free')
-    
-    # Получаем текущие цены
+@cache.cached(timeout=600, key_prefix='apple_services_data')
+def get_apple_services_data():
     prices = get_current_prices()
-    
-    # Создаем словарь цен для каждого типа услуги
-    service_prices = {
+    return {
         'free': 'უფასო',
         'fmi': f"{prices['fmi'] / 100:.2f}₾",
         'blacklist': f"{prices['blacklist'] / 100:.2f}₾",
@@ -401,7 +419,12 @@ def apple_check():
         'mdm': f"{prices['mdm'] / 100:.2f}₾"
     }
 
-    # Создаем список услуг с данными для передачи в шаблон
+@app.route('/applecheck')
+def apple_check():
+    logger.info("Apple check page access")
+    service_type = request.args.get('type', 'free')
+    service_prices = get_apple_services_data()
+
     services_data = [
         { 
             'id': 'free', 
@@ -465,14 +488,10 @@ def apple_check():
 # Роут для страницы проверки Android IMEI
 # ======================================
 
-@app.route('/androidcheck')
-def android_check():
-    """Страница проверки Android устройств"""
-    logger.info("Android check page access")
-    service_type = request.args.get('type', '')
+@cache.cached(timeout=600, key_prefix='android_services_data')
+def get_android_services_data():
     prices = get_current_prices()
-
-    service_prices = {
+    return {
         'samsung_v1': f"{prices['samsung_v1'] / 100:.2f}₾",
         'samsung_v2': f"{prices['samsung_v2'] / 100:.2f}₾",
         'samsung_knox': f"{prices['samsung_knox'] / 100:.2f}₾",
@@ -486,7 +505,13 @@ def android_check():
         'sim_lock_android': f"{prices['sim_lock_android'] / 100:.2f}₾",
     }
 
-    # Данные сервисов
+@app.route('/androidcheck')
+def android_check():
+    """Страница проверки Android устройств"""
+    logger.info("Android check page access")
+    service_type = request.args.get('type', '')
+    service_prices = get_android_services_data()
+
     services_data = [
         { 
             'id': 'samsung', 
@@ -565,43 +590,44 @@ def perform_background_check(imei, service_type, session_id):
     from ifreeapi import perform_api_check
     from datetime import datetime
     try:
-        logger.info(f"Background check started for session: {session_id}")
-        result = perform_api_check(imei, service_type)
-        
-        # Всегда сохраняем полный результат
-        update_data = {
-            'result': result,
-            'status': 'completed' if result.get('success') else 'failed',
-            'completed_at': datetime.utcnow()
-        }
-        
-        if checks_collection is not None:
-            checks_collection.update_one(
-                {'session_id': session_id},
-                {'$set': update_data}
-            )
-            logger.info(f"Background check completed for session: {session_id}")
-        else:
-            logger.error("Checks collection is not available")
+        with REQUEST_SEMAPHORE:
+            logger.info(f"Background check started for session: {session_id}")
+            result = perform_api_check(imei, service_type)
             
+            update_data = {
+                'result': result,
+                'status': 'completed' if result.get('success') else 'failed',
+                'completed_at': datetime.utcnow()
+            }
+            
+            if checks_collection is not None:
+                checks_collection.update_one(
+                    {'session_id': session_id},
+                    {'$set': update_data}
+                )
+                logger.info(f"Background check completed for session: {session_id}")
+            else:
+                logger.error("Checks collection is not available")
+                
     except Exception as e:
         logger.exception(f"Background check failed: {str(e)}")
-        # Сохраняем ошибку в базу
         error_result = {
             'success': False,
             'error': f"Background processing error: {str(e)}",
             'error_type': 'internal_error'
         }
-        checks_collection.update_one(
-            {'session_id': session_id},
-            {'$set': {
-                'result': error_result,
-                'status': 'failed',
-                'completed_at': datetime.utcnow()
-            }}
-        )
+        if checks_collection:
+            checks_collection.update_one(
+                {'session_id': session_id},
+                {'$set': {
+                    'result': error_result,
+                    'status': 'failed',
+                    'completed_at': datetime.utcnow()
+                }}
+            )
 
 @app.route('/create-checkout-session', methods=['POST'])
+@csrf.exempt
 def create_checkout_session():
     try:
         data = request.json
@@ -616,24 +642,18 @@ def create_checkout_session():
             logger.warning(f"Invalid IMEI: {imei}")
             return jsonify({'error': 'არასწორი IMEI'}), 400
         
-        # Получаем цену для сервиса
         amount = get_service_price(service_type)
         
-        # Для бесплатной проверки не создаем сессию
         if service_type == 'free':
             logger.debug("Free service - no checkout needed")
             return jsonify({'error': 'უფასო შემოწმება არ საჭიროებს გადახდამ'}), 400
         
-        # Если пользователь авторизован и выбрал оплату с баланса
         if use_balance and 'user_id' in session:
             user_id = session['user_id']
-            # Конвертируем сумму в лари
             amount_gel = amount / 100.0
             
-            # Генерируем уникальный ключ идемпотентности
             idempotency_key = f"bal_{user_id}_{imei}_{datetime.utcnow().timestamp()}"
             
-            # Пытаемся списать средства с баланса
             if stripe_payment.deduct_balance(
                 user_id=user_id,
                 amount=amount_gel,
@@ -641,9 +661,8 @@ def create_checkout_session():
                 imei=imei,
                 idempotency_key=idempotency_key
             ):
-                # Создаем запись о проверке в коллекции checks
                 record = {
-                    'session_id': idempotency_key,  # используем idempotency_key как session_id для балансовой операции
+                    'session_id': idempotency_key,
                     'imei': imei,
                     'service_type': service_type,
                     'paid': True,
@@ -654,13 +673,12 @@ def create_checkout_session():
                     'timestamp': datetime.utcnow(),
                     'user_id': ObjectId(user_id),
                     'idempotency_key': idempotency_key,
-                    'status': 'pending_verification'  # ожидание выполнения проверки
+                    'status': 'pending_verification'
                 }
                 if client:
                     checks_collection.insert_one(record)
                     logger.info(f"Balance payment recorded for IMEI: {imei}")
                 
-                # Запускаем фоновую проверку
                 threading.Thread(
                     target=perform_background_check,
                     args=(imei, service_type, idempotency_key),
@@ -675,17 +693,14 @@ def create_checkout_session():
                 logger.warning(f"Balance deduction failed for user: {user_id}")
                 return jsonify({'error': 'ბალანსიდან გადახდა ვერ მოხერხდა'}), 500
         
-        # Если не используем баланс (неавторизован или недостаточно средств), создаем сессию Stripe
         base_url = request.host_url.rstrip('/')
         success_url = f"{base_url}/success?session_id={{CHECKOUT_SESSION_ID}}&imei={imei}&service_type={service_type}"
         
-        # Определяем cancel_url в зависимости от типа услуги
         if service_type in ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']:
             cancel_url = f"{base_url}/applecheck?type={service_type}"
         else:
             cancel_url = f"{base_url}/androidcheck?type={service_type}"
         
-        # Метаданные для сессии
         metadata = {
             'imei': imei,
             'service_type': service_type,
@@ -694,11 +709,10 @@ def create_checkout_session():
         if 'user_id' in session:
             metadata['user_id'] = session['user_id']
         
-        # Создаем сессию через StripePayment
         stripe_session = stripe_payment.create_checkout_session(
             imei=imei,
             service_type=service_type,
-            amount=amount,  # в центах
+            amount=amount,
             success_url=success_url,
             cancel_url=cancel_url,
             metadata=metadata,
@@ -713,7 +727,6 @@ def create_checkout_session():
     
     except Exception as e:
         logger.exception(f"Error creating checkout session: {str(e)}")
-        # Возвращаем детализированную ошибку
         return jsonify({
             'error': 'გადახდის შეცდომა',
             'details': str(e),
@@ -732,35 +745,26 @@ def payment_success():
         logger.warning("Missing parameters in payment success")
         return render_template('error.html', error="არასაკმარისი პარამეტრები"), 400
     
-    # Если session_id начинается с "bal_", то это оплата с баланса
     if session_id.startswith('bal_'):
-        # Для балансовой оплаты мы уже создали запись в checks_collection
-        # Теперь нужно выполнить проверку и обновить запись
-        # Но можно перенаправить сразу на страницу результатов, передав session_id
-        # Или отобразить результаты здесь?
-        # Пока просто перенаправляем на страницу проверки с параметрами
         apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
         if service_type in apple_services:
             return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
         else:
             return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
     else:
-        # Это оплата через Stripe
         try:
-            # Получаем сессию Stripe
             stripe_session = stripe.checkout.Session.retrieve(session_id)
             
-            # Создаем запись о платеже в коллекции checks
             record = {
                 'stripe_session_id': session_id,
                 'imei': imei,
                 'service_type': service_type,
                 'paid': True,
                 'payment_status': stripe_session.payment_status,
-                'amount': stripe_session.amount_total / 100,  # переводим в лари
+                'amount': stripe_session.amount_total / 100,
                 'currency': stripe_session.currency,
                 'timestamp': datetime.utcnow(),
-                'status': 'pending_verification'  # ожидание выполнения проверки
+                'status': 'pending_verification'
             }
             if 'user_id' in session:
                 record['user_id'] = ObjectId(session['user_id'])
@@ -768,7 +772,6 @@ def payment_success():
                 checks_collection.insert_one(record)
                 logger.info(f"Payment recorded: {session_id}")
             
-            # Перенаправляем на страницу проверки с параметрами
             apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
             if service_type in apple_services:
                 return redirect(url_for('apple_check', type=service_type, imei=imei, session_id=session_id))
@@ -780,6 +783,7 @@ def payment_success():
             return render_template('error.html', error=str(e)), 500
 
 @app.route('/get_check_result')
+@csrf.exempt
 def get_check_result():
     session_id = request.args.get('session_id')
     logger.info(f"Check result request: {session_id}")
@@ -788,7 +792,6 @@ def get_check_result():
         return jsonify({'error': 'სესიის ID არის მითითებული'}), 400
     
     try:
-        # Ищем как по session_id (баланс), так и по stripe_session_id (Stripe)
         record = checks_collection.find_one({
             '$or': [
                 {'session_id': session_id},
@@ -799,7 +802,6 @@ def get_check_result():
             logger.warning(f"Check result not found: {session_id}")
             return jsonify({'error': 'შედეგი ვერ მოიძებნა'}), 404
         
-        # Возвращаем все данные проверки
         response_data = {
             'imei': record.get('imei'),
             'service_type': record.get('service_type'),
@@ -808,7 +810,6 @@ def get_check_result():
             'completed_at': record.get('completed_at')
         }
         
-        # Добавляем результат если есть
         if 'result' in record:
             response_data['result'] = record['result']
         
@@ -828,6 +829,7 @@ def get_check_result():
         }), 500
 
 @app.route('/perform_check', methods=['POST'])
+@csrf.exempt
 def perform_check():
     try:
         data = request.get_json()
@@ -844,10 +846,8 @@ def perform_check():
             logger.warning(f"Invalid IMEI: {imei}")
             return jsonify({'error': 'IMEI-ის არასწორი ფორმატი'}), 400
         
-        # Выполняем проверку
         result = perform_api_check(imei, service_type)
         
-        # Сохраняем результат в базу данных
         if client:
             record = {
                 'imei': imei,
@@ -880,18 +880,16 @@ def get_balance():
         return jsonify({'error': 'Unauthorized'}), 401
 
     try:
-        # Получаем пользователя из базы данных
-        user = regular_users_collection.find_one({'_id': ObjectId(user_id)})
+        user = regular_users_collection.find_one(
+            {'_id': ObjectId(user_id)},
+            projection={'balance': 1}
+        )
         if not user:
             logger.warning(f"User not found: {user_id}")
             return jsonify({'error': 'User not found'}), 404
 
         balance = user.get('balance', 0)
-        logger.debug(f"Balance retrieved: {balance}")
-        # Возвращаем баланс пользователя
-        return jsonify({
-            'balance': balance
-        })
+        return jsonify({'balance': balance})
     except (TypeError, InvalidId) as e:
         logger.error(f"Invalid user ID: {user_id} - {str(e)}")
         return jsonify({'error': 'Invalid user ID'}), 400
@@ -911,7 +909,6 @@ def send_webhook_event(event_type, payload):
         logger.warning("Database unavailable for webhook")
         return
         
-    # Получаем коллекцию вебхуков
     webhooks_collection = client.imeicheck.webhooks
     active_webhooks = webhooks_collection.find({
         'active': True,
@@ -960,7 +957,6 @@ def send_webhook_event(event_type, payload):
 
 @app.route('/create-carousel-folder', methods=['POST'])
 def create_carousel_folder():
-    """Создает папку для изображений карусели"""
     data = request.json
     path = data.get('path', 'static/img/carousel')
     
@@ -974,7 +970,6 @@ def create_carousel_folder():
 
 @app.route('/upload-carousel-image', methods=['POST'])
 def upload_carousel_image():
-    """Загружает изображение для карусели"""
     if 'carouselImage' not in request.files:
         logger.warning("No file in carousel upload")
         return jsonify({'success': False, 'error': 'ფაილი არ არის ატვირთული'}), 400
@@ -985,7 +980,6 @@ def upload_carousel_image():
         return jsonify({'success': False, 'error': 'ფაილი არ არის არჩეული'}), 400
     
     try:
-        # Сохраняем в папку carousel
         upload_folder = 'static/img/carousel'
         os.makedirs(upload_folder, exist_ok=True)
         
@@ -1006,13 +1000,12 @@ def upload_carousel_image():
 app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(admin_bp, url_prefix='/admin')
-app.register_blueprint(test_bp, url_prefix='/test')  # Регистрация тестового модуля
+app.register_blueprint(test_bp, url_prefix='/test')
 
-# Установка CSRF-куки для AJAX
+# Установка CSRF-куки
 @app.after_request
 def set_csrf_cookie(response):
-    # Не устанавливаем CSRF для статики и API
-    if not request.path.startswith(('/static', '/api', '/create-checkout-session', '/get_check_result', '/perform_check')):
+    if not request.path.startswith(('/static', '/api')):
         secure = app.config['SESSION_COOKIE_SECURE']
         response.set_cookie(
             'csrf_token', 
@@ -1023,7 +1016,7 @@ def set_csrf_cookie(response):
         )
     return response
 
-# Обработчик ошибок CSRF (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+# Обработчик ошибок CSRF
 @app.errorhandler(CSRFError)
 def handle_csrf_error(e):
     logger.error(f"CSRF Validation Error: {e.description}")
@@ -1063,10 +1056,7 @@ def internal_server_error(e):
 # Глобальный обработчик ошибок
 @app.errorhandler(Exception)
 def handle_unexpected_error(e):
-    """Глобальный обработчик непредвиденных ошибок"""
     logger.exception(f"Unexpected error: {str(e)}")
-    
-    # Определяем тип ошибки для пользователя
     error_type = "internal"
     if isinstance(e, KeyError):
         error_type = "data_missing"
@@ -1124,7 +1114,20 @@ def health_check():
     
     return jsonify(status), 200 if status['status'] == 'OK' else 500
 
+# Создание индексов при запуске
+def create_indexes():
+    if client:
+        try:
+            checks_collection.create_index([("session_id", 1)])
+            checks_collection.create_index([("stripe_session_id", 1)])
+            checks_collection.create_index([("user_id", 1)])
+            checks_collection.create_index([("timestamp", -1)])
+            logger.info("Database indexes created")
+        except Exception as e:
+            logger.error(f"Error creating indexes: {str(e)}")
+
 if __name__ == '__main__':
+    create_indexes()
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting application on port {port}")
     app.run(host='0.0.0.0', port=port, debug=True)
