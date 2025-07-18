@@ -255,7 +255,7 @@ def admin_required(f):
     return decorated
 
 def login_required(f):
-    @wrups(f)
+    @wrups(f).
     def decorated(*args, **kwargs):
         if 'user_id' not in session and 'admin_id' not in session:
             logger.warning("Unauthorized access attempt")
