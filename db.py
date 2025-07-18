@@ -76,6 +76,21 @@ def init_admin_user(db):
 logger.info("Initializing MongoDB client")
 client = init_mongodb()
 
+# Глобальные переменные для коллекций
+db = None
+regular_users_collection = None
+checks_collection = None
+payments_collection = None
+refunds_collection = None
+prices_collection = None
+comparisons_collection = None
+phonebase_collection = None
+admin_users_collection = None
+parser_logs_collection = None
+audit_logs_collection = None
+api_keys_collection = None
+webhooks_collection = None
+
 # Инициализация коллекций даже если подключение не удалось
 try:
     if client:
