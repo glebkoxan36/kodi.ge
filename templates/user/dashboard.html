@@ -97,12 +97,15 @@
                     </div>
                     <div class="card-body">
                         <div class="text-center mb-4">
-                            <div class="user-info-avatar" 
-                                 style="background-color: {{ avatar_color }};">
+                            <div class="user-info-avatar rounded-circle" 
+                                 style="background-color: {{ avatar_color }}; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto;">
                                 {% if user.avatar_url %}
-                                    <img src="{{ user.avatar_url }}" alt="User Avatar" class="user-avatar">
+                                    <img src="{{ user.avatar_url }}" alt="User Avatar" 
+                                         style="width: 100%; height: 100%; object-fit: cover;">
                                 {% else %}
-                                    {{ user.first_name[0] }}{{ user.last_name[0] }}
+                                    <span style="font-size: 2rem; color: white;">
+                                        {{ user.first_name[0] }}{{ user.last_name[0] }}
+                                    </span>
                                 {% endif %}
                             </div>
                             <div>
@@ -169,24 +172,49 @@
                     </div>
                     <div class="card-body">
                         {% if last_checks %}
-                            <table class="history-table text-light">
-                                <thead>
-                                    <tr>
-                                        <th>თარიღი</th>
-                                        <th>IMEI</th>
-                                        <th>ტიპი</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for check in last_checks %}
-                                    <tr>
-                                        <td>{{ check.formatted_timestamp or check.timestamp }}</td>
-                                        <td>{{ check.imei }}</td>
-                                        <td>{{ check.service_type }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="history-table text-light">
+                                    <thead>
+                                        <tr>
+                                            <th>თარიღი</th>
+                                            <th>IMEI</th>
+                                            <th>ტიპი</th>
+                                            <th>სტატუსი</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for check in last_checks %}
+                                        <tr>
+                                            <td>{{ check.formatted_timestamp or check.timestamp }}</td>
+                                            <td>{{ check.imei }}</td>
+                                            <td>{{ check.service_type }}</td>
+                                            <td>
+                                                {% if check.result and check.result.success and check.result.status %}
+                                                    {% set device_status = check.result.status | lower %}
+                                                    {% if device_status in ['clean', 'სუფთა'] %}
+                                                        <span class="badge bg-success">{{ check.result.status }}</span>
+                                                    {% elif device_status in ['blacklisted', 'შავ სიაშია'] %}
+                                                        <span class="badge bg-danger">{{ check.result.status }}</span>
+                                                    {% elif device_status in ['warning', 'გაფრთხილება'] %}
+                                                        <span class="badge bg-warning">{{ check.result.status }}</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ check.result.status }}</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    {% if check.status == 'completed' %}
+                                                        <span class="badge bg-success">დასრულებული</span>
+                                                    {% elif check.status == 'failed' %}
+                                                        <span class="badge bg-danger">შეცდომა</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ check.status }}</span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         {% else %}
                             <div class="text-center py-4">
                                 <p class="text-muted">შემოწმებების ისტორია ცარიელია</p>
