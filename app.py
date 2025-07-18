@@ -255,7 +255,7 @@ def admin_required(f):
     return decorated
 
 def login_required(f):
-    @wraps(f)
+    @wrups(f)
     def decorated(*args, **kwargs):
         if 'user_id' not in session and 'admin_id' not in session:
             logger.warning("Unauthorized access attempt")
@@ -1013,10 +1013,6 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(test_bp, url_prefix='/test')
-
-# Явно регистрируем Facebook OAuth роуты
-app.add_url_rule('/auth/facebook', view_func=auth_bp.view_functions['facebook_login'])
-app.add_url_rule('/auth/facebook/callback', view_func=auth_bp.view_functions['facebook_callback'])
 
 # Установка CSRF-куки
 @app.after_request
