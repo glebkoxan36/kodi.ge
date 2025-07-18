@@ -678,9 +678,9 @@
         });
         
         document.getElementById('facebook-btn').addEventListener('click', () => {
-            alert('Facebook-ით რეგისტრაცია ამჟამად მიუწვდომელია');
+            window.location.href = "/auth/facebook";
         });
-        
+
         document.querySelectorAll('.form-control').forEach(input => {
             input.addEventListener('input', () => {
                 const errorId = input.id + '_error';
