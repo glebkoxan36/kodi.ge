@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <style>
-        /* Стили остаются без изменений */
         body.modal-open { overflow: hidden; position: fixed; width: 100%; }
         .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 2999; display: none; }
         .result-modal, .payment-method-modal, .payment-status-modal { transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: translateY(-20px); }
@@ -28,6 +27,21 @@
         .balance-insufficient { color: var(--danger-color); font-weight: bold; }
         .balance-error { color: var(--warning-color); font-weight: bold; }
         @media (max-width: 768px) { .result-modal .modal-content { width: 100%; margin: 10px; } }
+        .btn-back {
+            background: linear-gradient(135deg, var(--accent-color), #0066ff);
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -60,7 +74,6 @@
             <p>აირჩიეთ შემოწმების ტიპი და შეიყვანეთ IMEI ან სერიული ნომერი</p>
         </div>
         
-        <!-- Android предупреждение -->
         <div class="android-warning">
             <i class="fas fa-exclamation-triangle"></i>
             <p>
@@ -71,7 +84,6 @@
         </div>
         
         <div id="services-container" class="services-grid">
-            <!-- JavaScript сгенерирует карточки сервисов -->
         </div>
         
         <div id="selected-service-container" class="selected-service-container">
@@ -96,7 +108,6 @@
                     <div class="form-group">
                         <label class="form-label">შეიყვანეთ IMEI ან სერიული ნომერი:</label>
                         <input type="text" class="form-control" id="imei-input" placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
-                        <div class="error-message" id="imei-error"></div>
                     </div>
                     <button class="btn-primary" id="check-btn">შემოწმების დაწყება</button>
                 </div>
@@ -104,7 +115,6 @@
         </div>
     </div>
     
-    <!-- Results Modal -->
     <div class="result-modal" id="result-modal">
         <div class="modal-content">
             <div class="card-header">
@@ -118,7 +128,6 @@
         </div>
     </div>
     
-    <!-- Payment Method Modal -->
     <div class="payment-method-modal" id="payment-method-modal">
         <div class="payment-method-content">
             <div class="payment-method-header">
@@ -147,7 +156,6 @@
         </div>
     </div>
     
-    <!-- Payment Status Modals -->
     <div class="payment-status-modal" id="payment-success-modal">
         <div class="modal-content">
             <div class="status-icon success">
@@ -238,7 +246,6 @@
             
             container.innerHTML = '';
             
-            // Фильтруем бесплатные сервисы
             const paidServices = services.filter(service => service.price !== 'უფასო');
             
             if (!paidServices || paidServices.length === 0) {
@@ -458,10 +465,8 @@
                 })
             })
             .then(response => {
-                // Читаем ответ как JSON, даже если статус не 200
                 return response.json().then(data => {
                     if (!response.ok) {
-                        // Если ответ не успешный, бросаем ошибку с данными из ответа
                         throw Object.assign(new Error('Payment failed'), { details: data });
                     }
                     return data;
@@ -471,7 +476,6 @@
                 document.getElementById('spinner').style.display = 'none';
                 
                 if (data.error) {
-                    // Если в ответе есть ошибка (например, от сервера)
                     throw new Error(data.error);
                 }
                 
@@ -494,7 +498,6 @@
                 
                 let errorMessage = error.message || 'Unknown payment error';
                 
-                // Если есть детали в ошибке (например, от сервера)
                 if (error.details && error.details.error) {
                     errorMessage = error.details.error;
                     if (error.details.details) {
@@ -544,13 +547,11 @@
                     document.getElementById('spinner').style.display = 'none';
                     closeModal('payment-success-modal');
                     
-                    // Обработка ошибок сервера
                     if (data.error) {
                         displayError(data.error);
                         return;
                     }
                     
-                    // Обработка pending статуса
                     if (data.status === 'pending') {
                         setTimeout(() => {
                             fetchResultForSession(sessionId, attempt + 1);
@@ -558,7 +559,6 @@
                         return;
                     }
                     
-                    // Отображение результатов
                     displayResults(currentImei, currentServiceType, data);
                     
                     document.getElementById('check-btn').disabled = false;
@@ -603,7 +603,6 @@
         function displayResults(imei, serviceType, data) {
             const resultContent = document.getElementById('result-content');
             
-            // Показ ошибок API
             if (data.result && data.result.error) {
                 resultContent.innerHTML = `
                     <div class="error-card">
@@ -620,7 +619,6 @@
                 return;
             }
             
-            // Обработка типа устройства
             const deviceType = (data.device_type || '').toLowerCase();
             if (deviceType === 'android' || deviceType === 'unknown') {
                 resultContent.innerHTML = `
@@ -629,7 +627,7 @@
                         <p>ამ გვერდზე შეგიძლიათ მხოლოდ Apple მოწყობილობების შემოწმება.</p>
                         <p>თქვენი მოწყობილობა: ${data.brand || 'Unknown'} ${data.model || ''}</p>
                         <div class="result-actions">
-                            <a href="/android_check" class="btn-primary">გადასვლა Android შემოწმებაზე</a>
+                            <a href="/androidcheck" class="btn-primary">გადასვლა Android შემოწმებაზე</a>
                         </div>
                     </div>
                 `;
@@ -637,7 +635,6 @@
                 return;
             }
             
-            // Форматирование результатов из JSON
             let resultsHTML = `
                 <div class="text-center mb-4">
                     <i class="fas fa-check-circle text-success" style="font-size: 4rem; color: var(--success-color);"></i>
@@ -651,7 +648,6 @@
                         <div class="card-body">
             `;
             
-            // Основные поля для отображения
             const keyFields = {
                 'brand': 'მწარმოებელი',
                 'model': 'მოდელი',
@@ -665,10 +661,8 @@
                 'warranty_status': 'გარანტია'
             };
             
-            // Фильтруем существующие поля
             const existingFields = Object.keys(keyFields).filter(field => data.result && data.result[field]);
             
-            // Форматируем основные параметры
             existingFields.forEach(field => {
                 const value = data.result[field];
                 let statusClass = '';
@@ -711,4 +705,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
