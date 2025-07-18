@@ -462,6 +462,10 @@ h1, h2, h3, h4, h5, h6 {
   animation: fadeIn 0.8s ease-out;
 }
 
+.card-body, .card-body * {
+  color: var(--text-color) !important;
+}
+
 .card-footer {
   margin-top: 20px;
   padding-top: 20px;
@@ -594,7 +598,7 @@ h1, h2, h3, h4, h5, h6 {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(10, 16, 30, 0.85) !important;
+  background: rgba(10, 16, 30, 0.95) !important;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -611,6 +615,8 @@ h1, h2, h3, h4, h5, h6 {
 .placeholder .logo-animated {
   width: 80px; /* Reduced logo size */
   height: 80px; /* Reduced logo size */
+  filter: none;
+  transform: translateZ(0);
 }
 
 .placeholder .logo-core {
@@ -839,6 +845,16 @@ h1, h2, h3, h4, h5, h6 {
   .carousel { min-height: 250px; max-width: 95%; }
   .placeholder-text { font-size: 1.1rem; }
   .section-title { font-size: 1.8rem; }
+  
+  .carousel-content {
+    margin-top: -50px;
+  }
+  
+  .placeholder-text {
+    font-size: 1.3rem !important;
+    padding: 10px 15px !important;
+    font-weight: 600;
+  }
 }
 
 @media (max-width: 576px) {
@@ -848,6 +864,24 @@ h1, h2, h3, h4, h5, h6 {
   .carousel { min-height: 200px; max-width: 95%; }
   .placeholder-text { font-size: 1rem; }
   .section-title { font-size: 1.6rem; }
+  
+  .carousel-content {
+    margin-top: -70px;
+  }
+  
+  .placeholder .logo-animated {
+    width: 60px !important;
+    height: 60px !important;
+  }
+  
+  .placeholder .logo-core {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  
+  .placeholder .logo-letter {
+    font-size: 20px !important;
+  }
 }
 
 @media (max-width: 360px) {
@@ -858,4 +892,4 @@ h1, h2, h3, h4, h5, h6 {
   .service-price { font-size: 1.5rem; }
   .modal-content { padding: 15px 10px; }
   .close-modal { width: 30px; height: 30px; font-size: 1.3rem; }
-    }
+}
