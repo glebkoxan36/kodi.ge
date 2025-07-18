@@ -377,12 +377,12 @@
     
     <script>
         // User context
-        window.currentUser = {% if current_user.is_authenticated %}{
-            id: "{{ current_user.id }}",
-            username: "{{ current_user.username }}",
-            balance: {{ current_user.balance|default(0.0) }}
-        }{% else %}null{% endif %};
-
+          window.currentUser = {% if currentUser %}{
+           id: "{{ currentUser.id }}",
+          username: "{{ currentUser.username }}",
+          balance: {{ currentUser.balance }}
+         {% else %}null{% endif %};
+ 
         // Core functions
         function getCSRFToken() {
             return document.querySelector('meta[name="csrf-token"]').content;
