@@ -215,6 +215,10 @@
         .btn-secondary:hover {
             background: #5a6268;
         }
+        /* Добавлено для скрытия контейнера выбранного сервиса */
+        #selected-service-container {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -428,7 +432,8 @@
         });
         
         function setupEventListeners() {
-            document.querySelectorAll('.service-card').forEach(card => {
+            // Исправлено: выбираем только карточки в основном контейнере сервисов
+            document.querySelectorAll('#services-container .service-card').forEach(card => {
                 card.addEventListener('click', function() {
                     const serviceId = this.getAttribute('data-service');
                     selectService(serviceId);
@@ -493,6 +498,12 @@
                 populateVersionSelector(service.versions);
                 versionSelector.style.display = 'block';
                 document.getElementById('selected-service-price').textContent = '';
+                
+                // Автоматически выбираем первую версию
+                if (service.versions.length > 0) {
+                    currentServiceType = service.versions[0].id;
+                    document.getElementById('selected-service-price').textContent = service.versions[0].price;
+                }
             } else {
                 versionSelector.style.display = 'none';
                 document.getElementById('selected-service-price').textContent = service.price;
@@ -518,7 +529,11 @@
                 select.appendChild(option);
             });
             
-            updateSelectedVersion();
+            // Устанавливаем первую версию по умолчанию
+            if (versions.length > 0) {
+                select.selectedIndex = 0;
+                updateSelectedVersion();
+            }
         }
         
         function updateSelectedVersion() {
