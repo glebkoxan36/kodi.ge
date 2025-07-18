@@ -619,7 +619,8 @@ def perform_background_check(imei, service_type, session_id):
         error_result = {
             'success': False,
             'error': f"Background processing error: {str(e)}",
-            'error_type': 'internal_error'
+            'error_type': 'internal_error',
+            'status': 'Error'
         }
         if checks_collection:
             checks_collection.update_one(
@@ -858,7 +859,8 @@ def perform_check():
                 'imei': imei,
                 'service_type': service_type,
                 'timestamp': datetime.utcnow(),
-                'result': result
+                'result': result,
+                'status': 'completed' if result.get('success') else 'failed'
             }
             if 'user_id' in session:
                 record['user_id'] = ObjectId(session['user_id'])
