@@ -22,16 +22,17 @@ from flask_session import Session
 from flask_caching import Cache
 from bs4 import BeautifulSoup
 from pymongo.errors import PyMongoError
+from flask_pymongo import PyMongo
 
 # Импорт модулей
 from auth import auth_bp
 from user_dashboard import user_bp
 from ifreeapi import validate_imei, perform_api_check
-from db import client, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection, db
+from db import client, db, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection
 from stripepay import StripePayment
 from admin_routes import admin_bp
 from test import test_bp
-from price import get_current_prices, get_service_price
+from price import get_current_prices, get_service_price, init_prices
 
 # Создаем папку для логов
 if not os.path.exists('logs'):
@@ -67,6 +68,10 @@ if os.getenv('FLASK_ENV') == 'production':
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
+
+# Инициализация PyMongo
+app.config["MONGO_URI"] = os.getenv('MONGODB_URI')
+mongo = PyMongo(app)
 
 # Инициализация кэширования
 cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
@@ -1127,6 +1132,10 @@ def create_indexes():
             logger.error(f"Error creating indexes: {str(e)}")
 
 if __name__ == '__main__':
+    # Инициализация цен
+    if db:
+        init_prices()
+    
     create_indexes()
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting application on port {port}")
