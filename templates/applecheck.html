@@ -42,6 +42,44 @@
             margin-bottom: 20px;
             display: inline-block;
         }
+        /* Исправленные стили для кнопки */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-color), #0066ff);
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            margin-top: 20px;
+            display: inline-block;
+            width: 100%;
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 198, 255, 0.3);
+        }
+        .btn-primary:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        /* Стили для сообщений об ошибках */
+        .error-message {
+            display: none;
+            color: #ff3860;
+            margin-top: 10px;
+            padding: 8px 12px;
+            background-color: #fff5f7;
+            border-radius: 6px;
+            border-left: 4px solid #ff3860;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -108,6 +146,7 @@
                     <div class="form-group">
                         <label class="form-label">შეიყვანეთ IMEI ან სერიული ნომერი:</label>
                         <input type="text" class="form-control" id="imei-input" placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
+                        <div id="imei-error" class="error-message"></div>
                     </div>
                     <button class="btn-primary" id="check-btn">შემოწმების დაწყება</button>
                 </div>
@@ -383,6 +422,11 @@
             const errorElement = document.getElementById('imei-error');
             const checkBtn = document.getElementById('check-btn');
             
+            // Сброс предыдущих ошибок
+            errorElement.style.display = 'none';
+            errorElement.textContent = '';
+            
+            // Валидация IMEI
             if (!imei) {
                 errorElement.textContent = 'გთხოვთ შეიყვანოთ IMEI ან სერიული ნომერი';
                 errorElement.style.display = 'block';
@@ -395,7 +439,7 @@
                 return;
             }
             
-            errorElement.style.display = 'none';
+            // Проверка выбранного сервиса
             const urlParams = new URLSearchParams(window.location.search);
             const serviceType = urlParams.get('type');
             
@@ -405,34 +449,43 @@
                 return;
             }
             
+            // Сохранение данных и начало процесса
             currentImei = imei;
             currentServiceType = serviceType;
             checkBtn.disabled = true;
             
             if (window.currentUser) {
-                fetchUserBalance().then(balance => {
-                    const service = services.find(s => s.id === serviceType);
-                    const priceText = service.price;
-                    const price = parseFloat(priceText.replace('₾', '').trim());
-                    
-                    document.getElementById('user-balance').textContent = balance.toFixed(2);
-                    
-                    if (balance >= price) {
-                        document.getElementById('balance-status').innerHTML = 
-                            `<span class="balance-sufficient">ბალანსი საკმარისია</span>`;
-                    } else {
-                        document.getElementById('balance-status').innerHTML = 
-                            `<span class="balance-insufficient">არასაკმარისი თანხა</span>`;
-                    }
-                    
-                    openModal('payment-method-modal');
-                }).catch(() => {
-                    document.getElementById('balance-status').innerHTML = 
-                        `<span class="balance-error">ბალანსის მონაცემები ვერ მოიძებნა</span>`;
-                }).finally(() => {
-                    checkBtn.disabled = false;
-                });
+                // Для авторизованных пользователей
+                fetchUserBalance()
+                    .then(balance => {
+                        const service = services.find(s => s.id === serviceType);
+                        const priceText = service.price;
+                        const price = parseFloat(priceText.replace('₾', '').trim());
+                        
+                        // Обновление информации о балансе
+                        document.getElementById('user-balance').textContent = balance.toFixed(2);
+                        
+                        if (balance >= price) {
+                            document.getElementById('balance-status').innerHTML = 
+                                `<span class="balance-sufficient">ბალანსი საკმარისია</span>`;
+                        } else {
+                            document.getElementById('balance-status').innerHTML = 
+                                `<span class="balance-insufficient">არასაკმარისი თანხა</span>`;
+                        }
+                        
+                        // Открытие модального окна выбора оплаты
+                        openModal('payment-method-modal');
+                    })
+                    .catch(error => {
+                        console.error('Error fetching balance:', error);
+                        errorElement.textContent = 'ბალანსის მონაცემების მიღება ვერ მოხერხდა. სცადეთ ხელახლა.';
+                        errorElement.style.display = 'block';
+                    })
+                    .finally(() => {
+                        checkBtn.disabled = false;
+                    });
             } else {
+                // Для неавторизованных пользователей
                 processPayment(false);
             }
         }
@@ -483,31 +536,50 @@
                     openModal('payment-success-modal');
                     fetchResultForSession(data.id);
                 } else if (data.payment_method === 'stripe') {
+                    // Решение проблемы с пустым ответом от Stripe
+                    if (!data.id) {
+                        throw new Error('Stripe session ID is missing');
+                    }
+                    
                     stripe.redirectToCheckout({ sessionId: data.id })
                         .then(result => {
                             if (result.error) {
                                 document.getElementById('payment-error-message').textContent = 
                                     `Stripe error: ${result.error.message}`;
                                 openModal('payment-error-modal');
+                                document.getElementById('check-btn').disabled = false;
                             }
+                        })
+                        .catch(error => {
+                            document.getElementById('payment-error-message').textContent = 
+                                `Stripe error: ${error.message}`;
+                            openModal('payment-error-modal');
+                            document.getElementById('check-btn').disabled = false;
                         });
+                } else {
+                    throw new Error('Unknown payment method');
                 }
             })
             .catch(error => {
                 document.getElementById('spinner').style.display = 'none';
                 
-                let errorMessage = error.message || 'Unknown payment error';
+                let errorMessage = 'გადახდის პროცესში მოხდა შეცდომა';
                 
                 if (error.details && error.details.error) {
                     errorMessage = error.details.error;
                     if (error.details.details) {
                         errorMessage += ` (${error.details.details})`;
                     }
+                } else if (error.message) {
+                    errorMessage = error.message;
                 }
                 
                 document.getElementById('payment-error-message').textContent = errorMessage;
                 openModal('payment-error-modal');
                 console.error('Payment error:', error);
+                
+                // Разблокировка кнопки при ошибке
+                document.getElementById('check-btn').disabled = false;
             });
         }
         
@@ -603,6 +675,7 @@
         function displayResults(imei, serviceType, data) {
             const resultContent = document.getElementById('result-content');
             
+            // Обработка ошибок API
             if (data.result && data.result.error) {
                 resultContent.innerHTML = `
                     <div class="error-card">
@@ -619,6 +692,7 @@
                 return;
             }
             
+            // Проверка типа устройства
             const deviceType = (data.device_type || '').toLowerCase();
             if (deviceType === 'android' || deviceType === 'unknown') {
                 resultContent.innerHTML = `
@@ -635,6 +709,7 @@
                 return;
             }
             
+            // Отображение результатов проверки
             let resultsHTML = `
                 <div class="text-center mb-4">
                     <i class="fas fa-check-circle text-success" style="font-size: 4rem; color: var(--success-color);"></i>
