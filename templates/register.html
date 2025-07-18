@@ -174,6 +174,17 @@
             font-size: 16px;
             cursor: pointer;
         }
+        .password-container {
+            position: relative;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6c757d;
+        }
     </style>
 </head>
 <body>
@@ -257,8 +268,11 @@
             
             <div class="form-group">
                 <label class="form-label" for="password">პაროლი</label>
-                <input type="password" class="form-control" id="password" name="password" 
-                       placeholder="შეიყვანეთ პაროლი" required>
+                <div class="password-container">
+                    <input type="password" class="form-control" id="password" name="password" 
+                           placeholder="შეიყვანეთ პაროლი" required style="padding-right: 40px;">
+                    <i class="fas fa-eye toggle-password" id="togglePassword"></i>
+                </div>
                 <div class="password-requirements">
                     პაროლი უნდა შეიცავდეს:
                     <ul>
@@ -274,12 +288,15 @@
             
             <div class="form-group">
                 <label class="form-label" for="confirm_password">გაიმეორეთ პაროლი</label>
-                <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
-                       placeholder="გაიმეორეთ პაროლი" required>
+                <div class="password-container">
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                           placeholder="გაიმეორეთ პაროლი" required style="padding-right: 40px;">
+                    <i class="fas fa-eye toggle-password" id="toggleConfirmPassword"></i>
+                </div>
                 <div class="error-message" id="confirm_password_error"></div>
             </div>
             
-            <button type="submit" class="btn-primary">რეგისტრაცია</button>
+            <button type="submit" class="btn-primary" style="width:100%;">რეგისტრაცია</button>
         </form>
         
         <div class="social-auth">
@@ -332,24 +349,33 @@
             header.innerHTML = '<h3>აირჩიეთ წელი</h3>';
             container.appendChild(header);
             
-            const yearGrid = document.createElement('div');
-            yearGrid.className = 'calendar-grid';
+            const nav = document.createElement('div');
+            nav.className = 'calendar-nav';
+            nav.innerHTML = `
+                <button class="calendar-nav-btn" id="prev-year"><i class="fas fa-chevron-left"></i></button>
+                <h3>${currentYear}</h3>
+                <button class="calendar-nav-btn" id="next-year"><i class="fas fa-chevron-right"></i></button>
+            `;
+            container.appendChild(nav);
             
-            const startYear = currentYear - 50;
-            const endYear = currentYear + 10;
+            document.getElementById('prev-year').addEventListener('click', () => {
+                currentYear--;
+                nav.querySelector('h3').textContent = currentYear;
+            });
             
-            for (let year = endYear; year >= startYear; year--) {
-                const yearBtn = document.createElement('button');
-                yearBtn.className = 'calendar-grid-btn';
-                yearBtn.textContent = year;
-                yearBtn.addEventListener('click', () => {
-                    currentYear = year;
-                    showMonthSelector();
-                });
-                yearGrid.appendChild(yearBtn);
-            }
+            document.getElementById('next-year').addEventListener('click', () => {
+                currentYear++;
+                nav.querySelector('h3').textContent = currentYear;
+            });
             
-            container.appendChild(yearGrid);
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = 'შემდეგი';
+            nextBtn.className = 'btn-primary';
+            nextBtn.style.marginTop = '15px';
+            nextBtn.style.width = '100%';
+            nextBtn.addEventListener('click', showMonthSelector);
+            container.appendChild(nextBtn);
+            
             currentStep = 'years';
         }
         
@@ -359,27 +385,44 @@
             
             const header = document.createElement('div');
             header.className = 'calendar-header';
-            header.innerHTML = `<h3>აირჩიეთ თვე (${currentYear})</h3>`;
+            header.innerHTML = `<h3>აირჩიეთ თვე</h3>`;
             container.appendChild(header);
             
-            const monthGrid = document.createElement('div');
-            monthGrid.className = 'calendar-grid';
+            const nav = document.createElement('div');
+            nav.className = 'calendar-nav';
+            nav.innerHTML = `
+                <button class="calendar-nav-btn" id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                <h3>${getMonthName(currentMonth)}</h3>
+                <button class="calendar-nav-btn" id="next-month"><i class="fas fa-chevron-right"></i></button>
+            `;
+            container.appendChild(nav);
             
-            const months = ['იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი', 
-                          'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი'];
-            
-            months.forEach((month, index) => {
-                const monthBtn = document.createElement('button');
-                monthBtn.className = 'calendar-grid-btn';
-                monthBtn.textContent = month;
-                monthBtn.addEventListener('click', () => {
-                    currentMonth = index;
-                    showDaySelector();
-                });
-                monthGrid.appendChild(monthBtn);
+            document.getElementById('prev-month').addEventListener('click', () => {
+                currentMonth--;
+                if (currentMonth < 0) {
+                    currentMonth = 11;
+                    currentYear--;
+                }
+                nav.querySelector('h3').textContent = getMonthName(currentMonth);
             });
             
-            container.appendChild(monthGrid);
+            document.getElementById('next-month').addEventListener('click', () => {
+                currentMonth++;
+                if (currentMonth > 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                }
+                nav.querySelector('h3').textContent = getMonthName(currentMonth);
+            });
+            
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = 'შემდეგი';
+            nextBtn.className = 'btn-primary';
+            nextBtn.style.marginTop = '15px';
+            nextBtn.style.width = '100%';
+            nextBtn.addEventListener('click', showDaySelector);
+            container.appendChild(nextBtn);
+            
             currentStep = 'months';
         }
         
@@ -390,9 +433,9 @@
             const nav = document.createElement('div');
             nav.className = 'calendar-nav';
             nav.innerHTML = `
-                <button class="calendar-nav-btn" id="prev-year"><i class="fas fa-chevron-left"></i></button>
+                <button class="calendar-nav-btn" id="prev-month-btn"><i class="fas fa-chevron-left"></i></button>
                 <h3>${currentYear} - ${getMonthName(currentMonth)}</h3>
-                <button class="calendar-nav-btn" id="next-year"><i class="fas fa-chevron-right"></i></button>
+                <button class="calendar-nav-btn" id="next-month-btn"><i class="fas fa-chevron-right"></i></button>
             `;
             container.appendChild(nav);
             
@@ -442,7 +485,7 @@
             container.appendChild(daysGrid);
             currentStep = 'days';
             
-            document.getElementById('prev-year').addEventListener('click', () => {
+            document.getElementById('prev-month-btn').addEventListener('click', () => {
                 if (currentMonth === 0) {
                     currentMonth = 11;
                     currentYear--;
@@ -452,7 +495,7 @@
                 showDaySelector();
             });
             
-            document.getElementById('next-year').addEventListener('click', () => {
+            document.getElementById('next-month-btn').addEventListener('click', () => {
                 if (currentMonth === 11) {
                     currentMonth = 0;
                     currentYear++;
@@ -644,6 +687,22 @@
                 const errorElement = document.getElementById(errorId);
                 if (errorElement) {
                     errorElement.style.display = 'none';
+                }
+            });
+        });
+
+        // Toggle password visibility
+        document.querySelectorAll('.toggle-password').forEach(icon => {
+            icon.addEventListener('click', function() {
+                const input = this.previousElementSibling;
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    this.classList.remove('fa-eye');
+                    this.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    this.classList.remove('fa-eye-slash');
+                    this.classList.add('fa-eye');
                 }
             });
         });
