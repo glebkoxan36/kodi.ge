@@ -25,6 +25,11 @@
         color: #ffffff !important;
         background-color: rgba(30, 30, 40, 0.7) !important;
     }
+    
+    .status-badge {
+        font-size: 0.85rem;
+        padding: 0.4em 0.6em;
+    }
 </style>
 
 <div class="card">
@@ -63,8 +68,10 @@
             <table class="table table-hover">
                 <thead class="table-dark">
                     <tr>
+                        <th>ID</th>
                         <th>თარიღი</th>
                         <th>IMEI</th>
+                        <th>სერვისი</th>
                         <th>სტატუსი</th>
                         <th>მოქმედება</th>
                     </tr>
@@ -72,18 +79,30 @@
                 <tbody>
                     {% for check in checks %}
                     <tr>
-                        <td>{{ check.timestamp }}</td>
+                        <td>{{ check._id }}</td>
+                        <td>{{ check.formatted_timestamp or check.timestamp }}</td>
                         <td>{{ check.imei[:2] + '***********' + check.imei[-2:] }}</td>
+                        <td>{{ check.service_type }}</td>
                         <td>
-                            {% set status_value = check.status | lower %}
-                            {% if status_value == 'clean' or status_value == 'სუფთა' %}
-                                <span class="badge bg-success">სუფთა</span>
-                            {% elif status_value == 'blacklisted' or status_value == 'შავ სიაშია' %}
-                                <span class="badge bg-danger">შავ სიაშია</span>
-                            {% elif status_value == 'warning' or status_value == 'გაფრთხილება' %}
-                                <span class="badge bg-warning">გაფრთხილება</span>
+                            {% if check.result and check.result.success and check.result.status %}
+                                {% set device_status = check.result.status | lower %}
+                                {% if device_status in ['clean', 'სუფთა'] %}
+                                    <span class="badge status-badge bg-success">{{ check.result.status }}</span>
+                                {% elif device_status in ['blacklisted', 'შავ სიაშია'] %}
+                                    <span class="badge status-badge bg-danger">{{ check.result.status }}</span>
+                                {% elif device_status in ['warning', 'გაფრთხილება'] %}
+                                    <span class="badge status-badge bg-warning">{{ check.result.status }}</span>
+                                {% else %}
+                                    <span class="badge status-badge bg-secondary">{{ check.result.status }}</span>
+                                {% endif %}
                             {% else %}
-                                <span class="badge bg-secondary">{{ check.status }}</span>
+                                {% if check.status == 'completed' %}
+                                    <span class="badge status-badge bg-success">დასრულებული</span>
+                                {% elif check.status == 'failed' %}
+                                    <span class="badge status-badge bg-danger">შეცდომა</span>
+                                {% else %}
+                                    <span class="badge status-badge bg-secondary">{{ check.status }}</span>
+                                {% endif %}
                             {% endif %}
                         </td>
                         <td>
@@ -95,7 +114,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="4" class="text-center">ჩანაწერები ვერ მოიძებნა</td>
+                        <td colspan="6" class="text-center">ჩანაწერები ვერ მოიძებნა</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -181,24 +200,43 @@
                 
                 // Determine status class based on status text
                 let statusClass = 'bg-secondary';
-                const statusText = data.status || 'Unknown';
-                if (statusText.includes('Clean') || statusText.includes('სუფთა')) {
+                const statusText = data.result?.status || 'Unknown';
+                const statusLower = statusText.toLowerCase();
+                
+                if (statusLower.includes('clean') || statusLower.includes('სუფთა')) {
                     statusClass = 'bg-success';
-                } else if (statusText.includes('Blacklisted') || statusText.includes('შავ სიაში')) {
+                } else if (statusLower.includes('blacklisted') || statusLower.includes('შავ სიაში')) {
                     statusClass = 'bg-danger';
-                } else if (statusText.includes('Warning') || statusText.includes('გაფრთხილება')) {
+                } else if (statusLower.includes('warning') || statusLower.includes('გაფრთხილება')) {
                     statusClass = 'bg-warning';
+                }
+                
+                // Format additional info
+                let additionalInfo = 'No additional info';
+                if (data.result && data.result.full_response) {
+                    additionalInfo = JSON.stringify(data.result.full_response, null, 2);
                 }
                 
                 const html = `
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <h6>IMEI ნომერი:</h6>
-                            <p class="fs-5">${data.imei || 'არ არის მონაცემი'}</p>
+                            <h6>Check ID:</h6>
+                            <p>${checkId}</p>
                         </div>
                         <div class="col-md-6">
                             <h6>შემოწმების თარიღი:</h6>
-                            <p class="fs-5">${data.timestamp || 'არ არის მონაცემი'}</p>
+                            <p>${data.formatted_timestamp}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>IMEI ნომერი:</h6>
+                            <p>${data.imei || 'არ არის მონაცემი'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>სერვისის ტიპი:</h6>
+                            <p>${data.service_type || 'არ არის მონაცემი'}</p>
                         </div>
                     </div>
                     
@@ -209,14 +247,14 @@
                         </div>
                         <div class="col-md-6">
                             <h6>მოწყობილობის მოდელი:</h6>
-                            <p>${data.device_info || 'არ არის მონაცემი'}</p>
+                            <p>${data.result?.brand || 'არ არის მონაცემი'} ${data.result?.model || ''}</p>
                         </div>
                     </div>
                     
                     <div class="mb-3">
                         <h6>დამატებითი ინფორმაცია:</h6>
                         <div class="card bg-light p-3">
-                            <pre>${data.additional_info || 'დამატებითი ინფორმაცია არ არის'}</pre>
+                            <pre>${additionalInfo}</pre>
                         </div>
                     </div>
                 `;
