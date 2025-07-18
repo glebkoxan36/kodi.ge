@@ -213,6 +213,7 @@ def check_details(check_id):
             logger.warning(f"Check not found: {check_id}")
             return jsonify({'error': 'შემოწმება ვერ მოიძებნა'}), 404
         
+        # Форматируем временную метку
         check['formatted_timestamp'] = check['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
         
         # Удаляем несериализуемые поля
