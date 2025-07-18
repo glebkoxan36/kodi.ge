@@ -7,6 +7,25 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='compares.css') }}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
@@ -114,6 +133,9 @@
                     </div>
                 </div>
                 
+                <!-- Контейнер для результатов сравнения -->
+                <div id="comparisonResults"></div>
+                
                 <!-- КОНТЕЙНЕР ДЛЯ СПЕЦИФИКАЦИЙ -->
                 <div class="compare-specs-grid" id="compareSpecs">
                     <!-- Спецификации для сравнения будут здесь -->
@@ -124,7 +146,6 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // === ИСПРАВЛЕННАЯ СЕКЦИЯ: ПЕРЕМЕЩЕННО В НАЧАЛО ===
         // Текущий режим
         let currentMode = null;
         
@@ -149,10 +170,8 @@
         const compareTitle2 = document.getElementById('compareTitle2');
         const compareImage1 = document.getElementById('compareImage1');
         const compareImage2 = document.getElementById('compareImage2');
-        
-        // === ИСПРАВЛЕНИЕ КОНФЛИКТА ИМЕН ===
-        // Переименовываем элемент для сравнения спецификаций
         const compareSpecsContainer = document.getElementById('compareSpecs');
+        const comparisonResults = document.getElementById('comparisonResults');
         
         // Элементы превью телефонов
         const phonePreviews = {
@@ -237,8 +256,6 @@
                 setActiveMode('compare');
             }
         });
-        
-        // === КОНЕЦ ИСПРАВЛЕННОЙ СЕКЦИИ ===
         
         // Весовые коэффициенты для групп характеристик
         const groupWeights = {
@@ -496,8 +513,8 @@
             // Создаем HTML для результатов
             let resultsHTML = `
                 <div class="comparison-result">
-                    <div class="winner-banner">
-                        <h3>
+                    <div class="winner-banner text-center">
+                        <h3 class="mb-3">
                             ${scores.winner === 0 ? 
                                 '<i class="fas fa-handshake me-2"></i> Ничья!' : 
                                 `<i class="fas fa-trophy me-2"></i> Победитель: ${scores.winner === 1 ? brand1 + ' ' + model1 : brand2 + ' ' + model2}`
@@ -508,7 +525,7 @@
                     
                     <div class="score-summary">
                         <h4 class="text-center mb-4"><i class="fas fa-chart-bar me-2"></i>Результаты по категориям</h4>
-                        <div class="grid-cols-2">
+                        <div class="score-cards-container">
                             <div class="score-card ${phone1Class}">
                                 <h4 class="text-center mb-3">${brand1} ${model1}</h4>
                                 <div class="space-y-3">
@@ -559,14 +576,7 @@
                 </div>
             `;
             
-            // Создаем контейнер для результатов
-            const resultsContainer = document.createElement('div');
-            resultsContainer.id = 'comparisonResults';
-            resultsContainer.innerHTML = resultsHTML;
-            
-            // Добавляем результаты в контейнер сравнения
-            const compareContainer = document.getElementById('compareDetails');
-            compareContainer.appendChild(resultsContainer);
+            return resultsHTML;
         }
 
         // Кэш данных телефонов
@@ -919,7 +929,7 @@
             startCompareBtn.disabled = !(selectedPhones[1] && selectedPhones[2]);
         }
         
-        // === ИСПРАВЛЕННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ СЕТКИ ===
+        // Функция генерации сетки сравнения
         function generateComparisonGrid(phone1, phone2) {
             let html = '';
             
@@ -1006,7 +1016,6 @@
                 `;
             }
             
-            // Используем переименованный контейнер
             compareSpecsContainer.innerHTML = html;
         }
 
@@ -1027,10 +1036,7 @@
             compareDetails.style.display = 'block';
             
             // Удаляем предыдущие результаты, если есть
-            const existingResults = document.getElementById('comparisonResults');
-            if (existingResults) {
-                existingResults.remove();
-            }
+            comparisonResults.innerHTML = '';
             
             // Заполняем заголовки
             const brand1 = phone1.Бренд || phone1.Brand || 'Неизвестный бренд';
@@ -1066,7 +1072,7 @@
             
             // Рассчитываем баллы и выводим результаты
             const scores = compareSpecs(phone1, phone2);
-            displayComparisonResults(scores, phone1, phone2);
+            comparisonResults.innerHTML = displayComparisonResults(scores, phone1, phone2);
         }
 
         // Обработчик кнопки "Назад"
