@@ -37,7 +37,7 @@
         .social-btn {
             width: 100%;
             display: block;
-            text-align: center; /* Центрирование текста */
+            text-align: center;
         }
         .social-divider {
             display: flex;
@@ -71,12 +71,14 @@
         }
         .forgot-password-link {
             text-align: right;
-            margin-top: -10px;
-            margin-bottom: 25px; /* Увеличен отступ */
+            margin-top: 15px;
+            margin-bottom: 25px;
         }
-        /* Исправление цвета календаря */
-        .calendar-day {
-            color: #000; /* Чёрный цвет текста */
+        .form-group {
+            text-align: center;
+        }
+        #login-form {
+            text-align: center;
         }
     </style>
 </head>
@@ -129,7 +131,7 @@
                 <div class="error-message" id="password_error"></div>
             </div>
             
-            <button type="submit" class="btn-primary">შესვლა</button>
+            <button type="submit" class="btn-primary" style="width:100%;">შესვლა</button>
         </form>
         
         <div class="social-auth">
@@ -153,7 +155,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно восстановления пароля -->
     <div class="modal" id="forgot-password-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -184,14 +185,12 @@
     </div>
 
     <script>
-        // Обработчик формы входа
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const loginBtn = e.target.querySelector('.btn-primary');
             const originalText = loginBtn.innerHTML;
             
-            // Показать индикатор загрузки
             loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> შესვლა';
             
             try {
@@ -223,23 +222,19 @@
             }
         });
         
-        // Обработчики кнопок социальных сетей
         document.getElementById('facebook-btn').addEventListener('click', () => {
             window.location.href = "/auth/facebook";
         });
 
-        // Управление модальным окном
         const modal = document.getElementById('forgot-password-modal');
         const forgotPasswordLink = document.getElementById('forgot-password-link');
         const closeModalBtns = document.querySelectorAll('.close-modal');
         
-        // Открытие модального окна
         forgotPasswordLink.addEventListener('click', (e) => {
             e.preventDefault();
             modal.style.display = 'flex';
         });
         
-        // Закрытие модального окна
         closeModalBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 modal.style.display = 'none';
@@ -248,7 +243,6 @@
             });
         });
         
-        // Закрытие при клике вне окна
         window.addEventListener('click', (e) => {
             if (e.target === modal) {
                 modal.style.display = 'none';
@@ -257,13 +251,11 @@
             }
         });
         
-        // Обработка формы восстановления пароля
         document.getElementById('forgot-password-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const identifier = document.getElementById('recovery-identifier').value.trim();
             const errorElement = document.getElementById('recovery-error');
             
-            // Сброс ошибки
             errorElement.style.display = 'none';
             
             if (!identifier) {
@@ -277,10 +269,8 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             
             try {
-                // Имитация отправки запроса
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 
-                // Анимация успеха
                 submitBtn.innerHTML = '<i class="fas fa-check"></i> გაგზავნილია';
                 submitBtn.style.background = 'var(--success-color)';
                 
