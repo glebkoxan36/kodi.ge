@@ -50,14 +50,16 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         return {
             'success': False,
             'error': ERROR_MESSAGES['invalid_imei'],
-            'error_type': 'invalid_input'
+            'error_type': 'invalid_input',
+            'status': 'Invalid IMEI'
         }
     
     if service_type not in SERVICE_CODES:
         return {
             'success': False,
             'error': ERROR_MESSAGES['invalid_service'],
-            'error_type': 'invalid_service'
+            'error_type': 'invalid_service',
+            'status': 'Invalid Service'
         }
     
     try:
@@ -77,7 +79,8 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 'success': False,
                 'error': f"API server error: {http_code}",
                 'http_code': http_code,
-                'error_type': 'server_error'
+                'error_type': 'server_error',
+                'status': 'Server Error'
             }
         
         data = response.json()
@@ -88,7 +91,8 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 'success': False,
                 'error': error,
                 'api_error': error,
-                'error_type': 'api_error'
+                'error_type': 'api_error',
+                'status': 'API Error'
             }
         
         # Extract device information
@@ -127,11 +131,13 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         return {
             'success': False,
             'error': f"{ERROR_MESSAGES['network_error']}: {str(e)}",
-            'error_type': 'network_error'
+            'error_type': 'network_error',
+            'status': 'Network Error'
         }
     except Exception as e:
         return {
             'success': False,
             'error': f"{ERROR_MESSAGES['api_error']}: {str(e)}",
-            'error_type': 'processing_error'
+            'error_type': 'processing_error',
+            'status': 'Processing Error'
         }
