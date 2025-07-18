@@ -68,6 +68,19 @@
         .hero-section {
             padding-top: 30px;
         }
+        /* Added for carousel content positioning */
+        .carousel-content {
+            margin-top: -30px;
+        }
+        /* Ensure white text in IMEI info section */
+        #imei-info .card-body,
+        #imei-info .card-body * {
+            color: white !important;
+        }
+        /* Make social buttons perfectly round */
+        .social-icon {
+            border-radius: 50% !important;
+        }
     </style>
 </head>
 <body>
@@ -228,43 +241,49 @@
                 <div class="carousel-inner">
                     <div class="slide">
                         <div class="placeholder">
-                            <div class="logo-animated">
-                                <div class="logo-ring"></div>
-                                <div class="logo-ring"></div>
-                                <div class="logo-ring"></div>
-                                <div class="logo-core">
-                                    <div class="logo-letter">K</div>
+                            <div class="carousel-content">
+                                <div class="logo-animated">
+                                    <div class="logo-ring"></div>
+                                    <div class="logo-ring"></div>
+                                    <div class="logo-ring"></div>
+                                    <div class="logo-core">
+                                        <div class="logo-letter">K</div>
+                                    </div>
                                 </div>
+                                <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
                             </div>
-                            <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
                         </div>
                     </div>
                     
                     <div class="slide">
                         <div class="placeholder">
-                            <div class="logo-animated">
-                                <div class="logo-ring"></div>
-                                <div class="logo-ring"></div>
-                                <div class="logo-ring"></div>
-                                <div class="logo-core">
-                                    <div class="logo-letter">K</div>
+                            <div class="carousel-content">
+                                <div class="logo-animated">
+                                    <div class="logo-ring"></div>
+                                    <div class="logo-ring"></div>
+                                    <div class="logo-ring"></div>
+                                    <div class="logo-core">
+                                        <div class="logo-letter">K</div>
+                                    </div>
                                 </div>
+                                <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
                             </div>
-                            <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
                         </div>
                     </div>
                     
                     <div class="slide">
                         <div class="placeholder">
-                            <div class="logo-animated">
-                                <div class="logo-ring"></div>
-                                <div class="logo-ring"></div>
-                                <div class="logo-ring"></div>
-                                <div class="logo-core">
-                                    <div class="logo-letter">K</div>
+                            <div class="carousel-content">
+                                <div class="logo-animated">
+                                    <div class="logo-ring"></div>
+                                    <div class="logo-ring"></div>
+                                    <div class="logo-ring"></div>
+                                    <div class="logo-core">
+                                        <div class="logo-letter">K</div>
+                                    </div>
                                 </div>
+                                <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
                             </div>
-                            <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
                         </div>
                     </div>
                 </div>
@@ -272,7 +291,7 @@
         </div>
         
         <div id="imei-check-section" class="card mt-5">
-            <div class="card-header">
+            <div class="card-header text-center">
                 <i class="fas fa-shield-check me-2"></i>
                 <span>ორიგინალურობის შემოწმება</span>
             </div>
@@ -283,7 +302,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="device-instruction">
-                                <h4><i class="fab fa-apple me-2"></i>iPhone-ისთვის</h4>
+                                <h4 class="text-center"><i class="fab fa-apple me-2"></i>iPhone-ისთვის</h4>
                                 <p>
                                     <span class="step-number">1</span>
                                     აკრიფეთ თქვენს ტელეფონზე: <code>*#06#</code>
@@ -306,7 +325,7 @@
                         
                         <div class="col-md-6">
                             <div class="device-instruction">
-                                <h4><i class="fab fa-android me-2"></i>Android-ისთვის</h4>
+                                <h4 class="text-center"><i class="fab fa-android me-2"></i>Android-ისთვის</h4>
                                 <p>
                                     <span class="step-number">1</span>
                                     აკრიფეთ თქვენს ტელეფონზე: <code>*#06#</code>
@@ -350,7 +369,7 @@
         </div>
         
         <div id="about" class="card mt-5">
-            <div class="card-header">
+            <div class="card-header text-center">
                 <i class="fas fa-info-circle me-2"></i>
                 Kodi.ge-ს შესახებ
             </div>
@@ -362,7 +381,7 @@
         </div>
         
         <div id="imei-info" class="card mt-5">
-            <div class="card-header">
+            <div class="card-header text-center">
                 <i class="fas fa-qrcode me-2"></i>
                 რა არის IMEI?
             </div>
@@ -379,14 +398,14 @@
         </div>
         
         <div id="services" class="mt-5">
-            <h2 class="section-title">ჩვენი სერვისები</h2>
+            <h2 class="section-title text-center">ჩვენი სერვისები</h2>
             <div class="row">
                 <div class="col-md-4 mb-4">
                     <div class="card h-100 service-card">
                         <div class="service-icon text-info">
                             <i class="fab fa-apple fa-3x"></i>
                         </div>
-                        <h3 class="service-title">Apple IMEI შემოწმება</h3>
+                        <h3 class="service-title text-center">Apple IMEI შემოწმება</h3>
                         <ul class="list-unstyled">
                             <li><i class="fas fa-check-circle me-2 text-success"></i> FMI iCloud სტატუსი</li>
                             <li><i class="fas fa-check-circle me-2 text-success"></i> SIM ლოკის შემოწმება</li>
@@ -404,7 +423,7 @@
                         <div class="service-icon text-success">
                             <i class="fab fa-android fa-3x"></i>
                         </div>
-                        <h3 class="service-title">Android IMEI შემოწმება</h3>
+                        <h3 class="service-title text-center">Android IMEI შემოწმება</h3>
                         <ul class="list-unstyled">
                             <li><i class="fas fa-check-circle me-2 text-success"></i> Samsung მოწყობილობები</li>
                             <li><i class="fas fa-check-circle me-2 text-success"></i> Xiaomi და Redmi</li>
@@ -422,7 +441,7 @@
                         <div class="service-icon text-warning">
                             <i class="fas fa-exchange-alt fa-3x"></i>
                         </div>
-                        <h3 class="service-title">ტელეფონების შედარება</h3>
+                        <h3 class="service-title text-center">ტელეფონების შედარება</h3>
                         <ul class="list-unstyled">
                             <li><i class="fas fa-check-circle me-2 text-success"></i> AI-ზე დაფუძნებული ანალიზი</li>
                             <li><i class="fas fa-check-circle me-2 text-success"></i> მახასიათებლების შედარება</li>
@@ -735,4 +754,4 @@
         });
     </script>
 </body>
-                                </html>
+</html>
