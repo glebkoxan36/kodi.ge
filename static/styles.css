@@ -419,7 +419,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .card:hover {
-  transform: translateY(-7px);
+  transform: translateY(-5px);
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
   background: var(--card-hover-bg);
 }
@@ -470,7 +470,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .service-card:hover {
-  transform: translateY(-10px) rotate(2deg);
+  transform: translateY(-5px);
   box-shadow: 0 20px 30px rgba(0, 229, 255, 0.4) !important;
   background: var(--card-hover-bg) !important;
   border-color: rgba(0, 229, 255, 0.4) !important;
@@ -774,4 +774,4 @@ h1, h2, h3, h4, h5, h6 {
   .service-price { font-size: 1.5rem; }
   .modal-content { padding: 15px 10px; }
   .close-modal { width: 30px; height: 30px; font-size: 1.3rem; }
-  }
+                        }
