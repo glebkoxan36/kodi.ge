@@ -544,7 +544,7 @@ h1, h2, h3, h4, h5, h6 {
   overflow: hidden;
   box-shadow: var(--shadow);
   border-radius: 12px;
-  min-height: 500px; /* Increased height */
+  min-height: 400px; /* Reduced height */
   aspect-ratio: 16/7;
   perspective: 1000px;
 }
@@ -553,7 +553,7 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 500px; /* Increased height */
+  min-height: 400px; /* Reduced height */
   transform-style: preserve-3d;
 }
 
@@ -604,6 +604,10 @@ h1, h2, h3, h4, h5, h6 {
   padding: 20px;
 }
 
+.carousel-content {
+  margin-top: -30px; /* Move content up */
+}
+
 .placeholder .logo-animated {
   width: 80px; /* Reduced logo size */
   height: 80px; /* Reduced logo size */
@@ -619,7 +623,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .placeholder-text {
-  font-size: 1.8rem; /* Reduced text size */
+  font-size: 1.5rem; /* Reduced text size */
   font-weight: 700;
   margin-top: 20px;
   letter-spacing: 1px;
@@ -770,7 +774,7 @@ h1, h2, h3, h4, h5, h6 {
 .social-icon {
   width: 50px;
   height: 50px;
-  border-radius: 50%;
+  border-radius: 50%; /* Ensure perfect circle */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -798,7 +802,8 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 1199px) {
   .sidebar { width: 250px; }
   .main-content { margin-left: 250px; padding: 25px; }
-  .carousel { min-height: 400px; max-width: 95%; }
+  .carousel { min-height: 350px; max-width: 95%; }
+  .placeholder-text { font-size: 1.3rem; }
 }
 
 @media (max-width: 992px) {
@@ -813,8 +818,8 @@ h1, h2, h3, h4, h5, h6 {
   .logo-ring:nth-child(1) { width: 60px; height: 60px; }
   .logo-ring:nth-child(2) { width: 75px; height: 75px; }
   .logo-ring:nth-child(3) { width: 90px; height: 90px; }
-  .carousel { min-height: 350px; max-width: 95%; }
-  .placeholder-text { font-size: 1.5rem; padding: 10px 20px; }
+  .carousel { min-height: 300px; max-width: 95%; }
+  .placeholder-text { font-size: 1.2rem; padding: 10px 20px; }
 }
 
 @media (max-width: 768px) {
@@ -831,8 +836,8 @@ h1, h2, h3, h4, h5, h6 {
   .result-row { flex-direction: column; }
   .result-label { width: 100%; margin-bottom: 5px; }
   .result-value { width: 100%; }
-  .carousel { min-height: 300px; max-width: 95%; }
-  .placeholder-text { font-size: 1.3rem; }
+  .carousel { min-height: 250px; max-width: 95%; }
+  .placeholder-text { font-size: 1.1rem; }
   .section-title { font-size: 1.8rem; }
 }
 
@@ -840,8 +845,8 @@ h1, h2, h3, h4, h5, h6 {
   .service-card { margin-bottom: 20px; }
   .auth-container { padding: 25px 15px; }
   .history-table th, .history-table td { padding: 10px 12px; font-size: 0.9rem; }
-  .carousel { min-height: 250px; max-width: 95%; }
-  .placeholder-text { font-size: 1.1rem; }
+  .carousel { min-height: 200px; max-width: 95%; }
+  .placeholder-text { font-size: 1rem; }
   .section-title { font-size: 1.6rem; }
 }
 
@@ -853,4 +858,4 @@ h1, h2, h3, h4, h5, h6 {
   .service-price { font-size: 1.5rem; }
   .modal-content { padding: 15px 10px; }
   .close-modal { width: 30px; height: 30px; font-size: 1.3rem; }
-  }
+    }
