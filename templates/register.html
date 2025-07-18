@@ -48,6 +48,7 @@
         .social-btn {
             width: 100%;
             display: block;
+            text-align: center;
         }
         .social-divider {
             display: flex;
@@ -80,18 +81,20 @@
             display: flex;
         }
         .modal-content {
-            background-color: #fefefe;
+            background-color: #121a2b;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             max-width: 300px;
             width: 100%;
+            color: #ffffff;
         }
         .calendar-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 10px 0;
+            color: #ffffff;
         }
         .calendar-weekdays {
             display: flex;
@@ -108,17 +111,20 @@
             padding: 8px;
             cursor: pointer;
             border-radius: 4px;
-            color: #000; /* Исправленный цвет текста */
+            color: #ffffff;
         }
         .calendar-day:hover {
-            background-color: #f0f0f0;
+            background-color: #1d3d7a;
         }
         .calendar-day.selected {
-            background-color: #007bff;
-            color: white;
+            background-color: #00e5ff;
+            color: #000;
         }
         .calendar-day.empty {
             visibility: hidden;
+        }
+        .password-requirements ul {
+            padding-left: 20px;
         }
     </style>
 </head>
@@ -140,7 +146,6 @@
         </div>
         
         <form id="registration-form">
-            <!-- CSRF токен для защиты -->
             <input type="hidden" name="csrf_token" id="csrf_token" value="{{ csrf_token() }}">
             
             <div class="form-group">
@@ -249,7 +254,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно для выбора даты рождения -->
     <div id="datepicker-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -266,7 +270,6 @@
     </div>
 
     <script>
-        // Calendar generation
         function generateCalendar(year, month) {
             const calendar = document.getElementById('datepicker');
             calendar.innerHTML = '';
@@ -308,7 +311,6 @@
             header.appendChild(nextBtn);
             calendar.appendChild(header);
             
-            // Weekdays
             const weekdays = ['ორ', 'სამ', 'ოთხ', 'ხუთ', 'პარ', 'შაბ', 'კვ'];
             const weekdayRow = document.createElement('div');
             weekdayRow.className = 'calendar-weekdays';
@@ -319,20 +321,17 @@
             });
             calendar.appendChild(weekdayRow);
             
-            // Days
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const daysRow = document.createElement('div');
             daysRow.className = 'calendar-days';
             
-            // Empty cells
             for (let i = 0; i < firstDay; i++) {
                 const emptyCell = document.createElement('div');
                 emptyCell.className = 'calendar-day empty';
                 daysRow.appendChild(emptyCell);
             }
             
-            // Actual days
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayCell = document.createElement('div');
                 dayCell.className = 'calendar-day';
@@ -350,7 +349,6 @@
         
         let selectedDate = null;
         
-        // Datepicker modal control
         const dateModal = document.getElementById('datepicker-modal');
         const dateInput = document.getElementById('birth_date');
         const datepickerToggle = document.querySelector('.datepicker-toggle');
@@ -388,7 +386,6 @@
             }
         });
         
-        // Функция валидации формы
         function validateForm() {
             let isValid = true;
             const firstName = document.getElementById('first_name');
@@ -400,13 +397,11 @@
             const password = document.getElementById('password');
             const confirmPassword = document.getElementById('confirm_password');
             
-            // Сброс ошибок
             document.querySelectorAll('.error-message').forEach(el => {
                 el.textContent = '';
                 el.style.display = 'none';
             });
             
-            // Валидация имени (только грузинские буквы)
             const georgianRegex = /^[\u10A0-\u10FF\s]+$/;
             if (!firstName.value.trim()) {
                 showError('first_name_error', 'გთხოვთ შეიყვანოთ თქვენი სახელი');
@@ -416,7 +411,6 @@
                 isValid = false;
             }
             
-            // Валидация фамилии (только грузинские буквы)
             if (!lastName.value.trim()) {
                 showError('last_name_error', 'გთხოვთ შეიყვანოთ თქვენი გვარი');
                 isValid = false;
@@ -425,40 +419,34 @@
                 isValid = false;
             }
             
-            // Валидация даты рождения
             if (!birthDate.value) {
                 showError('birth_date_error', 'გთხოვთ აირჩიოთ დაბადების თარიღი');
                 isValid = false;
             }
             
-            // Валидация телефона
             const phoneRegex = /^\+995\d{9}$/;
             if (!phoneRegex.test(phone.value)) {
                 showError('phone_error', 'გთხოვთ შეიყვანოთ სწორი ტელეფონის ნომერი (+995XXXXXXXXX)');
                 isValid = false;
             }
             
-            // Валидация email
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email.value)) {
                 showError('email_error', 'გთხოვთ შეიყვანოთ სწორი ელ. ფოსტის მისამართი');
                 isValid = false;
             }
             
-            // Валидация логина
             if (username.value.length < 4) {
                 showError('username_error', 'მომხმარებლის სახელი უნდა შეიცავდეს მინიმუმ 4 სიმბოლოს');
                 isValid = false;
             }
             
-            // Валидация пароля
             const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/;
             if (!passwordRegex.test(password.value)) {
                 showError('password_error', 'პაროლი არ აკმაყოფილებს მოთხოვნებს');
                 isValid = false;
             }
             
-            // Подтверждение пароля
             if (password.value !== confirmPassword.value) {
                 showError('confirm_password_error', 'პაროლები არ ემთხვევა ერთმანეთს');
                 isValid = false;
@@ -467,14 +455,12 @@
             return isValid;
         }
         
-        // Функция отображения ошибок
         function showError(elementId, message) {
             const errorElement = document.getElementById(elementId);
             errorElement.textContent = message;
             errorElement.style.display = 'block';
         }
         
-        // Обработчик отправки формы
         document.getElementById('registration-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -483,14 +469,11 @@
             const registerBtn = e.target.querySelector('.btn-primary');
             const originalText = registerBtn.innerHTML;
             
-            // Показать индикатор загрузки
             registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> რეგისტრაცია';
             
             try {
-                // Сбор данных формы
                 const formData = new FormData(e.target);
                 
-                // Convert birth date to YYYY-MM-DD format
                 const birthDateParts = formData.get('birth_date').split('/');
                 if (birthDateParts.length === 3) {
                     const formattedDate = `${birthDateParts[2]}-${birthDateParts[1]}-${birthDateParts[0]}`;
@@ -500,13 +483,12 @@
                 const response = await fetch('/register', {
                     method: 'POST',
                     body: formData,
-                    credentials: 'include'  // Важно для передачи кук
+                    credentials: 'include'
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Анимация успешной регистрации
                     registerBtn.innerHTML = '<i class="fas fa-check"></i> წარმატებული რეგისტრაცია';
                     registerBtn.style.background = 'var(--success-color)';
                     
@@ -516,7 +498,6 @@
                     }, 1500);
                 } else {
                     registerBtn.innerHTML = originalText;
-                    // Отображение ошибок сервера
                     if (data.errors) {
                         data.errors.forEach(error => {
                             showError('general_error', error);
@@ -531,12 +512,10 @@
             }
         });
         
-        // Обработчики кнопок социальных сетей
         document.getElementById('facebook-btn').addEventListener('click', () => {
             alert('Facebook-ით რეგისტრაცია ამჟამად მიუწვდომელია');
         });
         
-        // Валидация в реальном времени
         document.querySelectorAll('.form-control').forEach(input => {
             input.addEventListener('input', () => {
                 const errorId = input.id + '_error';
