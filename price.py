@@ -1,9 +1,11 @@
 import os
 import logging
 from datetime import datetime
-from flask import current_app
-from bson import ObjectId
 from pymongo.errors import PyMongoError
+from bson import ObjectId
+
+# Импортируем глобальные коллекции из db
+from db import prices_collection
 
 # Логгер
 logger = logging.getLogger(__name__)
@@ -35,12 +37,12 @@ DEFAULT_PRICES = {
     'free': 0
 }
 
-def init_prices(db):
+def init_prices():
     """Инициализирует цены для всех сервисов если не существуют"""
     logger.info("Initializing service prices")
     try:
-        if db and db.prices.count_documents({}) == 0:
-            db.prices.insert_one({
+        if prices_collection and prices_collection.count_documents({}) == 0:
+            prices_collection.insert_one({
                 'type': 'current',
                 'prices': DEFAULT_PRICES,
                 'created_at': datetime.utcnow(),
@@ -56,22 +58,12 @@ def get_current_prices():
     """Возвращает текущие цены для всех сервисов"""
     logger.info("Fetching current service prices")
     try:
-        # Если приложение запущено в тестовом режиме
-        if current_app and current_app.config.get('TESTING', False):
+        # Если коллекция цен недоступна, используем значения по умолчанию
+        if prices_collection is None:
+            logger.warning("Prices collection not available, using default prices")
             return DEFAULT_PRICES
             
-        # Если нет доступа к приложению Flask
-        if not current_app:
-            logger.warning("No Flask app context, using default prices")
-            return DEFAULT_PRICES
-            
-        # Проверяем наличие расширения pymongo
-        if 'pymongo' not in current_app.extensions:
-            logger.warning("PyMongo extension not found, using default prices")
-            return DEFAULT_PRICES
-            
-        db = current_app.extensions['pymongo'].db
-        price_doc = db.prices.find_one({'type': 'current'})
+        price_doc = prices_collection.find_one({'type': 'current'})
         
         if price_doc:
             # Обновляем структуру если нужно
@@ -93,7 +85,7 @@ def get_current_prices():
             # Сохраняем обновленные цены
             if updated:
                 try:
-                    db.prices.update_one(
+                    prices_collection.update_one(
                         {'_id': price_doc['_id']},
                         {'$set': {
                             'prices': current_prices,
