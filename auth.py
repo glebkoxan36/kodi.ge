@@ -4,6 +4,7 @@ import re
 import requests
 import secrets
 import urllib.parse
+import os
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session, current_app, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson import ObjectId
@@ -27,6 +28,9 @@ def init_logger():
 init_logger()
 
 auth_bp = Blueprint('auth', __name__)
+
+# Facebook OAuth конфигурация
+FACEBOOK_REDIRECT_URI = os.getenv('FACEBOOK_REDIRECT_URI', 'http://localhost:5000/auth/facebook/callback')
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
