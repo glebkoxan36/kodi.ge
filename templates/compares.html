@@ -124,7 +124,7 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // === ИСПРАВЛЕННАЯ СЕКЦИЯ: ПЕРЕМЕЩЕНО В НАЧАЛО ===
+        // === ИСПРАВЛЕННАЯ СЕКЦИЯ: ПЕРЕМЕЩЕННО В НАЧАЛО ===
         // Текущий режим
         let currentMode = null;
         
@@ -149,7 +149,10 @@
         const compareTitle2 = document.getElementById('compareTitle2');
         const compareImage1 = document.getElementById('compareImage1');
         const compareImage2 = document.getElementById('compareImage2');
-        const compareSpecs = document.getElementById('compareSpecs');
+        
+        // === ИСПРАВЛЕНИЕ КОНФЛИКТА ИМЕН ===
+        // Переименовываем элемент для сравнения спецификаций
+        const compareSpecsContainer = document.getElementById('compareSpecs');
         
         // Элементы превью телефонов
         const phonePreviews = {
@@ -916,66 +919,7 @@
             startCompareBtn.disabled = !(selectedPhones[1] && selectedPhones[2]);
         }
         
-        // Запуск сравнения
-        function startComparison() {
-            const phoneId1 = selectedPhones[1];
-            const phoneId2 = selectedPhones[2];
-            
-            if (!phoneId1 || !phoneId2) return;
-            
-            const phone1 = phoneCache[phoneId1];
-            const phone2 = phoneCache[phoneId2];
-            
-            if (!phone1 || !phone2) return;
-            
-            // Показываем контейнер сравнения
-            compareSelection.style.display = 'none';
-            compareDetails.style.display = 'block';
-            
-            // Удаляем предыдущие результаты, если есть
-            const existingResults = document.getElementById('comparisonResults');
-            if (existingResults) {
-                existingResults.remove();
-            }
-            
-            // Заполняем заголовки
-            const brand1 = phone1.Бренд || phone1.Brand || 'Неизвестный бренд';
-            const model1 = phone1.Модель || phone1.Model || 'Неизвестная модель';
-            const brand2 = phone2.Бренд || phone2.Brand || 'Неизвестный бренд';
-            const model2 = phone2.Модель || phone2.Model || 'Неизвестная модель';
-            
-            compareTitle1.textContent = `${brand1} ${model1}`;
-            compareTitle2.textContent = `${brand2} ${model2}`;
-            
-            // Загружаем изображения
-            const brandFolder1 = brand1.replace(/\s+/g, '_').toLowerCase();
-            const modelName1 = model1.replace(/\s+/g, '_').toLowerCase();
-            const imagePath1 = `/static/img/phones/${brandFolder1}/${modelName1}.jpg`;
-            
-            const brandFolder2 = brand2.replace(/\s+/g, '_').toLowerCase();
-            const modelName2 = model2.replace(/\s+/g, '_').toLowerCase();
-            const imagePath2 = `/static/img/phones/${brandFolder2}/${modelName2}.jpg`;
-            
-            compareImage1.src = imagePath1;
-            compareImage2.src = imagePath2;
-            
-            compareImage1.onerror = function() { 
-                this.src = '/static/placeholder.jpg';
-            };
-            
-            compareImage2.onerror = function() { 
-                this.src = '/static/placeholder.jpg';
-            };
-            
-            // Генерируем таблицу сравнения
-            generateComparisonGrid(phone1, phone2);
-            
-            // Рассчитываем баллы и выводим результаты
-            const scores = compareSpecs(phone1, phone2);
-            displayComparisonResults(scores, phone1, phone2);
-        }
-        
-        // Генерация таблицы сравнения
+        // === ИСПРАВЛЕННАЯ ФУНКЦИЯ ГЕНЕРАЦИИ СЕТКИ ===
         function generateComparisonGrid(phone1, phone2) {
             let html = '';
             
@@ -1062,7 +1006,67 @@
                 `;
             }
             
-            compareSpecs.innerHTML = html;
+            // Используем переименованный контейнер
+            compareSpecsContainer.innerHTML = html;
+        }
+
+        // Запуск сравнения
+        function startComparison() {
+            const phoneId1 = selectedPhones[1];
+            const phoneId2 = selectedPhones[2];
+            
+            if (!phoneId1 || !phoneId2) return;
+            
+            const phone1 = phoneCache[phoneId1];
+            const phone2 = phoneCache[phoneId2];
+            
+            if (!phone1 || !phone2) return;
+            
+            // Показываем контейнер сравнения
+            compareSelection.style.display = 'none';
+            compareDetails.style.display = 'block';
+            
+            // Удаляем предыдущие результаты, если есть
+            const existingResults = document.getElementById('comparisonResults');
+            if (existingResults) {
+                existingResults.remove();
+            }
+            
+            // Заполняем заголовки
+            const brand1 = phone1.Бренд || phone1.Brand || 'Неизвестный бренд';
+            const model1 = phone1.Модель || phone1.Model || 'Неизвестная модель';
+            const brand2 = phone2.Бренд || phone2.Brand || 'Неизвестный бренд';
+            const model2 = phone2.Модель || phone2.Model || 'Неизвестная модель';
+            
+            compareTitle1.textContent = `${brand1} ${model1}`;
+            compareTitle2.textContent = `${brand2} ${model2}`;
+            
+            // Загружаем изображения
+            const brandFolder1 = brand1.replace(/\s+/g, '_').toLowerCase();
+            const modelName1 = model1.replace(/\s+/g, '_').toLowerCase();
+            const imagePath1 = `/static/img/phones/${brandFolder1}/${modelName1}.jpg`;
+            
+            const brandFolder2 = brand2.replace(/\s+/g, '_').toLowerCase();
+            const modelName2 = model2.replace(/\s+/g, '_').toLowerCase();
+            const imagePath2 = `/static/img/phones/${brandFolder2}/${modelName2}.jpg`;
+            
+            compareImage1.src = imagePath1;
+            compareImage2.src = imagePath2;
+            
+            compareImage1.onerror = function() { 
+                this.src = '/static/placeholder.jpg';
+            };
+            
+            compareImage2.onerror = function() { 
+                this.src = '/static/placeholder.jpg';
+            };
+            
+            // Генерируем таблицу сравнения
+            generateComparisonGrid(phone1, phone2);
+            
+            // Рассчитываем баллы и выводим результаты
+            const scores = compareSpecs(phone1, phone2);
+            displayComparisonResults(scores, phone1, phone2);
         }
 
         // Обработчик кнопки "Назад"
