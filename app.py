@@ -611,11 +611,23 @@ def perform_background_check(imei, service_type, session_id):
             }
             
             if checks_collection is not None:
-                checks_collection.update_one(
+                # Сначала пробуем обновить по session_id
+                update_result = checks_collection.update_one(
                     {'session_id': session_id},
                     {'$set': update_data}
                 )
-                logger.info(f"Background check completed for session: {session_id}")
+                if update_result.matched_count == 0:
+                    # Если не нашли, пробуем по stripe_session_id (для старых записей)
+                    update_result = checks_collection.update_one(
+                        {'stripe_session_id': session_id},
+                        {'$set': update_data}
+                    )
+                    if update_result.matched_count == 0:
+                        logger.error(f"Record not found for session: {session_id}")
+                    else:
+                        logger.info(f"Updated by stripe_session_id: {session_id}")
+                else:
+                    logger.info(f"Background check completed for session: {session_id}")
             else:
                 logger.error("Checks collection is not available")
                 
@@ -628,7 +640,8 @@ def perform_background_check(imei, service_type, session_id):
             'status': 'Error'
         }
         if checks_collection:
-            checks_collection.update_one(
+            # Пробуем обновить по session_id, а потом по stripe_session_id
+            update_result = checks_collection.update_one(
                 {'session_id': session_id},
                 {'$set': {
                     'result': error_result,
@@ -636,6 +649,15 @@ def perform_background_check(imei, service_type, session_id):
                     'completed_at': datetime.utcnow()
                 }}
             )
+            if update_result.matched_count == 0:
+                checks_collection.update_one(
+                    {'stripe_session_id': session_id},
+                    {'$set': {
+                        'result': error_result,
+                        'status': 'failed',
+                        'completed_at': datetime.utcnow()
+                    }}
+                )
 
 @app.route('/create-checkout-session', methods=['POST'])
 @csrf.exempt
@@ -767,6 +789,7 @@ def payment_success():
             stripe_session = stripe.checkout.Session.retrieve(session_id)
             
             record = {
+                'session_id': session_id,  # Добавлено новое поле
                 'stripe_session_id': session_id,
                 'imei': imei,
                 'service_type': service_type,
