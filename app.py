@@ -709,9 +709,13 @@ def android_check():
         }
     ]
 
+    # Определяем базовый тип сервиса для выделения карточки
+    base_service_type = service_type.split('_')[0] if '_' in service_type else service_type
+
     return render_common_template(
         'androidcheck.html',
         service_type=service_type,
+        base_service_type=base_service_type,  # передаем базовый тип для выделения карточки
         services_data=services_data,
         stripe_public_key=STRIPE_PUBLIC_KEY
     )
