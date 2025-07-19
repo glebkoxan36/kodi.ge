@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ka" class="auth-page">
 <head>
@@ -5,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>რეგისტრაცია</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="/static/styles.css">
     <style>
         .date-input-container {
             position: relative;
@@ -185,6 +186,59 @@
             cursor: pointer;
             color: #6c757d;
         }
+        .policy-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            overflow: auto;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .policy-modal.show {
+            display: flex;
+        }
+        
+        .policy-content {
+            background: rgba(18, 26, 43, 0.95);
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .policy-section {
+            margin-bottom: 20px;
+        }
+        
+        .policy-section h3 {
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+        
+        .policy-check {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .policy-check label {
+            margin-left: 10px;
+        }
+        
+        .policy-link {
+            color: var(--accent-color);
+            cursor: pointer;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -296,6 +350,16 @@
                 <div class="error-message" id="confirm_password_error"></div>
             </div>
             
+            <div class="form-group">
+                <div class="policy-check">
+                    <input type="checkbox" id="agreePolicy" required>
+                    <label for="agreePolicy">
+                        ვეთანხმები <span class="policy-link" id="showPolicyLink">საიტის პოლიტიკას</span>
+                    </label>
+                </div>
+                <div class="error-message" id="policy_error"></div>
+            </div>
+            
             <button type="submit" class="btn-primary" style="width:100%;">რეგისტრაცია</button>
         </form>
         
@@ -330,6 +394,38 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-primary" id="confirm-date">არჩევა</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="policy-modal" id="policyModal">
+        <div class="policy-content">
+            <button class="close-modal" id="closePolicyModal">&times;</button>
+            
+            <div class="policy-section">
+                <h3>1. კონფიდენციალურობის პოლიტიკა</h3>
+                <p>ჩვენ ვიყენებთ გადახდის სისტემას Stripe, რაც უზრუნველყოფს თქვენი გადახდის მონაცემების უსაფრთხოებას. 
+                   თქვენი პირადი მონაცემები ინახება MongoDB ბაზაში. 
+                   IMEI შემოწმებისთვის ვიყენებთ ifreeicloud API. 
+                   ჩვენ არ ვინახავთ თქვენს IMEI ნომრებს ჩვენს სერვერებზე გრძელვადიანად.</p>
+            </div>
+            
+            <div class="policy-section">
+                <h3>2. დაბრუნების პოლიტიკა</h3>
+                <p>გადახდილი თანხების დაბრუნება შესაძლებელია მხოლოდ იმ შემთხვევაში, თუ სერვისი არ იყო გაწეული ჩვენი შეცდომის გამო. 
+                   თუ შეცდომა მოხდა ჩვენი მხრიდან, თანხა სრულად დაგიბრუნდებათ. 
+                   სხვა შემთხვევებში თანხის დაბრუნება არ ხდება.</p>
+            </div>
+            
+            <div class="policy-section">
+                <h3>3. Facebook-ით რეგისტრაციის პოლიტიკა</h3>
+                <p>Facebook-ით რეგისტრაციისას, ჩვენ ვიღებთ მხოლოდ თქვენს სახელს, გვარს და ელ.ფოსტას. 
+                   ჩვენ არ ვინახავთ თქვენს პაროლებს Facebook-ში. 
+                   თქვენი ანგარიში შეიქმნება ჩვენს სისტემაში Facebook-ის მიერ მოწოდებული მონაცემებით.</p>
+            </div>
+            
+            <div class="text-center">
+                <button class="btn-primary" id="acceptPolicyBtn">მე ვეთანხმები</button>
             </div>
         </div>
     </div>
@@ -617,6 +713,11 @@
                 isValid = false;
             }
             
+            if (!document.getElementById('agreePolicy').checked) {
+                showError('policy_error', 'გთხოვთ დაეთანხმოთ საიტის პოლიტიკას');
+                isValid = false;
+            }
+            
             return isValid;
         }
         
@@ -705,6 +806,30 @@
                     this.classList.add('fa-eye');
                 }
             });
+        });
+        
+        // Показать модальное окно политики
+        document.getElementById('showPolicyLink').addEventListener('click', function() {
+            document.getElementById('policyModal').classList.add('show');
+        });
+        
+        // Закрыть модальное окно
+        document.getElementById('closePolicyModal').addEventListener('click', function() {
+            document.getElementById('policyModal').classList.remove('show');
+        });
+        
+        // Принять политику
+        document.getElementById('acceptPolicyBtn').addEventListener('click', function() {
+            document.getElementById('agreePolicy').checked = true;
+            document.getElementById('policyModal').classList.remove('show');
+            document.getElementById('policy_error').style.display = 'none';
+        });
+        
+        // Закрыть при клике вне модального окна
+        window.addEventListener('click', function(e) {
+            if (e.target === document.getElementById('policyModal')) {
+                document.getElementById('policyModal').classList.remove('show');
+            }
         });
     </script>
 </body>
