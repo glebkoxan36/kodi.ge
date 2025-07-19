@@ -484,7 +484,9 @@
         function fetchUserBalance() {
             return fetch('/user/get_balance')
                 .then(response => {
-                    if (!response.ok) throw new Error('Failed to fetch balance');
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch balance');
+                    }
                     return response.json();
                 })
                 .then(data => data.balance)
@@ -509,17 +511,18 @@
                 })
             })
             .then(response => {
-                return response.json().then(data => {
-                    if (!response.ok) {
-                        throw Object.assign(
-                            new Error(data.error || 'Payment failed'), 
-                            { details: data }
-                        );
-                    }
-                    return data;
-                });
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    });
+                }
+                return response.json();
             })
             .then(data => {
+                if (!data.id) {
+                    throw new Error('Missing session ID in server response');
+                }
+                
                 document.getElementById('spinner').style.display = 'none';
                 
                 if (data.error) {
@@ -530,24 +533,14 @@
                     openModal('payment-success-modal');
                     fetchResultForSession(data.id);
                 } else if (data.payment_method === 'stripe') {
-                    if (!data.id) {
-                        throw new Error('Stripe session ID is missing in response');
-                    }
-                    
                     stripe.redirectToCheckout({ sessionId: data.id })
                         .then(result => {
                             if (result.error) {
-                                document.getElementById('payment-error-message').textContent = 
-                                    `Stripe error: ${result.error.message}`;
-                                openModal('payment-error-modal');
-                                document.getElementById('check-btn').disabled = false;
+                                showPaymentError(`Stripe error: ${result.error.message}`);
                             }
                         })
                         .catch(error => {
-                            document.getElementById('payment-error-message').textContent = 
-                                `Stripe redirect error: ${error.message}`;
-                            openModal('payment-error-modal');
-                            document.getElementById('check-btn').disabled = false;
+                            showPaymentError(`Payment redirect failed: ${error.message}`);
                         });
                 } else {
                     throw new Error('Unknown payment method');
@@ -555,24 +548,15 @@
             })
             .catch(error => {
                 document.getElementById('spinner').style.display = 'none';
-                
-                let errorMessage = 'გადახდის პროცესში მოხდა შეცდომა';
-                
-                if (error.details) {
-                    errorMessage = error.details.error || error.message;
-                    if (error.details.details) {
-                        errorMessage += ` (${error.details.details})`;
-                    }
-                } else if (error.message) {
-                    errorMessage = error.message;
-                }
-                
-                document.getElementById('payment-error-message').textContent = errorMessage;
-                openModal('payment-error-modal');
+                showPaymentError(error.message);
                 console.error('Payment error:', error);
-                
                 document.getElementById('check-btn').disabled = false;
             });
+        }
+        
+        function showPaymentError(message) {
+            document.getElementById('payment-error-message').textContent = message;
+            openModal('payment-error-modal');
         }
         
         function fetchResultForSession(sessionId, attempt = 1) {
@@ -599,8 +583,8 @@
             const fetchPromise = fetch('/get_check_result?session_id=' + sessionId)
                 .then(response => {
                     if (!response.ok) {
-                        return response.json().then(err => {
-                            throw new Error(err.error || 'ქსელის პასუხი არასწორია');
+                        return response.json().then(errData => {
+                            throw new Error(errData.error || `HTTP error! status: ${response.status}`);
                         });
                     }
                     return response.json();
@@ -612,8 +596,7 @@
                     closeModal('payment-success-modal');
                     
                     if (data.error) {
-                        displayError(data.error);
-                        return;
+                        throw new Error(data.error);
                     }
                     
                     if (data.status === 'pending') {
@@ -624,7 +607,6 @@
                     }
                     
                     displayResults(currentImei, currentServiceType, data);
-                    
                     document.getElementById('check-btn').disabled = false;
                 })
                 .catch(error => {
@@ -637,10 +619,10 @@
                                 fetchResultForSession(sessionId, attempt + 1);
                             }, delay);
                         } else {
-                            displayError('მოთხოვნის დრო ამოიწურა. სცადეთ ხელახლა.');
+                            displayError(`მოთხოვნის დრო ამოიწურა: ${error.message}`);
                         }
                     } else {
-                        displayError('შეცდომა: ' + error.message);
+                        displayError(`შეცდომა შედეგის მიღებაში: ${error.message}`);
                     }
                     
                     document.getElementById('check-btn').disabled = false;
