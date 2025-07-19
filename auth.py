@@ -30,6 +30,11 @@ init_logger()
 auth_bp = Blueprint('auth', __name__)
 
 # Facebook OAuth конфигурация
+FACEBOOK_API_VERSION = "v23.0"
+FACEBOOK_OAUTH_URL = f"https://www.facebook.com/{FACEBOOK_API_VERSION}/dialog/oauth"
+FACEBOOK_TOKEN_URL = f"https://graph.facebook.com/{FACEBOOK_API_VERSION}/oauth/access_token"
+FACEBOOK_USER_INFO_URL = f"https://graph.facebook.com/{FACEBOOK_API_VERSION}/me"
+FACEBOOK_DEBUG_TOKEN_URL = f"https://graph.facebook.com/{FACEBOOK_API_VERSION}/debug_token"
 FACEBOOK_REDIRECT_URI = os.getenv('FACEBOOK_REDIRECT_URI', 'http://localhost:5000/auth/facebook/callback')
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -320,7 +325,7 @@ def facebook_login():
         return redirect(url_for('auth.login'))
     
     # Генерируем уникальный state для защиты от CSRF
-    state = secrets.token_urlsafe(16)
+    state = secrets.token_urlsafe(32)
     session['facebook_state'] = state
     
     # Параметры для запроса авторизации
@@ -328,18 +333,27 @@ def facebook_login():
         'client_id': current_app.config['FACEBOOK_OAUTH_CLIENT_ID'],
         'redirect_uri': FACEBOOK_REDIRECT_URI,
         'state': state,
-        'scope': 'email',
-        'response_type': 'code'
+        'scope': 'email,public_profile',
+        'response_type': 'code',
+        'auth_type': 'rerequest'  # Для повторного запроса отклоненных разрешений
     }
     
     # Формируем URL для перенаправления
-    url = 'https://www.facebook.com/v19.0/dialog/oauth?' + urllib.parse.urlencode(params)
+    url = FACEBOOK_OAUTH_URL + '?' + urllib.parse.urlencode(params)
     logger.info(f"Redirecting to Facebook: {url}")
     return redirect(url)
 
 @auth_bp.route('/facebook/callback')
 def facebook_callback():
     """Обрабатывает ответ от Facebook после авторизации"""
+    # Проверяем наличие ошибок
+    if request.args.get('error'):
+        error_reason = request.args.get('error_reason', '')
+        error_description = request.args.get('error_description', '')
+        logger.warning(f"Facebook authentication error: {error_reason} - {error_description}")
+        flash('Facebook authentication failed', 'danger')
+        return redirect(url_for('auth.login'))
+    
     # Проверяем state для защиты от CSRF
     if request.args.get('state') != session.get('facebook_state'):
         logger.warning("Facebook state mismatch")
@@ -355,7 +369,6 @@ def facebook_callback():
     
     try:
         # Обмениваем код на access token
-        token_url = "https://graph.facebook.com/v19.0/oauth/access_token"
         token_params = {
             'client_id': current_app.config['FACEBOOK_OAUTH_CLIENT_ID'],
             'client_secret': current_app.config['FACEBOOK_OAUTH_CLIENT_SECRET'],
@@ -363,19 +376,33 @@ def facebook_callback():
             'code': code
         }
         
-        token_response = requests.get(token_url, params=token_params)
+        token_response = requests.get(FACEBOOK_TOKEN_URL, params=token_params)
         token_response.raise_for_status()
         token_data = token_response.json()
         access_token = token_data['access_token']
         
+        # Проверяем маркер доступа
+        debug_params = {
+            'input_token': access_token,
+            'access_token': f"{current_app.config['FACEBOOK_OAUTH_CLIENT_ID']}|{current_app.config['FACEBOOK_OAUTH_CLIENT_SECRET']}"
+        }
+        
+        debug_response = requests.get(FACEBOOK_DEBUG_TOKEN_URL, params=debug_params)
+        debug_response.raise_for_status()
+        debug_data = debug_response.json()
+        
+        if not debug_data['data']['is_valid']:
+            logger.warning("Invalid Facebook access token")
+            flash('Facebook authentication failed', 'danger')
+            return redirect(url_for('auth.login'))
+        
         # Получаем данные пользователя
-        user_info_url = "https://graph.facebook.com/me"
         user_params = {
             'fields': 'id,email,first_name,last_name',
             'access_token': access_token
         }
         
-        user_response = requests.get(user_info_url, params=user_params)
+        user_response = requests.get(FACEBOOK_USER_INFO_URL, params=user_params)
         user_response.raise_for_status()
         user_data = user_response.json()
         
@@ -434,6 +461,6 @@ def facebook_callback():
         return redirect(url_for('user.dashboard'))
     
     except Exception as e:
-        logger.error(f"Facebook authentication error: {str(e)}")
+        logger.exception(f"Facebook authentication error: {str(e)}")
         flash('Facebook authentication failed', 'danger')
         return redirect(url_for('auth.login'))
