@@ -301,7 +301,7 @@ class StripePayment:
                 
                 if session.get('payment_status') != 'paid':
                     logger.warning(f"Unpaid session: {session['id']}")
-                    return event
+                    return session
                 
                 if metadata.get('type') == 'balance_topup':
                     return self.process_topup(session)
@@ -322,7 +322,7 @@ class StripePayment:
                     })
                     if existing_payment:
                         logger.warning(f"Duplicate payment for session: {session['id']}")
-                        return event
+                        return session
                     
                     payment_record = {
                         'stripe_session_id': session['id'],
@@ -342,7 +342,12 @@ class StripePayment:
                         except (TypeError, InvalidId):
                             logger.error(f"Invalid user ID in metadata: {metadata['user_id']}")
                     
-                    self.payments_collection.insert_one(payment_record)
+                    # Убедимся, что запись создана
+                    if self.payments_collection.count_documents({'stripe_session_id': session['id']}) == 0:
+                        self.payments_collection.insert_one(payment_record)
+                        logger.info(f"Payment record created: {session['id']}")
+                    else:
+                        logger.warning(f"Payment record already exists: {session['id']}")
             
             # Handle async payment status updates
             elif event_type == 'checkout.session.async_payment_succeeded':
