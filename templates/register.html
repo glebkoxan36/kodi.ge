@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ka" class="auth-page">
 <head>
@@ -59,13 +58,13 @@
             justify-content: center;
             gap: 10px;
         }
-        .social-btn.facebook {
-            background-color: #3b5998;
+        .social-btn.clerk {
+            background-color: #3a86ff;
             color: white;
             border: none;
         }
-        .social-btn.facebook:hover {
-            background-color: #344e86;
+        .social-btn.clerk:hover {
+            background-color: #2c6bc7;
         }
         .social-divider {
             display: flex;
@@ -371,9 +370,9 @@
             </div>
             
             <div class="social-buttons">
-                <button type="button" class="social-btn facebook" id="facebook-btn">
-                    <i class="fab fa-facebook-f"></i>
-                    Facebook-ით რეგისტრაცია
+                <button type="button" class="social-btn clerk" id="clerk-btn">
+                    <i class="fas fa-user-shield"></i>
+                    რეგისტრაცია Clerk-ით
                 </button>
             </div>
         </div>
@@ -418,10 +417,10 @@
             </div>
             
             <div class="policy-section">
-                <h3>3. Facebook-ით რეგისტრაციის პოლიტიკა</h3>
-                <p>Facebook-ით რეგისტრაციისას, ჩვენ ვიღებთ მხოლოდ თქვენს სახელს, გვარს და ელ.ფოსტას. 
-                   ჩვენ არ ვინახავთ თქვენს პაროლებს Facebook-ში. 
-                   თქვენი ანგარიში შეიქმნება ჩვენს სისტემაში Facebook-ის მიერ მოწოდებული მონაცემებით.</p>
+                <h3>3. Clerk-ით რეგისტრაციის პოლიტიკა</h3>
+                <p>Clerk-ით რეგისტრაციისას, ჩვენ ვიღებთ მხოლოდ თქვენს სახელს, გვარს და ელ.ფოსტას. 
+                   ჩვენ არ ვინახავთ თქვენს პაროლებს Clerk-ში. 
+                   თქვენი ანგარიში შეიქმნება ჩვენს სისტემაში Clerk-ის მიერ მოწოდებული მონაცემებით.</p>
             </div>
             
             <div class="text-center">
@@ -778,8 +777,8 @@
             }
         });
         
-        document.getElementById('facebook-btn').addEventListener('click', () => {
-            window.location.href = "/auth/facebook";
+        document.getElementById('clerk-btn').addEventListener('click', () => {
+            window.location.href = "https://your-app.clerk.accounts.dev/sign-up";
         });
 
         document.querySelectorAll('.form-control').forEach(input => {
@@ -833,4 +832,4 @@
         });
     </script>
 </body>
-</html>
+        </html>
