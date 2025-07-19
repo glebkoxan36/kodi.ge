@@ -232,7 +232,7 @@ stripe_payment = StripePayment(
 # ======================================
 
 def admin_required(f):
-    @wraps(f)  # Исправлено: было @wrups(f)
+    @wraps(f)
     def decorated(*args, **kwargs):
         if 'admin_id' not in session or 'admin_role' not in session:
             logger.warning(f"Unauthorized admin access attempt: session={dict(session)}")
@@ -255,7 +255,7 @@ def admin_required(f):
     return decorated
 
 def login_required(f):
-    @wraps(f)  # Исправлено: было @wrups(f)
+    @wraps(f)
     def decorated(*args, **kwargs):
         if 'user_id' not in session and 'admin_id' not in session:
             logger.warning("Unauthorized access attempt")
@@ -611,13 +611,11 @@ def perform_background_check(imei, service_type, session_id):
             }
             
             if checks_collection is not None:
-                # Сначала пробуем обновить по session_id
                 update_result = checks_collection.update_one(
                     {'session_id': session_id},
                     {'$set': update_data}
                 )
                 if update_result.matched_count == 0:
-                    # Если не нашли, пробуем по stripe_session_id (для старых записей)
                     update_result = checks_collection.update_one(
                         {'stripe_session_id': session_id},
                         {'$set': update_data}
@@ -640,7 +638,6 @@ def perform_background_check(imei, service_type, session_id):
             'status': 'Error'
         }
         if checks_collection:
-            # Пробуем обновить по session_id, а потом по stripe_session_id
             update_result = checks_collection.update_one(
                 {'session_id': session_id},
                 {'$set': {
@@ -676,6 +673,14 @@ def create_checkout_session():
             return jsonify({'error': 'არასწორი IMEI'}), 400
         
         amount = get_service_price(service_type)
+        
+        # Проверка корректности суммы
+        if not isinstance(amount, int) or amount <= 0:
+            logger.error(f"Invalid amount for service {service_type}: {amount}")
+            return jsonify({
+                'error': 'Invalid service price configuration',
+                'details': f'Service: {service_type}, Amount: {amount}'
+            }), 500
         
         if service_type == 'free':
             logger.debug("Free service - no checkout needed")
@@ -752,6 +757,14 @@ def create_checkout_session():
             idempotency_key=idempotency_key
         )
         
+        # Проверка ответа Stripe
+        if not stripe_session or not stripe_session.id:
+            logger.error("Stripe returned empty session object")
+            return jsonify({
+                'error': 'Stripe API returned empty response',
+                'details': 'Please try again later'
+            }), 500
+            
         logger.info(f"Stripe session created: {stripe_session.id}")
         return jsonify({
             'id': stripe_session.id,
@@ -789,7 +802,7 @@ def payment_success():
             stripe_session = stripe.checkout.Session.retrieve(session_id)
             
             record = {
-                'session_id': session_id,  # Добавлено новое поле
+                'session_id': session_id,
                 'stripe_session_id': session_id,
                 'imei': imei,
                 'service_type': service_type,
