@@ -1,3 +1,5 @@
+[file name]: app.py
+[file content begin]
 import os
 import json
 import logging
@@ -268,7 +270,7 @@ def admin_required(f):
             )
             if not admin or admin.get('role') not in ['admin', 'superadmin']:
                 flash('Administrator account not found or invalid', 'danger')
-                session.clear()
+                session.clear();
                 return redirect(url_for('auth.admin_login'))
         except:
             session.clear()
@@ -467,6 +469,16 @@ def knowledge_base():
     """База знаний"""
     logger.info("Knowledge base access")
     return render_common_template('knowledge-base.html')
+
+# ======================================
+# Роут для страницы политики
+# ======================================
+@app.route('/politika')
+@cache.cached(timeout=3600)
+def policy_page():
+    """Страница политики конфиденциальности"""
+    logger.info("Policy page access")
+    return render_common_template('politika.html')
 
 # ======================================
 # Роут для страницы сравнения телефонов
@@ -1272,3 +1284,4 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting application on port {port}")
     app.run(host='0.0.0.0', port=port, debug=True)
+[file content end]
