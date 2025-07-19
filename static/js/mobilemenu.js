@@ -105,7 +105,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 70vh;
+            height: 80vh; /* Увеличена высота */
             max-height: none;
             z-index: 1100;
             transform: translateY(100%);
@@ -137,6 +137,7 @@
             position: relative;
             z-index: 4;
             overflow-x: hidden; /* Фикс горизонтального скролла */
+            padding-top: 70px; /* Добавлено место для аватарки */
         }
         
         .kodi-close-modal {
@@ -160,7 +161,7 @@
         
         .kodi-avatar-container {
             position: absolute;
-            top: -60px; /* Исправлено: увеличен отступ для аватарки */
+            top: -75px; /* Увеличено для полного отображения */
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
@@ -317,7 +318,7 @@
             background: transparent;
             box-sizing: border-box;
             padding: 0;
-            margin-top: 100px;
+            margin-top: 0; /* Убрано смещение */
             position: relative;
             z-index: 10;
         }
@@ -371,12 +372,25 @@
         
         /* Оптимизированные медиа-запросы */
         @media (max-width: 768px) {
+            .kodi-menu-modal {
+                height: 85vh; /* Увеличена высота */
+            }
+            
+            .kodi-avatar-container {
+                top: -70px; /* Увеличено для полного отображения */
+            }
+            
             .kodi-menu-grid {
                 gap: 10px;
                 max-width: 380px;
                 height: 380px;
-                margin-top: 120px;
+                margin-top: 0;
             }
+            
+            .kodi-modal-body {
+                padding-top: 60px; /* Уменьшено для маленьких экранов */
+            }
+            
             .kodi-menu-item {
                 padding: 10px 7px;
             }
@@ -394,11 +408,23 @@
         }
         
         @media (max-width: 576px) {
+            .kodi-menu-modal {
+                height: 90vh; /* Увеличена высота */
+            }
+            
+            .kodi-avatar-container {
+                top: -65px; /* Увеличено для полного отображения */
+            }
+            
+            .kodi-modal-body {
+                padding-top: 50px; /* Уменьшено для маленьких экранов */
+            }
+            
             .kodi-menu-grid {
                 gap: 8px;
                 max-width: 340px;
                 height: 340px;
-                margin-top: 110px;
+                margin-top: 0;
             }
             .kodi-menu-item i {
                 font-size: 36px !important;
@@ -409,11 +435,23 @@
         }
         
         @media (max-width: 400px) {
+            .kodi-menu-modal {
+                height: 95vh; /* Увеличена высота */
+            }
+            
+            .kodi-avatar-container {
+                top: -60px; /* Увеличено для полного отображения */
+            }
+            
+            .kodi-modal-body {
+                padding-top: 40px; /* Уменьшено для маленьких экранов */
+            }
+            
             .kodi-menu-grid {
                 gap: 6px;
                 max-width: 300px;
                 height: 300px;
-                margin-top: 100px;
+                margin-top: 0;
             }
             .kodi-menu-item i {
                 font-size: 34px !important;
@@ -424,11 +462,19 @@
         }
         
         @media (max-width: 340px) {
+            .kodi-avatar-container {
+                top: -55px; /* Увеличено для полного отображения */
+            }
+            
+            .kodi-modal-body {
+                padding-top: 35px; /* Уменьшено для маленьких экранов */
+            }
+            
             .kodi-menu-grid {
                 gap: 5px;
                 max-width: 280px;
                 height: 280px;
-                margin-top: 90px;
+                margin-top: 0;
             }
             .kodi-menu-item i {
                 font-size: 32px !important;
@@ -440,11 +486,11 @@
         
         @media (min-width: 769px) and (max-width: 1024px) {
             .kodi-menu-modal {
-                max-height: 55vh;
+                max-height: 65vh; /* Увеличена высота */
                 height: auto;
             }
             .kodi-avatar-container {
-                top: -50px; /* Исправлено: увеличен отступ для аватарки */
+                top: -70px; /* Увеличено для полного отображения */
             }
             .kodi-floating-avatar {
                 width: 110px;
@@ -459,7 +505,7 @@
             .kodi-menu-grid {
                 max-width: 420px;
                 height: 420px;
-                margin-top: 140px;
+                margin-top: 0;
             }
             .kodi-menu-item i {
                 font-size: 38px !important;
