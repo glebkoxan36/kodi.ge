@@ -1,4 +1,3 @@
-# ifreeapi.py
 import requests
 import logging
 import re
@@ -72,7 +71,6 @@ def perform_api_check(imei: str, service_type: str) -> dict:
         response = requests.post(API_URL, data=payload, timeout=30)
         http_code = response.status_code
         
-        # Обработка HTTP ошибок
         if http_code != 200:
             error_msg = f"HTTP Error: {http_code}"
             return {
@@ -95,10 +93,8 @@ def perform_api_check(imei: str, service_type: str) -> dict:
                 'status': 'API Error'
             }
         
-        # Extract device information
         device_info = data.get('object', {})
         
-        # Simplified result structure
         result = {
             'success': True,
             'imei': imei,
@@ -113,10 +109,9 @@ def perform_api_check(imei: str, service_type: str) -> dict:
             'carrier': device_info.get('carrier', ''),
             'mdm_status': device_info.get('mdm_status', ''),
             'warranty_status': device_info.get('warranty_status', ''),
-            'full_response': device_info  # Keep full response for debugging
+            'full_response': device_info
         }
         
-        # Determine device type
         brand = result['brand'].lower()
         if 'apple' in brand or 'iphone' in brand or 'ipad' in brand:
             result['device_type'] = 'Apple'
