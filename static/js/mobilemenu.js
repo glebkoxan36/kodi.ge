@@ -160,7 +160,7 @@
         
         .kodi-avatar-container {
             position: absolute;
-            top: -47px;
+            top: -60px; /* Исправлено: увеличен отступ для аватарки */
             left: 50%;
             transform: translateX(-50%);
             z-index: 1500;
@@ -444,7 +444,7 @@
                 height: auto;
             }
             .kodi-avatar-container {
-                top: -35px;
+                top: -50px; /* Исправлено: увеличен отступ для аватарки */
             }
             .kodi-floating-avatar {
                 width: 110px;
@@ -485,6 +485,9 @@
         }
     `;
     document.head.appendChild(style);
+
+    // Переменная для отслеживания состояния анимации
+    let menuAnimationInProgress = false;
 
     // Navigation functions
     window.kodiGoToLogin = function() {
@@ -802,30 +805,46 @@
 
     // Menu functions
     window.kodiOpenMenu = function() {
+        if (menuAnimationInProgress) return;
+        menuAnimationInProgress = true;
+
         const modal = getElement('kodiMainMenu');
         updateUserInfo(); // Обновление данных при открытии
         if (modal) {
             document.body.classList.add('kodi-menu-open');
             modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('open'), 10);
+            setTimeout(() => {
+                modal.classList.add('open');
+                menuAnimationInProgress = false;
+            }, 10);
         } else {
             createMobileMenuStructure();
-            setTimeout(() => kodiOpenMenu(), 50);
+            setTimeout(() => {
+                kodiOpenMenu();
+                menuAnimationInProgress = false;
+            }, 50);
         }
     }
 
     window.kodiCloseMenu = function() {
+        if (menuAnimationInProgress) return;
+        menuAnimationInProgress = true;
+
         const modal = getElement('kodiMainMenu');
         if (modal) {
             modal.classList.remove('open');
             setTimeout(() => {
                 modal.style.display = 'none';
                 document.body.classList.remove('kodi-menu-open');
+                menuAnimationInProgress = false;
             }, 400);
         }
     }
 
     window.kodiOpenAppleMenu = function() {
+        if (menuAnimationInProgress) return;
+        menuAnimationInProgress = true;
+
         kodiCloseMenu();
         setTimeout(() => {
             const appleModal = getElement('kodiAppleMenu');
@@ -833,23 +852,33 @@
                 updateUserInfo(); // Обновление данных при открытии
                 document.body.classList.add('kodi-menu-open');
                 appleModal.style.display = 'flex';
-                setTimeout(() => appleModal.classList.add('open'), 10);
+                setTimeout(() => {
+                    appleModal.classList.add('open');
+                    menuAnimationInProgress = false;
+                }, 10);
             }
         }, 50);
     }
 
     window.kodiCloseAppleMenu = function() {
+        if (menuAnimationInProgress) return;
+        menuAnimationInProgress = true;
+
         const appleModal = getElement('kodiAppleMenu');
         if (appleModal) {
             appleModal.classList.remove('open');
             setTimeout(() => {
                 appleModal.style.display = 'none';
                 document.body.classList.remove('kodi-menu-open');
+                menuAnimationInProgress = false;
             }, 400);
         }
     }
 
     window.kodiOpenAndroidMenu = function() {
+        if (menuAnimationInProgress) return;
+        menuAnimationInProgress = true;
+
         kodiCloseMenu();
         setTimeout(() => {
             const androidModal = getElement('kodiAndroidMenu');
@@ -857,18 +886,25 @@
                 updateUserInfo(); // Обновление данных при открытии
                 document.body.classList.add('kodi-menu-open');
                 androidModal.style.display = 'flex';
-                setTimeout(() => androidModal.classList.add('open'), 10);
+                setTimeout(() => {
+                    androidModal.classList.add('open');
+                    menuAnimationInProgress = false;
+                }, 10);
             }
         }, 50);
     }
 
     window.kodiCloseAndroidMenu = function() {
+        if (menuAnimationInProgress) return;
+        menuAnimationInProgress = true;
+
         const androidModal = getElement('kodiAndroidMenu');
         if (androidModal) {
             androidModal.classList.remove('open');
             setTimeout(() => {
                 androidModal.style.display = 'none';
                 document.body.classList.remove('kodi-menu-open');
+                menuAnimationInProgress = false;
             }, 400);
         }
     }
@@ -878,12 +914,35 @@
         kodiCloseAppleMenu();
         kodiCloseAndroidMenu();
         document.body.classList.remove('kodi-menu-open');
+        menuAnimationInProgress = false;
     }
 
     // Навигация назад вместо закрытия меню
     window.kodiBackToMainMenu = function() {
-        kodiCloseAllMenus();
-        kodiOpenMenu();
+        if (menuAnimationInProgress) return;
+        menuAnimationInProgress = true;
+
+        const appleMenu = getElement('kodiAppleMenu');
+        const androidMenu = getElement('kodiAndroidMenu');
+        
+        if (appleMenu.classList.contains('open')) {
+            appleMenu.classList.remove('open');
+            setTimeout(() => {
+                appleMenu.style.display = 'none';
+                kodiOpenMenu();
+                menuAnimationInProgress = false;
+            }, 400);
+        } else if (androidMenu.classList.contains('open')) {
+            androidMenu.classList.remove('open');
+            setTimeout(() => {
+                androidMenu.style.display = 'none';
+                kodiOpenMenu();
+                menuAnimationInProgress = false;
+            }, 400);
+        } else {
+            kodiOpenMenu();
+            menuAnimationInProgress = false;
+        }
     }
 
     // Initialize menu
