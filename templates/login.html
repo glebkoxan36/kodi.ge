@@ -139,6 +139,18 @@
             z-index: 10000;
             font-size: 12px;
         }
+        .debug-panel button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .debug-panel button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -248,8 +260,8 @@
 
     <!-- Отладочная панель -->
     <div class="debug-panel">
-        <p>CLERK_CLIENT_ID: <span id="debug-client-id">{{ CLERK_CLIENT_ID }}</span></p>
-        <p>Current URL: <span id="current-url"></span></p>
+        <p><strong>CLERK_CLIENT_ID:</strong> <span id="debug-client-id">{{ CLERK_CLIENT_ID }}</span></p>
+        <p><strong>Current URL:</strong> <span id="current-url"></span></p>
         <button onclick="testClerkRedirect()">Test Clerk Redirect</button>
     </div>
 
@@ -294,32 +306,37 @@
             }
         });
         
-        <script>
-    // ИСПРАВЛЕННЫЙ обработчик для кнопки Clerk
-    document.getElementById('clerk-btn').addEventListener('click', () => {
-        const clientId = '{{ CLERK_CLIENT_ID }}';
-        
-        // Формируем правильный redirect_uri
-        const redirectUri = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
-        
-        // ИСПОЛЬЗУЕМ ВАШ ДОМЕН CLERK: clerk.kodi.ge
-        window.location.href = `https://clerk.kodi.ge/oauth/authorize?` +
-            `client_id=${clientId}` +
-            `&redirect_uri=${redirectUri}` +
-            `&response_type=code` +
-            `&scope=openid+email+profile`;
-    });
+        // ИСПРАВЛЕННЫЙ обработчик для кнопки Clerk с ВАШИМ доменом
+        document.getElementById('clerk-btn').addEventListener('click', () => {
+            const clientId = '{{ CLERK_CLIENT_ID }}';
+            
+            // Формируем правильный redirect_uri
+            const redirectUri = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
+            
+            // ИСПОЛЬЗУЕМ ВАШ ДОМЕН CLERK: clerk.kodi.ge
+            window.location.href = `https://clerk.kodi.ge/oauth/authorize?` +
+                `client_id=${clientId}` +
+                `&redirect_uri=${redirectUri}` +
+                `&response_type=code` +
+                `&scope=openid+email+profile`;
+        });
 
-    // Функция для тестирования
-    function testClerkRedirect() {
-        const clientId = '{{ CLERK_CLIENT_ID }}';
-        const redirectUri = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
-        const url = `https://clerk.kodi.ge/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid+email+profile`;
-        console.log("Clerk Redirect URL:", url);
-        alert("Тестовый URL: " + url); // Для отладки
-        window.location.href = url;
-    }
-</script>
+        // Функция для тестирования перенаправления Clerk
+        function testClerkRedirect() {
+            const clientId = '{{ CLERK_CLIENT_ID }}';
+            const redirectUri = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
+            
+            // Формируем URL для Clerk с ВАШИМ доменом
+            const url = `https://clerk.kodi.ge/oauth/authorize?` +
+                `client_id=${clientId}` +
+                `&redirect_uri=${redirectUri}` +
+                `&response_type=code` +
+                `&scope=openid+email+profile`;
+            
+            console.log("Clerk Redirect URL:", url);
+            alert("URL для перенаправления:\n" + url);
+            window.location.href = url;
+        }
 
         const modal = document.getElementById('forgot-password-modal');
         const forgotPasswordLink = document.getElementById('forgot-password-link');
@@ -398,4 +415,4 @@
         });
     </script>
 </body>
-    </html>
+</html>
