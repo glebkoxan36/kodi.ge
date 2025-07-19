@@ -273,8 +273,11 @@
             }
         });
         
+        // ОБНОВЛЕННЫЙ обработчик для кнопки Clerk
         document.getElementById('clerk-btn').addEventListener('click', () => {
-            window.location.href = "https://clerk.kodi.ge/v1/oauth_callback";
+            const clientId = '{{ CLERK_CLIENT_ID }}';
+            const redirectUri = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
+            window.location.href = `https://clerk.kodi.ge/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
         });
 
         const modal = document.getElementById('forgot-password-modal');
