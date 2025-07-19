@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import ssl  # Добавлен импорт ssl
 from logging.handlers import RotatingFileHandler
 import re
 import hmac
@@ -1344,4 +1345,21 @@ if __name__ == '__main__':
     create_indexes()
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting application on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    
+    # Создаем SSL контекст с современными настройками
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
+    ssl_context.set_ciphers('ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384')
+    ssl_context.set_ecdh_curve('prime256v1')
+    ssl_context.options |= ssl.OP_NO_SSLv2
+    ssl_context.options |= ssl.OP_NO_SSLv3
+    ssl_context.options |= ssl.OP_NO_TLSv1
+    ssl_context.options |= ssl.OP_NO_TLSv1_1
+    ssl_context.options |= ssl.OP_NO_COMPRESSION
+    
+    app.run(
+        host='0.0.0.0',
+        port=port,
+        debug=True,
+        ssl_context=ssl_context
+            )
