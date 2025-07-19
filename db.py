@@ -38,7 +38,6 @@ def init_mongodb():
                 retryWrites=True,
                 w='majority'
             )
-            # Проверка подключения
             client.admin.command('ismaster')
             logger.info("Successfully connected to MongoDB")
             return client
