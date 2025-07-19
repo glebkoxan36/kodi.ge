@@ -758,14 +758,14 @@ def create_checkout_session():
         )
         
         # Проверка ответа Stripe
-        if not stripe_session or not stripe_session.id:
-            logger.error("Stripe returned empty session object")
+        if not stripe_session or not hasattr(stripe_session, 'id'):
+            logger.error("Stripe session creation failed: empty response")
             return jsonify({
-                'error': 'Stripe API returned empty response',
-                'details': 'Please try again later'
+                'error': 'Stripe session creation failed',
+                'details': 'Empty response from Stripe API'
             }), 500
             
-        logger.info(f"Stripe session created: {stripe_session.id}")
+        logger.info(f"Stripe session created successfully: {stripe_session.id}")
         return jsonify({
             'id': stripe_session.id,
             'payment_method': 'stripe'
@@ -799,7 +799,13 @@ def payment_success():
             return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
     else:
         try:
+            # Проверка статуса платежа в Stripe
             stripe_session = stripe.checkout.Session.retrieve(session_id)
+            
+            if stripe_session.payment_status != 'paid':
+                logger.error(f"Unpaid Stripe session: {session_id}")
+                return render_template('error.html', 
+                    error=f"გადახდა არ დასრულებულა სესიისთვის: {session_id}"), 402
             
             record = {
                 'session_id': session_id,
@@ -825,9 +831,14 @@ def payment_success():
             else:
                 return redirect(url_for('android_check', type=service_type, imei=imei, session_id=session_id))
         
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe error in /success: {e.user_message}")
+            return render_template('error.html', 
+                error=f"Stripe შეცდომა: {e.user_message}"), 500
         except Exception as e:
-            logger.exception(f"Payment success error: {str(e)}")
-            return render_template('error.html', error=str(e)), 500
+            logger.exception(f"Payment success processing failed: {str(e)}")
+            return render_template('error.html', 
+                error="სისტემური შეცდომა"), 500
 
 @app.route('/get_check_result')
 @csrf.exempt
