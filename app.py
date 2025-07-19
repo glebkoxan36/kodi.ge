@@ -27,7 +27,7 @@ from pymongo.errors import PyMongoError
 from flask_pymongo import PyMongo
 from celery import Celery
 import celery.states as states
-from clerk_backend_api import Clerk, authenticate_request
+import jwt  # Добавлен импорт для работы с JWT
 from urllib3.poolmanager import PoolManager
 from urllib3.util import ssl_
 
@@ -73,9 +73,6 @@ if os.getenv('FLASK_ENV') == 'production':
     logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
 app = Flask(__name__)
-
-# Инициализация Clerk
-clerk = Clerk(bearer_auth=os.getenv('CLERK_SECRET_KEY'))
 
 # Инициализация Celery
 celery = Celery(
@@ -233,7 +230,11 @@ def inject_user():
         except Exception as e:
             logger.exception(f"Error getting user: {str(e)}")
     
-    return {'currentUser': user_data, 'admin_username': admin_username}
+    return {
+        'currentUser': user_data, 
+        'admin_username': admin_username,
+        'CLERK_CLIENT_ID': os.getenv('CLERK_CLIENT_ID')  # Передаем клиентский ID для фронтенда
+    }
 
 # Конфигурация
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
@@ -1004,37 +1005,89 @@ def perform_check():
         return jsonify({'error': 'სერვერული შეცდომა'}), 500
 
 # ======================================
-# Clerk Authentication Callback
+# Clerk Authentication Callback (ПОЛНОСТЬЮ ПЕРЕПИСАНО)
 # ======================================
+
+# Константы для Clerk
+CLERK_ISSUER = "https://clerk.kodi.ge"
+CLERK_JWKS_URL = "https://clerk.kodi.ge/.well-known/jwks.json"
+CLERK_PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuVAT6ZHm5C/Y11HfHV6L
+hCrT0p4k/SQQn95O+ZfXZWwIdAeuFy4Wou6UTgOJWAMPfeXfAcG5tLeG2hjkw3ff
+WGLAPQH59UULH+rvleuOQCbeyYnVTMRw0QaPWmcwmlO8D3WXHSPs1DGrlgtj3Slz
+hmJHbnMCp3sw+AUv2YiAgyyZTGBOLRMt9VuwmjYsk9WLuSrgS8q6O4On5UjlZWpa
+zlaEiFaazFy2pF7XE/FIEQExVW9nEkAxAgu7F35/8EwRzuZdy2OjLF8yV2uA6IaV
+NtxLd1uMphCMxOtS0DNYZJ3aWjj/gZPES8ojCs3XHa+UHbnutcaFWjw+7aST41QW
+cwIDAQAB
+-----END PUBLIC KEY-----"""
 
 @app.route('/auth/clerk/callback', methods=['GET'])
 def clerk_callback():
-    """Обработчик аутентификации через Clerk.com"""
+    """Правильная обработка аутентификации через Clerk.com с использованием OAuth 2.0"""
     try:
         logger.info("Processing Clerk authentication callback")
         
-        # Аутентификация запроса через Clerk SDK
-        request_state = clerk.authenticate_request(request)
-        
-        if not request_state.is_signed_in:
-            logger.warning("Clerk authentication failed: user not signed in")
-            flash('Authentication failed', 'danger')
+        # 1. Получение authorization code
+        code = request.args.get('code')
+        if not code:
+            logger.error("Missing authorization code in callback")
+            flash('Authentication failed: missing authorization code', 'danger')
             return redirect(url_for('auth.login'))
         
-        # Извлекаем данные пользователя
-        user_id = request_state.payload["sub"]
-        email = request_state.payload.get("email", "")
-        first_name = request_state.payload.get("given_name", "")
-        last_name = request_state.payload.get("family_name", "")
+        # 2. Обмен кода на токен
+        token_url = "https://api.clerk.com/v1/oauth/token"
+        payload = {
+            'client_id': os.getenv('CLERK_CLIENT_ID'),
+            'client_secret': os.getenv('CLERK_SECRET_KEY'),
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': url_for('auth.clerk_callback', _external=True)
+        }
+        
+        response = requests.post(token_url, data=payload)
+        if response.status_code != 200:
+            logger.error(f"Token exchange failed: {response.status_code} - {response.text}")
+            return jsonify({'error': 'Token exchange failed'}), 401
+        
+        token_data = response.json()
+        id_token = token_data.get('id_token')
+        if not id_token:
+            logger.error("Missing ID token in response")
+            return jsonify({'error': 'Missing ID token'}), 401
+        
+        # 3. Верификация JWT
+        try:
+            # Используем предоставленный публичный ключ
+            public_key = CLERK_PUBLIC_KEY
+            
+            # Декодирование токена
+            payload = jwt.decode(
+                id_token,
+                public_key,
+                algorithms=["RS256"],
+                audience=os.getenv('CLERK_CLIENT_ID'),
+                issuer=CLERK_ISSUER
+            )
+        except jwt.ExpiredSignatureError:
+            logger.error("JWT token expired")
+            return jsonify({'error': 'Token expired'}), 401
+        except jwt.InvalidTokenError as e:
+            logger.error(f"Invalid JWT token: {str(e)}")
+            return jsonify({'error': 'Invalid token'}), 401
+        
+        # 4. Извлечение данных пользователя
+        user_id = payload["sub"]
+        email = payload.get("email", "")
+        first_name = payload.get("given_name", "")
+        last_name = payload.get("family_name", "")
         
         logger.debug(f"Clerk user data: id={user_id}, email={email}")
         
-        # Поиск пользователя в базе по Clerk ID
+        # 5. Поиск/создание пользователя
         user = regular_users_collection.find_one({'clerk_user_id': user_id})
         
         if not user:
             logger.info(f"Creating new user for Clerk ID: {user_id}")
-            # Создаем нового пользователя
             new_user = {
                 'clerk_user_id': user_id,
                 'email': email,
@@ -1046,13 +1099,12 @@ def clerk_callback():
                 'updated_at': datetime.utcnow()
             }
             
-            # Сохраняем пользователя
             user_id_db = regular_users_collection.insert_one(new_user).inserted_id
             user = new_user
             user['_id'] = user_id_db
             logger.info(f"New user created for Clerk ID: {user_id}")
         
-        # Устанавливаем сессию пользователя
+        # 6. Установка сессии
         session['user_id'] = str(user['_id'])
         session['role'] = 'user'
         session.permanent = True
@@ -1420,4 +1472,4 @@ if __name__ == '__main__':
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production',
         ssl_context=ssl_context
-    )
+        )
