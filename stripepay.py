@@ -32,6 +32,8 @@ class StripePayment:
     def create_checkout_session(self, imei, service_type, amount, success_url, cancel_url, metadata=None, idempotency_key=None):
         try:
             logger.info(f"Creating checkout session for IMEI: {imei}, service: {service_type}")
+            logger.info(f"Amount: {amount} (cents)")
+            
             if metadata is None:
                 metadata = {}
                 
@@ -49,7 +51,7 @@ class StripePayment:
                             'name': f'Apple IMEI Check ({service_type.capitalize()})',
                             'description': f'IMEI: {imei}',
                         },
-                        'unit_amount': int(amount * 100),
+                        'unit_amount': amount,
                     },
                     'quantity': 1,
                 }],
@@ -61,7 +63,6 @@ class StripePayment:
             )
         except stripe.error.StripeError as e:
             logger.error(f"Stripe API error: {e.user_message}")
-            # Пробрасываем исключение с сообщением для пользователя
             raise Exception(f"Stripe error: {e.user_message}") from e
         except Exception as e:
             logger.exception("Stripe session creation failed")
@@ -93,7 +94,6 @@ class StripePayment:
                 idempotency_key=idempotency_key
             )
             
-            # Add session ID to payment intent metadata
             if session.payment_intent:
                 stripe.PaymentIntent.modify(
                     session.payment_intent,
@@ -282,7 +282,6 @@ class StripePayment:
             event_type = event['type']
             logger.info(f"Processing Stripe event: {event_type}")
             
-            # Handle payment_intent.succeeded event
             if event_type == 'payment_intent.succeeded':
                 payment_intent = event['data']['object']
                 session_id = payment_intent.get('metadata', {}).get('session_id')
@@ -294,7 +293,6 @@ class StripePayment:
                 session = stripe.checkout.Session.retrieve(session_id)
                 return self.process_topup(session)
             
-            # Handle checkout.session.completed event
             elif event_type == 'checkout.session.completed':
                 session = event['data']['object']
                 metadata = session.get('metadata', {})
@@ -342,14 +340,12 @@ class StripePayment:
                         except (TypeError, InvalidId):
                             logger.error(f"Invalid user ID in metadata: {metadata['user_id']}")
                     
-                    # Убедимся, что запись создана
                     if self.payments_collection.count_documents({'stripe_session_id': session['id']}) == 0:
                         self.payments_collection.insert_one(payment_record)
                         logger.info(f"Payment record created: {session['id']}")
                     else:
                         logger.warning(f"Payment record already exists: {session['id']}")
             
-            # Handle async payment status updates
             elif event_type == 'checkout.session.async_payment_succeeded':
                 session = event['data']['object']
                 logger.info(f"Payment succeeded: {session['id']}")
@@ -374,7 +370,6 @@ class StripePayment:
                     }}
                 )
             
-            # Handle refunds
             elif event_type == 'charge.refunded':
                 charge = event['data']['object']
                 logger.info(f"Refund processed: {charge.id}")
