@@ -1,9 +1,7 @@
 # auth.py
 import logging
 import re
-import requests
 import secrets
-import urllib.parse
 import os
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session, current_app, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -28,14 +26,6 @@ def init_logger():
 init_logger()
 
 auth_bp = Blueprint('auth', __name__)
-
-# Facebook OAuth конфигурация
-FACEBOOK_API_VERSION = "v23.0"
-FACEBOOK_OAUTH_URL = f"https://www.facebook.com/{FACEBOOK_API_VERSION}/dialog/oauth"
-FACEBOOK_TOKEN_URL = f"https://graph.facebook.com/{FACEBOOK_API_VERSION}/oauth/access_token"
-FACEBOOK_USER_INFO_URL = f"https://graph.facebook.com/{FACEBOOK_API_VERSION}/me"
-FACEBOOK_DEBUG_TOKEN_URL = f"https://graph.facebook.com/{FACEBOOK_API_VERSION}/debug_token"
-FACEBOOK_REDIRECT_URI = os.getenv('FACEBOOK_REDIRECT_URI', 'http://localhost:5000/auth/facebook/callback')
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -314,153 +304,3 @@ def admin_logout():
         logger.error(f"Admin logout error: {str(e)}")
         flash('Error during admin logout', 'danger')
         return redirect(url_for('admin.admin_dashboard'))
-
-@auth_bp.route('/facebook')
-def facebook_login():
-    """Перенаправляет пользователя на страницу авторизации Facebook"""
-    # Проверяем, что приложение настроено
-    if not current_app.config.get('FACEBOOK_OAUTH_CLIENT_ID'):
-        logger.error("Facebook OAuth not configured")
-        flash('Facebook authentication is not available', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    # Генерируем уникальный state для защиты от CSRF
-    state = secrets.token_urlsafe(32)
-    session['facebook_state'] = state
-    
-    # Параметры для запроса авторизации
-    params = {
-        'client_id': current_app.config['FACEBOOK_OAUTH_CLIENT_ID'],
-        'redirect_uri': FACEBOOK_REDIRECT_URI,
-        'state': state,
-        'scope': 'email,public_profile',
-        'response_type': 'code',
-        'auth_type': 'rerequest'  # Для повторного запроса отклоненных разрешений
-    }
-    
-    # Формируем URL для перенаправления
-    url = FACEBOOK_OAUTH_URL + '?' + urllib.parse.urlencode(params)
-    logger.info(f"Redirecting to Facebook: {url}")
-    return redirect(url)
-
-@auth_bp.route('/facebook/callback')
-def facebook_callback():
-    """Обрабатывает ответ от Facebook после авторизации"""
-    # Проверяем наличие ошибок
-    if request.args.get('error'):
-        error_reason = request.args.get('error_reason', '')
-        error_description = request.args.get('error_description', '')
-        logger.warning(f"Facebook authentication error: {error_reason} - {error_description}")
-        flash('Facebook authentication failed', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    # Проверяем state для защиты от CSRF
-    if request.args.get('state') != session.get('facebook_state'):
-        logger.warning("Facebook state mismatch")
-        flash('Invalid authentication request', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    # Получаем код авторизации
-    code = request.args.get('code')
-    if not code:
-        logger.warning("Facebook callback missing code")
-        flash('Facebook authentication failed', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    try:
-        # Обмениваем код на access token
-        token_params = {
-            'client_id': current_app.config['FACEBOOK_OAUTH_CLIENT_ID'],
-            'client_secret': current_app.config['FACEBOOK_OAUTH_CLIENT_SECRET'],
-            'redirect_uri': FACEBOOK_REDIRECT_URI,
-            'code': code
-        }
-        
-        token_response = requests.get(FACEBOOK_TOKEN_URL, params=token_params)
-        token_response.raise_for_status()
-        token_data = token_response.json()
-        access_token = token_data['access_token']
-        
-        # Проверяем маркер доступа
-        debug_params = {
-            'input_token': access_token,
-            'access_token': f"{current_app.config['FACEBOOK_OAUTH_CLIENT_ID']}|{current_app.config['FACEBOOK_OAUTH_CLIENT_SECRET']}"
-        }
-        
-        debug_response = requests.get(FACEBOOK_DEBUG_TOKEN_URL, params=debug_params)
-        debug_response.raise_for_status()
-        debug_data = debug_response.json()
-        
-        if not debug_data['data']['is_valid']:
-            logger.warning("Invalid Facebook access token")
-            flash('Facebook authentication failed', 'danger')
-            return redirect(url_for('auth.login'))
-        
-        # Получаем данные пользователя
-        user_params = {
-            'fields': 'id,email,first_name,last_name',
-            'access_token': access_token
-        }
-        
-        user_response = requests.get(FACEBOOK_USER_INFO_URL, params=user_params)
-        user_response.raise_for_status()
-        user_data = user_response.json()
-        
-        # Извлекаем данные пользователя
-        facebook_id = user_data['id']
-        email = user_data.get('email')
-        first_name = user_data.get('first_name', '')
-        last_name = user_data.get('last_name', '')
-        
-        if not email:
-            logger.warning("Facebook account without email")
-            flash('Your Facebook account does not have an email address', 'danger')
-            return redirect(url_for('auth.login'))
-        
-        # Ищем пользователя по email или facebook_id
-        user = regular_users_collection.find_one({
-            '$or': [
-                {'email': email},
-                {'facebook_id': facebook_id}
-            ]
-        })
-        
-        if user:
-            # Пользователь существует - логиним
-            session['user_id'] = str(user['_id'])
-            session['role'] = user.get('role', 'user')
-            session.permanent = True
-            logger.info(f"Facebook login successful: {email}")
-            flash('თქვენ წარმატებით შეხვედით სისტემაში', 'success')
-            return redirect(url_for('user.dashboard'))
-        
-        # Создаем нового пользователя
-        hashed_password = generate_password_hash(secrets.token_urlsafe(16))
-        
-        new_user = {
-            'first_name': first_name,
-            'last_name': last_name,
-            'email': email,
-            'password': hashed_password,
-            'facebook_id': facebook_id,
-            'balance': 0.0,
-            'role': 'user',
-            'created_at': datetime.utcnow(),
-            'updated_at': datetime.utcnow()
-        }
-        
-        # Сохраняем пользователя
-        user_id = regular_users_collection.insert_one(new_user).inserted_id
-        logger.info(f"New user registered via Facebook: {email}")
-        
-        # Логиним пользователя
-        session['user_id'] = str(user_id)
-        session['role'] = 'user'
-        session.permanent = True
-        flash('რეგისტრაცია წარმატებით დასრულდა!', 'success')
-        return redirect(url_for('user.dashboard'))
-    
-    except Exception as e:
-        logger.exception(f"Facebook authentication error: {str(e)}")
-        flash('Facebook authentication failed', 'danger')
-        return redirect(url_for('auth.login'))
