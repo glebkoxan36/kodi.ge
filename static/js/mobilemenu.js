@@ -73,7 +73,6 @@
         .html, body {
           margin: 0;
           padding: 0;
-          overflow-x: hidden; /* Фикс горизонтального скролла */
         }
         
         @media (max-width: 1024px) {
@@ -118,7 +117,6 @@
             border: 2px solid #00c6ff;
             box-shadow: 0 0 20px rgba(0, 198, 255, 0.7);
             background: linear-gradient(135deg, #1a2138, #0e1321);
-            overflow-x: hidden; /* Фикс горизонтального скролла */
         }
         
         .kodi-menu-modal.open {
@@ -136,7 +134,6 @@
             height: 100%;
             position: relative;
             z-index: 4;
-            overflow-x: hidden; /* Фикс горизонтального скролла */
         }
         
         .kodi-close-modal {
@@ -507,15 +504,6 @@
         window.location.href = "/user/dashboard";
     }
 
-    // Обновление информации о пользователе без перезагрузки страницы
-    function updateUserInfo() {
-        const userHTML = generateUserHTML();
-        const avatarContainers = document.querySelectorAll('.kodi-avatar-container');
-        avatarContainers.forEach(container => {
-            container.innerHTML = userHTML;
-        });
-    }
-
     // Generate user HTML
     function generateUserHTML() {
         const userData = window.currentUser || {};
@@ -682,11 +670,10 @@
                             <i class="fas fa-address-card"></i>
                             <span>კონტაქტი</span>
                         </a>
-                        <!-- Замена: Политика возврата на AI Ремонтер -->
-                        <a class="kodi-menu-item" href="/ai_repair">
-                            <i class="fas fa-robot"></i>
-                            <span>AI რემონტერი</span>
-                        </a>
+                        <div class="kodi-menu-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>კონფიდენციალურობა</span>
+                        </div>
                         <div class="kodi-menu-item" onclick="kodiCloseMenu()">
                             <i class="fas fa-undo"></i>
                             <span>დაბრუნება</span>
@@ -696,7 +683,7 @@
             </div>
 
             <div class="kodi-menu-modal" id="kodiAppleMenu">
-                <button class="kodi-close-modal" onclick="kodiBackToMainMenu()">
+                <button class="kodi-close-modal" onclick="kodiCloseAppleMenu()">
                     <i class="fas fa-times"></i>
                 </button>
 
@@ -706,7 +693,11 @@
                 
                 <div class="kodi-modal-body">
                     <div class="kodi-menu-grid">
-                        <!-- Удален старый пункт "უფასო შემოწმება" -->
+                        <a class="kodi-menu-item" href="/applecheck?type=free">
+                            <img src="static/ico/8f1197c9-19f4-4923-8030-4f7b88c9d697_20250627_012614_0000.png" 
+                                 class="kodi-menu-icon-img">
+                            <span>უფასო შემოწმება</span>
+                        </a>
                         <a class="kodi-menu-item" href="/applecheck?type=fmi">
                             <img src="static/ico/f9a07c0e-e427-4a1a-aab9-948ba60f1b6a_20250627_012716_0000.png" 
                                  class="kodi-menu-icon-img">
@@ -737,13 +728,7 @@
                                  class="kodi-menu-icon-img">
                             <span>MacBook</span>
                         </a>
-                        <!-- Переименованный и перемещенный пункт -->
-                        <a class="kodi-menu-item" href="/applecheck?type=free">
-                            <img src="static/ico/8f1197c9-19f4-4923-8030-4f7b88c9d697_20250627_012614_0000.png" 
-                                 class="kodi-menu-icon-img">
-                            <span>ყველა სერვისი</span>
-                        </a>
-                        <div class="kodi-menu-item" onclick="kodiBackToMainMenu()">
+                        <div class="kodi-menu-item" onclick="kodiCloseAppleMenu()">
                             <i class="fas fa-arrow-left"></i>
                             <span>უკან</span>
                         </div>
@@ -752,7 +737,7 @@
             </div>
 
             <div class="kodi-menu-modal" id="kodiAndroidMenu">
-                <button class="kodi-close-modal" onclick="kodiBackToMainMenu()">
+                <button class="kodi-close-modal" onclick="kodiCloseAndroidMenu()">
                     <i class="fas fa-times"></i>
                 </button>
 
@@ -790,7 +775,7 @@
                             <i class="fas fa-ellipsis-h"></i>
                             <span>სხვა</span>
                         </a>
-                        <div class="kodi-menu-item" onclick="kodiBackToMainMenu()">
+                        <div class="kodi-menu-item" onclick="kodiCloseAndroidMenu()">
                             <i class="fas fa-arrow-left"></i>
                             <span>უკან</span>
                         </div>
@@ -803,7 +788,6 @@
     // Menu functions
     window.kodiOpenMenu = function() {
         const modal = getElement('kodiMainMenu');
-        updateUserInfo(); // Обновление данных при открытии
         if (modal) {
             document.body.classList.add('kodi-menu-open');
             modal.style.display = 'flex';
@@ -830,7 +814,6 @@
         setTimeout(() => {
             const appleModal = getElement('kodiAppleMenu');
             if (appleModal) {
-                updateUserInfo(); // Обновление данных при открытии
                 document.body.classList.add('kodi-menu-open');
                 appleModal.style.display = 'flex';
                 setTimeout(() => appleModal.classList.add('open'), 10);
@@ -854,7 +837,6 @@
         setTimeout(() => {
             const androidModal = getElement('kodiAndroidMenu');
             if (androidModal) {
-                updateUserInfo(); // Обновление данных при открытии
                 document.body.classList.add('kodi-menu-open');
                 androidModal.style.display = 'flex';
                 setTimeout(() => androidModal.classList.add('open'), 10);
@@ -878,12 +860,6 @@
         kodiCloseAppleMenu();
         kodiCloseAndroidMenu();
         document.body.classList.remove('kodi-menu-open');
-    }
-
-    // Навигация назад вместо закрытия меню
-    window.kodiBackToMainMenu = function() {
-        kodiCloseAllMenus();
-        kodiOpenMenu();
     }
 
     // Initialize menu
