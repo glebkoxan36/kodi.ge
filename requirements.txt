@@ -18,3 +18,4 @@ redis==4.5.5
 clerk-backend-api
 pyOpenSSL
 urllib3
+PyJWT
