@@ -23,6 +23,8 @@ from flask_caching import Cache
 from bs4 import BeautifulSoup
 from pymongo.errors import PyMongoError
 from flask_pymongo import PyMongo
+from celery import Celery
+import celery.states as states
 
 # Импорт модулей
 from auth import auth_bp
@@ -66,6 +68,30 @@ if os.getenv('FLASK_ENV') == 'production':
     logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
 app = Flask(__name__)
+
+# Инициализация Celery
+celery = Celery(
+    app.name,
+    broker=os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0'),
+    backend=os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+)
+
+# Конфигурация Celery
+celery.conf.update(
+    task_serializer='json',
+    accept_content=['json'],
+    result_serializer='json',
+    timezone='UTC',
+    enable_utc=True,
+    broker_connection_retry_on_startup=True,
+    task_track_started=True,
+    task_time_limit=300,
+    task_soft_time_limit=280,
+    worker_max_tasks_per_child=100,
+    worker_prefetch_multiplier=1,
+    task_acks_late=True,
+)
+
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 
@@ -117,9 +143,6 @@ Session(app)
 # Инициализация CSRF защиты
 csrf = CSRFProtect(app)
 csrf.exempt(auth_bp)  # Исключаем auth blueprint
-
-# Семафор для ограничения запросов
-REQUEST_SEMAPHORE = threading.BoundedSemaphore(10)
 
 # Функция для генерации цвета аватара
 @lru_cache(maxsize=512)
@@ -318,6 +341,104 @@ def render_common_template(template_name, **kwargs):
     """Общая функция для рендеринга шаблонов без данных пользователя"""
     logger.debug(f"Rendering template: {template_name}")
     return render_template(template_name, **kwargs)
+
+# ======================================
+# Celery задачи
+# ======================================
+
+@celery.task(bind=True, max_retries=3, default_retry_delay=60)
+def background_check_task(self, imei, service_type, session_id):
+    """Выполняет проверку в фоновом режиме и обновляет запись в базе"""
+    from ifreeapi import perform_api_check
+    from datetime import datetime
+    from pymongo import MongoClient
+    import os
+    import logging
+    
+    # Настройка логгера для задачи
+    logger = logging.getLogger(f'celery.task.{self.name}')
+    logger.setLevel(logging.INFO)
+    
+    try:
+        logger.info(f"Starting background check for session: {session_id}")
+        
+        # Создаем новое подключение к MongoDB
+        mongo_uri = os.getenv('MONGODB_URI')
+        client = MongoClient(mongo_uri)
+        db = client['imei_checker']
+        checks_collection = db['results']
+        
+        # Выполняем проверку
+        result = perform_api_check(imei, service_type)
+        
+        if not result.get('success'):
+            error_msg = result.get('error', 'Unknown API error')
+            logger.error(f"API check failed: {error_msg}")
+            raise Exception(f"API error: {error_msg}")
+        
+        update_data = {
+            'result': result,
+            'status': 'completed',
+            'completed_at': datetime.utcnow()
+        }
+        
+        # Обновляем запись в базе
+        update_result = checks_collection.update_one(
+            {'session_id': session_id},
+            {'$set': update_data}
+        )
+        
+        if update_result.matched_count == 0:
+            update_result = checks_collection.update_one(
+                {'stripe_session_id': session_id},
+                {'$set': update_data}
+            )
+            if update_result.matched_count == 0:
+                logger.error(f"Record not found for session: {session_id}")
+                raise Exception("Database record not found")
+        
+        logger.info(f"Background check completed for session: {session_id}")
+        return True
+    
+    except Exception as exc:
+        logger.exception(f"Background check failed: {str(exc)}")
+        
+        # Фиксация ошибки в базе данных
+        error_data = {
+            'result': {
+                'success': False,
+                'error': f"Background processing error: {str(exc)}",
+                'error_type': 'internal_error',
+                'status': 'Error'
+            },
+            'status': 'failed',
+            'completed_at': datetime.utcnow(),
+            'retry_count': self.request.retries
+        }
+        
+        try:
+            if 'checks_collection' in locals():
+                checks_collection.update_one(
+                    {'$or': [
+                        {'session_id': session_id},
+                        {'stripe_session_id': session_id}
+                    ]},
+                    {'$set': error_data}
+                )
+        except Exception as e:
+            logger.error(f"Failed to update error status in database: {str(e)}")
+        
+        if self.request.retries < self.max_retries:
+            logger.info(f"Retrying task (attempt {self.request.retries + 1})")
+            raise self.retry(exc=exc)
+        else:
+            logger.error("Task failed after all retries")
+            return False
+    
+    finally:
+        # Всегда закрываем подключение к БД
+        if 'client' in locals() and client:
+            client.close()
 
 # ======================================
 # Основные маршруты приложения
@@ -595,67 +716,6 @@ def android_check():
         stripe_public_key=STRIPE_PUBLIC_KEY
     )
 
-def perform_background_check(imei, service_type, session_id):
-    """Выполняет проверку в фоновом режиме и обновляет запись в базе"""
-    from ifreeapi import perform_api_check
-    from datetime import datetime
-    try:
-        with REQUEST_SEMAPHORE:
-            logger.info(f"Background check started for session: {session_id}")
-            result = perform_api_check(imei, service_type)
-            
-            update_data = {
-                'result': result,
-                'status': 'completed' if result.get('success') else 'failed',
-                'completed_at': datetime.utcnow()
-            }
-            
-            if checks_collection is not None:
-                update_result = checks_collection.update_one(
-                    {'session_id': session_id},
-                    {'$set': update_data}
-                )
-                if update_result.matched_count == 0:
-                    update_result = checks_collection.update_one(
-                        {'stripe_session_id': session_id},
-                        {'$set': update_data}
-                    )
-                    if update_result.matched_count == 0:
-                        logger.error(f"Record not found for session: {session_id}")
-                    else:
-                        logger.info(f"Updated by stripe_session_id: {session_id}")
-                else:
-                    logger.info(f"Background check completed for session: {session_id}")
-            else:
-                logger.error("Checks collection is not available")
-                
-    except Exception as e:
-        logger.exception(f"Background check failed: {str(e)}")
-        error_result = {
-            'success': False,
-            'error': f"Background processing error: {str(e)}",
-            'error_type': 'internal_error',
-            'status': 'Error'
-        }
-        if checks_collection:
-            update_result = checks_collection.update_one(
-                {'session_id': session_id},
-                {'$set': {
-                    'result': error_result,
-                    'status': 'failed',
-                    'completed_at': datetime.utcnow()
-                }}
-            )
-            if update_result.matched_count == 0:
-                checks_collection.update_one(
-                    {'stripe_session_id': session_id},
-                    {'$set': {
-                        'result': error_result,
-                        'status': 'failed',
-                        'completed_at': datetime.utcnow()
-                    }}
-                )
-
 @app.route('/create-checkout-session', methods=['POST'])
 @csrf.exempt
 def create_checkout_session():
@@ -717,11 +777,8 @@ def create_checkout_session():
                     checks_collection.insert_one(record)
                     logger.info(f"Balance payment recorded for IMEI: {imei}")
                 
-                threading.Thread(
-                    target=perform_background_check,
-                    args=(imei, service_type, idempotency_key),
-                    daemon=True
-                ).start()
+                # Запуск фоновой задачи через Celery
+                background_check_task.delay(imei, service_type, idempotency_key)
                 
                 return jsonify({
                     'id': idempotency_key,
@@ -824,6 +881,9 @@ def payment_success():
             if client:
                 checks_collection.insert_one(record)
                 logger.info(f"Payment recorded: {session_id}")
+            
+            # Запуск фоновой задачи через Celery
+            background_check_task.delay(imei, service_type, session_id)
             
             apple_services = ['fmi', 'blacklist', 'sim_lock', 'activation', 'carrier', 'mdm']
             if service_type in apple_services:
@@ -1169,6 +1229,20 @@ def health_check():
         status['services']['external_api'] = 'OK' if response.status_code == 200 else f'HTTP {response.status_code}'
     except Exception as e:
         status['services']['external_api'] = f'ERROR: {str(e)}'
+        status['status'] = 'ERROR'
+    
+    # Проверка Celery
+    try:
+        from celery import current_app
+        inspect = current_app.control.inspect()
+        active_tasks = inspect.active()
+        if active_tasks is not None:
+            status['services']['celery'] = 'OK'
+        else:
+            status['services']['celery'] = 'ERROR: No response from workers'
+            status['status'] = 'ERROR'
+    except Exception as e:
+        status['services']['celery'] = f'ERROR: {str(e)}'
         status['status'] = 'ERROR'
     
     return jsonify(status), 200 if status['status'] == 'OK' else 500
