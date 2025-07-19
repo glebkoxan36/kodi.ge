@@ -20,7 +20,6 @@
         .error-card h4 { margin-bottom: 15px; color: var(--danger-color); }
         .error-details { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin: 10px 0; font-size: 0.9em; }
         .android-error { display: flex; align-items: center; gap: 15px; padding: 15px; background: #f8d7da; border-radius: 8px; border-left: 4px solid #dc3545; }
-        .android-error i { font-size: 2.5rem; color: #3ddc84; }
         .android-warning { display: flex; align-items: center; gap: 15px; max-width: 800px; margin: 20px auto; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107; }
         .result-modal .modal-content { max-height: 90vh; overflow-y: auto; width: 95%; max-width: 800px; }
         .balance-sufficient { color: var(--success-color); font-weight: bold; }
@@ -422,11 +421,9 @@
             const errorElement = document.getElementById('imei-error');
             const checkBtn = document.getElementById('check-btn');
             
-            // Сброс предыдущих ошибок
             errorElement.style.display = 'none';
             errorElement.textContent = '';
             
-            // Валидация IMEI
             if (!imei) {
                 errorElement.textContent = 'გთხოვთ შეიყვანოთ IMEI ან სერიული ნომერი';
                 errorElement.style.display = 'block';
@@ -439,7 +436,6 @@
                 return;
             }
             
-            // Проверка выбранного сервиса
             const urlParams = new URLSearchParams(window.location.search);
             const serviceType = urlParams.get('type');
             
@@ -449,20 +445,17 @@
                 return;
             }
             
-            // Сохранение данных и начало процесса
             currentImei = imei;
             currentServiceType = serviceType;
             checkBtn.disabled = true;
             
             if (window.currentUser) {
-                // Для авторизованных пользователей
                 fetchUserBalance()
                     .then(balance => {
                         const service = services.find(s => s.id === serviceType);
                         const priceText = service.price;
                         const price = parseFloat(priceText.replace('₾', '').trim());
                         
-                        // Обновление информации о балансе
                         document.getElementById('user-balance').textContent = balance.toFixed(2);
                         
                         if (balance >= price) {
@@ -473,7 +466,6 @@
                                 `<span class="balance-insufficient">არასაკმარისი თანხა</span>`;
                         }
                         
-                        // Открытие модального окна выбора оплаты
                         openModal('payment-method-modal');
                     })
                     .catch(error => {
@@ -485,7 +477,6 @@
                         checkBtn.disabled = false;
                     });
             } else {
-                // Для неавторизованных пользователей
                 processPayment(false);
             }
         }
@@ -520,7 +511,10 @@
             .then(response => {
                 return response.json().then(data => {
                     if (!response.ok) {
-                        throw Object.assign(new Error('Payment failed'), { details: data });
+                        throw Object.assign(
+                            new Error(data.error || 'Payment failed'), 
+                            { details: data }
+                        );
                     }
                     return data;
                 });
@@ -536,9 +530,8 @@
                     openModal('payment-success-modal');
                     fetchResultForSession(data.id);
                 } else if (data.payment_method === 'stripe') {
-                    // Решение проблемы с пустым ответом от Stripe
                     if (!data.id) {
-                        throw new Error('Stripe session ID is missing');
+                        throw new Error('Stripe session ID is missing in response');
                     }
                     
                     stripe.redirectToCheckout({ sessionId: data.id })
@@ -552,7 +545,7 @@
                         })
                         .catch(error => {
                             document.getElementById('payment-error-message').textContent = 
-                                `Stripe error: ${error.message}`;
+                                `Stripe redirect error: ${error.message}`;
                             openModal('payment-error-modal');
                             document.getElementById('check-btn').disabled = false;
                         });
@@ -565,8 +558,8 @@
                 
                 let errorMessage = 'გადახდის პროცესში მოხდა შეცდომა';
                 
-                if (error.details && error.details.error) {
-                    errorMessage = error.details.error;
+                if (error.details) {
+                    errorMessage = error.details.error || error.message;
                     if (error.details.details) {
                         errorMessage += ` (${error.details.details})`;
                     }
@@ -578,7 +571,6 @@
                 openModal('payment-error-modal');
                 console.error('Payment error:', error);
                 
-                // Разблокировка кнопки при ошибке
                 document.getElementById('check-btn').disabled = false;
             });
         }
@@ -675,7 +667,6 @@
         function displayResults(imei, serviceType, data) {
             const resultContent = document.getElementById('result-content');
             
-            // Обработка ошибок API
             if (data.result && data.result.error) {
                 resultContent.innerHTML = `
                     <div class="error-card">
@@ -692,7 +683,6 @@
                 return;
             }
             
-            // Проверка типа устройства
             const deviceType = (data.device_type || '').toLowerCase();
             if (deviceType === 'android' || deviceType === 'unknown') {
                 resultContent.innerHTML = `
@@ -709,7 +699,6 @@
                 return;
             }
             
-            // Отображение результатов проверки
             let resultsHTML = `
                 <div class="text-center mb-4">
                     <i class="fas fa-check-circle text-success" style="font-size: 4rem; color: var(--success-color);"></i>
@@ -780,4 +769,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
