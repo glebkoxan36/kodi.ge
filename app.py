@@ -3,6 +3,7 @@ import json
 import logging
 import ssl
 import urllib3
+import socket  # Добавлен импорт socket
 from logging.handlers import RotatingFileHandler
 import re
 import hmac
@@ -1005,7 +1006,7 @@ def perform_check():
         return jsonify({'error': 'სერვერული შეცდომა'}), 500
 
 # ======================================
-# Clerk Authentication Callback (ПОЛНОСТЬЮ ПЕРЕПИСАНО)
+# Clerk Authentication Callback (ИСПРАВЛЕННЫЙ ВАРИАНТ)
 # ======================================
 
 # Константы для Clerk
@@ -1036,15 +1037,25 @@ def clerk_callback():
         
         # 2. Обмен кода на токен
         token_url = "https://api.clerk.com/v1/oauth/token"
+        
+        # ФИКС: Используем абсолютный URL для redirect_uri
+        redirect_uri = url_for('clerk_callback', _external=True)
+        logger.info(f"Using redirect_uri: {redirect_uri}")
+        
         payload = {
             'client_id': os.getenv('CLERK_CLIENT_ID'),
             'client_secret': os.getenv('CLERK_SECRET_KEY'),
             'grant_type': 'authorization_code',
             'code': code,
-            'redirect_uri': url_for('auth.clerk_callback', _external=True)
+            'redirect_uri': redirect_uri
         }
         
-        response = requests.post(token_url, data=payload)
+        # ФИКС: Добавляем User-Agent для запросов к Clerk API
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+        }
+        
+        response = requests.post(token_url, data=payload, headers=headers)
         if response.status_code != 200:
             logger.error(f"Token exchange failed: {response.status_code} - {response.text}")
             return jsonify({'error': 'Token exchange failed'}), 401
@@ -1057,23 +1068,23 @@ def clerk_callback():
         
         # 3. Верификация JWT
         try:
-            # Используем предоставленный публичный ключ
             public_key = CLERK_PUBLIC_KEY
             
-            # Декодирование токена
+            # ФИКС: Указываем правильный алгоритм и опции
             payload = jwt.decode(
                 id_token,
                 public_key,
                 algorithms=["RS256"],
                 audience=os.getenv('CLERK_CLIENT_ID'),
-                issuer=CLERK_ISSUER
+                issuer=CLERK_ISSUER,
+                options={"verify_aud": True}
             )
         except jwt.ExpiredSignatureError:
             logger.error("JWT token expired")
             return jsonify({'error': 'Token expired'}), 401
         except jwt.InvalidTokenError as e:
             logger.error(f"Invalid JWT token: {str(e)}")
-            return jsonify({'error': 'Invalid token'}), 401
+            return jsonify({'error': f'Invalid token: {str(e)}'}), 401
         
         # 4. Извлечение данных пользователя
         user_id = payload["sub"]
@@ -1111,6 +1122,8 @@ def clerk_callback():
         session.modified = True
         
         logger.info(f"User authenticated via Clerk: {email}")
+        
+        # ФИКС: Перенаправляем на dashboard
         return redirect(url_for('user.dashboard'))
     
     except Exception as e:
@@ -1472,4 +1485,4 @@ if __name__ == '__main__':
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production',
         ssl_context=ssl_context
-        )
+    )
