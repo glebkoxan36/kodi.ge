@@ -1,7 +1,8 @@
 import os
 import json
 import logging
-import ssl  # Добавлен импорт ssl
+import ssl
+import urllib3
 from logging.handlers import RotatingFileHandler
 import re
 import hmac
@@ -27,6 +28,8 @@ from flask_pymongo import PyMongo
 from celery import Celery
 import celery.states as states
 from clerk_backend_api import Clerk, authenticate_request
+from urllib3.poolmanager import PoolManager
+from urllib3.util import ssl_
 
 # Импорт модулей
 from auth import auth_bp
@@ -1303,10 +1306,30 @@ def health_check():
     
     # Проверка внешнего API
     try:
-        response = requests.get(API_URL, timeout=5)
+        # Используем совместимый SSL контекст
+        ctx = ssl_.create_urllib3_context()
+        ctx.load_default_certs()
+        session = requests.Session()
+        session.mount("https://", requests.adapters.HTTPAdapter(poolmanager=PoolManager(ssl_context=ctx)))
+        
+        response = session.get(API_URL, timeout=5)
         status['services']['external_api'] = 'OK' if response.status_code == 200 else f'HTTP {response.status_code}'
     except Exception as e:
         status['services']['external_api'] = f'ERROR: {str(e)}'
+        status['status'] = 'ERROR'
+    
+    # Проверка Clerk API
+    try:
+        # Используем совместимый SSL контекст
+        ctx = ssl_.create_urllib3_context()
+        ctx.load_default_certs()
+        session = requests.Session()
+        session.mount("https://", requests.adapters.HTTPAdapter(poolmanager=PoolManager(ssl_context=ctx)))
+        
+        response = session.get('https://clerk.accounts.dev', timeout=5)
+        status['services']['clerk_api'] = 'OK' if response.status_code == 200 else f'HTTP {response.status_code}'
+    except Exception as e:
+        status['services']['clerk_api'] = f'ERROR: {str(e)}'
         status['status'] = 'ERROR'
     
     # Проверка Celery
@@ -1337,6 +1360,22 @@ def create_indexes():
         except Exception as e:
             logger.error(f"Error creating indexes: {str(e)}")
 
+# Проверка поддержки TLS
+def check_tls_support():
+    """Проверяет поддержку TLS 1.2+"""
+    try:
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+        ctx.set_ciphers('ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256')
+        
+        with socket.create_connection(('clerk.accounts.dev', 443)) as sock:
+            with ctx.wrap_socket(sock, server_hostname='clerk.accounts.dev') as ssock:
+                logger.info(f"TLS connection successful: {ssock.version()}")
+                return True
+    except Exception as e:
+        logger.error(f"TLS connection failed: {str(e)}")
+        return False
+
 if __name__ == '__main__':
     # Инициализация цен
     if db:
@@ -1346,20 +1385,39 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting application on port {port}")
     
+    # Проверка поддержки TLS
+    if not check_tls_support():
+        logger.warning("TLS 1.2+ is not supported, connection issues may occur")
+    
     # Создаем SSL контекст с современными настройками
-    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
-    ssl_context.set_ciphers('ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384')
-    ssl_context.set_ecdh_curve('prime256v1')
-    ssl_context.options |= ssl.OP_NO_SSLv2
-    ssl_context.options |= ssl.OP_NO_SSLv3
-    ssl_context.options |= ssl.OP_NO_TLSv1
-    ssl_context.options |= ssl.OP_NO_TLSv1_1
-    ssl_context.options |= ssl.OP_NO_COMPRESSION
+    ssl_context = None
+    certfile = os.getenv('SSL_CERT_FILE')
+    keyfile = os.getenv('SSL_KEY_FILE')
+    
+    if certfile and keyfile and os.path.exists(certfile) and os.path.exists(keyfile):
+        try:
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
+            ssl_context.set_ciphers('ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256')
+            ssl_context.options |= ssl.OP_NO_SSLv2
+            ssl_context.options |= ssl.OP_NO_SSLv3
+            ssl_context.options |= ssl.OP_NO_TLSv1
+            ssl_context.options |= ssl.OP_NO_TLSv1_1
+            ssl_context.options |= ssl.OP_NO_COMPRESSION
+            ssl_context.load_cert_chain(certfile, keyfile)
+            logger.info("Using custom SSL certificate")
+        except Exception as e:
+            logger.error(f"Error creating SSL context: {str(e)}")
+            ssl_context = None
+    
+    # Если в production нет сертификатов, используем adhoc
+    if not ssl_context and os.getenv('FLASK_ENV') == 'production':
+        ssl_context = 'adhoc'
+        logger.warning("Using adhoc SSL certificate in production")
     
     app.run(
         host='0.0.0.0',
         port=port,
-        debug=True,
+        debug=os.getenv('FLASK_ENV') != 'production',
         ssl_context=ssl_context
-            )
+    )
