@@ -92,9 +92,9 @@ h1, h2, h3, h4, h5, h6 {
 .text-center { text-align: center; }
 .text-right { text-align: right; }
 
-.status-error { color: var(--danger-color); }
-.status-warning { color: var(--warning-color); }
-.status-success { color: var(--success-color); }
+.status-error { color: var(--danger-color) !important; }
+.status-warning { color: var(--warning-color) !important; }
+.status-success { color: var(--success-color) !important; }
 
 .flex { display: flex; }
 .flex-column { flex-direction: column; }
@@ -130,7 +130,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 20px auto 15px; /* Added top margin to lower logo */
+  margin: 20px auto 15px;
 }
 
 .logo-core {
@@ -285,8 +285,8 @@ h1, h2, h3, h4, h5, h6 {
   display: none;
 }
 
-/* ===== BUTTON STYLES ===== */
-.btn {
+/* ===== BUTTON STYLES (FIXED) ===== */
+.btn, .btn-primary, .btn-secondary {
   display: inline-block;
   border: none;
   border-radius: 8px;
@@ -296,6 +296,7 @@ h1, h2, h3, h4, h5, h6 {
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
+  color: white !important;
 }
 
 .btn-primary {
@@ -413,7 +414,7 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 3px;
 }
 
-/* ===== CARD STYLES ===== */
+/* ===== CARD STYLES (FIXED TEXT COLORS) ===== */
 .card {
   background: var(--card-bg) !important;
   border: 1px solid var(--border-color);
@@ -460,9 +461,10 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
   z-index: 1;
   animation: fadeIn 0.8s ease-out;
+  color: var(--text-color);
 }
 
-.card-body, .card-body * {
+.card-body *:not(.status-error):not(.status-warning):not(.status-success) {
   color: var(--text-color) !important;
 }
 
@@ -548,7 +550,7 @@ h1, h2, h3, h4, h5, h6 {
   overflow: hidden;
   box-shadow: var(--shadow);
   border-radius: 12px;
-  min-height: 400px; /* Reduced height */
+  min-height: 400px;
   aspect-ratio: 16/7;
   perspective: 1000px;
 }
@@ -557,7 +559,7 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 400px; /* Reduced height */
+  min-height: 400px;
   transform-style: preserve-3d;
 }
 
@@ -609,27 +611,27 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .carousel-content {
-  margin-top: -30px; /* Move content up */
+  margin-top: -30px;
 }
 
 .placeholder .logo-animated {
-  width: 80px; /* Reduced logo size */
-  height: 80px; /* Reduced logo size */
+  width: 80px;
+  height: 80px;
   filter: none;
   transform: translateZ(0);
 }
 
 .placeholder .logo-core {
-  width: 50px; /* Reduced logo size */
-  height: 50px; /* Reduced logo size */
+  width: 50px;
+  height: 50px;
 }
 
 .placeholder .logo-letter {
-  font-size: 24px; /* Reduced text size */
+  font-size: 24px;
 }
 
 .placeholder-text {
-  font-size: 1.5rem; /* Reduced text size */
+  font-size: 1.5rem;
   font-weight: 700;
   margin-top: 20px;
   letter-spacing: 1px;
@@ -641,7 +643,7 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 90%;
 }
 
-/* ===== MODAL STYLES ===== */
+/* ===== MODAL STYLES (FIXED) ===== */
 .modal-backdrop {
   position: fixed;
   top: 0;
@@ -690,6 +692,14 @@ h1, h2, h3, h4, h5, h6 {
   overflow-y: auto;
 }
 
+.modal-content *:not(.status-error):not(.status-warning):not(.status-success) {
+  color: var(--text-color) !important;
+}
+
+.modal-content .btn {
+  margin-top: 15px;
+}
+
 .close-modal {
   background: none;
   border: none;
@@ -734,7 +744,7 @@ h1, h2, h3, h4, h5, h6 {
   animation: spin 1s linear infinite;
 }
 
-/* ===== TABLE STYLES ===== */
+/* ===== TABLE STYLES (FIXED TEXT COLORS) ===== */
 .table-container {
   overflow-x: auto;
   margin: 25px 0;
@@ -780,7 +790,7 @@ h1, h2, h3, h4, h5, h6 {
 .social-icon {
   width: 50px;
   height: 50px;
-  border-radius: 50%; /* Ensure perfect circle */
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -892,4 +902,4 @@ h1, h2, h3, h4, h5, h6 {
   .service-price { font-size: 1.5rem; }
   .modal-content { padding: 15px 10px; }
   .close-modal { width: 30px; height: 30px; font-size: 1.3rem; }
-}
+    }
