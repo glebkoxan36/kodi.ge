@@ -504,6 +504,17 @@
         window.location.href = "/user/dashboard";
     }
 
+    // Вспомогательная функция для создания аватара по инициалам
+    function generateAvatarFallback(firstName, lastName, color) {
+        const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
+        return `
+            <div class="kodi-avatar-placeholder" 
+                style="background-color: ${color || '#1a2138'}">
+                ${initials}
+            </div>
+        `;
+    }
+
     // Generate user HTML
     function generateUserHTML() {
         const userData = window.currentUser || {};
@@ -535,14 +546,24 @@
             `;
         } 
         else if (userData.first_name && userData.last_name) {
+            const avatarUrl = userData.avatar_url || '';
             const formattedBalance = (userData.balance || 0).toFixed(2);
             
+            // Используем аватар из дашборда с параметром времени для предотвращения кеширования
             let avatarHTML;
-            if (userData.avatar_url) {
-                avatarHTML = `<img src="${userData.avatar_url}" alt="User Avatar" class="kodi-avatar-image">`;
+            if (avatarUrl) {
+                const timestamp = new Date().getTime();
+                avatarHTML = `
+                    <img src="${avatarUrl}?t=${timestamp}" 
+                         alt="User Avatar" 
+                         class="kodi-avatar-image"
+                         onerror="this.onerror=null;this.parentElement.innerHTML=generateAvatarFallback('${userData.first_name}', '${userData.last_name}', '${userData.avatar_color}')">`;
             } else {
-                const initials = `${userData.first_name.charAt(0)}${userData.last_name.charAt(0)}`;
-                avatarHTML = `<div class="kodi-avatar-placeholder" style="background-color: ${userData.avatar_color || '#1a2138'}">${initials}</div>`;
+                avatarHTML = generateAvatarFallback(
+                    userData.first_name, 
+                    userData.last_name, 
+                    userData.avatar_color
+                );
             }
             
             html = `
@@ -573,6 +594,18 @@
         }
         
         return html;
+    }
+
+    // Добавим новую функцию для обновления информации о пользователе
+    function updateUserInMenus() {
+        const userHTML = generateUserHTML();
+        const containers = document.querySelectorAll('.kodi-avatar-container');
+        
+        if (containers && containers.length > 0) {
+            containers.forEach(container => {
+                container.innerHTML = userHTML;
+            });
+        }
     }
 
     // Create mobile menu structure
@@ -787,6 +820,7 @@
 
     // Menu functions
     window.kodiOpenMenu = function() {
+        updateUserInMenus(); // ОБНОВЛЯЕМ ПОЛЬЗОВАТЕЛЯ
         const modal = getElement('kodiMainMenu');
         if (modal) {
             document.body.classList.add('kodi-menu-open');
@@ -810,6 +844,7 @@
     }
 
     window.kodiOpenAppleMenu = function() {
+        updateUserInMenus(); // ОБНОВЛЯЕМ ПОЛЬЗОВАТЕЛЯ
         kodiCloseMenu();
         setTimeout(() => {
             const appleModal = getElement('kodiAppleMenu');
@@ -833,6 +868,7 @@
     }
 
     window.kodiOpenAndroidMenu = function() {
+        updateUserInMenus(); // ОБНОВЛЯЕМ ПОЛЬЗОВАТЕЛЯ
         kodiCloseMenu();
         setTimeout(() => {
             const androidModal = getElement('kodiAndroidMenu');
