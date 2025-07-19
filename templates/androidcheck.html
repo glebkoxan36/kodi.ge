@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ka">
 <head>
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta name="csrf-token" content="{{ csrf_token }}">
+    <script src="https://js.stripe.com/v3/"></script>
     <style>
         body.modal-open { overflow: hidden; position: fixed; width: 100%; }
         .modal-backdrop { 
@@ -134,6 +136,14 @@
         }
         .version-selector {
             margin: 20px 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+        .version-selector.visible {
+            max-height: 100px;
+            opacity: 1;
         }
         #version-select {
             width: 100%;
@@ -215,9 +225,12 @@
         .btn-secondary:hover {
             background: #5a6268;
         }
-        /* Добавлено для скрытия контейнера выбранного сервиса */
         #selected-service-container {
             display: none;
+        }
+        .service-card.selected {
+            border: 2px solid #007bff;
+            box-shadow: 0 0 10px rgba(0,123,255,0.3);
         }
     </style>
 </head>
@@ -247,9 +260,9 @@
         
         <div id="services-container" class="services-grid">
             {% for service in services_data %}
-            <div class="service-card" 
+            <div class="service-card {% if service.id == base_service_type %}selected{% endif %}" 
                  data-service="{{ service.id }}"
-                 {% if service.versions %}data-has-versions="true"{% else %}data-service-type="{{ service.id }}"{% endif %}>
+                 {% if service.versions %}data-has-versions="true"{% else %}data-has-versions="false"{% endif %}>
                 <div class="service-icon">
                     <i class="fas {{ service.icon }}"></i>
                 </div>
@@ -381,11 +394,11 @@
     
     <script>
         // User context
-          window.currentUser = {% if currentUser %}{
-           id: "{{ currentUser.id }}",
-          username: "{{ currentUser.username }}",
-          balance: {{ currentUser.balance }}
-         {% else %}null{% endif %};
+        window.currentUser = {% if currentUser %}{
+            id: "{{ currentUser.id }}",
+            username: "{{ currentUser.username }}",
+            balance: {{ currentUser.balance }}
+        {% else %}null{% endif %};
  
         // Core functions
         function getCSRFToken() {
@@ -394,6 +407,8 @@
         
         const stripe = Stripe('{{ stripe_public_key }}');
         const services = {{ services_data | tojson | safe }};
+        const initialServiceType = "{{ service_type }}";
+        const initialBaseServiceType = "{{ base_service_type }}";
         let currentImei = '';
         let currentServiceType = '';
         let selectedVersions = null;
@@ -428,20 +443,24 @@
         
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
-            handleUrlParams();
+            handleInitialSelection();
         });
         
         function setupEventListeners() {
-            // ИСПРАВЛЕННЫЙ КОД: Используем делегирование событий
+            // Service card selection
             document.getElementById('services-container').addEventListener('click', function(e) {
                 const card = e.target.closest('.service-card');
                 if (!card) return;
                 
                 const serviceId = card.getAttribute('data-service');
-                selectService(serviceId);
-                const url = new URL(window.location);
-                url.searchParams.set('type', serviceId);
-                window.history.replaceState({}, '', url);
+                const hasVersions = card.getAttribute('data-has-versions') === 'true';
+                
+                // If service has versions, select the first version by default
+                if (hasVersions) {
+                    selectService(serviceId, null);
+                } else {
+                    selectService(serviceId);
+                }
             });
             
             document.getElementById('back-to-services').addEventListener('click', resetSelection);
@@ -463,15 +482,14 @@
             });
         }
         
-        function handleUrlParams() {
+        function handleInitialSelection() {
+            if (initialBaseServiceType) {
+                selectService(initialBaseServiceType, initialServiceType);
+            }
+            
             const urlParams = new URLSearchParams(window.location.search);
-            const serviceParam = urlParams.get('type');
             const imeiParam = urlParams.get('imei');
             const sessionParam = urlParams.get('session_id');
-            
-            if (serviceParam && services.some(s => s.id === serviceParam)) {
-                selectService(serviceParam);
-            }
             
             if (imeiParam) {
                 document.getElementById('imei-input').value = imeiParam;
@@ -479,15 +497,26 @@
             
             if (imeiParam && sessionParam) {
                 currentImei = imeiParam;
-                currentServiceType = serviceParam;
+                currentServiceType = initialServiceType;
                 document.getElementById('spinner').style.display = 'flex';
                 fetchResultForSession(sessionParam);
             }
         }
         
-        function selectService(serviceId) {
+        function selectService(serviceId, versionId = null) {
             const service = services.find(s => s.id === serviceId);
             if (!service) return;
+            
+            // Update URL
+            const url = new URL(window.location);
+            url.searchParams.set('type', serviceId);
+            window.history.replaceState({}, '', url);
+            
+            // Update UI
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`.service-card[data-service="${serviceId}"]`).classList.add('selected');
             
             document.getElementById('selected-service-icon').className = `fas ${service.icon}`;
             document.getElementById('selected-service-title-full').textContent = service.title;
@@ -497,18 +526,24 @@
             if (service.versions) {
                 selectedVersions = service.versions;
                 populateVersionSelector(service.versions);
-                versionSelector.style.display = 'block';
-                document.getElementById('selected-service-price').textContent = '';
+                versionSelector.classList.add('visible');
                 
-                // Автоматически выбираем первую версию
-                if (service.versions.length > 0) {
-                    currentServiceType = service.versions[0].id;
-                    document.getElementById('selected-service-price').textContent = service.versions[0].price;
+                // Set version if provided, otherwise first version
+                if (versionId) {
+                    document.getElementById('version-select').value = versionId;
+                    currentServiceType = versionId;
+                    document.getElementById('selected-service-price').textContent = 
+                        service.versions.find(v => v.id === versionId).price;
+                } else if (service.versions.length > 0) {
+                    const firstVersion = service.versions[0];
+                    document.getElementById('version-select').value = firstVersion.id;
+                    currentServiceType = firstVersion.id;
+                    document.getElementById('selected-service-price').textContent = firstVersion.price;
                 }
             } else {
-                versionSelector.style.display = 'none';
+                versionSelector.classList.remove('visible');
                 document.getElementById('selected-service-price').textContent = service.price;
-                currentServiceType = service.id;
+                currentServiceType = serviceId;
             }
             
             document.getElementById('services-container').style.display = 'none';
@@ -526,15 +561,9 @@
             versions.forEach(version => {
                 const option = document.createElement('option');
                 option.value = version.id;
-                option.textContent = version.name;
+                option.textContent = `${version.name} - ${version.price}`;
                 select.appendChild(option);
             });
-            
-            // Устанавливаем первую версию по умолчанию
-            if (versions.length > 0) {
-                select.selectedIndex = 0;
-                updateSelectedVersion();
-            }
         }
         
         function updateSelectedVersion() {
@@ -998,4 +1027,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
