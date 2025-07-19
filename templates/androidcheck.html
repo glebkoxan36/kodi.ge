@@ -432,15 +432,16 @@
         });
         
         function setupEventListeners() {
-            // Исправлено: выбираем только карточки в основном контейнере сервисов
-            document.querySelectorAll('#services-container .service-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    const serviceId = this.getAttribute('data-service');
-                    selectService(serviceId);
-                    const url = new URL(window.location);
-                    url.searchParams.set('type', serviceId);
-                    window.history.replaceState({}, '', url);
-                });
+            // ИСПРАВЛЕННЫЙ КОД: Используем делегирование событий
+            document.getElementById('services-container').addEventListener('click', function(e) {
+                const card = e.target.closest('.service-card');
+                if (!card) return;
+                
+                const serviceId = card.getAttribute('data-service');
+                selectService(serviceId);
+                const url = new URL(window.location);
+                url.searchParams.set('type', serviceId);
+                window.history.replaceState({}, '', url);
             });
             
             document.getElementById('back-to-services').addEventListener('click', resetSelection);
