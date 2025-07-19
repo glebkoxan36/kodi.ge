@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ka">
 <head>
@@ -8,230 +7,46 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <script src="https://js.stripe.com/v3/"></script>
     <style>
         body.modal-open { overflow: hidden; position: fixed; width: 100%; }
-        .modal-backdrop { 
-            position: fixed; top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            background: rgba(0, 0, 0, 0.7); 
-            z-index: 2999; display: none; 
-        }
-        .result-modal, .payment-method-modal, .payment-status-modal { 
-            transition: opacity 0.3s ease, transform 0.3s ease; 
-            opacity: 0; transform: translateY(-20px); 
-            display: none;
-            position: fixed; top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            z-index: 3000; 
-            justify-content: center; 
-            align-items: center;
-        }
-        .modal-content {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            width: 95%;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-        }
-        .card-header {
-            padding: 20px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 2rem;
-            cursor: pointer;
-        }
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 2999; display: none; }
+        .result-modal, .payment-method-modal, .payment-status-modal { transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: translateY(-20px); display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; justify-content: center; align-items: center; }
+        .modal-content { background: #fff; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 95%; max-width: 800px; max-height: 90vh; overflow-y: auto; position: relative; }
+        .card-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .close-modal { background: none; border: none; font-size: 2rem; cursor: pointer; }
         .card-body { padding: 20px; }
-        .card-footer {
-            padding: 20px;
-            text-align: center;
-            border-top: 1px solid #eee;
-        }
+        .card-footer { padding: 20px; text-align: center; border-top: 1px solid #eee; }
         .status-error { color: #dc3545; }
         .status-warning { color: #ffc107; }
         .status-success { color: #28a745; }
-        .result-actions { 
-            display: flex; 
-            justify-content: center; 
-            margin: 20px 0; 
-            gap: 10px;
-        }
-        .error-card { 
-            background: #f8d7da; 
-            border-radius: 12px; 
-            padding: 20px; 
-            margin-top: 20px; 
-            text-align: center; 
-            border-left: 4px solid #dc3545;
-        }
-        .server-error-card {
-            background: #f8d7da;
-            border-left: 4px solid #dc3545;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        .android-error { 
-            display: flex; 
-            align-items: center; 
-            gap: 15px; 
-            padding: 15px; 
-            background: #f8d7da; 
-            border-radius: 8px; 
-            border-left: 4px solid #dc3545; 
-        }
-        .spinner-container {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 4000;
-            justify-content: center;
-            align-items: center;
-        }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        .result-actions { display: flex; justify-content: center; margin: 20px 0; gap: 10px; }
+        .error-card { background: #f8d7da; border-radius: 12px; padding: 20px; margin-top: 20px; text-align: center; border-left: 4px solid #dc3545; }
+        .server-error-card { background: #f8d7da; border-left: 4px solid #dc3545; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .android-error { display: flex; align-items: center; gap: 15px; padding: 15px; background: #f8d7da; border-radius: 8px; border-left: 4px solid #dc3545; }
+        .spinner-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 4000; justify-content: center; align-items: center; }
+        .spinner { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .balance-sufficient { color: #28a745; font-weight: bold; }
         .balance-insufficient { color: #dc3545; font-weight: bold; }
         .balance-error { color: #ffc107; font-weight: bold; }
-        .payment-option {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .payment-option:hover {
-            background: #f9f9f9;
-            border-color: #007bff;
-        }
-        .payment-option i {
-            font-size: 2rem;
-            margin-right: 15px;
-            color: #007bff;
-        }
-        .version-selector {
-            margin: 20px 0;
-            max-height: 0;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            opacity: 0;
-        }
-        .version-selector.visible {
-            max-height: 100px;
-            opacity: 1;
-        }
-        #version-select {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-        .status-icon {
-            font-size: 4rem;
-            text-align: center;
-            margin: 20px 0;
-        }
+        .payment-option { display: flex; align-items: center; padding: 15px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; cursor: pointer; transition: all 0.3s; }
+        .payment-option:hover { background: #f9f9f9; border-color: #007bff; }
+        .payment-option i { font-size: 2rem; margin-right: 15px; color: #007bff; }
+        .status-icon { font-size: 4rem; text-align: center; margin: 20px 0; }
         .status-icon.success { color: #28a745; }
         .status-icon.error { color: #dc3545; }
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        .raw-results pre {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            overflow-x: auto;
-        }
-        .warning-banner {
-            background: #fff3cd;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-            margin-bottom: 20px;
-            border-left: 4px solid #ffc107;
-        }
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        .history-table th, .history-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        .history-table th {
-            background-color: #f8f9fa;
-        }
-        .status-clean { color: #28a745; }
-        .status-warning { color: #ffc107; }
-        .error-message {
-            color: #dc3545;
-            display: none;
-            margin-top: 5px;
-            font-size: 0.9rem;
-        }
-        .btn-primary {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s;
-        }
-        .btn-primary:hover {
-            background: #0069d9;
-        }
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s;
-        }
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-        #selected-service-container {
-            display: none;
-        }
-        .service-card.selected {
-            border: 2px solid #007bff;
-            box-shadow: 0 0 10px rgba(0,123,255,0.3);
-        }
+        .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+        .error-message { color: #dc3545; display: none; margin-top: 5px; font-size: 0.9rem; }
+        .btn-primary { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: background 0.3s; }
+        .btn-primary:hover { background: #0069d9; }
+        .btn-secondary { background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: background 0.3s; }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-back { background: linear-gradient(135deg, var(--accent-color), #0066ff); color: white; box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2); border: none; border-radius: 8px; padding: 12px 20px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; text-align: center; margin-bottom: 20px; display: inline-block; }
+        .btn-primary:disabled { background: #cccccc; cursor: not-allowed; }
+        .result-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .result-label { font-weight: bold; }
+        .result-value { text-align: right; }
+        .service-card.selected { border: 2px solid #007bff; box-shadow: 0 0 10px rgba(0,123,255,0.3); }
     </style>
 </head>
 <body>
@@ -255,28 +70,18 @@
         
         <div class="section-title">
             <h1><i class="fab fa-android android-logo"></i> Android IMEI შემოწმება</h1>
-            <p>აირჩიეთ მწარმოებელი და შემოწმების ტიპი, შემდეგ შეიყვანეთ IMEI</p>
+            <p>აირჩიეთ შემოწმების ტიპი და შეიყვანეთ IMEI</p>
         </div>
         
         <div id="services-container" class="services-grid">
             {% for service in services_data %}
-            <div class="service-card {% if service.id == base_service_type %}selected{% endif %}" 
-                 data-service="{{ service.id }}"
-                 {% if service.versions %}data-has-versions="true"{% else %}data-has-versions="false"{% endif %}>
+            <div class="service-card" data-service="{{ service.id }}">
                 <div class="service-icon">
                     <i class="fas {{ service.icon }}"></i>
                 </div>
                 <div class="service-title">{{ service.title }}</div>
                 <div class="service-description">{{ service.description }}</div>
-                
-                {% if service.versions %}
-                    <div class="versions-info" title="აირჩიეთ შემოწმების ტიპი ველში">
-                        <i class="fas fa-layer-group"></i> {{ service.versions|length }} ვერსია
-                    </div>
-                {% else %}
-                    <div class="service-price">{{ service.price }}</div>
-                {% endif %}
-                
+                <div class="service-price">{{ service.price }}</div>
                 <div class="service-action">არჩევა</div>
             </div>
             {% endfor %}
@@ -294,13 +99,6 @@
                 <div class="service-title" id="selected-service-title-full">სერვისის დასახელება</div>
                 <div class="service-price" id="selected-service-price">სერვისის ღირებულება</div>
                 <div class="service-description" id="selected-service-description">სერვისის აღწერა</div>
-            </div>
-            
-            <div class="version-selector" id="version-selector">
-                <label>აირჩიეთ შემოწმების ტიპი:</label>
-                <select id="version-select">
-                    <!-- Versions will be added via JS -->
-                </select>
             </div>
             
             <div class="imei-form-container" id="imei-form-container">
@@ -392,26 +190,16 @@
         <div class="spinner"></div>
     </div>
     
+    <script src="https://js.stripe.com/v3/"></script>
     <script>
-        // User context
-        window.currentUser = {% if currentUser %}{
-            id: "{{ currentUser.id }}",
-            username: "{{ currentUser.username }}",
-            balance: {{ currentUser.balance }}
-        {% else %}null{% endif %};
- 
-        // Core functions
         function getCSRFToken() {
             return document.querySelector('meta[name="csrf-token"]').content;
         }
         
         const stripe = Stripe('{{ stripe_public_key }}');
         const services = {{ services_data | tojson | safe }};
-        const initialServiceType = "{{ service_type }}";
-        const initialBaseServiceType = "{{ base_service_type }}";
         let currentImei = '';
         let currentServiceType = '';
-        let selectedVersions = null;
         
         function openModal(modalId) {
             const modal = document.getElementById(modalId);
@@ -442,37 +230,81 @@
         }
         
         document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('services-container');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            const paidServices = services.filter(service => service.price !== 'უფასო');
+            
+            if (!paidServices || paidServices.length === 0) {
+                container.innerHTML = '<p>სერვისები დროებით მიუწვდომელია</p>';
+                return;
+            }
+            
+            paidServices.forEach(service => {
+                const card = document.createElement('div');
+                card.className = 'service-card';
+                card.setAttribute('data-service', service.id);
+                card.innerHTML = `
+                    <div class="service-icon">
+                        <i class="fas ${service.icon}"></i>
+                    </div>
+                    <div class="service-title">${service.title}</div>
+                    <div class="service-description">${service.description}</div>
+                    <div class="service-price">${service.price}</div>
+                    <div class="service-action">არჩევა</div>
+                `;
+                container.appendChild(card);
+            });
+            
             setupEventListeners();
-            handleInitialSelection();
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const serviceParam = urlParams.get('type');
+            const imeiParam = urlParams.get('imei');
+            const sessionParam = urlParams.get('session_id');
+            
+            if (serviceParam && paidServices.some(s => s.id === serviceParam)) {
+                selectService(serviceParam);
+            }
+            
+            if (imeiParam && sessionParam) {
+                currentImei = imeiParam;
+                currentServiceType = serviceParam;
+                document.getElementById('spinner').style.display = 'flex';
+                fetchResultForSession(sessionParam);
+            }
         });
         
         function setupEventListeners() {
-            // Service card selection
-            document.getElementById('services-container').addEventListener('click', function(e) {
-                const card = e.target.closest('.service-card');
-                if (!card) return;
-                
-                const serviceId = card.getAttribute('data-service');
-                const hasVersions = card.getAttribute('data-has-versions') === 'true';
-                
-                // If service has versions, select the first version by default
-                if (hasVersions) {
-                    selectService(serviceId, null);
-                } else {
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const serviceId = this.getAttribute('data-service');
                     selectService(serviceId);
-                }
+                    const url = new URL(window.location);
+                    url.searchParams.set('type', serviceId);
+                    window.history.replaceState({}, '', url);
+                });
             });
             
-            document.getElementById('back-to-services').addEventListener('click', resetSelection);
-            document.getElementById('check-btn').addEventListener('click', startCheck);
-            document.getElementById('close-modal').addEventListener('click', () => closeModal('result-modal'));
-            document.getElementById('version-select').addEventListener('change', updateSelectedVersion);
+            document.getElementById('back-to-services').addEventListener('click', function() {
+                document.getElementById('selected-service-container').style.display = 'none';
+                document.getElementById('services-container').style.display = 'grid';
+                document.querySelectorAll('.service-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                document.getElementById('imei-input').value = '';
+                document.getElementById('imei-error').style.display = 'none';
+                const url = new URL(window.location);
+                url.searchParams.delete('type');
+                window.history.replaceState({}, '', url);
+            });
             
-            document.getElementById('balance-option').addEventListener('click', () => processPayment(true));
-            document.getElementById('card-option').addEventListener('click', () => processPayment(false));
-            document.getElementById('cancel-payment').addEventListener('click', () => closeModal('payment-method-modal'));
-            document.getElementById('retry-payment').addEventListener('click', () => processPayment(false));
-            document.getElementById('cancel-payment-action').addEventListener('click', () => closeModal('payment-error-modal'));
+            document.getElementById('check-btn').addEventListener('click', startCheck);
+            document.getElementById('close-modal').addEventListener('click', function() {
+                closeModal('result-modal');
+            });
             
             document.getElementById('modal-backdrop').addEventListener('click', function() {
                 closeModal('result-modal');
@@ -480,113 +312,41 @@
                 closeModal('payment-success-modal');
                 closeModal('payment-error-modal');
             });
-        }
-        
-        function handleInitialSelection() {
-            if (initialBaseServiceType) {
-                selectService(initialBaseServiceType, initialServiceType);
-            }
             
-            const urlParams = new URLSearchParams(window.location.search);
-            const imeiParam = urlParams.get('imei');
-            const sessionParam = urlParams.get('session_id');
-            
-            if (imeiParam) {
-                document.getElementById('imei-input').value = imeiParam;
-            }
-            
-            if (imeiParam && sessionParam) {
-                currentImei = imeiParam;
-                currentServiceType = initialServiceType;
-                document.getElementById('spinner').style.display = 'flex';
-                fetchResultForSession(sessionParam);
-            }
-        }
-        
-        function selectService(serviceId, versionId = null) {
-            const service = services.find(s => s.id === serviceId);
-            if (!service) return;
-            
-            // Update URL
-            const url = new URL(window.location);
-            url.searchParams.set('type', serviceId);
-            window.history.replaceState({}, '', url);
-            
-            // Update UI
-            document.querySelectorAll('.service-card').forEach(card => {
-                card.classList.remove('selected');
+            document.getElementById('balance-option').addEventListener('click', () => {
+                processPayment(true);
             });
-            document.querySelector(`.service-card[data-service="${serviceId}"]`).classList.add('selected');
             
+            document.getElementById('card-option').addEventListener('click', () => {
+                processPayment(false);
+            });
+            
+            document.getElementById('cancel-payment').addEventListener('click', () => {
+                closeModal('payment-method-modal');
+            });
+            
+            document.getElementById('retry-payment').addEventListener('click', () => {
+                closeModal('payment-error-modal');
+                processPayment(false);
+            });
+            
+            document.getElementById('cancel-payment-action').addEventListener('click', () => {
+                closeModal('payment-error-modal');
+            });
+        }
+        
+        function selectService(serviceId) {
+            document.getElementById('services-container').style.display = 'none';
+            const service = services.find(s => s.id === serviceId);
             document.getElementById('selected-service-icon').className = `fas ${service.icon}`;
             document.getElementById('selected-service-title-full').textContent = service.title;
+            document.getElementById('selected-service-price').textContent = service.price;
             document.getElementById('selected-service-description').textContent = service.description;
-            
-            const versionSelector = document.getElementById('version-selector');
-            if (service.versions) {
-                selectedVersions = service.versions;
-                populateVersionSelector(service.versions);
-                versionSelector.classList.add('visible');
-                
-                // Set version if provided, otherwise first version
-                if (versionId) {
-                    document.getElementById('version-select').value = versionId;
-                    currentServiceType = versionId;
-                    document.getElementById('selected-service-price').textContent = 
-                        service.versions.find(v => v.id === versionId).price;
-                } else if (service.versions.length > 0) {
-                    const firstVersion = service.versions[0];
-                    document.getElementById('version-select').value = firstVersion.id;
-                    currentServiceType = firstVersion.id;
-                    document.getElementById('selected-service-price').textContent = firstVersion.price;
-                }
-            } else {
-                versionSelector.classList.remove('visible');
-                document.getElementById('selected-service-price').textContent = service.price;
-                currentServiceType = serviceId;
-            }
-            
-            document.getElementById('services-container').style.display = 'none';
             document.getElementById('selected-service-container').style.display = 'block';
             
             setTimeout(() => {
                 document.getElementById('imei-input').focus();
             }, 100);
-        }
-        
-        function populateVersionSelector(versions) {
-            const select = document.getElementById('version-select');
-            select.innerHTML = '';
-            
-            versions.forEach(version => {
-                const option = document.createElement('option');
-                option.value = version.id;
-                option.textContent = `${version.name} - ${version.price}`;
-                select.appendChild(option);
-            });
-        }
-        
-        function updateSelectedVersion() {
-            if (!selectedVersions) return;
-            
-            const selectedId = document.getElementById('version-select').value;
-            const selectedVersion = selectedVersions.find(v => v.id === selectedId);
-            
-            if (selectedVersion) {
-                document.getElementById('selected-service-price').textContent = selectedVersion.price;
-                currentServiceType = selectedId;
-            }
-        }
-        
-        function resetSelection() {
-            document.getElementById('selected-service-container').style.display = 'none';
-            document.getElementById('services-container').style.display = 'grid';
-            document.getElementById('imei-input').value = '';
-            document.getElementById('imei-error').style.display = 'none';
-            
-            const url = new URL(window.location);
-            url.searchParams.delete('type');
-            window.history.replaceState({}, '', url);
         }
         
         function validateImei(imei) {
@@ -598,6 +358,9 @@
             const errorElement = document.getElementById('imei-error');
             const checkBtn = document.getElementById('check-btn');
             
+            errorElement.style.display = 'none';
+            errorElement.textContent = '';
+            
             if (!imei) {
                 errorElement.textContent = 'გთხოვთ შეიყვანოთ IMEI ან სერიული ნომერი';
                 errorElement.style.display = 'block';
@@ -605,67 +368,51 @@
             }
             
             if (!validateImei(imei)) {
-                errorElement.textContent = 'შეიყვანეთ სწორი IMEI ან სერიული ნომერი (მინიმუმ 8 სიმბოლო)';
+                errorElement.textContent = 'შეიყვანეთ სწორი IMEI ნომერი (მინიმუმ 8 სიმბოლო)';
                 errorElement.style.display = 'block';
                 return;
             }
             
-            errorElement.style.display = 'none';
-            currentImei = imei;
+            const urlParams = new URLSearchParams(window.location.search);
+            const serviceType = urlParams.get('type');
             
-            if (!currentServiceType) {
+            if (!serviceType) {
                 errorElement.textContent = 'გთხოვთ აირჩიოთ შემოწმების ტიპი';
                 errorElement.style.display = 'block';
                 return;
             }
             
-            // For free services
-            const service = services.find(s => 
-                s.id === currentServiceType || 
-                (s.versions && s.versions.some(v => v.id === currentServiceType))
-            );
+            currentImei = imei;
+            currentServiceType = serviceType;
+            checkBtn.disabled = true;
             
-            if (!service) {
-                errorElement.textContent = 'არასწორი სერვისია არჩეული';
-                errorElement.style.display = 'block';
-                return;
-            }
-            
-            let price = 0;
-            if (service.versions) {
-                const version = service.versions.find(v => v.id === currentServiceType);
-                if (version) {
-                    price = parseFloat(version.price.replace('₾', '').trim());
-                }
-            } else {
-                price = parseFloat(service.price.replace('₾', '').trim());
-            }
-            
-            // Skip payment for free services
-            if (price === 0) {
-                document.getElementById('spinner').style.display = 'flex';
-                performCheck(currentImei, currentServiceType);
-                return;
-            }
-            
-            // For authorized users
             if (window.currentUser) {
-                fetchUserBalance().then(balance => {
-                    document.getElementById('user-balance').textContent = balance.toFixed(2);
-                    
-                    if (balance >= price) {
-                        document.getElementById('balance-status').innerHTML = 
-                            `<span class="balance-sufficient">ბალანსი საკმარისია</span>`;
-                    } else {
-                        document.getElementById('balance-status').innerHTML = 
-                            `<span class="balance-insufficient">არასაკმარისი თანხა</span>`;
-                    }
-                    
-                    openModal('payment-method-modal');
-                }).catch(() => {
-                    document.getElementById('balance-status').innerHTML = 
-                        `<span class="balance-error">ბალანსის მონაცემები ვერ მოიძებნა</span>`;
-                });
+                fetchUserBalance()
+                    .then(balance => {
+                        const service = services.find(s => s.id === serviceType);
+                        const priceText = service.price;
+                        const price = parseFloat(priceText.replace('₾', '').trim());
+                        
+                        document.getElementById('user-balance').textContent = balance.toFixed(2);
+                        
+                        if (balance >= price) {
+                            document.getElementById('balance-status').innerHTML = 
+                                `<span class="balance-sufficient">ბალანსი საკმარისია</span>`;
+                        } else {
+                            document.getElementById('balance-status').innerHTML = 
+                                `<span class="balance-insufficient">არასაკმარისი თანხა</span>`;
+                        }
+                        
+                        openModal('payment-method-modal');
+                    })
+                    .catch(error => {
+                        console.error('Error fetching balance:', error);
+                        errorElement.textContent = 'ბალანსის მონაცემების მიღება ვერ მოხერხდა. სცადეთ ხელახლა.';
+                        errorElement.style.display = 'block';
+                    })
+                    .finally(() => {
+                        checkBtn.disabled = false;
+                    });
             } else {
                 processPayment(false);
             }
@@ -674,7 +421,9 @@
         function fetchUserBalance() {
             return fetch('/user/get_balance')
                 .then(response => {
-                    if (!response.ok) throw new Error('ბალანსის მიღება ვერ მოხერხდა');
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch balance');
+                    }
                     return response.json();
                 })
                 .then(data => data.balance)
@@ -699,14 +448,18 @@
                 })
             })
             .then(response => {
-                return response.json().then(data => {
-                    if (!response.ok) {
-                        throw Object.assign(new Error('გადახდა ვერ მოხერხდა'), { details: data });
-                    }
-                    return data;
-                });
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    });
+                }
+                return response.json();
             })
             .then(data => {
+                if (!data.id) {
+                    throw new Error('Missing session ID in server response');
+                }
+                
                 document.getElementById('spinner').style.display = 'none';
                 
                 if (data.error) {
@@ -720,70 +473,27 @@
                     stripe.redirectToCheckout({ sessionId: data.id })
                         .then(result => {
                             if (result.error) {
-                                document.getElementById('payment-error-message').textContent = 
-                                    `Stripe შეცდომა: ${result.error.message}`;
-                                openModal('payment-error-modal');
+                                showPaymentError(`Stripe error: ${result.error.message}`);
                             }
+                        })
+                        .catch(error => {
+                            showPaymentError(`Payment redirect failed: ${error.message}`);
                         });
+                } else {
+                    throw new Error('Unknown payment method');
                 }
             })
             .catch(error => {
                 document.getElementById('spinner').style.display = 'none';
-                
-                let errorMessage = 'გადახდის დროს მოხდა შეცდომა';
-                
-                // Специальная обработка internal error
-                if (error.details && error.details.error_type === 'internal') {
-                    errorMessage = `
-                        <div class="server-error-card">
-                            <p><strong>${error.details.error || 'სერვერზე შეცდომა'}</strong></p>
-                            <p>${error.details.message || 'გთხოვთ სცადოთ მოგვიანებით ან დაგვიკავშირდეთ'}</p>
-                            ${error.details.request_id ? `<p>მოთხოვნის ID: ${error.details.request_id}</p>` : ''}
-                        </div>
-                    `;
-                } else if (error.details) {
-                    errorMessage = error.details.error || error.details.message || 'უცნობი შეცდომა';
-                }
-                
-                document.getElementById('payment-error-message').innerHTML = errorMessage;
-                openModal('payment-error-modal');
+                showPaymentError(error.message);
                 console.error('Payment error:', error);
+                document.getElementById('check-btn').disabled = false;
             });
         }
         
-        function performCheck(imei, serviceType) {
-            document.getElementById('spinner').style.display = 'flex';
-            
-            fetch('/perform_check', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCSRFToken(),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    imei: imei,
-                    service_type: serviceType
-                })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('ქსელის შეცდომა');
-                return response.json();
-            })
-            .then(data => {
-                document.getElementById('spinner').style.display = 'none';
-                
-                if (data.error) {
-                    displayError(data.error);
-                } else {
-                    displayResults(imei, serviceType, data);
-                }
-            })
-            .catch(error => {
-                document.getElementById('spinner').style.display = 'none';
-                displayError('ქსელის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.');
-                console.error('Check error:', error);
-            });
+        function showPaymentError(message) {
+            document.getElementById('payment-error-message').textContent = message;
+            openModal('payment-error-modal');
         }
         
         function fetchResultForSession(sessionId, attempt = 1) {
@@ -795,20 +505,23 @@
                 document.getElementById('spinner').style.display = 'none';
                 closeModal('payment-success-modal');
                 displayError('შედეგის მიღება ვერ მოხერხდა. სცადეთ ხელახლა მოგვიანებით.');
+                document.getElementById('check-btn').disabled = false;
                 return;
             }
             
+            document.getElementById('spinner').style.display = 'flex';
+            
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => {
-                    reject(new Error('მოთხოვნის დრო ამოიწურა'));
+                    reject(new Error('Request timeout'));
                 }, timeoutDuration);
             });
             
             const fetchPromise = fetch('/get_check_result?session_id=' + sessionId)
                 .then(response => {
                     if (!response.ok) {
-                        return response.json().then(err => {
-                            throw new Error(err.error || 'ქსელის პასუხი არასწორია');
+                        return response.json().then(errData => {
+                            throw new Error(errData.error || `HTTP error! status: ${response.status}`);
                         });
                     }
                     return response.json();
@@ -820,8 +533,7 @@
                     closeModal('payment-success-modal');
                     
                     if (data.error) {
-                        displayError(data.error);
-                        return;
+                        throw new Error(data.error);
                     }
                     
                     if (data.status === 'pending') {
@@ -832,22 +544,25 @@
                     }
                     
                     displayResults(currentImei, currentServiceType, data);
+                    document.getElementById('check-btn').disabled = false;
                 })
                 .catch(error => {
                     document.getElementById('spinner').style.display = 'none';
                     closeModal('payment-success-modal');
                     
-                    if (error.message === 'მოთხოვნის დრო ამოიწურა') {
+                    if (error.message === 'Request timeout') {
                         if (attempt < maxAttempts) {
                             setTimeout(() => {
                                 fetchResultForSession(sessionId, attempt + 1);
                             }, delay);
                         } else {
-                            displayError('მოთხოვნის დრო ამოიწურა. სცადეთ ხელახლა.');
+                            displayError(`მოთხოვნის დრო ამოიწურა: ${error.message}`);
                         }
                     } else {
-                        displayError('შეცდომა: ' + error.message);
+                        displayError(`შეცდომა შედეგის მიღებაში: ${error.message}`);
                     }
+                    
+                    document.getElementById('check-btn').disabled = false;
                 });
         }
         
@@ -863,6 +578,9 @@
                 </div>
             `;
             openModal('result-modal');
+            document.getElementById('spinner').style.display = 'none';
+            closeModal('payment-success-modal');
+            document.getElementById('check-btn').disabled = false;
         }
         
         function displayResults(imei, serviceType, data) {
@@ -919,112 +637,62 @@
                     <i class="fas fa-check-circle text-success" style="font-size: 4rem; color: #28a745;"></i>
                     <h3 class="mt-3">შემოწმება დასრულებულია</h3>
                     <p>IMEI: <strong>${imei}</strong></p>
-                    <p>შემოწმების ტიპი: <strong>${getServiceName(serviceType)}</strong></p>
+                    <p>შემოწმების ტიპი: <strong>${services.find(s => s.id === serviceType).title}</strong></p>
                 </div>
+                <div class="free-check-results">
+                    <div class="result-card">
+                        <h3 class="card-title">სრული შედეგები</h3>
+                        <div class="card-body">
             `;
             
-            if (data.original_html) {
-                resultsHTML += `
-                    <div class="warning-banner">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        ზოგიერთი მონაცემი შეიძლება არ იყოს ამოღებული
-                    </div>
-                    <div class="raw-results">
-                        <h4>სერვერის პასუხი:</h4>
-                        <pre>${data.server_response || 'მონაცემები ხელმისაწვდომი არაა'}</pre>
-                    </div>`;
-            } 
-            else if (data && Object.keys(data).length > 0) {
-                resultsHTML += `
-                    <div class="table-container">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th>პარამეტრი</th>
-                                    <th>მნიშვნელობა</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
+            // Display all result fields
+            for (const [key, value] of Object.entries(data)) {
+                if (key === 'error' || key === 'html' || key === 'details' || key === 'original_html') continue;
                 
-                for (const [key, value] of Object.entries(data)) {
-                    if (key === 'error' || key === 'html' || key === 'details' || key === 'original_html') continue;
-                    
-                    let statusClass = '';
-                    const valStr = String(value).toLowerCase();
-                    
-                    if (valStr.includes('clean') || 
-                        valStr.includes('unlocked') || 
-                        valStr.includes('off') || 
-                        valStr.includes('არ არის') ||
-                        valStr.includes('valid')) {
-                        statusClass = 'status-clean';
-                    } else if (valStr.includes('locked') || 
-                               valStr.includes('blocked') || 
-                               valStr.includes('on') || 
-                               valStr.includes('არის') ||
-                               valStr.includes('blacklist')) {
-                        statusClass = 'status-warning';
-                    } else if (valStr.includes('fail') || valStr.includes('error')) {
-                        statusClass = 'status-error';
-                    }
-                    
-                    resultsHTML += `
-                        <tr>
-                            <td>${key}</td>
-                            <td class="${statusClass}">${value}</td>
-                        </tr>
-                    `;
+                let statusClass = '';
+                const valStr = String(value).toLowerCase();
+                
+                if (valStr.includes('unlocked') || 
+                    valStr.includes('clean') || 
+                    valStr.includes('off') ||
+                    valStr.includes('active') ||
+                    valStr.includes('valid')) {
+                    statusClass = 'status-success';
+                } else if (valStr.includes('locked') || 
+                           valStr.includes('blacklist') || 
+                           valStr.includes('on') ||
+                           valStr.includes('inactive') ||
+                           valStr.includes('expired')) {
+                    statusClass = 'status-warning';
+                } else if (valStr.includes('error') || 
+                           valStr.includes('fail') || 
+                           valStr.includes('invalid')) {
+                    statusClass = 'status-error';
                 }
                 
                 resultsHTML += `
-                            </tbody>
-                        </table>
+                    <div class="result-row">
+                        <span class="result-label">${key}:</span>
+                        <span class="result-value ${statusClass}">${value}</span>
                     </div>
                 `;
-            } else {
-                resultsHTML += `
-                    <div class="error-card">
-                        <h4>მონაცემების დამუშავება ვერ მოხერხდა</h4>
-                        <button class="btn-primary" onclick="retryParse('${imei}')">
-                            ხელახლა ცდა
-                        </button>
-                    </div>`;
             }
+            
+            resultsHTML += `
+                        </div>
+                    </div>
+                </div>
+            `;
             
             resultContent.innerHTML = resultsHTML;
             openModal('result-modal');
         }
         
-        function getServiceName(serviceType) {
-            for (const service of services) {
-                if (service.id === serviceType) {
-                    return service.title;
-                }
-                if (service.versions) {
-                    for (const version of service.versions) {
-                        if (version.id === serviceType) {
-                            return `${service.title} - ${version.name}`;
-                        }
-                    }
-                }
-            }
-            return serviceType;
-        }
-        
-        function retryParse(imei) {
-            document.getElementById('spinner').style.display = 'flex';
-            fetch(`/reparse_imei?imei=${imei}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('spinner').style.display = 'none';
-                    displayResults(imei, currentServiceType, data);
-                })
-                .catch(error => {
-                    document.getElementById('spinner').style.display = 'none';
-                    displayError('ხელახლა დამუშავების შეცდომა');
-                });
-        }
+        window.currentUser = {% if currentUser %}{
+            id: "{{ currentUser.id }}",
+            username: "{{ currentUser.username }}",
+            balance: {{ currentUser.balance }}
+        {% else %}null{% endif %};
     </script>
 </body>
     </html>
