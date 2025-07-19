@@ -232,7 +232,7 @@ stripe_payment = StripePayment(
 # ======================================
 
 def admin_required(f):
-    @wraps(f)
+    @wraps(f)  # Исправлено: было @wrups(f)
     def decorated(*args, **kwargs):
         if 'admin_id' not in session or 'admin_role' not in session:
             logger.warning(f"Unauthorized admin access attempt: session={dict(session)}")
@@ -255,7 +255,7 @@ def admin_required(f):
     return decorated
 
 def login_required(f):
-    @wrups(f).
+    @wraps(f)  # Исправлено: было @wrups(f)
     def decorated(*args, **kwargs):
         if 'user_id' not in session and 'admin_id' not in session:
             logger.warning("Unauthorized access attempt")
@@ -1146,4 +1146,4 @@ if __name__ == '__main__':
     create_indexes()
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting application on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True)da
