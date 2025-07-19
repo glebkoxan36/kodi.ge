@@ -1,4 +1,3 @@
-
 import os
 import json
 import logging
@@ -26,6 +25,7 @@ from pymongo.errors import PyMongoError
 from flask_pymongo import PyMongo
 from celery import Celery
 import celery.states as states
+from clerk_backend_api import Clerk, authenticate_request
 
 # Импорт модулей
 from auth import auth_bp
@@ -70,6 +70,9 @@ if os.getenv('FLASK_ENV') == 'production':
 
 app = Flask(__name__)
 
+# Инициализация Clerk
+clerk = Clerk(bearer_auth=os.getenv('CLERK_SECRET_KEY'))
+
 # Инициализация Celery
 celery = Celery(
     app.name,
@@ -95,11 +98,6 @@ celery.conf.update(
 
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
-
-# Добавляем конфигурацию Facebook
-app.config['FACEBOOK_OAUTH_CLIENT_ID'] = os.getenv('FACEBOOK_APP_ID')
-app.config['FACEBOOK_OAUTH_CLIENT_SECRET'] = os.getenv('FACEBOOK_APP_SECRET')
-FACEBOOK_REDIRECT_URI = os.getenv('FACEBOOK_REDIRECT_URI', 'http://localhost:5000/auth/facebook/callback')
 
 # Инициализация PyMongo
 app.config["MONGO_URI"] = os.getenv('MONGODB_URI')
@@ -136,7 +134,8 @@ app.config.update(
     WTF_CSRF_EXEMPT_ROUTES = [
         'stripe_webhook',
         'get_check_result',
-        'health'
+        'health',
+        'clerk_callback'
     ]
 )
 Session(app)
@@ -1001,6 +1000,69 @@ def perform_check():
         return jsonify({'error': 'სერვერული შეცდომა'}), 500
 
 # ======================================
+# Clerk Authentication Callback
+# ======================================
+
+@app.route('/auth/clerk/callback', methods=['GET'])
+def clerk_callback():
+    """Обработчик аутентификации через Clerk.com"""
+    try:
+        logger.info("Processing Clerk authentication callback")
+        
+        # Аутентификация запроса через Clerk SDK
+        request_state = clerk.authenticate_request(request)
+        
+        if not request_state.is_signed_in:
+            logger.warning("Clerk authentication failed: user not signed in")
+            flash('Authentication failed', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        # Извлекаем данные пользователя
+        user_id = request_state.payload["sub"]
+        email = request_state.payload.get("email", "")
+        first_name = request_state.payload.get("given_name", "")
+        last_name = request_state.payload.get("family_name", "")
+        
+        logger.debug(f"Clerk user data: id={user_id}, email={email}")
+        
+        # Поиск пользователя в базе по Clerk ID
+        user = regular_users_collection.find_one({'clerk_user_id': user_id})
+        
+        if not user:
+            logger.info(f"Creating new user for Clerk ID: {user_id}")
+            # Создаем нового пользователя
+            new_user = {
+                'clerk_user_id': user_id,
+                'email': email,
+                'first_name': first_name,
+                'last_name': last_name,
+                'balance': 0.0,
+                'role': 'user',
+                'created_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow()
+            }
+            
+            # Сохраняем пользователя
+            user_id_db = regular_users_collection.insert_one(new_user).inserted_id
+            user = new_user
+            user['_id'] = user_id_db
+            logger.info(f"New user created for Clerk ID: {user_id}")
+        
+        # Устанавливаем сессию пользователя
+        session['user_id'] = str(user['_id'])
+        session['role'] = 'user'
+        session.permanent = True
+        session.modified = True
+        
+        logger.info(f"User authenticated via Clerk: {email}")
+        return redirect(url_for('user.dashboard'))
+    
+    except Exception as e:
+        logger.exception(f"Clerk authentication error: {str(e)}")
+        flash('Authentication failed', 'danger')
+        return redirect(url_for('auth.login'))
+
+# ======================================
 # Роут для получения баланса пользователя
 # ======================================
 
@@ -1283,4 +1345,3 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting application on port {port}")
     app.run(host='0.0.0.0', port=port, debug=True)
-
