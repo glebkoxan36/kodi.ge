@@ -31,8 +31,11 @@ import celery.states as states
 import jwt
 from urllib3.poolmanager import PoolManager
 from urllib3.util import ssl_
-import jwt
-from jwt import PyJWKClient
+
+# Импорт Clerk SDK
+from clerk_backend_api import Clerk
+from clerk_backend_api.security import authenticate_request
+from clerk_backend_api.security.types import AuthenticateRequestOptions
 
 # Импорт модулей
 from auth import auth_bp
@@ -76,6 +79,9 @@ if os.getenv('FLASK_ENV') == 'production':
     logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
 app = Flask(__name__)
+
+# Инициализация Clerk SDK
+clerk_sdk = Clerk(bearer_auth=os.getenv('CLERK_SECRET_KEY', '58PippZlVEOKGwtGpuzKFWhNF6LA1Max'))
 
 # Инициализация Celery
 celery = Celery(
@@ -236,7 +242,7 @@ def inject_user():
     return {
         'currentUser': user_data, 
         'admin_username': admin_username,
-        'CLERK_CLIENT_ID': os.getenv('CLERK_CLIENT_ID')  # Передаем клиентский ID для фронтенда
+        'CLERK_CLIENT_ID': os.getenv('CLERK_CLIENT_ID', 'wVNCcZJL4lMasPZL')  # Передаем клиентский ID для фронтенда
     }
 
 # Конфигурация
@@ -794,7 +800,7 @@ def create_checkout_session():
                     'user_id': ObjectId(user_id),
                     'idempotency_key': idempotency_key,
                     'status': 'pending_verification'
-                }
+            }
                 if client:
                     checks_collection.insert_one(record)
                     logger.info(f"Balance payment recorded for IMEI: {imei}")
@@ -1011,95 +1017,34 @@ def perform_check():
 # Clerk Authentication Callback
 # ======================================
 
-# Константы для Clerk
-CLERK_ISSUER = "https://clerk.kodi.ge"
-CLERK_JWKS_URL = "https://clerk.kodi.ge/.well-known/jwks.json"
-
 @app.route('/auth/clerk/callback', methods=['GET'])
 def clerk_callback():
-    """Обработка аутентификации через Clerk.com с использованием OAuth 2.0"""
+    """Обработка аутентификации через Clerk.com с использованием SDK"""
     try:
         logger.info("Processing Clerk authentication callback")
         
-        # 1. Получение authorization code и state
-        code = request.args.get('code')
-        state = request.args.get('state')
-        
-        if not code:
-            logger.error("Missing authorization code in callback")
-            flash('Authentication failed: missing authorization code', 'danger')
-            return redirect(url_for('auth.login'))
-        
-        # 2. Проверка state (защита от CSRF)
-        saved_state = session.pop('clerk_oauth_state', None)
-        if not state or state != saved_state:
-            logger.error(f"State mismatch: received={state}, saved={saved_state}")
-            flash('Authentication failed: security token mismatch', 'danger')
-            return redirect(url_for('auth.login'))
-        
-        # 3. Обмен кода на токен
-        token_url = "https://clerk.kodi.ge/v1/oauth/token"
-        
-        # Формируем redirect_uri
-        redirect_uri = url_for('clerk_callback', _external=True)
-        logger.info(f"Using redirect_uri: {redirect_uri}")
-        
-        payload = {
-            'client_id': os.getenv('CLERK_CLIENT_ID'),
-            'client_secret': os.getenv('CLERK_SECRET_KEY'),
-            'grant_type': 'authorization_code',
-            'code': code,
-            'redirect_uri': redirect_uri
-        }
-        
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
-        }
-        
-        response = requests.post(token_url, data=payload, headers=headers)
-        if response.status_code != 200:
-            logger.error(f"Token exchange failed: {response.status_code} - {response.text}")
-            return jsonify({'error': 'Token exchange failed'}), 401
-        
-        token_data = response.json()
-        id_token = token_data.get('id_token')
-        if not id_token:
-            logger.error("Missing ID token in response")
-            return jsonify({'error': 'Missing ID token'}), 401
-        
-        # 4. Верификация JWT с использованием JWKS
-        try:
-            # Создаем JWKS клиент
-            jwks_client = PyJWKClient(CLERK_JWKS_URL)
-            
-            # Получаем ключ для верификации токена
-            signing_key = jwks_client.get_signing_key_from_jwt(id_token)
-            
-            # Декодируем токен
-            payload = jwt.decode(
-                id_token,
-                signing_key.key,
-                algorithms=["RS256"],
-                audience=os.getenv('CLERK_CLIENT_ID'),
-                issuer=CLERK_ISSUER,
-                options={"verify_aud": True, "verify_iss": True}
+        # 1. Аутентификация запроса через SDK
+        request_state = clerk_sdk.authenticate_request(
+            request,
+            AuthenticateRequestOptions(
+                authorized_parties=[os.getenv('CLERK_ISSUER', 'https://clerk.kodi.ge')]
             )
-        except jwt.ExpiredSignatureError:
-            logger.error("JWT token expired")
-            return jsonify({'error': 'Token expired'}), 401
-        except jwt.InvalidTokenError as e:
-            logger.error(f"Invalid JWT token: {str(e)}")
-            return jsonify({'error': f'Invalid token: {str(e)}'}), 401
+        )
         
-        # 5. Извлечение данных пользователя
-        user_id = payload["sub"]
-        email = payload.get("email", "")
-        first_name = payload.get("given_name", "")
-        last_name = payload.get("family_name", "")
+        if not request_state.is_signed_in:
+            logger.error(f"Authentication failed: {request_state.reason}")
+            flash('Authentication failed', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        # 2. Извлечение данных пользователя
+        user_id = request_state.payload["sub"]
+        email = request_state.payload.get("email", "")
+        first_name = request_state.payload.get("given_name", "")
+        last_name = request_state.payload.get("family_name", "")
         
         logger.info(f"Clerk user data: id={user_id}, email={email}")
         
-        # 6. Поиск/создание пользователя
+        # 3. Поиск/создание пользователя
         user = regular_users_collection.find_one({'clerk_user_id': user_id})
         
         if not user:
@@ -1122,15 +1067,13 @@ def clerk_callback():
         else:
             logger.info(f"User found: {user['email']}")
         
-        # 7. Установка сессии
+        # 4. Установка сессии
         session['user_id'] = str(user['_id'])
         session['role'] = 'user'
         session.permanent = True
         session.modified = True
         
         logger.info(f"User authenticated via Clerk: {email}")
-        
-        # Перенаправляем на dashboard
         return redirect(url_for('user.dashboard'))
     
     except Exception as e:
@@ -1492,4 +1435,4 @@ if __name__ == '__main__':
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production',
         ssl_context=ssl_context
-                                                                             )
+    )
