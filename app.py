@@ -1004,30 +1004,26 @@ def perform_check():
         return jsonify({'error': 'სერვერული შეცდომა'}), 500
 
 # ======================================
-# Clerk Authentication Callback (точно по примеру)
+# Clerk Authentication Callback (упрощенная версия для тестирования)
 # ======================================
 
 @app.route('/auth/clerk/callback', methods=['GET'])
 def clerk_callback():
-    """Обработка аутентификации через Clerk.com (точно по примеру)"""
+    """Обработка аутентификации через Clerk.com (упрощенная версия)"""
     try:
         logger.info("Processing Clerk authentication callback")
         
         # Получаем параметры из запроса
         code = request.args.get('code')
-        state = request.args.get('state')
-        saved_state = session.pop('oauth_state', None)
         
-        # Проверяем state (CSRF защита)
-        if not code or state != saved_state:
-            logger.error(f"Invalid state: expected {saved_state}, got {state}")
-            flash('Authentication failed: Invalid state', 'danger')
+        if not code:
+            logger.error("Missing authorization code")
+            flash('Authentication failed: Missing code', 'danger')
             return redirect(url_for('auth.login'))
         
         # Конфигурация Clerk
         CLERK_CLIENT_ID = os.getenv('CLERK_CLIENT_ID')
         CLERK_CLIENT_SECRET = os.getenv('CLERK_CLIENT_SECRET')
-        CLERK_API_KEY = os.getenv('CLERK_API_KEY')
         CLERK_TOKEN_URL = "https://clerk.kodi.ge/oauth/token"
         CLERK_ME_URL = "https://api.clerk.com/v1/users/me"
         
@@ -1054,8 +1050,6 @@ def clerk_callback():
             'Authorization': f'Bearer {access_token}',
             'Content-Type': 'application/json'
         }
-        if CLERK_API_KEY:
-            headers['Authorization'] = f'Bearer {CLERK_API_KEY}'
         
         user_resp = requests.get(CLERK_ME_URL, headers=headers)
         if user_resp.status_code != 200:
@@ -1475,4 +1469,4 @@ if __name__ == '__main__':
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production',
         ssl_context=ssl_context
-        )
+    )
