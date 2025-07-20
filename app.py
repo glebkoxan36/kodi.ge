@@ -1036,7 +1036,7 @@ def clerk_callback():
             return redirect(url_for('auth.login'))
         
         # 2. Обмен кода на токен
-        token_url = "https://api.clerk.com/v1/oauth/token"
+        token_url = "https://clerk.kodi.ge/v1/oauth/token"
         
         # ФИКС: Используем абсолютный URL для redirect_uri
         redirect_uri = url_for('clerk_callback', _external=True)
