@@ -903,3 +903,57 @@ h1, h2, h3, h4, h5, h6 {
   .modal-content { padding: 15px 10px; }
   .close-modal { width: 30px; height: 30px; font-size: 1.3rem; }
     }
+/* Добавьте в конец файла styles.css */
+/* ===== UNLOCK PAGE STYLES ===== */
+.service-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.service-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 198, 255, 0.2);
+    border-color: #00e5ff;
+}
+
+.service-card.border-primary {
+    border: 2px solid #00e5ff !important;
+}
+
+.service-icon {
+    font-size: 2rem;
+    color: #00e5ff;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 198, 255, 0.1);
+    border-radius: 50%;
+}
+
+.service-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #ffffff;
+}
+
+.service-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 10px 0;
+    color: #00d68f;
+}
+
+.result-details {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.table th {
+    color: #00e5ff;
+    padding-right: 20px;
+}
