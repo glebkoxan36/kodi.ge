@@ -184,21 +184,24 @@
                 method: 'GET',
                 dataType: 'json',
                 success: function(response) {
+                    console.log("Services API response:", response);
+                    
                     if (response.status === 'success' && response.services.length > 0) {
                         servicesData = response.services;
                         renderServices(servicesData);
                     } else {
                         $('#serviceList').html(`
                             <div class="alert alert-warning">
-                                Unlocking services are temporarily unavailable. Please try again later.
+                                ${response.message || 'Unlocking services are temporarily unavailable'}
                             </div>
                         `);
                     }
                 },
-                error: function() {
+                error: function(xhr) {
+                    console.error("Services API error:", xhr);
                     $('#serviceList').html(`
                         <div class="alert alert-danger">
-                            Failed to load services. Please refresh the page.
+                            API Error: ${xhr.status} ${xhr.statusText}
                         </div>
                     `);
                 }
@@ -210,24 +213,28 @@
             let html = '<div class="row">';
             
             services.forEach(service => {
-                // Добавляем время обработки (если есть в данных)
-                const timeInfo = service.time ? service.time : '1-3 days';
+                // Проверяем наличие обязательных полей
+                const id = service.id || 'N/A';
+                const name = service.name || 'Unnamed Service';
+                const price = service.price ? `${service.price} ₾` : 'Price N/A';
+                const timeInfo = service.time || '1-3 days';
+                const description = service.description || 'No description available';
                 
                 html += `
                     <div class="col-md-6 mb-3">
-                        <div class="service-card card h-100" data-id="${service.id}">
+                        <div class="service-card card h-100" data-id="${id}">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
                                     <div class="flex-shrink-0">
                                         <i class="service-icon fa fa-mobile-alt"></i>
                                     </div>
                                     <div class="flex-grow-1 ms-3">
-                                        <h5 class="service-title">${service.name}</h5>
-                                        <div class="service-price">${service.price} ₾</div>
+                                        <h5 class="service-title">${name}</h5>
+                                        <div class="service-price">${price}</div>
                                         <div class="time-badge d-inline-block">
                                             <i class="fa fa-clock me-1"></i> ${timeInfo}
                                         </div>
-                                        <p class="text-muted small mt-2">${service.description || ''}</p>
+                                        <p class="text-muted small mt-2">${description}</p>
                                     </div>
                                 </div>
                             </div>
@@ -253,7 +260,7 @@
             
             // Заполняем данные
             $('#serviceDetailName').text(service.name);
-            $('#serviceDetailPrice').text(service.price + ' ₾');
+            $('#serviceDetailPrice').text(service.price ? `${service.price} ₾` : 'Price N/A');
             $('#serviceDetailDescription').text(service.description || 'No additional information available');
             
             // Время обработки
