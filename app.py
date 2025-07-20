@@ -135,7 +135,6 @@ app.config.update(
         'stripe_webhook',
         'get_check_result',
         'health',
-        'clerk_callback'
     ]
 )
 Session(app)
@@ -231,8 +230,7 @@ def inject_user():
     
     return {
         'currentUser': user_data, 
-        'admin_username': admin_username,
-        'CLERK_CLIENT_ID': os.getenv('CLERK_CLIENT_ID', 'wVNCcZJL4lMasPZL')  # Передаем клиентский ID для фронтенда
+        'admin_username': admin_username
     }
 
 # Конфигурация
@@ -1004,118 +1002,6 @@ def perform_check():
         return jsonify({'error': 'სერვერული შეცდომა'}), 500
 
 # ======================================
-# Clerk Authentication Callback (упрощенная версия для тестирования)
-# ======================================
-
-@app.route('/auth/clerk/callback', methods=['GET'])
-def clerk_callback():
-    """Обработка аутентификации через Clerk.com (упрощенная версия)"""
-    try:
-        logger.info("Processing Clerk authentication callback")
-        
-        # Получаем параметры из запроса
-        code = request.args.get('code')
-        
-        if not code:
-            logger.error("Missing authorization code")
-            flash('Authentication failed: Missing code', 'danger')
-            return redirect(url_for('auth.login'))
-        
-        # Конфигурация Clerk
-        CLERK_CLIENT_ID = os.getenv('CLERK_CLIENT_ID')
-        CLERK_CLIENT_SECRET = os.getenv('CLERK_CLIENT_SECRET')
-        CLERK_TOKEN_URL = "https://clerk.kodi.ge/oauth/token"
-        CLERK_ME_URL = "https://api.clerk.com/v1/users/me"
-        
-        # Обмениваем код на токен
-        data = {
-            'grant_type': 'authorization_code',
-            'code': code,
-            'redirect_uri': url_for('clerk_callback', _external=True),
-            'client_id': CLERK_CLIENT_ID,
-            'client_secret': CLERK_CLIENT_SECRET,
-        }
-        
-        token_resp = requests.post(CLERK_TOKEN_URL, data=data)
-        if token_resp.status_code != 200:
-            logger.error(f"Token exchange failed: {token_resp.text}")
-            flash('Authentication failed: Token exchange error', 'danger')
-            return redirect(url_for('auth.login'))
-        
-        tokens = token_resp.json()
-        access_token = tokens.get('access_token')
-        
-        # Получаем информацию о пользователе
-        headers = {
-            'Authorization': f'Bearer {access_token}',
-            'Content-Type': 'application/json'
-        }
-        
-        user_resp = requests.get(CLERK_ME_URL, headers=headers)
-        if user_resp.status_code != 200:
-            logger.error(f"User info request failed: {user_resp.text}")
-            flash('Authentication failed: User info error', 'danger')
-            return redirect(url_for('auth.login'))
-        
-        user_data = user_resp.json()
-        
-        # Извлекаем данные пользователя
-        user_id = user_data['id']
-        email = None
-        first_name = user_data.get('first_name', '')
-        last_name = user_data.get('last_name', '')
-        
-        # Ищем email в адресах
-        for email_address in user_data.get('email_addresses', []):
-            if email_address.get('verified') and email_address.get('email'):
-                email = email_address['email']
-                break
-        
-        if not email:
-            logger.error("No verified email found")
-            flash('Authentication failed: No verified email', 'danger')
-            return redirect(url_for('auth.login'))
-        
-        logger.info(f"Clerk user data: id={user_id}, email={email}")
-        
-        # Поиск/создание пользователя
-        user = regular_users_collection.find_one({'clerk_user_id': user_id})
-        
-        if not user:
-            logger.info(f"Creating new user for Clerk ID: {user_id}")
-            new_user = {
-                'clerk_user_id': user_id,
-                'email': email,
-                'first_name': first_name,
-                'last_name': last_name,
-                'balance': 0.0,
-                'role': 'user',
-                'created_at': datetime.utcnow(),
-                'updated_at': datetime.utcnow()
-            }
-            
-            user_id_db = regular_users_collection.insert_one(new_user).inserted_id
-            user = new_user
-            user['_id'] = user_id_db
-            logger.info(f"New user created for Clerk ID: {user_id}")
-        else:
-            logger.info(f"User found: {user['email']}")
-        
-        # Установка сессии
-        session['user_id'] = str(user['_id'])
-        session['role'] = 'user'
-        session.permanent = True
-        session.modified = True
-        
-        logger.info(f"User authenticated via Clerk: {email}")
-        return redirect(url_for('user.dashboard'))
-    
-    except Exception as e:
-        logger.exception(f"Clerk authentication error: {str(e)}")
-        flash('Authentication failed', 'danger')
-        return redirect(url_for('auth.login'))
-
-# ======================================
 # Роут для получения баланса пользователя
 # ======================================
 
@@ -1367,20 +1253,6 @@ def health_check():
         status['services']['external_api'] = f'ERROR: {str(e)}'
         status['status'] = 'ERROR'
     
-    # Проверка Clerk API
-    try:
-        # Используем совместимый SSL контекст
-        ctx = ssl_.create_urllib3_context()
-        ctx.load_default_certs()
-        session = requests.Session()
-        session.mount("https://", requests.adapters.HTTPAdapter(poolmanager=PoolManager(ssl_context=ctx)))
-        
-        response = session.get('https://clerk.accounts.dev', timeout=5)
-        status['services']['clerk_api'] = 'OK' if response.status_code == 200 else f'HTTP {response.status_code}'
-    except Exception as e:
-        status['services']['clerk_api'] = f'ERROR: {str(e)}'
-        status['status'] = 'ERROR'
-    
     # Проверка Celery
     try:
         from celery import current_app
@@ -1469,4 +1341,4 @@ if __name__ == '__main__':
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production',
         ssl_context=ssl_context
-    )
+)
