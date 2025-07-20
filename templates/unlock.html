@@ -51,15 +51,25 @@
             color: #00d68f;
         }
 
-        .result-details {
+        .service-detail-card {
             background: rgba(0, 0, 0, 0.2);
             border-radius: 10px;
-            padding: 20px;
+            padding: 25px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
         }
-
-        .table th {
+        
+        .detail-icon {
+            font-size: 3rem;
             color: #00e5ff;
-            padding-right: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .time-badge {
+            background: rgba(0, 214, 143, 0.2);
+            color: #00d68f;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -79,14 +89,14 @@
                 <p>Unlock your phone for use with any carrier</p>
             </div>
 
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fa fa-unlock-alt me-2"></i>
-                    Device Unlocking
-                </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <label class="form-label">Select Service:</label>
+            <!-- Service List View -->
+            <div id="serviceListView">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <i class="fa fa-list me-2"></i>
+                        Select Unlocking Service
+                    </div>
+                    <div class="card-body">
                         <div id="serviceList" class="mb-4">
                             <div class="spinner-border text-info" role="status">
                                 <span class="visually-hidden">Loading...</span>
@@ -94,60 +104,69 @@
                             <p class="text-center mt-2">Loading available services...</p>
                         </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="imeiInput" class="form-label">Enter IMEI Number</label>
-                        <input type="text" class="form-control" id="imeiInput" 
-                            placeholder="15-17 digit IMEI" maxlength="17">
-                        <div class="error-message" id="imeiError"></div>
-                    </div>
-                    
-                    <div class="form-group mt-4">
-                        <button class="btn btn-primary w-100" id="unlockBtn" disabled>
-                            <i class="fa fa-bolt me-2"></i> Unlock Device
+                </div>
+            </div>
+            
+            <!-- Service Detail View (initially hidden) -->
+            <div id="serviceDetailView" class="d-none">
+                <div class="card mb-4">
+                    <div class="card-header d-flex align-items-center">
+                        <button id="backToServiceList" class="btn btn-sm btn-secondary me-2">
+                            <i class="fa fa-arrow-left"></i>
                         </button>
+                        <span>Service Details</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="service-detail-card text-center">
+                            <div class="detail-icon">
+                                <i class="fa fa-unlock-alt"></i>
+                            </div>
+                            <h3 id="serviceDetailName" class="service-title"></h3>
+                            <div class="service-price" id="serviceDetailPrice"></div>
+                            <div class="time-badge my-3" id="serviceDetailTime">
+                                <i class="fa fa-clock me-1"></i>
+                                <span id="processingTime">1-3 days</span>
+                            </div>
+                            <p class="text-muted" id="serviceDetailDescription"></p>
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            <label for="imeiInput" class="form-label">Enter IMEI Number</label>
+                            <input type="text" class="form-control" id="imeiInput" 
+                                placeholder="15-17 digit IMEI" maxlength="17">
+                            <div class="error-message" id="imeiError"></div>
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            <button class="btn btn-primary w-100" id="unlockBtn">
+                                <i class="fa fa-bolt me-2"></i> Start Unlock
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <div id="resultSection" class="d-none">
+            <!-- Order Confirmation View (initially hidden) -->
+            <div id="orderConfirmationView" class="d-none">
                 <div class="card">
                     <div class="card-header bg-success">
                         <i class="fa fa-check-circle me-2"></i>
-                        Unlock Results
+                        Order Received
                     </div>
-                    <div class="card-body">
-                        <div id="processing" class="text-center py-4">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Processing...</span>
-                            </div>
-                            <p class="mt-3">Unlocking in progress, please wait...</p>
+                    <div class="card-body text-center py-5">
+                        <div class="detail-icon text-success">
+                            <i class="fa fa-check-circle"></i>
                         </div>
-                        
-                        <div id="unlockResult" class="d-none">
-                            <div class="alert alert-success">
-                                <i class="fa fa-check-circle me-2"></i>
-                                Device unlocked successfully!
-                            </div>
-                            
-                            <div class="result-details mt-4">
-                                <h5 class="mb-3">Unlock Details:</h5>
-                                <div class="table-responsive">
-                                    <table class="table table-borderless">
-                                        <tbody id="resultTable"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            
-                            <div class="text-center mt-4">
-                                <div class="alert alert-info">
-                                    <i class="fa fa-info-circle me-2"></i>
-                                    Save this information for your records
-                                </div>
-                            </div>
+                        <h3>We've received your order!</h3>
+                        <p class="text-muted mt-3">
+                            Your device is now being processed for unlocking.<br>
+                            We'll notify you when the process is complete.
+                        </p>
+                        <div class="mt-4">
+                            <button id="newOrderBtn" class="btn btn-outline-light">
+                                <i class="fa fa-plus me-1"></i> Create New Order
+                            </button>
                         </div>
-                        
-                        <div id="errorResult" class="d-none alert alert-danger"></div>
                     </div>
                 </div>
             </div>
@@ -156,6 +175,8 @@
 
     <script>
     $(document).ready(function() {
+        let servicesData = [];
+        
         // Загрузка сервисов разблокировки
         function loadServices() {
             $.ajax({
@@ -164,7 +185,8 @@
                 dataType: 'json',
                 success: function(response) {
                     if (response.status === 'success' && response.services.length > 0) {
-                        renderServices(response.services);
+                        servicesData = response.services;
+                        renderServices(servicesData);
                     } else {
                         $('#serviceList').html(`
                             <div class="alert alert-warning">
@@ -188,6 +210,9 @@
             let html = '<div class="row">';
             
             services.forEach(service => {
+                // Добавляем время обработки (если есть в данных)
+                const timeInfo = service.time ? service.time : '1-3 days';
+                
                 html += `
                     <div class="col-md-6 mb-3">
                         <div class="service-card card h-100" data-id="${service.id}">
@@ -199,7 +224,10 @@
                                     <div class="flex-grow-1 ms-3">
                                         <h5 class="service-title">${service.name}</h5>
                                         <div class="service-price">${service.price} ₾</div>
-                                        <p class="text-muted small">${service.description || ''}</p>
+                                        <div class="time-badge d-inline-block">
+                                            <i class="fa fa-clock me-1"></i> ${timeInfo}
+                                        </div>
+                                        <p class="text-muted small mt-2">${service.description || ''}</p>
                                     </div>
                                 </div>
                             </div>
@@ -213,10 +241,28 @@
             
             // Обработчик выбора сервиса
             $('.service-card').click(function() {
-                $('.service-card').removeClass('border-primary border-2');
-                $(this).addClass('border-primary border-2');
-                $('#unlockBtn').prop('disabled', false);
+                const serviceId = $(this).data('id');
+                showServiceDetails(serviceId);
             });
+        }
+
+        // Показать детали сервиса
+        function showServiceDetails(serviceId) {
+            const service = servicesData.find(s => s.id == serviceId);
+            if (!service) return;
+            
+            // Заполняем данные
+            $('#serviceDetailName').text(service.name);
+            $('#serviceDetailPrice').text(service.price + ' ₾');
+            $('#serviceDetailDescription').text(service.description || 'No additional information available');
+            
+            // Время обработки
+            const timeInfo = service.time ? service.time : '1-3 days';
+            $('#processingTime').text(timeInfo);
+            
+            // Переключаем представления
+            $('#serviceListView').addClass('d-none');
+            $('#serviceDetailView').removeClass('d-none');
         }
 
         // Валидация IMEI
@@ -224,10 +270,23 @@
             return /^\d{15,17}$/.test(imei);
         }
 
-        // Обработка отправки формы
+        // Обработка кнопки "Назад" к списку сервисов
+        $('#backToServiceList').click(function() {
+            $('#serviceDetailView').addClass('d-none');
+            $('#serviceListView').removeClass('d-none');
+            $('#imeiInput').val('');
+            $('#imeiError').hide();
+        });
+
+        // Обработка кнопки "Создать новый заказ"
+        $('#newOrderBtn').click(function() {
+            $('#orderConfirmationView').addClass('d-none');
+            $('#serviceListView').removeClass('d-none');
+        });
+
+        // Обработка отправки заказа
         $('#unlockBtn').click(function() {
             const imei = $('#imeiInput').val().trim();
-            const serviceId = $('.service-card.border-primary').data('id');
             
             // Валидация
             if (!imei) {
@@ -240,75 +299,13 @@
                 return;
             }
             
-            if (!serviceId) {
-                alert('Please select an unlocking service');
-                return;
-            }
-            
             // Сброс ошибок
             $('#imeiError').hide();
-            $('#resultSection').removeClass('d-none');
-            $('#unlockResult').addClass('d-none');
-            $('#errorResult').addClass('d-none');
-            $('#processing').removeClass('d-none');
             
-            // Отправка запроса
-            $.ajax({
-                url: '/unlock/place-order',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    imei: imei,
-                    service_id: serviceId
-                }),
-                success: function(response) {
-                    $('#processing').addClass('d-none');
-                    
-                    if (response.status === 'success') {
-                        if (response.data.STATUS === 'ok') {
-                            renderUnlockResult(response.data);
-                        } else {
-                            showError(response.data.MESSAGE || 'Unlock failed');
-                        }
-                    } else {
-                        showError(response.message || 'Server error');
-                    }
-                },
-                error: function() {
-                    $('#processing').addClass('d-none');
-                    showError('Connection error');
-                }
-            });
+            // Показать подтверждение заказа
+            $('#serviceDetailView').addClass('d-none');
+            $('#orderConfirmationView').removeClass('d-none');
         });
-
-        // Отображение результата
-        function renderUnlockResult(data) {
-            const result = data.RESULTS.split('\n').filter(line => line);
-            let tableHtml = '';
-            
-            result.forEach(line => {
-                const [key, value] = line.split(';');
-                if (key && value) {
-                    tableHtml += `
-                        <tr>
-                            <th class="text-nowrap">${key.trim()}</th>
-                            <td>${value.trim()}</td>
-                        </tr>
-                    `;
-                }
-            });
-            
-            $('#resultTable').html(tableHtml);
-            $('#unlockResult').removeClass('d-none');
-        }
-
-        // Отображение ошибки
-        function showError(message) {
-            $('#errorResult').html(`
-                <i class="fa fa-exclamation-triangle me-2"></i>
-                ${message}
-            `).removeClass('d-none');
-        }
 
         // Запуск загрузки сервисов
         loadServices();
