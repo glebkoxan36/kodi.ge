@@ -26,6 +26,10 @@ class UnlockAPI:
             
             logger.info(f"API response: {api_response}")
             
+            # Список целевых сервисов
+            target_services = ['748', '749', '750']
+            service_list = []
+            
             # Обработка основного формата ответа API
             if isinstance(api_response, dict):
                 services_dict = {}
@@ -45,105 +49,81 @@ class UnlockAPI:
                             services_dict[key] = value
                     logger.info(f"Extracted services from root: {len(services_dict)} items")
                 
-                # Обработка сервисов
-                service_list = []
-                for service_id, service_data in services_dict.items():
-                    # Пропускаем не-словари
+                # Обработка только целевых сервисов
+                for service_id in target_services:
+                    if service_id in services_dict:
+                        service_data = services_dict[service_id]
+                        
+                        # Пропускаем не-словари
+                        if not isinstance(service_data, dict):
+                            logger.warning(f"Skipping non-dict service data for ID {service_id}: {service_data}")
+                            continue
+                        
+                        # Извлекаем данные сервиса
+                        name = service_data.get('SERVICENAME', f'Service {service_id}')
+                        price = service_data.get('CREDIT', '0')
+                        info = service_data.get('INFO', '')
+                        
+                        # Форматируем цену
+                        try:
+                            price_value = float(price)
+                            formatted_price = f"{price_value:.2f}"
+                        except (ValueError, TypeError):
+                            formatted_price = "0.00"
+                        
+                        # Определяем время обработки
+                        time_info = "1-3 days"
+                        if 'TIME' in service_data:
+                            time_info = service_data['TIME'].title()
+                        
+                        # Очищаем описание от HTML-тегов
+                        clean_info = re.sub(r'<[^>]+>', ' ', info).strip()
+                        clean_info = re.sub(r'\s+', ' ', clean_info)
+                        
+                        # Создаем объект сервиса с полным описанием
+                        service_list.append({
+                            'id': service_id,
+                            'name': name,
+                            'price': formatted_price,
+                            'description': clean_info,  # Полное описание
+                            'time': time_info
+                        })
+                    else:
+                        logger.warning(f"Target service ID {service_id} not found in API response")
+            
+            # Если целевые сервисы не найдены, используем первые 3 доступных
+            if not service_list and services_dict:
+                logger.warning("Target services not found, using first 3 available services")
+                for i, (service_id, service_data) in enumerate(services_dict.items()):
+                    if i >= 3:
+                        break
+                    
                     if not isinstance(service_data, dict):
-                        logger.warning(f"Skipping non-dict service data: {service_data}")
                         continue
                     
-                    # Извлекаем данные сервиса с использованием правильных ключей
-                    name = service_data.get('SERVICENAME', 'Unlock Service')
+                    name = service_data.get('SERVICENAME', f'Service {service_id}')
                     price = service_data.get('CREDIT', '0')
                     info = service_data.get('INFO', '')
                     
-                    # Извлекаем тип услуги из информации
-                    service_type = "Unlocking"
-                    type_match = re.search(r'Service type:\s*([^\n<]+)', info, re.IGNORECASE)
-                    if type_match:
-                        service_type = type_match.group(1).strip()
-                    
-                    # Форматируем цену
                     try:
-                        price_value = float(price)
-                        formatted_price = f"{price_value:.2f}"
+                        formatted_price = f"{float(price):.2f}"
                     except (ValueError, TypeError):
                         formatted_price = "0.00"
                     
-                    # Определяем время обработки
-                    time_info = "1-3 days"
-                    if 'TIME' in service_data:
-                        time_info = service_data['TIME'].title()
+                    time_info = service_data.get('TIME', '1-3 days').title()
                     
-                    # Очищаем описание от HTML-тегов
                     clean_info = re.sub(r'<[^>]+>', ' ', info).strip()
                     clean_info = re.sub(r'\s+', ' ', clean_info)
                     
-                    # Создаем объект сервиса
                     service_list.append({
-                        'id': str(service_id),
+                        'id': service_id,
                         'name': name,
                         'price': formatted_price,
-                        'description': service_type,
-                        'time': time_info,
-                        'full_info': clean_info[:200] + '...' if len(clean_info) > 200 else clean_info
+                        'description': clean_info,
+                        'time': time_info
                     })
-                
-                return service_list
             
-            # Обработка формата ответа в виде списка
-            elif isinstance(api_response, list):
-                logger.info(f"Received list of services: {len(api_response)} items")
-                service_list = []
-                
-                for service in api_response:
-                    if not isinstance(service, dict):
-                        continue
-                    
-                    # Извлекаем данные сервиса
-                    service_id = service.get('SERVICEID')
-                    name = service.get('SERVICENAME')
-                    price = service.get('CREDIT')
-                    info = service.get('INFO')
-                    
-                    # Извлекаем тип услуги
-                    service_type = "Unlocking"
-                    if info:
-                        type_match = re.search(r'Service type:\s*([^\n<]+)', info, re.IGNORECASE)
-                        if type_match:
-                            service_type = type_match.group(1).strip()
-                    
-                    # Форматируем цену
-                    try:
-                        price_value = float(price)
-                        formatted_price = f"{price_value:.2f}"
-                    except (ValueError, TypeError):
-                        formatted_price = "0.00"
-                    
-                    # Определяем время обработки
-                    time_info = "1-3 days"
-                    if 'TIME' in service:
-                        time_info = service['TIME'].title()
-                    
-                    # Очищаем описание
-                    clean_info = re.sub(r'<[^>]+>', ' ', info).strip() if info else ""
-                    clean_info = re.sub(r'\s+', ' ', clean_info)
-                    
-                    service_list.append({
-                        'id': str(service_id) if service_id else "0",
-                        'name': name or "Unlock Service",
-                        'price': formatted_price,
-                        'description': service_type,
-                        'time': time_info,
-                        'full_info': clean_info[:200] + '...' if len(clean_info) > 200 else clean_info
-                    })
-                
-                return service_list
-            
-            else:
-                logger.error(f"Unexpected API response format: {type(api_response)}")
-                return []
+            return service_list
         
         except Exception as e:
             logger.exception(f"API services error: {str(e)}")
