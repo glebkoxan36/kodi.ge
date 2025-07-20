@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Unlocking Service</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* ===== UNLOCK PAGE STYLES ===== */
+        .service-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .service-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 198, 255, 0.2);
+            border-color: #00e5ff;
+        }
+
+        .service-card.border-primary {
+            border: 2px solid #00e5ff !important;
+        }
+
+        .service-icon {
+            font-size: 2rem;
+            color: #00e5ff;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 198, 255, 0.1);
+            border-radius: 50%;
+        }
+
+        .service-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #ffffff;
+        }
+
+        .service-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+            color: #00d68f;
+        }
+
+        .result-details {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .table th {
+            color: #00e5ff;
+            padding-right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-container">
+            <div class="auth-header">
+                <div class="logo-animated">
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-ring"></div>
+                    <div class="logo-core">
+                        <div class="logo-letter">U</div>
+                    </div>
+                </div>
+                <h2>Phone Unlocking Service</h2>
+                <p>Unlock your phone for use with any carrier</p>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fa fa-unlock-alt me-2"></i>
+                    Device Unlocking
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">Select Service:</label>
+                        <div id="serviceList" class="mb-4">
+                            <div class="spinner-border text-info" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-center mt-2">Loading available services...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="imeiInput" class="form-label">Enter IMEI Number</label>
+                        <input type="text" class="form-control" id="imeiInput" 
+                            placeholder="15-17 digit IMEI" maxlength="17">
+                        <div class="error-message" id="imeiError"></div>
+                    </div>
+                    
+                    <div class="form-group mt-4">
+                        <button class="btn btn-primary w-100" id="unlockBtn" disabled>
+                            <i class="fa fa-bolt me-2"></i> Unlock Device
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="resultSection" class="d-none">
+                <div class="card">
+                    <div class="card-header bg-success">
+                        <i class="fa fa-check-circle me-2"></i>
+                        Unlock Results
+                    </div>
+                    <div class="card-body">
+                        <div id="processing" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Processing...</span>
+                            </div>
+                            <p class="mt-3">Unlocking in progress, please wait...</p>
+                        </div>
+                        
+                        <div id="unlockResult" class="d-none">
+                            <div class="alert alert-success">
+                                <i class="fa fa-check-circle me-2"></i>
+                                Device unlocked successfully!
+                            </div>
+                            
+                            <div class="result-details mt-4">
+                                <h5 class="mb-3">Unlock Details:</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-borderless">
+                                        <tbody id="resultTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <div class="alert alert-info">
+                                    <i class="fa fa-info-circle me-2"></i>
+                                    Save this information for your records
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="errorResult" class="d-none alert alert-danger"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    $(document).ready(function() {
+        // Загрузка сервисов разблокировки
+        function loadServices() {
+            $.ajax({
+                url: '/unlock/services',
+                method: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success' && response.services.length > 0) {
+                        renderServices(response.services);
+                    } else {
+                        $('#serviceList').html(`
+                            <div class="alert alert-warning">
+                                Unlocking services are temporarily unavailable. Please try again later.
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#serviceList').html(`
+                        <div class="alert alert-danger">
+                            Failed to load services. Please refresh the page.
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        // Отображение сервисов
+        function renderServices(services) {
+            let html = '<div class="row">';
+            
+            services.forEach(service => {
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <div class="service-card card h-100" data-id="${service.id}">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="service-icon fa fa-mobile-alt"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h5 class="service-title">${service.name}</h5>
+                                        <div class="service-price">${service.price} ₾</div>
+                                        <p class="text-muted small">${service.description || ''}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            $('#serviceList').html(html);
+            
+            // Обработчик выбора сервиса
+            $('.service-card').click(function() {
+                $('.service-card').removeClass('border-primary border-2');
+                $(this).addClass('border-primary border-2');
+                $('#unlockBtn').prop('disabled', false);
+            });
+        }
+
+        // Валидация IMEI
+        function validateImei(imei) {
+            return /^\d{15,17}$/.test(imei);
+        }
+
+        // Обработка отправки формы
+        $('#unlockBtn').click(function() {
+            const imei = $('#imeiInput').val().trim();
+            const serviceId = $('.service-card.border-primary').data('id');
+            
+            // Валидация
+            if (!imei) {
+                $('#imeiError').text('Please enter IMEI number').show();
+                return;
+            }
+            
+            if (!validateImei(imei)) {
+                $('#imeiError').text('Invalid IMEI format (15-17 digits required)').show();
+                return;
+            }
+            
+            if (!serviceId) {
+                alert('Please select an unlocking service');
+                return;
+            }
+            
+            // Сброс ошибок
+            $('#imeiError').hide();
+            $('#resultSection').removeClass('d-none');
+            $('#unlockResult').addClass('d-none');
+            $('#errorResult').addClass('d-none');
+            $('#processing').removeClass('d-none');
+            
+            // Отправка запроса
+            $.ajax({
+                url: '/unlock/place-order',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    imei: imei,
+                    service_id: serviceId
+                }),
+                success: function(response) {
+                    $('#processing').addClass('d-none');
+                    
+                    if (response.status === 'success') {
+                        if (response.data.STATUS === 'ok') {
+                            renderUnlockResult(response.data);
+                        } else {
+                            showError(response.data.MESSAGE || 'Unlock failed');
+                        }
+                    } else {
+                        showError(response.message || 'Server error');
+                    }
+                },
+                error: function() {
+                    $('#processing').addClass('d-none');
+                    showError('Connection error');
+                }
+            });
+        });
+
+        // Отображение результата
+        function renderUnlockResult(data) {
+            const result = data.RESULTS.split('\n').filter(line => line);
+            let tableHtml = '';
+            
+            result.forEach(line => {
+                const [key, value] = line.split(';');
+                if (key && value) {
+                    tableHtml += `
+                        <tr>
+                            <th class="text-nowrap">${key.trim()}</th>
+                            <td>${value.trim()}</td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            $('#resultTable').html(tableHtml);
+            $('#unlockResult').removeClass('d-none');
+        }
+
+        // Отображение ошибки
+        function showError(message) {
+            $('#errorResult').html(`
+                <i class="fa fa-exclamation-triangle me-2"></i>
+                ${message}
+            `).removeClass('d-none');
+        }
+
+        // Запуск загрузки сервисов
+        loadServices();
+    });
+    </script>
+</body>
+</html>
