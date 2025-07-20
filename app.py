@@ -9,6 +9,7 @@ import secrets
 import re
 import hmac
 import threading
+import hashlib
 from logging.handlers import RotatingFileHandler
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
@@ -39,6 +40,7 @@ from stripepay import StripePayment
 from admin_routes import admin_bp
 from test import test_bp
 from price import get_current_prices, get_service_price, init_prices
+from unlockimei24 import init_unlock_service
 
 # Создаем папку для логов
 if not os.path.exists('logs'):
@@ -111,6 +113,10 @@ cache.init_app(app)
 logger = logging.getLogger(__name__)
 logger.info("Application starting")
 
+# Конфигурация API разблокировки
+app.config['UNLOCK_API_EMAIL'] = 'glebkoxan36@gmail.com'
+app.config['UNLOCK_API_KEY'] = 'YHN-H96-H1F-OA1-AF7-3HX-9BV-MXF'
+
 # Обновленная конфигурация сессии
 app.config.update(
     SESSION_TYPE='mongodb',
@@ -135,7 +141,10 @@ app.config.update(
         'stripe_webhook',
         'get_check_result',
         'health',
-        'auth.facebook_callback'  # Добавлено исключение для Facebook callback
+        'auth.facebook_callback',  # Добавлено исключение для Facebook callback
+        'unlock_services',
+        'place_unlock_order',
+        'check_unlock_status'
     ]
 )
 Session(app)
@@ -1132,6 +1141,127 @@ def upload_carousel_image():
         logger.error(f"Error uploading carousel image: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ======================================
+# Unlock Service Endpoints
+# ======================================
+
+@app.route('/unlock')
+def unlock_page():
+    """Страница разблокировки телефонов"""
+    logger.info("Unlock page access")
+    return render_common_template('unlock.html')
+
+@app.route('/unlock/services')
+def unlock_services():
+    """API для получения списка сервисов разблокировки"""
+    try:
+        unlock_service = init_unlock_service()
+        services_data = unlock_service.get_services()
+        
+        if not services_data:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to get services'
+            }), 500
+        
+        # Преобразуем данные сервисов
+        services = []
+        for service_id, service_info in services_data.items():
+            if service_id.isdigit():
+                services.append({
+                    'id': service_id,
+                    'name': service_info.get('name', 'Unlock Service'),
+                    'price': service_info.get('price', '0.00'),
+                    'description': service_info.get('description', '')
+                })
+        
+        return jsonify({
+            'status': 'success',
+            'services': services
+        })
+    except Exception as e:
+        logger.exception(f"Error getting unlock services: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Internal server error'
+        }), 500
+
+@app.route('/unlock/place-order', methods=['POST'])
+def place_unlock_order():
+    """Отправка заказа на разблокировку"""
+    try:
+        data = request.get_json()
+        imei = data.get('imei', '').strip()
+        service_id = data.get('service_id', '')
+        
+        # Валидация IMEI
+        if not re.match(r'^\d{15,17}$', imei):
+            return jsonify({
+                'status': 'error',
+                'message': 'Invalid IMEI format (15-17 digits required)'
+            }), 400
+        
+        if not service_id or not service_id.isdigit():
+            return jsonify({
+                'status': 'error',
+                'message': 'Invalid service ID'
+            }), 400
+        
+        unlock_service = init_unlock_service()
+        result = unlock_service.place_order(imei, service_id)
+        
+        if result.get('STATUS') == 'error':
+            return jsonify({
+                'status': 'error',
+                'message': result.get('MESSAGE', 'Unlock failed')
+            }), 400
+        
+        return jsonify({
+            'status': 'success',
+            'data': result
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error placing unlock order: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Internal server error'
+        }), 500
+
+@app.route('/unlock/check-status', methods=['POST'])
+def check_unlock_status():
+    """Проверка статуса заказа"""
+    try:
+        data = request.get_json()
+        refid = data.get('refid', '')
+        
+        if not refid:
+            return jsonify({
+                'status': 'error',
+                'message': 'Reference ID is required'
+            }), 400
+        
+        unlock_service = init_unlock_service()
+        result = unlock_service.get_order_status(refid)
+        
+        if result.get('STATUS') == 'error':
+            return jsonify({
+                'status': 'error',
+                'message': result.get('MESSAGE', 'Status check failed')
+            }), 400
+        
+        return jsonify({
+            'status': 'success',
+            'data': result
+        })
+        
+    except Exception as e:
+        logger.exception(f"Error checking unlock status: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': 'Internal server error'
+        }), 500
+
 # Регистрация блюпринтов
 app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
@@ -1342,4 +1472,4 @@ if __name__ == '__main__':
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production',
         ssl_context=ssl_context
-        )
+)
