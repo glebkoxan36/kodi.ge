@@ -310,13 +310,6 @@
         document.getElementById('clerk-btn').addEventListener('click', () => {
             const clientId = '{{ CLERK_CLIENT_ID }}';
             
-            // Генерируем уникальный state
-            const state = Math.random().toString(36).substring(2, 15) + 
-                          Math.random().toString(36).substring(2, 15);
-            
-            // Сохраняем state в sessionStorage
-            sessionStorage.setItem('clerk_oauth_state', state);
-            
             // Формируем правильный redirect_uri
             const redirectUri = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
             
@@ -325,8 +318,7 @@
                 `client_id=${clientId}` +
                 `&redirect_uri=${redirectUri}` +
                 `&response_type=code` +
-                `&scope=openid+email+profile` +
-                `&state=${state}`;
+                `&scope=openid+email+profile`;
         });
 
         // Функция для тестирования перенаправления Clerk
@@ -334,20 +326,12 @@
             const clientId = '{{ CLERK_CLIENT_ID }}';
             const redirectUri = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
             
-            // Генерируем уникальный state
-            const state = Math.random().toString(36).substring(2, 15) + 
-                          Math.random().toString(36).substring(2, 15);
-            
-            // Сохраняем state в sessionStorage
-            sessionStorage.setItem('clerk_oauth_state', state);
-            
             // Формируем URL для Clerk
             const url = `https://clerk.kodi.ge/oauth/authorize?` +
                 `client_id=${clientId}` +
                 `&redirect_uri=${redirectUri}` +
                 `&response_type=code` +
-                `&scope=openid+email+profile` +
-                `&state=${state}`;
+                `&scope=openid+email+profile`;
             
             console.log("Clerk Redirect URL:", url);
             alert("URL для перенаправления:\n" + url);
