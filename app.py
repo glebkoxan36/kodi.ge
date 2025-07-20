@@ -1165,33 +1165,59 @@ def unlock_page():
 @app.route('/unlock/services')
 def unlock_services():
     """API для получения списка сервисов разблокировки"""
+    logger.info("Request to /unlock/services")
     try:
         unlock_service = init_unlock_service()
         services_data = unlock_service.get_services()
-        
+        logger.info(f"Services data received: {services_data}")
+
         if not services_data:
+            logger.error("No services data received")
             return jsonify({
                 'status': 'error',
                 'message': 'Failed to get services'
             }), 500
-        
-        # Преобразуем данные сервисов
+
+        # Проверяем тип данных
+        if isinstance(services_data, list):
+            services_list = services_data
+        elif isinstance(services_data, dict):
+            # Преобразуем словарь в список значений
+            services_list = list(services_data.values())
+        else:
+            logger.error(f"Unexpected services data type: {type(services_data)}")
+            return jsonify({
+                'status': 'error',
+                'message': 'Invalid services data format'
+            }), 500
+
         services = []
-        for service_id, service_info in services_data.items():
-            if service_id.isdigit():
-                services.append({
-                    'id': service_id,
-                    'name': service_info.get('name', 'Unlock Service'),
-                    'price': service_info.get('price', '0.00'),
-                    'description': service_info.get('description', '')
-                })
-        
+        for service in services_list:
+            # Пропускаем элементы, которые не являются словарями
+            if not isinstance(service, dict):
+                logger.warning("Service entry is not a dict, skipping")
+                continue
+
+            # Получаем ID - он может быть числом или строкой
+            service_id = service.get('id')
+            if service_id is None:
+                logger.warning("Service entry has no id, skipping")
+                continue
+
+            services.append({
+                'id': str(service_id),
+                'name': service.get('name', 'Unlock Service'),
+                'price': service.get('price', '0.00'),
+                'description': service.get('description', '')
+            })
+
+        logger.info(f"Returning {len(services)} services")
         return jsonify({
             'status': 'success',
             'services': services
         })
     except Exception as e:
-        logger.exception(f"Error getting unlock services: {str(e)}")
+        logger.exception(f"Error in unlock_services: {str(e)}")
         return jsonify({
             'status': 'error',
             'message': 'Internal server error'
@@ -1483,4 +1509,4 @@ if __name__ == '__main__':
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production',
         ssl_context=ssl_context
-)
+                )
