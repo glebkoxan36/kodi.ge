@@ -306,15 +306,14 @@
             }
         });
         
-        // Исправленный обработчик для кнопки Clerk (точно по примеру)
-        document.getElementById('clerk-btn').addEventListener('click', () => {
+        // Исправленный обработчик для кнопки Clerk (упрощенная версия)
+        document.getElementById('clerk-btn').addEventListener('click', function() {
             const CLIENT_ID = '{{ CLERK_CLIENT_ID }}';
             const REDIRECT_URI = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
             const STATE = Math.random().toString(36).slice(2);
             
-            // Сохраняем state в сессии
+            // Сохраняем state в sessionStorage
             sessionStorage.setItem("oauth_state", STATE);
-            session.oauth_state = STATE;
             
             // Формируем URL для перенаправления
             const authUrl = `https://clerk.kodi.ge/oauth/authorize?` +
@@ -328,15 +327,14 @@
             window.location.href = authUrl;
         });
 
-        // Функция для тестирования перенаправления Clerk (точно по примеру)
+        // Функция для тестирования перенаправления Clerk
         function testClerkRedirect() {
             const CLIENT_ID = '{{ CLERK_CLIENT_ID }}';
             const REDIRECT_URI = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
             const STATE = Math.random().toString(36).slice(2);
             
-            // Сохраняем state в сессии
+            // Сохраняем state в sessionStorage
             sessionStorage.setItem("oauth_state", STATE);
-            session.oauth_state = STATE;
             
             const url = `https://clerk.kodi.ge/oauth/authorize?` +
                 `client_id=${CLIENT_ID}` +
