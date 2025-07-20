@@ -4,18 +4,14 @@ import logging
 import ssl
 import urllib3
 import socket
-import requests  # Убедитесь, что импорт добавлен
-import secrets   # Убедитесь, что импорт добавлен
-from logging.handlers import RotatingFileHandler
+import requests
+import secrets
 import re
 import hmac
-import secrets
-import hashlib
-import requests
-import time
 import threading
+from logging.handlers import RotatingFileHandler
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session, current_app, g
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, session
 from flask_cors import CORS
 import stripe
 from functools import wraps, lru_cache
@@ -33,11 +29,6 @@ import celery.states as states
 import jwt
 from urllib3.poolmanager import PoolManager
 from urllib3.util import ssl_
-
-# УДАЛЕНО: Импорт Clerk SDK
-# from clerk_backend_api import Clerk
-# from clerk_backend_api.security import authenticate_request
-# from clerk_backend_api.security.types import AuthenticateRequestOptions
 
 # Импорт модулей
 from auth import auth_bp
@@ -81,9 +72,6 @@ if os.getenv('FLASK_ENV') == 'production':
     logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
 app = Flask(__name__)
-
-# УДАЛЕНО: Инициализация Clerk SDK
-# clerk_sdk = Clerk(bearer_auth=os.getenv('CLERK_SECRET_KEY', '58PippZlVEOKGwtGpuzKFWhNF6LA1Max'))
 
 # Инициализация Celery
 celery = Celery(
@@ -1016,50 +1004,60 @@ def perform_check():
         return jsonify({'error': 'სერვერული შეცდომა'}), 500
 
 # ======================================
-# Clerk Authentication Callback (ПОЛНОСТЬЮ ПЕРЕПИСАН)
+# Clerk Authentication Callback (точно по примеру)
 # ======================================
 
 @app.route('/auth/clerk/callback', methods=['GET'])
 def clerk_callback():
-    """Обработка аутентификации через Clerk.com с использованием OAuth 2.0"""
+    """Обработка аутентификации через Clerk.com (точно по примеру)"""
     try:
         logger.info("Processing Clerk authentication callback")
         
-        # 1. Получаем параметры из запроса
-        code = request.args.get("code")
-        state = request.args.get("state")
-        saved_state = sessionStorage.getItem("oauth_state")
+        # Получаем параметры из запроса
+        code = request.args.get('code')
+        state = request.args.get('state')
+        saved_state = session.pop('oauth_state', None)
         
-        # 2. Проверяем state (CSRF защита)
-        if not state or state != saved_state:
+        # Проверяем state (CSRF защита)
+        if not code or state != saved_state:
             logger.error(f"Invalid state: expected {saved_state}, got {state}")
             flash('Authentication failed: Invalid state', 'danger')
             return redirect(url_for('auth.login'))
         
-        # 3. Обмениваем код на токен
-        token_url = "https://clerk.kodi.ge/oauth/token"
+        # Конфигурация Clerk
+        CLERK_CLIENT_ID = os.getenv('CLERK_CLIENT_ID')
+        CLERK_CLIENT_SECRET = os.getenv('CLERK_CLIENT_SECRET')
+        CLERK_API_KEY = os.getenv('CLERK_API_KEY')
+        CLERK_TOKEN_URL = "https://clerk.kodi.ge/oauth/token"
+        CLERK_ME_URL = "https://api.clerk.com/v1/users/me"
+        
+        # Обмениваем код на токен
         data = {
-            "grant_type": "authorization_code",
-            "code": code,
-            "redirect_uri": url_for('clerk_callback', _external=True),
-            "client_id": os.getenv('CLERK_CLIENT_ID'),
-            "client_secret": os.getenv('CLERK_CLIENT_SECRET')
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': url_for('clerk_callback', _external=True),
+            'client_id': CLERK_CLIENT_ID,
+            'client_secret': CLERK_CLIENT_SECRET,
         }
         
-        token_resp = requests.post(token_url, data=data)
+        token_resp = requests.post(CLERK_TOKEN_URL, data=data)
         if token_resp.status_code != 200:
             logger.error(f"Token exchange failed: {token_resp.text}")
             flash('Authentication failed: Token exchange error', 'danger')
             return redirect(url_for('auth.login'))
         
         tokens = token_resp.json()
-        access_token = tokens.get("access_token")
+        access_token = tokens.get('access_token')
         
-        # 4. Получаем информацию о пользователе
-        user_info_url = "https://clerk.kodi.ge/oauth/userinfo"
-        headers = {"Authorization": f"Bearer {access_token}"}
-        user_resp = requests.get(user_info_url, headers=headers)
+        # Получаем информацию о пользователе
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        }
+        if CLERK_API_KEY:
+            headers['Authorization'] = f'Bearer {CLERK_API_KEY}'
         
+        user_resp = requests.get(CLERK_ME_URL, headers=headers)
         if user_resp.status_code != 200:
             logger.error(f"User info request failed: {user_resp.text}")
             flash('Authentication failed: User info error', 'danger')
@@ -1067,15 +1065,26 @@ def clerk_callback():
         
         user_data = user_resp.json()
         
-        # 5. Извлекаем данные пользователя
-        user_id = user_data["sub"]
-        email = user_data.get("email", "")
-        first_name = user_data.get("given_name", "")
-        last_name = user_data.get("family_name", "")
+        # Извлекаем данные пользователя
+        user_id = user_data['id']
+        email = None
+        first_name = user_data.get('first_name', '')
+        last_name = user_data.get('last_name', '')
+        
+        # Ищем email в адресах
+        for email_address in user_data.get('email_addresses', []):
+            if email_address.get('verified') and email_address.get('email'):
+                email = email_address['email']
+                break
+        
+        if not email:
+            logger.error("No verified email found")
+            flash('Authentication failed: No verified email', 'danger')
+            return redirect(url_for('auth.login'))
         
         logger.info(f"Clerk user data: id={user_id}, email={email}")
         
-        # 6. Поиск/создание пользователя
+        # Поиск/создание пользователя
         user = regular_users_collection.find_one({'clerk_user_id': user_id})
         
         if not user:
@@ -1098,7 +1107,7 @@ def clerk_callback():
         else:
             logger.info(f"User found: {user['email']}")
         
-        # 7. Установка сессии
+        # Установка сессии
         session['user_id'] = str(user['_id'])
         session['role'] = 'user'
         session.permanent = True
@@ -1466,4 +1475,4 @@ if __name__ == '__main__':
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production',
         ssl_context=ssl_context
-)
+        )
