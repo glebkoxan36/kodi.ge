@@ -12,6 +12,15 @@ class UnlockAPI:
         self.email = email
         self.api_key = api_key
     
+    def extract_service_type(self, info_text):
+        """Извлекает тип услуги из текста описания"""
+        # Ищем паттерн "Service type: ..."
+        pattern = r'Service type:\s*([^<]+)'
+        match = re.search(pattern, info_text, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+        return None
+
     def get_services(self):
         """Получает список доступных сервисов разблокировки"""
         params = {
@@ -56,11 +65,19 @@ class UnlockAPI:
                     # Извлекаем данные сервиса с использованием фактических ключей из API
                     name = service_data.get('SERVICENAME', 'Unnamed Service')
                     price = service_data.get('CREDIT', '0')
-                    description = service_data.get('INFO', 'No description available')
+                    raw_info = service_data.get('INFO', '')
                     
-                    # Очистка HTML-тегов из описания
-                    description = re.sub(r'<[^>]+>', ' ', description).strip()
-                    description = re.sub(r'\s+', ' ', description)
+                    # Пытаемся извлечь тип услуги
+                    service_type = self.extract_service_type(raw_info)
+                    if service_type:
+                        description = service_type
+                    else:
+                        # Очистка HTML-тегов из описания
+                        description = re.sub(r'<[^>]+>', ' ', raw_info).strip()
+                        description = re.sub(r'\s+', ' ', description)
+                        # Обрежем длинное описание, чтобы не занимало много места
+                        if len(description) > 200:
+                            description = description[:200] + '...'
                     
                     # Форматируем цену
                     try:
@@ -77,7 +94,7 @@ class UnlockAPI:
                         'id': str(service_id),
                         'name': name,
                         'price': formatted_price,
-                        'description': description,
+                        'description': description or "No description available",
                         'time': time_info
                     })
                 
@@ -96,12 +113,21 @@ class UnlockAPI:
                     service_id = service.get('id') or service.get('ID') or service.get('SERVICEID')
                     name = service.get('name') or service.get('Name') or service.get('SERVICENAME')
                     price = service.get('price') or service.get('Price') or service.get('CREDIT')
-                    description = service.get('description') or service.get('Description') or service.get('INFO')
+                    raw_info = service.get('description') or service.get('Description') or service.get('INFO')
                     
-                    # Очистка HTML-тегов из описания
-                    if description:
-                        description = re.sub(r'<[^>]+>', ' ', description).strip()
-                        description = re.sub(r'\s+', ' ', description)
+                    # Пытаемся извлечь тип услуги
+                    service_type = self.extract_service_type(raw_info)
+                    if service_type:
+                        description = service_type
+                    else:
+                        # Очистка HTML-тегов из описания
+                        if raw_info:
+                            description = re.sub(r'<[^>]+>', ' ', raw_info).strip()
+                            description = re.sub(r'\s+', ' ', description)
+                            if len(description) > 200:
+                                description = description[:200] + '...'
+                        else:
+                            description = "No description available"
                     
                     # Форматируем цену
                     try:
@@ -118,7 +144,7 @@ class UnlockAPI:
                         'id': str(service_id) if service_id else "0",
                         'name': name or "Unlock Service",
                         'price': formatted_price,
-                        'description': description or "No description available",
+                        'description': description,
                         'time': time_info
                     })
                 
