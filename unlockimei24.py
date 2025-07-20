@@ -22,10 +22,81 @@ class UnlockAPI:
         try:
             response = requests.get(self.BASE_URL, params=params, timeout=10)
             response.raise_for_status()
-            return response.json()
+            services = response.json()
+            
+            # Логируем тип ответа для диагностики
+            logger.info(f"API response type: {type(services)}")
+            
+            # Если ответ - список, обрабатываем как список
+            if isinstance(services, list):
+                logger.info(f"Received {len(services)} services")
+                
+                # Добавляем время обработки для каждого сервиса
+                for service in services:
+                    # Проверяем наличие обязательных полей
+                    if 'id' not in service or 'name' not in service or 'price' not in service:
+                        logger.error(f"Service missing required fields: {service}")
+                        continue
+                    
+                    # Форматируем цену
+                    try:
+                        service['price'] = f"{float(service['price']):.2f}"
+                    except (ValueError, TypeError):
+                        service['price'] = "0.00"
+                    
+                    # Определяем время обработки
+                    if 'fast' in service['name'].lower():
+                        service['time'] = '24 hours'
+                    elif 'standard' in service['name'].lower():
+                        service['time'] = '3-5 days'
+                    else:
+                        service['time'] = '1-3 days'
+                
+                return services
+            
+            # Если ответ - словарь, преобразуем его в список
+            elif isinstance(services, dict):
+                logger.info(f"Received dictionary with {len(services)} services")
+                
+                service_list = []
+                for service_id, service_info in services.items():
+                    # Проверяем, что значение - словарь
+                    if not isinstance(service_info, dict):
+                        logger.warning(f"Invalid service format: {service_info}")
+                        continue
+                    
+                    # Форматируем цену
+                    try:
+                        price = f"{float(service_info.get('price', 0)):.2f}"
+                    except (ValueError, TypeError):
+                        price = "0.00"
+                    
+                    # Определяем время обработки
+                    name = service_info.get('name', '')
+                    if 'fast' in name.lower():
+                        time_info = '24 hours'
+                    elif 'standard' in name.lower():
+                        time_info = '3-5 days'
+                    else:
+                        time_info = '1-3 days'
+                    
+                    service_list.append({
+                        'id': service_id,
+                        'name': name,
+                        'price': price,
+                        'description': service_info.get('description', ''),
+                        'time': time_info
+                    })
+                
+                return service_list
+            
+            else:
+                logger.error(f"Unexpected API response format: {type(services)}")
+                return []
+        
         except Exception as e:
-            logger.error(f"API services error: {str(e)}")
-            return {}
+            logger.exception(f"API services error: {str(e)}")
+            return []
     
     def place_order(self, imei, service_id):
         """Отправляет заказ на разблокировку"""
@@ -41,7 +112,7 @@ class UnlockAPI:
             response.raise_for_status()
             return response.json()
         except Exception as e:
-            logger.error(f"API place order error: {str(e)}")
+            logger.exception(f"API place order error: {str(e)}")
             return {'STATUS': 'error', 'MESSAGE': 'API connection failed'}
     
     def get_order_status(self, refid):
@@ -57,7 +128,7 @@ class UnlockAPI:
             response.raise_for_status()
             return response.json()
         except Exception as e:
-            logger.error(f"API order status error: {str(e)}")
+            logger.exception(f"API order status error: {str(e)}")
             return {'STATUS': 'error', 'MESSAGE': 'API connection failed'}
 
 
