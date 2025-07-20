@@ -1,5 +1,4 @@
 import requests
-import re
 import logging
 from flask import current_app
 
@@ -22,57 +21,50 @@ class UnlockAPI:
         try:
             response = requests.get(self.BASE_URL, params=params, timeout=10)
             response.raise_for_status()
-            services = response.json()
+            api_response = response.json()
             
             # Логируем тип ответа для диагностики
-            logger.info(f"API response type: {type(services)}")
+            logger.info(f"API response type: {type(api_response)}")
             
-            # Если ответ - список, обрабатываем как список
-            if isinstance(services, list):
-                logger.info(f"Received {len(services)} services")
+            # Обработка словарного ответа API
+            if isinstance(api_response, dict):
+                # Ищем вложенный словарь с сервисами
+                services_dict = None
                 
-                # Добавляем время обработки для каждого сервиса
-                for service in services:
-                    # Проверяем наличие обязательных полей
-                    if 'id' not in service or 'name' not in service or 'price' not in service:
-                        logger.error(f"Service missing required fields: {service}")
-                        continue
-                    
-                    # Форматируем цену
-                    try:
-                        service['price'] = f"{float(service['price']):.2f}"
-                    except (ValueError, TypeError):
-                        service['price'] = "0.00"
-                    
-                    # Определяем время обработки
-                    if 'fast' in service['name'].lower():
-                        service['time'] = '24 hours'
-                    elif 'standard' in service['name'].lower():
-                        service['time'] = '3-5 days'
-                    else:
-                        service['time'] = '1-3 days'
+                # Вариант 1: ключ 'LIST' содержит сервисы
+                if 'LIST' in api_response and isinstance(api_response['LIST'], dict):
+                    services_dict = api_response['LIST']
+                # Вариант 2: весь ответ - это словарь сервисов (исключая системные поля)
+                else:
+                    services_dict = {}
+                    for key, value in api_response.items():
+                        # Пропускаем системные поля
+                        if key in ['STATUS', 'MESSAGE']:
+                            continue
+                        if isinstance(value, dict):
+                            services_dict[key] = value
                 
-                return services
-            
-            # Если ответ - словарь, преобразуем его в список
-            elif isinstance(services, dict):
-                logger.info(f"Received dictionary with {len(services)} services")
+                if not services_dict:
+                    logger.error("No services found in API response")
+                    return []
                 
+                logger.info(f"Processing {len(services_dict)} services")
                 service_list = []
-                for service_id, service_info in services.items():
-                    # Проверяем, что значение - словарь
-                    if not isinstance(service_info, dict):
-                        logger.warning(f"Invalid service format: {service_info}")
+                
+                for service_id, service_data in services_dict.items():
+                    # Пропускаем не-словари
+                    if not isinstance(service_data, dict):
                         continue
                     
                     # Форматируем цену
                     try:
-                        price = f"{float(service_info.get('price', 0)):.2f}"
+                        price = float(service_data.get('price', 0))
+                        formatted_price = f"{price:.2f}"
                     except (ValueError, TypeError):
-                        price = "0.00"
+                        formatted_price = "0.00"
                     
                     # Определяем время обработки
-                    name = service_info.get('name', '')
+                    name = service_data.get('name', 'Unnamed Service')
                     if 'fast' in name.lower():
                         time_info = '24 hours'
                     elif 'standard' in name.lower():
@@ -81,17 +73,50 @@ class UnlockAPI:
                         time_info = '1-3 days'
                     
                     service_list.append({
-                        'id': service_id,
+                        'id': str(service_id),
                         'name': name,
-                        'price': price,
-                        'description': service_info.get('description', ''),
+                        'price': formatted_price,
+                        'description': service_data.get('description', ''),
+                        'time': time_info
+                    })
+                
+                return service_list
+            
+            # Обработка списка сервисов (если API вернет список)
+            elif isinstance(api_response, list):
+                service_list = []
+                for service in api_response:
+                    if not isinstance(service, dict):
+                        continue
+                    
+                    # Форматируем цену
+                    try:
+                        price = float(service.get('price', 0))
+                        formatted_price = f"{price:.2f}"
+                    except (ValueError, TypeError):
+                        formatted_price = "0.00"
+                    
+                    # Определяем время обработки
+                    name = service.get('name', 'Unnamed Service')
+                    if 'fast' in name.lower():
+                        time_info = '24 hours'
+                    elif 'standard' in name.lower():
+                        time_info = '3-5 days'
+                    else:
+                        time_info = '1-3 days'
+                    
+                    service_list.append({
+                        'id': str(service.get('id', '0')),
+                        'name': name,
+                        'price': formatted_price,
+                        'description': service.get('description', ''),
                         'time': time_info
                     })
                 
                 return service_list
             
             else:
-                logger.error(f"Unexpected API response format: {type(services)}")
+                logger.error(f"Unexpected API response format: {type(api_response)}")
                 return []
         
         except Exception as e:
