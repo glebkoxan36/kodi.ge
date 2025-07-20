@@ -107,6 +107,24 @@
             cursor: pointer;
             color: #6c757d;
         }
+        .btn-facebook {
+            background-color: #3b5998;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            margin-top: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .btn-facebook:hover {
+            background-color: #344e86;
+        }
+        .social-buttons {
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
@@ -171,7 +189,11 @@
                 <div class="divider-line"></div>
             </div>
             
-            <!-- Удалены кнопки социальной авторизации -->
+            <div class="social-buttons">
+                <a href="/auth/facebook/login" class="btn-facebook">
+                    <i class="fab fa-facebook"></i> შესვლა Facebook-ით
+                </a>
+            </div>
         </div>
         
         <div class="login-options">
