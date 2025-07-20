@@ -12,15 +12,6 @@ class UnlockAPI:
         self.email = email
         self.api_key = api_key
     
-    def extract_service_type(self, info_text):
-        """Извлекает тип услуги из текста описания"""
-        # Ищем паттерн "Service type: ..."
-        pattern = r'Service type:\s*([^<]+)'
-        match = re.search(pattern, info_text, re.IGNORECASE)
-        if match:
-            return match.group(1).strip()
-        return None
-
     def get_services(self):
         """Получает список доступных сервисов разблокировки"""
         params = {
@@ -62,22 +53,16 @@ class UnlockAPI:
                         logger.warning(f"Skipping non-dict service data: {service_data}")
                         continue
                     
-                    # Извлекаем данные сервиса с использованием фактических ключей из API
-                    name = service_data.get('SERVICENAME', 'Unnamed Service')
+                    # Извлекаем данные сервиса с использованием правильных ключей
+                    name = service_data.get('SERVICENAME', 'Unlock Service')
                     price = service_data.get('CREDIT', '0')
-                    raw_info = service_data.get('INFO', '')
+                    info = service_data.get('INFO', '')
                     
-                    # Пытаемся извлечь тип услуги
-                    service_type = self.extract_service_type(raw_info)
-                    if service_type:
-                        description = service_type
-                    else:
-                        # Очистка HTML-тегов из описания
-                        description = re.sub(r'<[^>]+>', ' ', raw_info).strip()
-                        description = re.sub(r'\s+', ' ', description)
-                        # Обрежем длинное описание, чтобы не занимало много места
-                        if len(description) > 200:
-                            description = description[:200] + '...'
+                    # Извлекаем тип услуги из информации
+                    service_type = "Unlocking"
+                    type_match = re.search(r'Service type:\s*([^\n<]+)', info, re.IGNORECASE)
+                    if type_match:
+                        service_type = type_match.group(1).strip()
                     
                     # Форматируем цену
                     try:
@@ -86,16 +71,23 @@ class UnlockAPI:
                     except (ValueError, TypeError):
                         formatted_price = "0.00"
                     
-                    # Определяем время обработки на основе названия
-                    time_info = self.determine_processing_time(name)
+                    # Определяем время обработки
+                    time_info = "1-3 days"
+                    if 'TIME' in service_data:
+                        time_info = service_data['TIME'].title()
+                    
+                    # Очищаем описание от HTML-тегов
+                    clean_info = re.sub(r'<[^>]+>', ' ', info).strip()
+                    clean_info = re.sub(r'\s+', ' ', clean_info)
                     
                     # Создаем объект сервиса
                     service_list.append({
                         'id': str(service_id),
                         'name': name,
                         'price': formatted_price,
-                        'description': description or "No description available",
-                        'time': time_info
+                        'description': service_type,
+                        'time': time_info,
+                        'full_info': clean_info[:200] + '...' if len(clean_info) > 200 else clean_info
                     })
                 
                 return service_list
@@ -110,24 +102,17 @@ class UnlockAPI:
                         continue
                     
                     # Извлекаем данные сервиса
-                    service_id = service.get('id') or service.get('ID') or service.get('SERVICEID')
-                    name = service.get('name') or service.get('Name') or service.get('SERVICENAME')
-                    price = service.get('price') or service.get('Price') or service.get('CREDIT')
-                    raw_info = service.get('description') or service.get('Description') or service.get('INFO')
+                    service_id = service.get('SERVICEID')
+                    name = service.get('SERVICENAME')
+                    price = service.get('CREDIT')
+                    info = service.get('INFO')
                     
-                    # Пытаемся извлечь тип услуги
-                    service_type = self.extract_service_type(raw_info)
-                    if service_type:
-                        description = service_type
-                    else:
-                        # Очистка HTML-тегов из описания
-                        if raw_info:
-                            description = re.sub(r'<[^>]+>', ' ', raw_info).strip()
-                            description = re.sub(r'\s+', ' ', description)
-                            if len(description) > 200:
-                                description = description[:200] + '...'
-                        else:
-                            description = "No description available"
+                    # Извлекаем тип услуги
+                    service_type = "Unlocking"
+                    if info:
+                        type_match = re.search(r'Service type:\s*([^\n<]+)', info, re.IGNORECASE)
+                        if type_match:
+                            service_type = type_match.group(1).strip()
                     
                     # Форматируем цену
                     try:
@@ -137,15 +122,21 @@ class UnlockAPI:
                         formatted_price = "0.00"
                     
                     # Определяем время обработки
-                    time_info = self.determine_processing_time(name)
+                    time_info = "1-3 days"
+                    if 'TIME' in service:
+                        time_info = service['TIME'].title()
                     
-                    # Создаем объект сервиса
+                    # Очищаем описание
+                    clean_info = re.sub(r'<[^>]+>', ' ', info).strip() if info else ""
+                    clean_info = re.sub(r'\s+', ' ', clean_info)
+                    
                     service_list.append({
                         'id': str(service_id) if service_id else "0",
                         'name': name or "Unlock Service",
                         'price': formatted_price,
-                        'description': description,
-                        'time': time_info
+                        'description': service_type,
+                        'time': time_info,
+                        'full_info': clean_info[:200] + '...' if len(clean_info) > 200 else clean_info
                     })
                 
                 return service_list
@@ -157,31 +148,6 @@ class UnlockAPI:
         except Exception as e:
             logger.exception(f"API services error: {str(e)}")
             return []
-    
-    def determine_processing_time(self, name):
-        """Определяет время обработки на основе названия сервиса"""
-        if not name:
-            return '1-3 days'
-            
-        name_lower = name.lower()
-        
-        if 'instant' in name_lower:
-            return 'Instant'
-        elif 'fast' in name_lower:
-            return '24 hours'
-        elif 'standard' in name_lower:
-            return '3-5 days'
-        else:
-            # Попытка извлечь время из названия
-            match = re.search(r'(\d+[\s-]*hours?)', name_lower)
-            if match:
-                return match.group(0).title()
-            
-            match = re.search(r'(\d+[\s-]*days?)', name_lower)
-            if match:
-                return match.group(0).title()
-            
-            return '1-3 days'
     
     def place_order(self, imei, service_id):
         """Отправляет заказ на разблокировку"""
