@@ -306,19 +306,27 @@
             }
         });
         
-        // ИСПРАВЛЕННЫЙ обработчик для кнопки Clerk с ВАШИМ доменом
+        // Исправленный обработчик для кнопки Clerk
         document.getElementById('clerk-btn').addEventListener('click', () => {
             const clientId = '{{ CLERK_CLIENT_ID }}';
+            
+            // Генерируем уникальный state
+            const state = Math.random().toString(36).substring(2, 15) + 
+                          Math.random().toString(36).substring(2, 15);
+            
+            // Сохраняем state в sessionStorage
+            sessionStorage.setItem('clerk_oauth_state', state);
             
             // Формируем правильный redirect_uri
             const redirectUri = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
             
-            // ИСПОЛЬЗУЕМ ВАШ ДОМЕН CLERK: clerk.kodi.ge
+            // Формируем URL для Clerk
             window.location.href = `https://clerk.kodi.ge/oauth/authorize?` +
                 `client_id=${clientId}` +
                 `&redirect_uri=${redirectUri}` +
                 `&response_type=code` +
-                `&scope=openid+email+profile`;
+                `&scope=openid+email+profile` +
+                `&state=${state}`;
         });
 
         // Функция для тестирования перенаправления Clerk
@@ -326,12 +334,20 @@
             const clientId = '{{ CLERK_CLIENT_ID }}';
             const redirectUri = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
             
-            // Формируем URL для Clerk с ВАШИМ доменом
+            // Генерируем уникальный state
+            const state = Math.random().toString(36).substring(2, 15) + 
+                          Math.random().toString(36).substring(2, 15);
+            
+            // Сохраняем state в sessionStorage
+            sessionStorage.setItem('clerk_oauth_state', state);
+            
+            // Формируем URL для Clerk
             const url = `https://clerk.kodi.ge/oauth/authorize?` +
                 `client_id=${clientId}` +
                 `&redirect_uri=${redirectUri}` +
                 `&response_type=code` +
-                `&scope=openid+email+profile`;
+                `&scope=openid+email+profile` +
+                `&state=${state}`;
             
             console.log("Clerk Redirect URL:", url);
             alert("URL для перенаправления:\n" + url);
