@@ -98,6 +98,13 @@ celery.conf.update(
     task_acks_late=True,
 )
 
+class ContextTask(celery.Task):
+    def __call__(self, *args, **kwargs):
+        with app.app_context():
+            return self.run(*args, **kwargs)
+
+celery.Task = ContextTask
+
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 
@@ -1148,8 +1155,12 @@ def upload_carousel_image():
 @app.route('/unlock')
 def unlock_page():
     """Страница разблокировки телефонов"""
-    logger.info("Unlock page access")
-    return render_common_template('unlock.html')
+    logger.info(f"Accessing unlock page, templates: {app.jinja_loader.list_templates()}")
+    try:
+        return render_template('unlock.html')
+    except Exception as e:
+        logger.exception(f"Error rendering unlock template: {str(e)}")
+        return "Server error", 500
 
 @app.route('/unlock/services')
 def unlock_services():
@@ -1472,4 +1483,4 @@ if __name__ == '__main__':
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production',
         ssl_context=ssl_context
-    )
+)
