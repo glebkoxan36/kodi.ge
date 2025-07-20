@@ -306,51 +306,44 @@
             }
         });
         
-        // Исправленный обработчик для кнопки Clerk
+        // Исправленный обработчик для кнопки Clerk (точно по примеру)
         document.getElementById('clerk-btn').addEventListener('click', () => {
-            // Генерируем случайный state для защиты от CSRF
-            const state = Math.random().toString(36).substring(2, 15) + 
-                         Math.random().toString(36).substring(2, 15);
+            const CLIENT_ID = '{{ CLERK_CLIENT_ID }}';
+            const REDIRECT_URI = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
+            const STATE = Math.random().toString(36).slice(2);
             
-            // Сохраняем state в session storage
-            sessionStorage.setItem("oauth_state", state);
-            
-            // Формируем параметры для запроса
-            const clientId = '{{ CLERK_CLIENT_ID }}';
-            const redirectUri = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
-            const scope = encodeURIComponent('openid email profile');
+            // Сохраняем state в сессии
+            sessionStorage.setItem("oauth_state", STATE);
+            session.oauth_state = STATE;
             
             // Формируем URL для перенаправления
             const authUrl = `https://clerk.kodi.ge/oauth/authorize?` +
-                `client_id=${clientId}` +
-                `&redirect_uri=${redirectUri}` +
+                `client_id=${CLIENT_ID}` +
+                `&redirect_uri=${REDIRECT_URI}` +
                 `&response_type=code` +
-                `&scope=${scope}` +
-                `&state=${state}`;
+                `&scope=openid+email+profile` +
+                `&state=${STATE}`;
             
             // Перенаправляем пользователя
             window.location.href = authUrl;
         });
 
-        // Функция для тестирования перенаправления Clerk
+        // Функция для тестирования перенаправления Clerk (точно по примеру)
         function testClerkRedirect() {
-            // Генерируем случайный state для защиты от CSRF
-            const state = Math.random().toString(36).substring(2, 15) + 
-                         Math.random().toString(36).substring(2, 15);
+            const CLIENT_ID = '{{ CLERK_CLIENT_ID }}';
+            const REDIRECT_URI = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
+            const STATE = Math.random().toString(36).slice(2);
             
-            // Сохраняем state в session storage
-            sessionStorage.setItem("oauth_state", state);
-            
-            const clientId = '{{ CLERK_CLIENT_ID }}';
-            const redirectUri = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
-            const scope = encodeURIComponent('openid email profile');
+            // Сохраняем state в сессии
+            sessionStorage.setItem("oauth_state", STATE);
+            session.oauth_state = STATE;
             
             const url = `https://clerk.kodi.ge/oauth/authorize?` +
-                `client_id=${clientId}` +
-                `&redirect_uri=${redirectUri}` +
+                `client_id=${CLIENT_ID}` +
+                `&redirect_uri=${REDIRECT_URI}` +
                 `&response_type=code` +
-                `&scope=${scope}` +
-                `&state=${state}`;
+                `&scope=openid+email+profile` +
+                `&state=${STATE}`;
             
             console.log("Clerk Redirect URL:", url);
             alert("URL для перенаправления:\n" + url);
