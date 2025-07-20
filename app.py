@@ -3,7 +3,7 @@ import json
 import logging
 import ssl
 import urllib3
-import socket  # Добавлен импорт socket
+import socket
 from logging.handlers import RotatingFileHandler
 import re
 import hmac
@@ -28,9 +28,11 @@ from pymongo.errors import PyMongoError
 from flask_pymongo import PyMongo
 from celery import Celery
 import celery.states as states
-import jwt  # Добавлен импорт для работы с JWT
+import jwt
 from urllib3.poolmanager import PoolManager
 from urllib3.util import ssl_
+import jwt
+from jwt import PyJWKClient
 
 # Импорт модулей
 from auth import auth_bp
@@ -1006,39 +1008,39 @@ def perform_check():
         return jsonify({'error': 'სერვერული შეცდომა'}), 500
 
 # ======================================
-# Clerk Authentication Callback (ИСПРАВЛЕННЫЙ ВАРИАНТ)
+# Clerk Authentication Callback
 # ======================================
 
 # Константы для Clerk
 CLERK_ISSUER = "https://clerk.kodi.ge"
 CLERK_JWKS_URL = "https://clerk.kodi.ge/.well-known/jwks.json"
-CLERK_PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuVAT6ZHm5C/Y11HfHV6L
-hCrT0p4k/SQQn95O+ZfXZWwIdAeuFy4Wou6UTgOJWAMPfeXfAcG5tLeG2hjkw3ff
-WGLAPQH59UULH+rvleuOQCbeyYnVTMRw0QaPWmcwmlO8D3WXHSPs1DGrlgtj3Slz
-hmJHbnMCp3sw+AUv2YiAgyyZTGBOLRMt9VuwmjYsk9WLuSrgS8q6O4On5UjlZWpa
-zlaEiFaazFy2pF7XE/FIEQExVW9nEkAxAgu7F35/8EwRzuZdy2OjLF8yV2uA6IaV
-NtxLd1uMphCMxOtS0DNYZJ3aWjj/gZPES8ojCs3XHa+UHbnutcaFWjw+7aST41QW
-cwIDAQAB
------END PUBLIC KEY-----"""
 
 @app.route('/auth/clerk/callback', methods=['GET'])
 def clerk_callback():
-    """Правильная обработка аутентификации через Clerk.com с использованием OAuth 2.0"""
+    """Обработка аутентификации через Clerk.com с использованием OAuth 2.0"""
     try:
         logger.info("Processing Clerk authentication callback")
         
-        # 1. Получение authorization code
+        # 1. Получение authorization code и state
         code = request.args.get('code')
+        state = request.args.get('state')
+        
         if not code:
             logger.error("Missing authorization code in callback")
             flash('Authentication failed: missing authorization code', 'danger')
             return redirect(url_for('auth.login'))
         
-        # 2. Обмен кода на токен
+        # 2. Проверка state (защита от CSRF)
+        saved_state = session.pop('clerk_oauth_state', None)
+        if not state or state != saved_state:
+            logger.error(f"State mismatch: received={state}, saved={saved_state}")
+            flash('Authentication failed: security token mismatch', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        # 3. Обмен кода на токен
         token_url = "https://clerk.kodi.ge/v1/oauth/token"
         
-        # ФИКС: Используем абсолютный URL для redirect_uri
+        # Формируем redirect_uri
         redirect_uri = url_for('clerk_callback', _external=True)
         logger.info(f"Using redirect_uri: {redirect_uri}")
         
@@ -1050,7 +1052,6 @@ def clerk_callback():
             'redirect_uri': redirect_uri
         }
         
-        # ФИКС: Добавляем User-Agent для запросов к Clerk API
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
         }
@@ -1066,18 +1067,22 @@ def clerk_callback():
             logger.error("Missing ID token in response")
             return jsonify({'error': 'Missing ID token'}), 401
         
-        # 3. Верификация JWT
+        # 4. Верификация JWT с использованием JWKS
         try:
-            public_key = CLERK_PUBLIC_KEY
+            # Создаем JWKS клиент
+            jwks_client = PyJWKClient(CLERK_JWKS_URL)
             
-            # ФИКС: Указываем правильный алгоритм и опции
+            # Получаем ключ для верификации токена
+            signing_key = jwks_client.get_signing_key_from_jwt(id_token)
+            
+            # Декодируем токен
             payload = jwt.decode(
                 id_token,
-                public_key,
+                signing_key.key,
                 algorithms=["RS256"],
                 audience=os.getenv('CLERK_CLIENT_ID'),
                 issuer=CLERK_ISSUER,
-                options={"verify_aud": True}
+                options={"verify_aud": True, "verify_iss": True}
             )
         except jwt.ExpiredSignatureError:
             logger.error("JWT token expired")
@@ -1086,15 +1091,15 @@ def clerk_callback():
             logger.error(f"Invalid JWT token: {str(e)}")
             return jsonify({'error': f'Invalid token: {str(e)}'}), 401
         
-        # 4. Извлечение данных пользователя
+        # 5. Извлечение данных пользователя
         user_id = payload["sub"]
         email = payload.get("email", "")
         first_name = payload.get("given_name", "")
         last_name = payload.get("family_name", "")
         
-        logger.debug(f"Clerk user data: id={user_id}, email={email}")
+        logger.info(f"Clerk user data: id={user_id}, email={email}")
         
-        # 5. Поиск/создание пользователя
+        # 6. Поиск/создание пользователя
         user = regular_users_collection.find_one({'clerk_user_id': user_id})
         
         if not user:
@@ -1114,8 +1119,10 @@ def clerk_callback():
             user = new_user
             user['_id'] = user_id_db
             logger.info(f"New user created for Clerk ID: {user_id}")
+        else:
+            logger.info(f"User found: {user['email']}")
         
-        # 6. Установка сессии
+        # 7. Установка сессии
         session['user_id'] = str(user['_id'])
         session['role'] = 'user'
         session.permanent = True
@@ -1123,7 +1130,7 @@ def clerk_callback():
         
         logger.info(f"User authenticated via Clerk: {email}")
         
-        # ФИКС: Перенаправляем на dashboard
+        # Перенаправляем на dashboard
         return redirect(url_for('user.dashboard'))
     
     except Exception as e:
@@ -1485,4 +1492,4 @@ if __name__ == '__main__':
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production',
         ssl_context=ssl_context
-)
+                                                                             )
