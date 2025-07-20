@@ -135,6 +135,7 @@ app.config.update(
         'stripe_webhook',
         'get_check_result',
         'health',
+        'auth.facebook_callback'  # Добавлено исключение для Facebook callback
     ]
 )
 Session(app)
@@ -1341,4 +1342,4 @@ if __name__ == '__main__':
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production',
         ssl_context=ssl_context
-)
+        )
