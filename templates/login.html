@@ -308,30 +308,49 @@
         
         // Исправленный обработчик для кнопки Clerk
         document.getElementById('clerk-btn').addEventListener('click', () => {
+            // Генерируем случайный state для защиты от CSRF
+            const state = Math.random().toString(36).substring(2, 15) + 
+                         Math.random().toString(36).substring(2, 15);
+            
+            // Сохраняем state в session storage
+            sessionStorage.setItem("oauth_state", state);
+            
+            // Формируем параметры для запроса
             const clientId = '{{ CLERK_CLIENT_ID }}';
-            
-            // Формируем правильный redirect_uri
             const redirectUri = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
+            const scope = encodeURIComponent('openid email profile');
             
-            // Формируем URL для Clerk
-            window.location.href = `https://clerk.kodi.ge/oauth/authorize?` +
+            // Формируем URL для перенаправления
+            const authUrl = `https://clerk.kodi.ge/oauth/authorize?` +
                 `client_id=${clientId}` +
                 `&redirect_uri=${redirectUri}` +
                 `&response_type=code` +
-                `&scope=openid+email+profile`;
+                `&scope=${scope}` +
+                `&state=${state}`;
+            
+            // Перенаправляем пользователя
+            window.location.href = authUrl;
         });
 
         // Функция для тестирования перенаправления Clerk
         function testClerkRedirect() {
+            // Генерируем случайный state для защиты от CSRF
+            const state = Math.random().toString(36).substring(2, 15) + 
+                         Math.random().toString(36).substring(2, 15);
+            
+            // Сохраняем state в session storage
+            sessionStorage.setItem("oauth_state", state);
+            
             const clientId = '{{ CLERK_CLIENT_ID }}';
             const redirectUri = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
+            const scope = encodeURIComponent('openid email profile');
             
-            // Формируем URL для Clerk
             const url = `https://clerk.kodi.ge/oauth/authorize?` +
                 `client_id=${clientId}` +
                 `&redirect_uri=${redirectUri}` +
                 `&response_type=code` +
-                `&scope=openid+email+profile`;
+                `&scope=${scope}` +
+                `&state=${state}`;
             
             console.log("Clerk Redirect URL:", url);
             alert("URL для перенаправления:\n" + url);
