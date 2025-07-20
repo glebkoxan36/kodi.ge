@@ -8,6 +8,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from bson import ObjectId
 from bson.errors import InvalidId
 from datetime import datetime
+import requests
+from urllib.parse import urlencode
 
 # Используем импортированную коллекцию из db.py
 from db import regular_users_collection, admin_users_collection
@@ -26,6 +28,11 @@ def init_logger():
 init_logger()
 
 auth_bp = Blueprint('auth', __name__)
+
+# Facebook OAuth configuration
+FACEBOOK_APP_ID = os.getenv('FACEBOOK_APP_ID')
+FACEBOOK_APP_SECRET = os.getenv('FACEBOOK_APP_SECRET')
+FACEBOOK_REDIRECT_URI = os.getenv('FACEBOOK_REDIRECT_URI')
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -187,6 +194,151 @@ def login():
         return jsonify(success=True)
     
     return render_template('login.html')
+
+@auth_bp.route('/facebook/login')
+def facebook_login():
+    """Перенаправление на Facebook для авторизации"""
+    if not FACEBOOK_APP_ID or not FACEBOOK_APP_SECRET:
+        logger.error("Facebook OAuth not configured")
+        flash('Facebook ავტორიზაცია არ არის კონფიგურირებული', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    # Генерация state для защиты от CSRF
+    state = secrets.token_urlsafe(16)
+    session['facebook_state'] = state
+    
+    params = {
+        'client_id': FACEBOOK_APP_ID,
+        'redirect_uri': FACEBOOK_REDIRECT_URI,
+        'scope': 'email,public_profile',
+        'response_type': 'code',
+        'state': state
+    }
+    url = f"https://www.facebook.com/v18.0/dialog/oauth?{urlencode(params)}"
+    return redirect(url)
+
+@auth_bp.route('/facebook/callback')
+def facebook_callback():
+    """Обработка ответа от Facebook"""
+    # Проверка ошибок
+    if 'error' in request.args:
+        error_msg = request.args.get('error_description', 'Unknown Facebook error')
+        logger.error(f"Facebook auth error: {error_msg}")
+        flash('Facebook ავტორიზაცია ვერ მოხერხდა', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    # Проверка state для защиты от CSRF
+    state = request.args.get('state')
+    if not state or state != session.get('facebook_state'):
+        logger.warning("Facebook state mismatch - possible CSRF attack")
+        flash('უსაფრთხოების შეცდომა', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    # Получение кода авторизации
+    code = request.args.get('code')
+    if not code:
+        logger.warning("Facebook callback without code")
+        return redirect(url_for('auth.login'))
+    
+    try:
+        # Обмен кода на access token
+        token_url = "https://graph.facebook.com/v18.0/oauth/access_token"
+        token_params = {
+            'client_id': FACEBOOK_APP_ID,
+            'client_secret': FACEBOOK_APP_SECRET,
+            'redirect_uri': FACEBOOK_REDIRECT_URI,
+            'code': code
+        }
+        token_response = requests.get(token_url, params=token_params)
+        token_response.raise_for_status()
+        token_data = token_response.json()
+        access_token = token_data['access_token']
+        
+        # Получение информации о пользователе
+        user_info_url = "https://graph.facebook.com/v18.0/me"
+        params = {
+            'fields': 'id,email,first_name,last_name,picture',
+            'access_token': access_token
+        }
+        user_response = requests.get(user_info_url, params=params)
+        user_response.raise_for_status()
+        user_info = user_response.json()
+        
+        # Извлечение данных пользователя
+        facebook_id = user_info['id']
+        email = user_info.get('email')
+        first_name = user_info.get('first_name', '')
+        last_name = user_info.get('last_name', '')
+        picture_url = None
+        if 'picture' in user_info and 'data' in user_info['picture']:
+            picture_url = user_info['picture']['data'].get('url')
+        
+        if not email:
+            logger.warning("Facebook user without email")
+            flash('Facebook არ მიაწოდებს თქვენს ელ. ფოსტას. გთხოვთ გამოიყენოთ სხვა მეთოდი', 'warning')
+            return redirect(url_for('auth.login'))
+        
+        # Поиск пользователя по email или Facebook ID
+        user = regular_users_collection.find_one({
+            '$or': [
+                {'email': email},
+                {'facebook_id': facebook_id}
+            ]
+        })
+        
+        if user:
+            # Обновление Facebook ID для существующего пользователя
+            if not user.get('facebook_id'):
+                regular_users_collection.update_one(
+                    {'_id': user['_id']},
+                    {'$set': {
+                        'facebook_id': facebook_id,
+                        'updated_at': datetime.utcnow()
+                    }}
+                )
+                logger.info(f"Facebook ID added for user: {user['email']}")
+        else:
+            # Создание нового пользователя
+            username = email.split('@')[0]
+            # Проверка уникальности username
+            counter = 1
+            while regular_users_collection.find_one({'username': username}):
+                username = f"{email.split('@')[0]}_{counter}"
+                counter += 1
+            
+            # Генерация случайного пароля
+            password = secrets.token_urlsafe(16)
+            
+            new_user = {
+                'first_name': first_name,
+                'last_name': last_name,
+                'email': email,
+                'username': username,
+                'password': generate_password_hash(password),
+                'facebook_id': facebook_id,
+                'avatar_url': picture_url,
+                'balance': 0.0,
+                'role': 'user',
+                'created_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow()
+            }
+            user_id = regular_users_collection.insert_one(new_user).inserted_id
+            user = regular_users_collection.find_one({'_id': user_id})
+            logger.info(f"New user created via Facebook: {email}")
+        
+        # Авторизация пользователя
+        session['user_id'] = str(user['_id'])
+        session['role'] = user.get('role', 'user')
+        session.permanent = True
+        session.modified = True
+        
+        logger.info(f"User logged in via Facebook: {email}")
+        return redirect(url_for('user_dashboard.dashboard'))
+    
+    except Exception as e:
+        logger.exception(f"Facebook auth error: {str(e)}")
+        flash('Facebook-ით შესვლისას დაფიქსირდა შეცდომა', 'danger')
+        return redirect(url_for('auth.login'))
 
 @auth_bp.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
