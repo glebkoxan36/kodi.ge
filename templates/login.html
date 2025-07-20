@@ -34,27 +34,6 @@
             visibility: visible;
             opacity: 1;
         }
-        .social-btn {
-            width: 100%;
-            display: block;
-            text-align: center;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .social-btn.clerk {
-            background-color: #3a86ff;
-            color: white;
-            border: none;
-        }
-        .social-btn.clerk:hover {
-            background-color: #2c6bc7;
-        }
         .social-divider {
             display: flex;
             align-items: center;
@@ -128,29 +107,6 @@
             cursor: pointer;
             color: #6c757d;
         }
-        .debug-panel {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: white;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-            z-index: 10000;
-            font-size: 12px;
-        }
-        .debug-panel button {
-            padding: 5px 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            margin-top: 5px;
-        }
-        .debug-panel button:hover {
-            background-color: #45a049;
-        }
     </style>
 </head>
 <body>
@@ -215,12 +171,7 @@
                 <div class="divider-line"></div>
             </div>
             
-            <div class="social-buttons">
-                <button type="button" class="social-btn clerk" id="clerk-btn">
-                    <i class="fas fa-user-shield"></i>
-                    შესვლა Clerk-ით
-                </button>
-            </div>
+            <!-- Удалены кнопки социальной авторизации -->
         </div>
         
         <div class="login-options">
@@ -258,17 +209,7 @@
         </div>
     </div>
 
-    <!-- Отладочная панель -->
-    <div class="debug-panel">
-        <p><strong>CLERK_CLIENT_ID:</strong> <span id="debug-client-id">{{ CLERK_CLIENT_ID }}</span></p>
-        <p><strong>Current URL:</strong> <span id="current-url"></span></p>
-        <button onclick="testClerkRedirect()">Test Clerk Redirect</button>
-    </div>
-
     <script>
-        // Заполняем отладочную информацию
-        document.getElementById('current-url').textContent = window.location.href;
-        
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -305,48 +246,6 @@
                 document.getElementById('identifier_error').style.display = 'block';
             }
         });
-        
-        // Исправленный обработчик для кнопки Clerk (упрощенная версия)
-        document.getElementById('clerk-btn').addEventListener('click', function() {
-            const CLIENT_ID = '{{ CLERK_CLIENT_ID }}';
-            const REDIRECT_URI = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
-            const STATE = Math.random().toString(36).slice(2);
-            
-            // Сохраняем state в sessionStorage
-            sessionStorage.setItem("oauth_state", STATE);
-            
-            // Формируем URL для перенаправления
-            const authUrl = `https://clerk.kodi.ge/oauth/authorize?` +
-                `client_id=${CLIENT_ID}` +
-                `&redirect_uri=${REDIRECT_URI}` +
-                `&response_type=code` +
-                `&scope=openid+email+profile` +
-                `&state=${STATE}`;
-            
-            // Перенаправляем пользователя
-            window.location.href = authUrl;
-        });
-
-        // Функция для тестирования перенаправления Clerk
-        function testClerkRedirect() {
-            const CLIENT_ID = '{{ CLERK_CLIENT_ID }}';
-            const REDIRECT_URI = encodeURIComponent(window.location.origin + '/auth/clerk/callback');
-            const STATE = Math.random().toString(36).slice(2);
-            
-            // Сохраняем state в sessionStorage
-            sessionStorage.setItem("oauth_state", STATE);
-            
-            const url = `https://clerk.kodi.ge/oauth/authorize?` +
-                `client_id=${CLIENT_ID}` +
-                `&redirect_uri=${REDIRECT_URI}` +
-                `&response_type=code` +
-                `&scope=openid+email+profile` +
-                `&state=${STATE}`;
-            
-            console.log("Clerk Redirect URL:", url);
-            alert("URL для перенаправления:\n" + url);
-            window.location.href = url;
-        }
 
         const modal = document.getElementById('forgot-password-modal');
         const forgotPasswordLink = document.getElementById('forgot-password-link');
