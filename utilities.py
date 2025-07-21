@@ -2,12 +2,11 @@
 import re
 import secrets
 import hashlib
-import hashlib
 import requests
 from functools import lru_cache
 from datetime import datetime
-from .unlockimei24 import UnlockService
-from .price import get_current_prices
+from unlockimei24 import UnlockService  # Абсолютный импорт
+from price import get_current_prices
 
 # ======================================
 # 1. Вспомогательные функции
