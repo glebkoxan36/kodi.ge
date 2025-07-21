@@ -10,7 +10,6 @@
     <script src="https://js.stripe.com/v3/"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
-        /* Добавленные стили для исправления проблем */
         .balance-card {
             position: relative;
             background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
@@ -75,7 +74,6 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        /* Анимация для модального окна */
         .result-modal {
             display: none;
             position: fixed;
@@ -199,16 +197,23 @@
                     <div class="card-body">
                         <div class="text-center mb-4">
                             <div class="user-info-avatar rounded-circle" 
-                                 style="background-color: {{ avatar_color }}; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto;">
+                                 style="background-color: {{ avatar_color }}; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto; position: relative; cursor: pointer;"
+                                 id="avatarContainer">
                                 {% if user.avatar_url %}
                                     <img src="{{ user.avatar_url }}" alt="User Avatar" 
-                                         style="width: 100%; height: 100%; object-fit: cover;">
+                                         style="width: 100%; height: 100%; object-fit: cover;" id="avatarImage">
                                 {% else %}
-                                    <span style="font-size: 2rem; color: white;">
+                                    <span style="font-size: 2rem; color: white;" id="avatarInitials">
                                         {{ user.first_name[0] }}{{ user.last_name[0] }}
                                     </span>
                                 {% endif %}
+                                <div class="avatar-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; border-radius: 50%;">
+                                    <i class="fas fa-camera" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 1.5rem;"></i>
+                                </div>
                             </div>
+                            <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
+                            <div id="avatarError" class="text-danger mt-2"></div>
+                            
                             <div>
                                 <h4>{{ user.first_name }} {{ user.last_name }}</h4>
                                 <p class="mb-1">
@@ -374,7 +379,6 @@
             </div>
         </div>
         {% endblock %}
-        <!-- Удален футер с контактной информацией -->
     </div>
     
     <!-- Topup Balance Modal -->
@@ -448,7 +452,7 @@
                     <i class="fas fa-check-circle fa-5x text-success"></i>
                 </div>
                 <h4>გმადლობთ გადახდისთვის!</h4>
-                <p>ბალანსის განახლება მიმდინარეობს...</p>
+                <p>ბალანსის განახლება მიმდინარეობა...</p>
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">იტვირთება...</span>
                 </div>
@@ -619,7 +623,7 @@
                 stripe = Stripe(stripePublicKey);
             }
             
-            // Добавлено: обновление активного пункта меню
+            // Обновление активного пункта меню
             const currentPath = window.location.pathname;
             const menuItems = document.querySelectorAll('.nav-link');
             menuItems.forEach(item => {
@@ -628,6 +632,99 @@
                     item.closest('.nav-item').classList.add('active');
                 }
             });
+            
+            // Обработка загрузки аватара
+            const avatarContainer = document.getElementById('avatarContainer');
+            const avatarUpload = document.getElementById('avatarUpload');
+            const avatarError = document.getElementById('avatarError');
+            const avatarImage = document.getElementById('avatarImage');
+            const avatarInitials = document.getElementById('avatarInitials');
+
+            if (avatarContainer) {
+                avatarContainer.addEventListener('click', function() {
+                    avatarUpload.click();
+                });
+
+                avatarContainer.addEventListener('mouseenter', function() {
+                    this.querySelector('.avatar-overlay').style.display = 'block';
+                });
+
+                avatarContainer.addEventListener('mouseleave', function() {
+                    this.querySelector('.avatar-overlay').style.display = 'none';
+                });
+            }
+
+            if (avatarUpload) {
+                avatarUpload.addEventListener('change', function(e) {
+                    if (this.files && this.files[0]) {
+                        const file = this.files[0];
+                        const formData = new FormData();
+                        formData.append('avatar', file);
+
+                        // Проверка типа и размера
+                        if (!file.type.match('image.*')) {
+                            avatarError.textContent = 'ატვირთეთ მხოლოდ სურათი';
+                            return;
+                        }
+
+                        if (file.size > 5 * 1024 * 1024) {
+                            avatarError.textContent = 'ფაილის ზომა არ უნდა აღემატებოდეს 5MB';
+                            return;
+                        }
+
+                        // Показываем спиннер
+                        const spinner = document.createElement('div');
+                        spinner.className = 'spinner-border text-primary';
+                        spinner.style.position = 'absolute';
+                        spinner.style.top = '50%';
+                        spinner.style.left = '50%';
+                        spinner.style.transform = 'translate(-50%, -50%)';
+                        spinner.style.zIndex = '10';
+                        avatarContainer.appendChild(spinner);
+
+                        // Прячем ошибки
+                        avatarError.textContent = '';
+
+                        fetch('/user/upload-avatar', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            spinner.remove();
+                            if (data.success) {
+                                // Обновляем изображение
+                                if (avatarImage) {
+                                    avatarImage.src = data.avatar_url + '?t=' + new Date().getTime();
+                                } else {
+                                    // Если до этого были инициалы, то заменяем на изображение
+                                    if (avatarInitials) {
+                                        avatarInitials.style.display = 'none';
+                                    }
+                                    const img = document.createElement('img');
+                                    img.src = data.avatar_url + '?t=' + new Date().getTime();
+                                    img.alt = 'User Avatar';
+                                    img.style.width = '100%';
+                                    img.style.height = '100%';
+                                    img.style.objectFit = 'cover';
+                                    img.id = 'avatarImage';
+                                    avatarContainer.insertBefore(img, avatarContainer.firstChild);
+                                }
+                            } else {
+                                avatarError.textContent = data.error || 'შეცდომა ავატარის ატვირთვისას';
+                            }
+                        })
+                        .catch(error => {
+                            spinner.remove();
+                            avatarError.textContent = 'სერვერული შეცდომა';
+                            console.error('Error:', error);
+                        });
+                    }
+                });
+            }
         });
     </script>
 </body>
