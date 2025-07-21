@@ -25,6 +25,21 @@
         iconCache[url] = img;
     });
 
+    // Глобальная функция для генерации аватара
+    window.generateAvatarFallback = function(firstName, lastName, color) {
+        if (!firstName || !lastName) {
+            return '<div class="kodi-avatar-placeholder">KODI.GE</div>';
+        }
+        
+        const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
+        return `
+            <div class="kodi-avatar-placeholder" 
+                style="background-color: ${color || '#1a2138'}">
+                ${initials}
+            </div>
+        `;
+    };
+
     // Оптимизация: кеширование DOM элементов
     let cachedElements = {};
     
@@ -35,7 +50,7 @@
         return cachedElements[id];
     }
 
-    // Оптимизация: упрощенные стили
+    // Оптимизированные стили
     const style = document.createElement('style');
     style.id = 'kodi-mobile-menu-styles';
     style.textContent = `
@@ -504,85 +519,96 @@
         window.location.href = "/user/dashboard";
     }
 
-    // Вспомогательная функция для создания аватара по инициалам
-    function generateAvatarFallback(firstName, lastName, color) {
-        const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
-        return `
-            <div class="kodi-avatar-placeholder" 
-                style="background-color: ${color || '#1a2138'}">
-                ${initials}
-            </div>
-        `;
-    }
-
     // Generate user HTML
     function generateUserHTML() {
-        const userData = window.currentUser || {};
-        let html;
+        try {
+            const userData = window.currentUser || {};
+            let html;
 
-        if (userData.is_impersonation) {
-            html = `
-                <div class="kodi-user-info-container">
-                    <div class="kodi-admin-links">
+            if (userData.is_impersonation) {
+                html = `
+                    <div class="kodi-user-info-container">
+                        <div class="kodi-admin-links">
+                            <div class="kodi-user-info" onclick="kodiGoToAdminDashboard()">
+                                ადმინისტრატორი: ${userData.admin_username}
+                            </div>
+                            <div class="kodi-user-info" onclick="kodiGoToUserDashboard()">
+                                მომხმარებელი: ${userData.first_name} ${userData.last_name}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } 
+            else if (userData.is_admin) {
+                html = `
+                    <div class="kodi-floating-avatar" onclick="kodiGoToAdminDashboard()">
+                        <div class="kodi-avatar-placeholder">ADMIN</div>
+                    </div>
+                    <div class="kodi-user-info-container">
                         <div class="kodi-user-info" onclick="kodiGoToAdminDashboard()">
-                            ადმინისტრატორი: ${userData.admin_username}
-                        </div>
-                        <div class="kodi-user-info" onclick="kodiGoToUserDashboard()">
-                            მომხმარებელი: ${userData.first_name} ${userData.last_name}
+                            ${userData.admin_username}
                         </div>
                     </div>
-                </div>
-            `;
-        } 
-        else if (userData.is_admin) {
-            html = `
-                <div class="kodi-floating-avatar" onclick="kodiGoToAdminDashboard()">
-                    <div class="kodi-avatar-placeholder">ADMIN</div>
-                </div>
-                <div class="kodi-user-info-container">
-                    <div class="kodi-user-info" onclick="kodiGoToAdminDashboard()">
-                        ${userData.admin_username}
+                `;
+            } 
+            else if (userData.first_name && userData.last_name) {
+                const avatarUrl = userData.avatar_url || '';
+                const formattedBalance = (userData.balance || 0).toFixed(2);
+                
+                let avatarHTML;
+                if (avatarUrl) {
+                    const timestamp = new Date().getTime();
+                    avatarHTML = `
+                        <img src="${avatarUrl}?t=${timestamp}" 
+                             alt="User Avatar" 
+                             class="kodi-avatar-image"
+                             onerror="
+                                 this.onerror=null;
+                                 this.parentElement.innerHTML=window.generateAvatarFallback(
+                                     '${userData.first_name}', 
+                                     '${userData.last_name}', 
+                                     '${userData.avatar_color}'
+                                 )"
+                             >`;
+                } else {
+                    avatarHTML = window.generateAvatarFallback(
+                        userData.first_name, 
+                        userData.last_name, 
+                        userData.avatar_color
+                    );
+                }
+                
+                html = `
+                    <div class="kodi-floating-avatar" onclick="kodiGoToDashboard()">
+                        ${avatarHTML}
                     </div>
-                </div>
-            `;
-        } 
-        else if (userData.first_name && userData.last_name) {
-            const avatarUrl = userData.avatar_url || '';
-            const formattedBalance = (userData.balance || 0).toFixed(2);
-            
-            // Используем аватар из дашборда с параметром времени для предотвращения кеширования
-            let avatarHTML;
-            if (avatarUrl) {
-                const timestamp = new Date().getTime();
-                avatarHTML = `
-                    <img src="${avatarUrl}?t=${timestamp}" 
-                         alt="User Avatar" 
-                         class="kodi-avatar-image"
-                         onerror="this.onerror=null;this.parentElement.innerHTML=generateAvatarFallback('${userData.first_name}', '${userData.last_name}', '${userData.avatar_color}')">`;
-            } else {
-                avatarHTML = generateAvatarFallback(
-                    userData.first_name, 
-                    userData.last_name, 
-                    userData.avatar_color
-                );
+                    <div class="kodi-user-info-container">
+                        <div class="kodi-user-info" onclick="kodiGoToDashboard()">
+                            ${userData.first_name} ${userData.last_name}
+                        </div>
+                        <div class="kodi-user-balance" onclick="kodiGoToDashboard()">
+                            ბალანსი: ${formattedBalance}₾
+                        </div>
+                    </div>
+                `;
+            } 
+            else {
+                html = `
+                    <div class="kodi-floating-avatar" onclick="kodiGoToLogin()">
+                        <div class="kodi-avatar-placeholder">KODI.GE</div>
+                    </div>
+                    <div class="kodi-user-info-container">
+                        <div class="kodi-user-info not-logged-in" onclick="kodiGoToLogin()">
+                            ლოგინი|რეგისტრაცია
+                        </div>
+                    </div>
+                `;
             }
             
-            html = `
-                <div class="kodi-floating-avatar" onclick="kodiGoToDashboard()">
-                    ${avatarHTML}
-                </div>
-                <div class="kodi-user-info-container">
-                    <div class="kodi-user-info" onclick="kodiGoToDashboard()">
-                        ${userData.first_name} ${userData.last_name}
-                    </div>
-                    <div class="kodi-user-balance" onclick="kodiGoToDashboard()">
-                        ბალანსი: ${formattedBalance}₾
-                    </div>
-                </div>
-            `;
-        } 
-        else {
-            html = `
+            return html;
+        } catch (e) {
+            console.error('Error generating user HTML:', e);
+            return `
                 <div class="kodi-floating-avatar" onclick="kodiGoToLogin()">
                     <div class="kodi-avatar-placeholder">KODI.GE</div>
                 </div>
@@ -593,11 +619,9 @@
                 </div>
             `;
         }
-        
-        return html;
     }
 
-    // Добавим новую функцию для обновления информации о пользователе
+    // Обновление информации о пользователе
     function updateUserInMenus() {
         const userHTML = generateUserHTML();
         const containers = document.querySelectorAll('.kodi-avatar-container');
@@ -607,6 +631,18 @@
                 container.innerHTML = userHTML;
             });
         }
+    }
+
+    // Принудительное обновление аватара
+    function forceAvatarUpdate() {
+        const avatarContainers = document.querySelectorAll('.kodi-floating-avatar');
+        avatarContainers.forEach(container => {
+            const img = container.querySelector('img.kodi-avatar-image');
+            if (img) {
+                const newSrc = `${img.src.split('?')[0]}?t=${new Date().getTime()}`;
+                img.src = newSrc;
+            }
+        });
     }
 
     // Create mobile menu structure
@@ -821,7 +857,8 @@
 
     // Menu functions
     window.kodiOpenMenu = function() {
-        updateUserInMenus(); // ОБНОВЛЯЕМ ПОЛЬЗОВАТЕЛЯ
+        forceAvatarUpdate();
+        updateUserInMenus();
         const modal = getElement('kodiMainMenu');
         if (modal) {
             document.body.classList.add('kodi-menu-open');
@@ -845,7 +882,7 @@
     }
 
     window.kodiOpenAppleMenu = function() {
-        updateUserInMenus(); // ОБНОВЛЯЕМ ПОЛЬЗОВАТЕЛЯ
+        forceAvatarUpdate();
         kodiCloseMenu();
         setTimeout(() => {
             const appleModal = getElement('kodiAppleMenu');
@@ -869,7 +906,7 @@
     }
 
     window.kodiOpenAndroidMenu = function() {
-        updateUserInMenus(); // ОБНОВЛЯЕМ ПОЛЬЗОВАТЕЛЯ
+        forceAvatarUpdate();
         kodiCloseMenu();
         setTimeout(() => {
             const androidModal = getElement('kodiAndroidMenu');
