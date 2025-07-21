@@ -22,7 +22,8 @@
                        justify-content: center;
                        color: white;
                        font-weight: bold;
-                       font-size: 1.2rem;">
+                       font-size: 1.2rem;
+                       border-radius: 50%;">
                 ${initials}
             </div>
         `;
@@ -210,6 +211,16 @@
             overflow: hidden;
             margin: 0 auto;
             background: transparent !important;
+        }
+        
+        .kodi-avatar-background {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .kodi-avatar-image {
