@@ -27,12 +27,12 @@ import jwt
 # Импорт модулей
 from auth import auth_bp
 from user_dashboard import user_bp
-from ifreeapi import validate_imei, perform_api_check
+from ifreeapi import perform_api_check
 from db import client, db, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection
 from stripepay import StripePayment
 from admin_routes import admin_bp
 from price import get_current_prices, get_service_price, init_prices
-from unlockimei24 import init_unlock_service
+from utilities import validate_imei, generate_avatar_color, get_apple_services_data, get_android_services_data
 
 # Настройка корневого логгера
 root_logger = logging.getLogger()
@@ -147,16 +147,6 @@ Session(app)
 # Инициализация CSRF защиты
 csrf = CSRFProtect(app)
 csrf.exempt(auth_bp)
-
-# Функция для генерации цвета аватара
-@lru_cache(maxsize=512)
-def generate_avatar_color(name):
-    """Генерирует HEX-цвет на основе хеша имени пользователя"""
-    if not name:
-        return "#{:06x}".format(secrets.randbelow(0xFFFFFF))
-    
-    hash_obj = hashlib.md5(name.encode('utf-8'))
-    return '#' + hash_obj.hexdigest()[:6]
 
 # Фильтр для форматирования даты в шаблонах Jinja2
 @app.template_filter('format_datetime')
@@ -548,19 +538,6 @@ def get_phone_details(phone_id):
 # Роут для страницы проверки Apple IMEI
 # ======================================
 
-@cache.cached(timeout=600, key_prefix='apple_services_data')
-def get_apple_services_data():
-    prices = get_current_prices()
-    return {
-        'free': 'უფასო',
-        'fmi': f"{prices['fmi'] / 100:.2f}₾",
-        'blacklist': f"{prices['blacklist'] / 100:.2f}₾",
-        'sim_lock': f"{prices['sim_lock'] / 100:.2f}₾",
-        'activation': f"{prices['activation'] / 100:.2f}₾",
-        'carrier': f"{prices['carrier'] / 100:.2f}₾",
-        'mdm': f"{prices['mdm'] / 100:.2f}₾"
-    }
-
 @app.route('/applecheck')
 def apple_check():
     logger.info("Apple check page access")
@@ -629,23 +606,6 @@ def apple_check():
 # ======================================
 # Роут для страницы проверки Android IMEI
 # ======================================
-
-@cache.cached(timeout=600, key_prefix='android_services_data')
-def get_android_services_data():
-    prices = get_current_prices()
-    return {
-        'samsung_v1': f"{prices['samsung_v1'] / 100:.2f}₾",
-        'samsung_v2': f"{prices['samsung_v2'] / 100:.2f}₾",
-        'samsung_knox': f"{prices['samsung_knox'] / 100:.2f}₾",
-        'xiaomi': f"{prices['xiaomi'] / 100:.2f}₾",
-        'google_pixel': f"{prices['google_pixel'] / 100:.2f}₾",
-        'huawei_v1': f"{prices['huawei_v1'] / 100:.2f}₾",
-        'huawei_v2': f"{prices['huawei_v2'] / 100:.2f}₾",
-        'motorola': f"{prices['motorola'] / 100:.2f}₾",
-        'oppo': f"{prices['oppo'] / 100:.2f}₾",
-        'frp': f"{prices['frp'] / 100:.2f}₾",
-        'sim_lock_android': f"{prices['sim_lock_android'] / 100:.2f}₾",
-    }
 
 @app.route('/androidcheck')
 def android_check():
@@ -1149,8 +1109,8 @@ def unlock_services():
     """API для получения списка сервисов разблокировки"""
     logger.info("Request to /unlock/services")
     try:
-        unlock_service = init_unlock_service()
-        services_data = unlock_service.get_services()
+        from utilities import get_unlock_services
+        services_data = get_unlock_services()
         logger.info(f"Services data received: {services_data}")
 
         if not services_data:
@@ -1209,6 +1169,7 @@ def unlock_services():
 def place_unlock_order():
     """Отправка заказа на разблокировку"""
     try:
+        from utilities import place_unlock_order
         data = request.get_json()
         imei = data.get('imei', '').strip()
         service_id = data.get('service_id', '')
@@ -1226,8 +1187,7 @@ def place_unlock_order():
                 'message': 'Invalid service ID'
             }), 400
         
-        unlock_service = init_unlock_service()
-        result = unlock_service.place_order(imei, service_id)
+        result = place_unlock_order(imei, service_id)
         
         if result.get('STATUS') == 'error':
             return jsonify({
@@ -1251,6 +1211,7 @@ def place_unlock_order():
 def check_unlock_status():
     """Проверка статуса заказа"""
     try:
+        from utilities import check_unlock_status
         data = request.get_json()
         refid = data.get('refid', '')
         
@@ -1260,8 +1221,7 @@ def check_unlock_status():
                 'message': 'Reference ID is required'
             }), 400
         
-        unlock_service = init_unlock_service()
-        result = unlock_service.get_order_status(refid)
+        result = check_unlock_status(refid)
         
         if result.get('STATUS') == 'error':
             return jsonify({
@@ -1437,4 +1397,4 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production'
-)
+            )
