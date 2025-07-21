@@ -9,6 +9,8 @@ from functools import wraps
 import stripe
 from stripepay import StripePayment
 from datetime import datetime
+from werkzeug.utils import secure_filename
+from PIL import Image, ImageDraw
 
 # Настройка логгера
 logger = logging.getLogger(__name__)
@@ -356,3 +358,83 @@ def stripe_webhook():
     except Exception as e:
         logger.exception("Webhook processing error")
         return jsonify({'error': str(e)}), 500
+
+# Новый роут для загрузки аватара
+@user_bp.route('/upload-avatar', methods=['POST'])
+@login_required
+def upload_avatar():
+    if 'avatar' not in request.files:
+        return jsonify({'success': False, 'error': 'No file part'}), 400
+    
+    file = request.files['avatar']
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No selected file'}), 400
+    
+    if file:
+        # Проверка расширения
+        filename = secure_filename(file.filename)
+        if not filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+            return jsonify({'success': False, 'error': 'Invalid file type'}), 400
+        
+        # Создаем папку для аватаров, если ее нет
+        upload_folder = os.path.join(current_app.root_path, 'static', 'avatars')
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        # Генерируем уникальное имя файла
+        user_id = str(g.user['_id'])
+        ext = filename.rsplit('.', 1)[1].lower()
+        new_filename = f"{user_id}.{ext}"
+        file_path = os.path.join(upload_folder, new_filename)
+        
+        try:
+            # Открываем изображение
+            img = Image.open(file.stream)
+            
+            # Конвертируем в RGB, если это PNG с прозрачностью
+            if img.mode in ('RGBA', 'LA'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                background.paste(img, mask=img.split()[-1])  # Убираем альфа-канал
+                img = background
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            # Создаем круглую маску
+            size = min(img.width, img.height)
+            # Создаем новое изображение для маски
+            mask = Image.new('L', (size, size), 0)
+            draw = ImageDraw.Draw(mask)
+            draw.ellipse((0, 0, size, size), fill=255)
+            
+            # Обрезаем изображение до квадрата
+            left = (img.width - size) // 2
+            top = (img.height - size) // 2
+            right = left + size
+            bottom = top + size
+            img = img.crop((left, top, right, bottom))
+            
+            # Создаем новое изображение с альфа-каналом
+            result = Image.new('RGBA', (size, size))
+            result.paste(img, (0, 0), mask=mask)
+            
+            # Сжимаем изображение до 200x200
+            result.thumbnail((200, 200))
+            
+            # Сохраняем с оптимизацией
+            result.save(file_path, 'PNG', optimize=True)
+            
+            # Сохраняем путь в базе данных
+            avatar_url = f"/static/avatars/{new_filename}"
+            regular_users_collection.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': {'avatar_url': avatar_url}}
+            )
+            
+            return jsonify({
+                'success': True,
+                'avatar_url': avatar_url
+            })
+        except Exception as e:
+            logger.exception(f"Avatar upload error: {str(e)}")
+            return jsonify({'success': False, 'error': 'Processing error'}), 500
+    
+    return jsonify({'success': False, 'error': 'Unknown error'}), 500
