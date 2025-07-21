@@ -520,27 +520,28 @@
         const userData = window.currentUser || {};
         let html;
 
-        if (userData.is_admin && userData.admin_username) {
+        if (userData.is_impersonation) {
+            html = `
+                <div class="kodi-user-info-container">
+                    <div class="kodi-admin-links">
+                        <div class="kodi-user-info" onclick="kodiGoToAdminDashboard()">
+                            ადმინისტრატორი: ${userData.admin_username}
+                        </div>
+                        <div class="kodi-user-info" onclick="kodiGoToUserDashboard()">
+                            მომხმარებელი: ${userData.first_name} ${userData.last_name}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } 
+        else if (userData.is_admin) {
             html = `
                 <div class="kodi-floating-avatar" onclick="kodiGoToAdminDashboard()">
                     <div class="kodi-avatar-placeholder">ADMIN</div>
                 </div>
                 <div class="kodi-user-info-container">
-                    <div class="kodi-admin-links">
-                        <div class="kodi-user-info" onclick="kodiGoToAdminDashboard()">
-                            ადმინისტრაცია (${userData.admin_username})
-                        </div>
-            `;
-
-            if (userData.first_name && userData.last_name) {
-                html += `
-                        <div class="kodi-user-info" onclick="kodiGoToUserDashboard()">
-                            იუზერ დაშბორდი (${userData.first_name} ${userData.last_name})
-                        </div>
-                `;
-            }
-
-            html += `
+                    <div class="kodi-user-info" onclick="kodiGoToAdminDashboard()">
+                        ${userData.admin_username}
                     </div>
                 </div>
             `;
