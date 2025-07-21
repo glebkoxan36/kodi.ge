@@ -9,6 +9,107 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://js.stripe.com/v3/"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+        /* Добавленные стили для исправления проблем */
+        .balance-card {
+            position: relative;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            border: none;
+            border-radius: 15px;
+            padding: 30px 20px;
+            color: white;
+            text-align: center;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .balance-card .service-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .balance-card .service-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .balance-card .balance-amount {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+        
+        .balance-card .topup-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            width: 100%;
+            max-width: 250px;
+            margin: 0 auto;
+            backdrop-filter: blur(5px);
+        }
+        
+        .balance-card .topup-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-3px);
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .history-table {
+            width: 100%;
+        }
+        
+        .history-table th, 
+        .history-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Анимация для модального окна */
+        .result-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .result-modal.active {
+            opacity: 1;
+        }
+        
+        .modal-content {
+            background: #1a1a2e;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .result-modal.active .modal-content {
+            transform: translateY(0);
+        }
+    </style>
 </head>
 <body>
     <div id="urls" 
@@ -235,34 +336,36 @@
             </div>
             <div class="card-body">
                 {% if last_payments %}
-                    <table class="history-table text-light">
-                        <thead>
-                            <tr>
-                                <th>თარიღი</th>
-                                <th>თანხა</th>
-                                <th>ტიპი</th>
-                                <th>სტატუსი</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for payment in last_payments %}
-                            <tr>
-                                <td>{{ payment.formatted_timestamp or payment.timestamp }}</td>
-                                <td>{{ "%.2f"|format(payment.amount) }} ₾</td>
-                                <td>{{ payment.type }}</td>
-                                <td>
-                                    {% if payment.status == 'success' or payment.status == 'completed' %}
-                                        <span class="badge bg-success">წარმატებული</span>
-                                    {% elif payment.status == 'pending' %}
-                                        <span class="badge bg-warning">მუშავდება</span>
-                                    {% else %}
-                                        <span class="badge bg-danger">შეცდომა</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table class="history-table text-light">
+                            <thead>
+                                <tr>
+                                    <th>თარიღი</th>
+                                    <th>თანხა</th>
+                                    <th>ტიპი</th>
+                                    <th>სტატუსი</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in last_payments %}
+                                <tr>
+                                    <td>{{ payment.formatted_timestamp or payment.timestamp }}</td>
+                                    <td>{{ "%.2f"|format(payment.amount) }} ₾</td>
+                                    <td>{{ payment.type }}</td>
+                                    <td>
+                                        {% if payment.status == 'success' or payment.status == 'completed' %}
+                                            <span class="badge bg-success">წარმატებული</span>
+                                        {% elif payment.status == 'pending' %}
+                                            <span class="badge bg-warning">მუშავდება</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">შეცდომა</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 {% else %}
                     <div class="text-center py-4">
                         <p class="text-muted">გადახდების ისტორია ცარიელია</p>
@@ -271,33 +374,7 @@
             </div>
         </div>
         {% endblock %}
-        <footer class="mt-5 pt-4 border-top border-secondary">
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <h5>Kodi.ge</h5>
-                    <p>IMEI შემოწმების პროფესიონალური სერვისი</p>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <h5>კონტაქტი</h5>
-                    <ul class="list-unstyled">
-                        <li><i class="fas fa-phone me-2"></i> +995 555 12 34 56</li>
-                        <li><i class="fas fa-envelope me-2"></i> info@kodi.ge</li>
-                        <li><i class="fas fa-map-marker-alt me-2"></i> თბილისი, საქართველო</li>
-                    </ul>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <h5>მიჰყევით</h5>
-                    <div class="d-flex gap-3">
-                        <a href="#" class="text-light"><i class="fab fa-facebook fa-2x"></i></a>
-                        <a href="#" class="text-light"><i class="fab fa-instagram fa-2x"></i></a>
-                        <a href="#" class="text-light"><i class="fab fa-telegram fa-2x"></i></a>
-                    </div>
-                </div>
-            </div>
-            <div class="text-center py-3">
-                <p class="mb-0">© 2024 Kodi.ge. ყველა უფლება დაცულია.</p>
-            </div>
-        </footer>
+        <!-- Удален футер с контактной информацией -->
     </div>
     
     <!-- Topup Balance Modal -->
@@ -318,11 +395,12 @@
                             class="form-control bg-dark text-light" 
                             id="amount" 
                             placeholder="შეიყვანეთ თანხა"
-                            min="1"
+                            min="5"
+                            max="250"
                             step="0.01"
                             required
                             value="10.00">
-                        <div class="form-text">მინიმალური თანხა: 1 ₾</div>
+                        <div class="form-text">მინიმალური თანხა: 5 ₾, მაქსიმალური: 250 ₾</div>
                     </div>
                     
                     <div class="mb-4">
@@ -337,10 +415,10 @@
                                 </label>
                             </div>
                             <div class="form-check flex-grow-1">
-                                <input class="form-check-input" type="radio" name="paymentMethod" id="cryptoMethod">
+                                <input class="form-check-input" type="radio" name="paymentMethod" id="cryptoMethod" disabled>
                                 <label class="form-check-label d-flex align-items-center" for="cryptoMethod">
                                     <i class="fab fa-bitcoin fa-2x me-2"></i>
-                                    კრიპტოვალუტა
+                                    კრიპტოვალუტა (მალე)
                                 </label>
                             </div>
                         </div>
@@ -378,7 +456,6 @@
             </div>
         </div>
     </div>
-    
     
     <!-- Loading Spinner -->
     <div class="spinner-container" id="spinner">
@@ -433,8 +510,8 @@
         async function initiatePayment() {
             const amount = parseFloat(document.getElementById('amount').value);
             
-            if (isNaN(amount) || amount < 1) {
-                alert('მინიმალური თანხა: 1 ₾');
+            if (isNaN(amount) || amount < 5 || amount > 250) {
+                alert('თანხა უნდა იყოს 5-დან 250 ლარამდე');
                 return;
             }
             
@@ -541,6 +618,16 @@
             if (!stripe && stripePublicKey) {
                 stripe = Stripe(stripePublicKey);
             }
+            
+            // Добавлено: обновление активного пункта меню
+            const currentPath = window.location.pathname;
+            const menuItems = document.querySelectorAll('.nav-link');
+            menuItems.forEach(item => {
+                if (item.getAttribute('href') === currentPath) {
+                    item.classList.add('active');
+                    item.closest('.nav-item').classList.add('active');
+                }
+            });
         });
     </script>
 </body>
