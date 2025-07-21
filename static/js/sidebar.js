@@ -1,42 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const sidebarHTML = `
         <div class="sidebar">
-            <div class="user-profile-section" onclick="{% if currentUser %}goToDashboard(){% else %}goToLogin(){% endif %}">
-                <div class="user-avatar-container">
-                    <div class="user-avatar" {% if currentUser %}style="background-color: {{ currentUser.avatar_color }}"{% endif %}>
-                        {% if currentUser %}
-                            {% if currentUser.is_impersonation %}
-                                <i class="fas fa-user-secret"></i>
-                            {% elif currentUser.is_admin %}
-                                ADMIN
-                            {% else %}
-                                {{ currentUser.first_name|first }}{{ currentUser.last_name|first }}
-                            {% endif %}
-                        {% else %}
-                            <i class="fas fa-user"></i>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="user-name">
-                    {% if currentUser %}
-                        {% if currentUser.is_impersonation %}
-                            {{ currentUser.first_name }} {{ currentUser.last_name }}
-                            <div class="user-admin-username">
-                                (Admin: {{ currentUser.admin_username }})
-                            </div>
-                        {% elif currentUser.is_admin %}
-                            ადმინისტრატორი
-                            <div class="user-admin-username">({{ currentUser.admin_username }})</div>
-                        {% else %}
-                            {{ currentUser.first_name }} {{ currentUser.last_name }}
-                            <div class="user-balance">ბალანსი: {{ '%.2f' % currentUser.balance }}₾</div>
-                        {% endif %}
-                    {% else %}
-                        ლოგინი/რეგისტრაცია
-                    {% endif %}
-                </div>
-            </div>
-            
             <ul class="nav flex-column">
                 <li class="nav-item">
                     <a class="nav-link active" href="#">
@@ -109,14 +73,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span>დაბრუნების პოლიტიკა</span>
                     </a>
                 </li>
-                {% if currentUser and currentUser.is_admin %}
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/dashboard">
-                        <i class="fas fa-cog"></i>
-                        <span>ადმინ პანელი</span>
-                    </a>
-                </li>
-                {% endif %}
             </ul>
         </div>
     `;
