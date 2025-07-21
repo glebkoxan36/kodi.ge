@@ -3,9 +3,11 @@ import re
 import secrets
 import hashlib
 import requests
+import hmac
+import json
 from functools import lru_cache
 from datetime import datetime
-from unlockimei24 import UnlockService  # Абсолютный импорт
+from unlockimei24 import init_unlock_service  # Исправленный импорт
 from price import get_current_prices
 
 # ======================================
@@ -66,23 +68,21 @@ def get_android_services_data():
 # ======================================
 # 4. Функции для сервиса разблокировки
 # ======================================
-def init_unlock_service():
-    """Инициализация сервиса разблокировки"""
-    return UnlockService()
+# Удалена локальная init_unlock_service - теперь используется импортированная
 
 def get_unlock_services():
     """Получение списка сервисов разблокировки"""
-    unlock_service = init_unlock_service()
+    unlock_service = init_unlock_service()  # Используем импортированную функцию
     return unlock_service.get_services()
 
 def place_unlock_order(imei, service_id):
     """Создание заказа на разблокировку"""
-    unlock_service = init_unlock_service()
+    unlock_service = init_unlock_service()  # Используем импортированную функцию
     return unlock_service.place_order(imei, service_id)
 
 def check_unlock_status(refid):
     """Проверка статуса заказа на разблокировку"""
-    unlock_service = init_unlock_service()
+    unlock_service = init_unlock_service()  # Используем импортированную функцию
     return unlock_service.get_order_status(refid)
 
 # ======================================
