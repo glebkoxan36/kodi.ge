@@ -204,11 +204,11 @@ def inject_user():
             logger.warning("Invalid admin ID in session - cleared")
     
     # Проверяем обычного пользователя
-    if 'user_id' in session and not is_impersonation:
+    if 'user_id' in session:
         try:
             user = regular_users_collection.find_one(
                 {'_id': ObjectId(session['user_id'])},
-                projection={'first_name': 1, 'last_name': 1, 'balance': 1, 'avatar_color': 1, 'avatar_url': 1, 'email': 1}
+                projection={'first_name': 1, 'last_name': 1, 'balance': 1, 'avatar_color': 1, 'avatar_url': 1, 'email': 1, 'username': 1}
             )
             if user:
                 name_part = user.get('first_name') or user.get('email', 'user')
@@ -225,7 +225,8 @@ def inject_user():
                     'role': role,
                     'admin_role': admin_role,
                     'admin_username': admin_username,
-                    'is_impersonation': is_impersonation
+                    'is_impersonation': is_impersonation,
+                    'username': user.get('username', '')
                 }
         except (TypeError, InvalidId):
             session.pop('user_id', None)
@@ -452,11 +453,11 @@ def background_check_task(self, imei, service_type, session_id):
 # ======================================
 
 @app.route('/')
-@cache.cached(timeout=300)
+@cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)
 def index():
     logger.info("Home page access")
     prices = get_current_prices()
-    return render_common_template(
+    return render_template(
         'index.html',
         stripe_public_key=STRIPE_PUBLIC_KEY,
     )
@@ -1436,4 +1437,4 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production'
-    )
+)
