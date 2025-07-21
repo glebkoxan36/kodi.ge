@@ -1,10 +1,6 @@
 import os
 import json
 import logging
-import ssl
-import urllib3
-import socket
-import requests
 import secrets
 import re
 import hmac
@@ -22,14 +18,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_session import Session
 from flask_caching import Cache
-from bs4 import BeautifulSoup
 from pymongo.errors import PyMongoError
 from flask_pymongo import PyMongo
 from celery import Celery
 import celery.states as states
 import jwt
-from urllib3.poolmanager import PoolManager
-from urllib3.util import ssl_
 
 # Импорт модулей
 from auth import auth_bp
@@ -38,13 +31,8 @@ from ifreeapi import validate_imei, perform_api_check
 from db import client, db, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection
 from stripepay import StripePayment
 from admin_routes import admin_bp
-from test import test_bp
 from price import get_current_prices, get_service_price, init_prices
 from unlockimei24 import init_unlock_service
-
-# Создаем папку для логов
-if not os.path.exists('logs'):
-    os.makedirs('logs')
 
 # Настройка корневого логгера
 root_logger = logging.getLogger()
@@ -52,7 +40,7 @@ root_logger.setLevel(logging.DEBUG)
 
 # Обработчик для записи в файл
 file_handler = RotatingFileHandler(
-    'logs/app.log', 
+    'app.log', 
     maxBytes=1024 * 1024 * 5,  # 5 MB
     backupCount=3
 )
@@ -124,7 +112,7 @@ logger.info("Application starting")
 app.config['UNLOCK_API_EMAIL'] = 'glebkoxan36@gmail.com'
 app.config['UNLOCK_API_KEY'] = 'YHN-H96-H1F-OA1-AF7-3HX-9BV-MXF'
 
-# Обновленная конфигурация сессии
+# Конфигурация сессии
 app.config.update(
     SESSION_TYPE='mongodb',
     SESSION_MONGODB=client,
@@ -133,7 +121,7 @@ app.config.update(
     SESSION_COOKIE_NAME='imeicheck_session',
     SESSION_COOKIE_DOMAIN=os.getenv('SESSION_DOMAIN', None),
     SESSION_COOKIE_PATH='/',
-    SESSION_COOKIE_SECURE=os.getenv('FLASK_ENV') == 'production',
+    SESSION_COOKIE_SECURE=False,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=timedelta(days=7),
@@ -148,7 +136,7 @@ app.config.update(
         'stripe_webhook',
         'get_check_result',
         'health',
-        'auth.facebook_callback',  # Добавлено исключение для Facebook callback
+        'auth.facebook_callback',
         'unlock_services',
         'place_unlock_order',
         'check_unlock_status'
@@ -158,7 +146,7 @@ Session(app)
 
 # Инициализация CSRF защиты
 csrf = CSRFProtect(app)
-csrf.exempt(auth_bp)  # Исключаем auth blueprint
+csrf.exempt(auth_bp)
 
 # Функция для генерации цвета аватара
 @lru_cache(maxsize=512)
@@ -287,7 +275,7 @@ def admin_required(f):
             )
             if not admin or admin.get('role') not in ['admin', 'superadmin']:
                 flash('Administrator account not found or invalid', 'danger')
-                session.clear();
+                session.clear()
                 return redirect(url_for('auth.admin_login'))
         except:
             session.clear()
@@ -487,19 +475,12 @@ def knowledge_base():
     logger.info("Knowledge base access")
     return render_common_template('knowledge-base.html')
 
-# ======================================
-# Роут для страницы политики
-# ======================================
 @app.route('/politika')
 @cache.cached(timeout=3600)
 def policy_page():
     """Страница политики конфиденциальности"""
     logger.info("Policy page access")
     return render_common_template('politika.html')
-
-# ======================================
-# Роут для страницы сравнения телефонов
-# ======================================
 
 @app.route('/compares')
 @cache.cached(timeout=3600)
@@ -744,7 +725,7 @@ def android_check():
     return render_common_template(
         'androidcheck.html',
         service_type=service_type,
-        base_service_type=base_service_type,  # передаем базовый тип для выделения карточки
+        base_service_type=base_service_type,
         services_data=services_data,
         stripe_public_key=STRIPE_PUBLIC_KEY
     )
@@ -1155,7 +1136,7 @@ def upload_carousel_image():
 @app.route('/unlock')
 def unlock_page():
     """Страница разблокировки телефонов"""
-    logger.info(f"Accessing unlock page, templates: {app.jinja_loader.list_templates()}")
+    logger.info("Accessing unlock page")
     try:
         return render_template('unlock.html')
     except Exception as e:
@@ -1303,13 +1284,12 @@ def check_unlock_status():
 app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(admin_bp, url_prefix='/admin')
-app.register_blueprint(test_bp, url_prefix='/test')
 
 # Установка CSRF-куки
 @app.after_request
 def set_csrf_cookie(response):
     if not request.path.startswith(('/static', '/api')):
-        secure = app.config['SESSION_COOKIE_SECURE']
+        secure = False
         response.set_cookie(
             'csrf_token', 
             generate_csrf(),
@@ -1409,13 +1389,7 @@ def health_check():
     
     # Проверка внешнего API
     try:
-        # Используем совместимый SSL контекст
-        ctx = ssl_.create_urllib3_context()
-        ctx.load_default_certs()
-        session = requests.Session()
-        session.mount("https://", requests.adapters.HTTPAdapter(poolmanager=PoolManager(ssl_context=ctx)))
-        
-        response = session.get(API_URL, timeout=5)
+        response = requests.get(API_URL, timeout=5)
         status['services']['external_api'] = 'OK' if response.status_code == 200 else f'HTTP {response.status_code}'
     except Exception as e:
         status['services']['external_api'] = f'ERROR: {str(e)}'
@@ -1449,22 +1423,6 @@ def create_indexes():
         except Exception as e:
             logger.error(f"Error creating indexes: {str(e)}")
 
-# Проверка поддержки TLS
-def check_tls_support():
-    """Проверяет поддержку TLS 1.2+"""
-    try:
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-        ctx.set_ciphers('ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256')
-        
-        with socket.create_connection(('clerk.accounts.dev', 443)) as sock:
-            with ctx.wrap_socket(sock, server_hostname='clerk.accounts.dev') as ssock:
-                logger.info(f"TLS connection successful: {ssock.version()}")
-                return True
-    except Exception as e:
-        logger.error(f"TLS connection failed: {str(e)}")
-        return False
-
 if __name__ == '__main__':
     # Инициализация цен
     if db:
@@ -1474,39 +1432,8 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting application on port {port}")
     
-    # Проверка поддержки TLS
-    if not check_tls_support():
-        logger.warning("TLS 1.2+ is not supported, connection issues may occur")
-    
-    # Создаем SSL контекст с современными настройками
-    ssl_context = None
-    certfile = os.getenv('SSL_CERT_FILE')
-    keyfile = os.getenv('SSL_KEY_FILE')
-    
-    if certfile and keyfile and os.path.exists(certfile) and os.path.exists(keyfile):
-        try:
-            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-            ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
-            ssl_context.set_ciphers('ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256')
-            ssl_context.options |= ssl.OP_NO_SSLv2
-            ssl_context.options |= ssl.OP_NO_SSLv3
-            ssl_context.options |= ssl.OP_NO_TLSv1
-            ssl_context.options |= ssl.OP_NO_TLSv1_1
-            ssl_context.options |= ssl.OP_NO_COMPRESSION
-            ssl_context.load_cert_chain(certfile, keyfile)
-            logger.info("Using custom SSL certificate")
-        except Exception as e:
-            logger.error(f"Error creating SSL context: {str(e)}")
-            ssl_context = None
-    
-    # Если в production нет сертификатов, используем adhoc
-    if not ssl_context and os.getenv('FLASK_ENV') == 'production':
-        ssl_context = 'adhoc'
-        logger.warning("Using adhoc SSL certificate in production")
-    
     app.run(
         host='0.0.0.0',
         port=port,
-        debug=os.getenv('FLASK_ENV') != 'production',
-        ssl_context=ssl_context
-                )
+        debug=os.getenv('FLASK_ENV') != 'production'
+    )
