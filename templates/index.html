@@ -409,10 +409,12 @@
             last_name: "{{ currentUser.last_name }}",
             balance: {{ currentUser.balance }},
             avatar_color: "{{ currentUser.avatar_color }}",
+            avatar_url: "{{ currentUser.avatar_url }}",
             is_admin: {% if currentUser.is_admin %}true{% else %}false{% endif %},
             is_impersonation: {% if currentUser.is_impersonation %}true{% else %}false{% endif %},
             username: "{{ currentUser.username }}",
             role: "{{ currentUser.role }}",
+            admin_role: "{{ currentUser.admin_role }}",
             admin_username: "{{ currentUser.admin_username }}"
         }{% else %}undefined{% endif %};
     </script>
@@ -625,4 +627,4 @@
         });
     </script>
 </body>
-</html>
+    </html>
