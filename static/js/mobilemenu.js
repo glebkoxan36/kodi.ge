@@ -7,24 +7,6 @@
         document.head.appendChild(fontAwesomeLink);
     }
 
-    // Предзагрузка и кеширование всех иконок
-    const iconUrls = [
-        'static/ico/8f1197c9-19f4-4923-8030-4f7b88c9d697_20250627_012614_0000.png',
-        'static/ico/f9a07c0e-e427-4a1a-aab9-948ba60f1b6a_20250627_012716_0000.png',
-        'static/ico/957afe67-7a27-48cb-9622-6c557b220b71_20250627_012808_0000.png',
-        'static/ico/4e28c4f2-541b-4a1b-8163-c79e6db5481c_20250627_012852_0000.png',
-        'static/ico/275e6a62-c55e-48b9-8781-5b323ebcdce0_20250627_012946_0000.png',
-        'static/ico/84df4824-0564-447c-b5c4-e749442bdc19_20250627_013110_0000.png',
-        'static/ico/874fae5b-c0f5-42d8-9c37-679aa86360e6_20250627_013030_0000.png'
-    ];
-
-    const iconCache = {};
-    iconUrls.forEach(url => {
-        const img = new Image();
-        img.src = url;
-        iconCache[url] = img;
-    });
-
     // Глобальная функция для генерации аватара
     window.generateAvatarFallback = function(firstName, lastName, color) {
         if (!firstName || !lastName) {
@@ -34,7 +16,13 @@
         const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`;
         return `
             <div class="kodi-avatar-placeholder" 
-                style="background-color: ${color || '#1a2138'}">
+                style="background: ${color || '#1a2138'};
+                       display: flex;
+                       align-items: center;
+                       justify-content: center;
+                       color: white;
+                       font-weight: bold;
+                       font-size: 1.2rem;">
                 ${initials}
             </div>
         `;
@@ -50,7 +38,22 @@
         return cachedElements[id];
     }
 
-    // Оптимизированные стили
+    // Кэш аватаров
+    const avatarCache = new Map();
+    
+    // Предварительная загрузка аватаров
+    function preloadAvatars() {
+        if (!window.currentUser || !window.currentUser.avatar_url) return;
+        
+        const avatarUrl = window.currentUser.avatar_url;
+        if (avatarCache.has(avatarUrl)) return;
+        
+        const img = new Image();
+        img.src = avatarUrl;
+        avatarCache.set(avatarUrl, img);
+    }
+    
+    // Стили меню (добавлен важный background-color)
     const style = document.createElement('style');
     style.id = 'kodi-mobile-menu-styles';
     style.textContent = `
@@ -214,6 +217,7 @@
             height: 100%;
             object-fit: cover;
             border-radius: 50%;
+            transition: opacity 0.3s ease;
         }
         
         .kodi-avatar-placeholder {
@@ -554,28 +558,41 @@
             else if (userData.first_name && userData.last_name) {
                 const avatarUrl = userData.avatar_url || '';
                 const formattedBalance = (userData.balance || 0).toFixed(2);
+                const avatarColor = userData.avatar_color || '#1a2138';
                 
                 let avatarHTML;
                 if (avatarUrl) {
-                    const timestamp = new Date().getTime();
+                    // Используем кэшированное изображение, если оно есть
+                    const cachedAvatar = avatarCache.get(avatarUrl);
+                    const src = cachedAvatar ? cachedAvatar.src : `${avatarUrl}?t=${new Date().getTime()}`;
+                    
                     avatarHTML = `
-                        <img src="${avatarUrl}?t=${timestamp}" 
+                        <div class="kodi-avatar-background" style="background: ${avatarColor}">
+                            ${window.generateAvatarFallback(
+                                userData.first_name, 
+                                userData.last_name, 
+                                avatarColor
+                            )}
+                        </div>
+                        <img src="${src}" 
                              alt="User Avatar" 
                              class="kodi-avatar-image"
+                             style="opacity: ${cachedAvatar ? '1' : '0'}"
+                             onload="this.style.opacity='1'"
                              onerror="
-                                 this.onerror=null;
-                                 this.parentElement.innerHTML=window.generateAvatarFallback(
-                                     '${userData.first_name}', 
-                                     '${userData.last_name}', 
-                                     '${userData.avatar_color}'
-                                 )"
-                             >`;
+                                 this.style.display='none';
+                                 this.previousElementSibling.style.display='flex'">
+                    `;
                 } else {
-                    avatarHTML = window.generateAvatarFallback(
-                        userData.first_name, 
-                        userData.last_name, 
-                        userData.avatar_color
-                    );
+                    avatarHTML = `
+                        <div class="kodi-avatar-background" style="background: ${avatarColor}">
+                            ${window.generateAvatarFallback(
+                                userData.first_name, 
+                                userData.last_name, 
+                                avatarColor
+                            )}
+                        </div>
+                    `;
                 }
                 
                 html = `
@@ -631,18 +648,6 @@
                 container.innerHTML = userHTML;
             });
         }
-    }
-
-    // Принудительное обновление аватара
-    function forceAvatarUpdate() {
-        const avatarContainers = document.querySelectorAll('.kodi-floating-avatar');
-        avatarContainers.forEach(container => {
-            const img = container.querySelector('img.kodi-avatar-image');
-            if (img) {
-                const newSrc = `${img.src.split('?')[0]}?t=${new Date().getTime()}`;
-                img.src = newSrc;
-            }
-        });
     }
 
     // Create mobile menu structure
@@ -857,7 +862,7 @@
 
     // Menu functions
     window.kodiOpenMenu = function() {
-        forceAvatarUpdate();
+        preloadAvatars(); // Предзагрузка аватаров
         updateUserInMenus();
         const modal = getElement('kodiMainMenu');
         if (modal) {
@@ -882,7 +887,7 @@
     }
 
     window.kodiOpenAppleMenu = function() {
-        forceAvatarUpdate();
+        preloadAvatars(); // Предзагрузка аватаров
         kodiCloseMenu();
         setTimeout(() => {
             const appleModal = getElement('kodiAppleMenu');
@@ -906,7 +911,7 @@
     }
 
     window.kodiOpenAndroidMenu = function() {
-        forceAvatarUpdate();
+        preloadAvatars(); // Предзагрузка аватаров
         kodiCloseMenu();
         setTimeout(() => {
             const androidModal = getElement('kodiAndroidMenu');
@@ -938,6 +943,9 @@
 
     // Initialize menu
     document.addEventListener('DOMContentLoaded', () => {
+        // Предзагрузка аватаров при загрузке страницы
+        setTimeout(preloadAvatars, 1000);
+        
         createMobileMenuStructure();
         
         // Menu button setup
