@@ -1,4 +1,21 @@
 (function() {
+    // Добавляем стиль для скрытия кнопки при загрузке
+    const initialStyle = document.createElement('style');
+    initialStyle.textContent = `
+        #kodiMenuBottom {
+            display: none !important;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .kodi-floating-avatar {
+            opacity: 0;
+            transform: scale(0.8) translateX(-20px);
+            transition: all 0.5s ease;
+        }
+    `;
+    document.head.appendChild(initialStyle);
+
     // Проверка и добавление FontAwesome
     if (!document.querySelector('link[href*="font-awesome"]')) {
         const fontAwesomeLink = document.createElement('link');
@@ -75,6 +92,7 @@
             padding-bottom: env(safe-area-inset-bottom, 5px);
             transform: translateY(0);
             transition: transform 0.4s ease;
+            opacity: 1 !important;
         }
         
         .kodi-menu-bottom.hidden {
@@ -211,6 +229,8 @@
             overflow: hidden;
             margin: 0 auto;
             background: transparent !important;
+            opacity: 1 !important;
+            transform: scale(1) translateX(0) !important;
         }
         
         .kodi-avatar-background {
@@ -673,6 +693,20 @@
         const isDashboard = window.location.pathname.includes('dashboard');
         const userHTML = isDashboard ? '' : generateUserHTML();
 
+        // Создаем кнопку меню
+        let menuBottom = getElement('kodiMenuBottom');
+        if (!menuBottom) {
+            menuBottom = document.createElement('div');
+            menuBottom.id = 'kodiMenuBottom';
+            menuBottom.className = 'kodi-menu-bottom';
+            menuBottom.innerHTML = `
+                <button class="kodi-menu-btn" id="kodiMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            `;
+            document.body.appendChild(menuBottom);
+        }
+
         if (isDashboard) {
             createDashboardMenu(container, userHTML);
         } else {
@@ -955,7 +989,7 @@
     // Initialize menu
     document.addEventListener('DOMContentLoaded', () => {
         // Предзагрузка аватаров при загрузке страницы
-        setTimeout(preloadAvatars, 1000);
+        preloadAvatars();
         
         createMobileMenuStructure();
         
@@ -994,7 +1028,7 @@
         // Scroll behavior for menu button
         let lastScrollTop = 0;
         let isScrolling;
-        const menuBottom = document.querySelector('.kodi-menu-bottom');
+        const menuBottom = document.getElementById('kodiMenuBottom');
         
         if (menuBottom) {
             window.addEventListener('scroll', function() {
@@ -1018,5 +1052,26 @@
                 }, 300);
             }, false);
         }
+    });
+
+    // Показываем элементы после полной загрузки
+    window.addEventListener('load', function() {
+        // Показываем кнопку меню
+        const menuBottom = document.getElementById('kodiMenuBottom');
+        if (menuBottom) {
+            menuBottom.style.display = 'block';
+            setTimeout(() => {
+                menuBottom.style.opacity = '1';
+            }, 100);
+        }
+        
+        // Запускаем анимацию аватара
+        const avatars = document.querySelectorAll('.kodi-floating-avatar');
+        avatars.forEach(avatar => {
+            setTimeout(() => {
+                avatar.style.opacity = '1';
+                avatar.style.transform = 'scale(1) translateX(0)';
+            }, 300);
+        });
     });
 })();
