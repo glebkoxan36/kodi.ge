@@ -23,6 +23,7 @@ from flask_pymongo import PyMongo
 from celery import Celery
 import celery.states as states
 import jwt
+import requests
 
 # Импорт модулей
 from auth import auth_bp
@@ -32,7 +33,15 @@ from db import client, db, regular_users_collection, checks_collection, payments
 from stripepay import StripePayment
 from admin_routes import admin_bp
 from price import get_current_prices, get_service_price, init_prices
-from utilities import validate_imei, generate_avatar_color, get_apple_services_data, get_android_services_data
+from utilities import (
+    validate_imei, 
+    generate_avatar_color, 
+    get_apple_services_data, 
+    get_android_services_data,
+    get_unlock_services,
+    place_unlock_order as utils_place_unlock_order,
+    check_unlock_status as utils_check_unlock_status
+)
 
 # Настройка корневого логгера
 root_logger = logging.getLogger()
@@ -1109,7 +1118,6 @@ def unlock_services():
     """API для получения списка сервисов разблокировки"""
     logger.info("Request to /unlock/services")
     try:
-        from utilities import get_unlock_services
         services_data = get_unlock_services()
         logger.info(f"Services data received: {services_data}")
 
@@ -1169,7 +1177,6 @@ def unlock_services():
 def place_unlock_order():
     """Отправка заказа на разблокировку"""
     try:
-        from utilities import place_unlock_order
         data = request.get_json()
         imei = data.get('imei', '').strip()
         service_id = data.get('service_id', '')
@@ -1187,7 +1194,7 @@ def place_unlock_order():
                 'message': 'Invalid service ID'
             }), 400
         
-        result = place_unlock_order(imei, service_id)
+        result = utils_place_unlock_order(imei, service_id)
         
         if result.get('STATUS') == 'error':
             return jsonify({
@@ -1211,7 +1218,6 @@ def place_unlock_order():
 def check_unlock_status():
     """Проверка статуса заказа"""
     try:
-        from utilities import check_unlock_status
         data = request.get_json()
         refid = data.get('refid', '')
         
@@ -1221,7 +1227,7 @@ def check_unlock_status():
                 'message': 'Reference ID is required'
             }), 400
         
-        result = check_unlock_status(refid)
+        result = utils_check_unlock_status(refid)
         
         if result.get('STATUS') == 'error':
             return jsonify({
