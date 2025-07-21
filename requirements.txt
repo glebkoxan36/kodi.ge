@@ -15,7 +15,6 @@ pylint-flask
 pylint-plugin-utils
 celery==5.3.1
 redis==4.5.5
-clerk-backend-api
-pyOpenSSL
 urllib3
 PyJWT
+Pillow
