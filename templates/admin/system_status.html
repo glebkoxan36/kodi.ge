@@ -1,0 +1,92 @@
+{% extends "admin/admin_base.html" %}
+
+{% block content %}
+<!-- System Status Section -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="mb-0">System Status</h3>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-value">{{ system_stats.total_checks }}</div>
+                    <div class="stat-label">Total Checks</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-value">{{ system_stats.active_webhooks }}</div>
+                    <div class="stat-label">Active Webhooks</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-value">{{ system_stats.valid_api_keys }}</div>
+                    <div class="stat-label">Valid API Keys</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-value">{{ (system_stats.db_size / 1024 / 1024)|round(2) }} MB</div>
+                    <div class="stat-label">Database Size</div>
+                </div>
+            </div>
+        </div>
+
+        <h4 class="mb-3">Service Status</h4>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for service, status in health_data.services.items() %}
+                    <tr>
+                        <td>{{ service|upper }}</td>
+                        <td>
+                            <span class="badge {% if 'OK' in status %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <h4 class="mt-4 mb-3">Recent Audit Events</h4>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in audit_events %}
+                    <tr>
+                        <td>{{ event.timestamp }}</td>
+                        <td>{{ event.username }}</td>
+                        <td>{{ event.action }}</td>
+                        <td>
+                            <small>{{ event.details|tojson }}</small>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center">No audit events</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
