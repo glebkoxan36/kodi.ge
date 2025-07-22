@@ -28,6 +28,7 @@ def init_logger():
     logger.addHandler(handler)
 
 init_logger()
+os.makedirs('logs', exist_ok=True)
 
 auth_bp = Blueprint('auth', __name__)
 
