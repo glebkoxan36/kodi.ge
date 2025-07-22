@@ -10,9 +10,11 @@ from bson.errors import InvalidId
 from datetime import datetime
 import requests
 from urllib.parse import urlencode
+import time
 
 # Используем импортированную коллекцию из db.py
 from db import regular_users_collection, admin_users_collection
+from utilities import generate_verification_code, send_verification_email, store_verification_data, verify_code
 
 # Настройка логгера
 logger = logging.getLogger(__name__)
@@ -33,6 +35,9 @@ auth_bp = Blueprint('auth', __name__)
 FACEBOOK_APP_ID = os.getenv('FACEBOOK_APP_ID')
 FACEBOOK_APP_SECRET = os.getenv('FACEBOOK_APP_SECRET')
 FACEBOOK_REDIRECT_URI = os.getenv('FACEBOOK_REDIRECT_URI')
+
+# Глобальное хранилище для кодов верификации
+verification_storage = {}
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -118,41 +123,113 @@ def register():
             logger.warning(f"Invalid birth date format: {birth_date_str}")
             return jsonify(success=False, errors=['დაბადების თარიღის არასწორი ფორმატი'])
         
-        # Создание пользователя
-        hashed_password = generate_password_hash(password)
+        # Генерация кода верификации
+        verification_code = generate_verification_code()
         
-        user = {
+        # Сохраняем данные для верификации
+        store_verification_data(
+            email, 
+            verification_code, 
+            verification_storage
+        )
+        
+        # Отправляем email с кодом
+        if not send_verification_email(email, verification_code):
+            return jsonify(success=False, errors=['ვერიფიკაციის კოდის გაგზავნა ვერ მოხერხდა'])
+        
+        # Сохраняем данные пользователя в сессии
+        session['pending_user'] = {
             'first_name': first_name,
             'last_name': last_name,
-            'birth_date': birth_date,
+            'birth_date': birth_date_str,
             'phone': phone,
             'email': email,
             'username': username,
-            'password': hashed_password,
-            'balance': 0.0,
-            'role': 'user',
-            'created_at': datetime.utcnow(),
-            'updated_at': datetime.utcnow()
+            'password': password,
+            'verification_email': email
         }
         
-        # Сохранение в базу данных
-        try:
-            user_id = regular_users_collection.insert_one(user).inserted_id
-            logger.info(f"User registered successfully: {email}")
-        except Exception as e:
-            logger.error(f"Error saving user: {str(e)}")
-            return jsonify(success=False, errors=['სისტემური შეცდომა, გთხოვთ სცადოთ მოგვიანებით'])
-        
-        # Автоматический вход после регистрации
-        session['user_id'] = str(user_id)
-        session['role'] = 'user'
-        # Делаем сессию постоянной
-        session.permanent = True
-        session.modified = True
-        
-        return jsonify(success=True)
+        return jsonify(
+            success=False, 
+            verify_required=True,
+            message='ვერიფიკაციის კოდი გამოგზავნილია თქვენს ელ. ფოსტაზე'
+        )
     
     return render_template('register.html')
+
+@auth_bp.route('/verify-email', methods=['POST'])
+def verify_email():
+    data = request.json
+    code = data.get('code')
+    email = session.get('pending_user', {}).get('verification_email')
+    
+    if not email:
+        return jsonify(success=False, message='სესიის ვადა გაუვიდა')
+    
+    is_valid, message = verify_code(email, code, verification_storage)
+    
+    if is_valid:
+        # Получаем данные из сессии
+        user_data = session['pending_user']
+        
+        # Создаем пользователя
+        try:
+            birth_date = datetime.strptime(user_data['birth_date'], '%Y-%m-%d')
+            hashed_password = generate_password_hash(user_data['password'])
+            
+            user = {
+                'first_name': user_data['first_name'],
+                'last_name': user_data['last_name'],
+                'birth_date': birth_date,
+                'phone': user_data['phone'],
+                'email': user_data['email'],
+                'username': user_data['username'],
+                'password': hashed_password,
+                'balance': 0.0,
+                'role': 'user',
+                'created_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow(),
+                'email_verified': True
+            }
+            
+            user_id = regular_users_collection.insert_one(user).inserted_id
+            logger.info(f"User registered with verification: {user_data['email']}")
+            
+            # Очищаем сессию
+            session.pop('pending_user', None)
+            
+            # Авторизуем пользователя
+            session['user_id'] = str(user_id)
+            session['role'] = 'user'
+            session.permanent = True
+            session.modified = True
+            
+            return jsonify(success=True)
+        except Exception as e:
+            logger.error(f"Error completing registration: {str(e)}")
+            return jsonify(success=False, message='რეგისტრაციის დროს მოხდა შეცდომა')
+    
+    return jsonify(success=False, message=message)
+
+@auth_bp.route('/resend-verification', methods=['POST'])
+def resend_verification():
+    pending_user = session.get('pending_user')
+    if not pending_user:
+        return jsonify(success=False, message='სესიის ვადა გაუვიდა')
+    
+    email = pending_user['email']
+    
+    # Генерируем новый код
+    new_code = generate_verification_code()
+    
+    # Обновляем хранилище
+    store_verification_data(email, new_code, verification_storage)
+    
+    # Отправляем email
+    if send_verification_email(email, new_code):
+        return jsonify(success=True, message='ახალი კოდი გამოგზავნილია')
+    
+    return jsonify(success=False, message='კოდის გაგზავნა ვერ მოხერხდა')
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -320,7 +397,8 @@ def facebook_callback():
                 'balance': 0.0,
                 'role': 'user',
                 'created_at': datetime.utcnow(),
-                'updated_at': datetime.utcnow()
+                'updated_at': datetime.utcnow(),
+                'email_verified': True
             }
             user_id = regular_users_collection.insert_one(new_user).inserted_id
             user = regular_users_collection.find_one({'_id': user_id})
