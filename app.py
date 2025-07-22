@@ -50,6 +50,7 @@ root_logger.setLevel(logging.DEBUG)
 
 # Создаем директорию для логов если ее не существует
 log_dir = '/kodige/mexsiereb'
+try:
     os.makedirs(log_dir, exist_ok=True)
     root_logger.info(f"Log directory created: {log_dir}")
 except Exception as e:
