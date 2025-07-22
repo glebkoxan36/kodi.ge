@@ -212,7 +212,7 @@ def send_verification_email(email, verification_code):
     </html>
     """
     
-    sender = {"name": "IMEI Checker", "email": "noreply@imeicheck.ge"}
+    sender = {"name": "Kodi", "email": "daxmareba@kodi.ge"}
     to = [{"email": email}]
     
     send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
