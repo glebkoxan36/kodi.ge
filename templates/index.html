@@ -81,6 +81,21 @@
         .social-icon {
             border-radius: 50% !important;
         }
+        
+        /* Scanner styles */
+        #scanner-video {
+            border-radius: 10px;
+            border: 2px solid var(--accent-color);
+            background: #000;
+        }
+        
+        #capture-btn {
+            width: 100%;
+        }
+        
+        #scanner-btn {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -225,11 +240,22 @@
                 <div class="form-group mt-4">
                     <label class="form-label">შეიყვანეთ IMEI ან სერიული ნომერი:</label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
+                        <!-- Заменена иконка телефона на кнопку сканера -->
+                        <button class="input-group-text" id="scanner-btn">
+                            <i class="fas fa-camera"></i>
+                        </button>
                         <input type="text" class="form-control" id="free-imei-input" 
                                placeholder="15-ნიშნა IMEI ან სერიული ნომერი">
                     </div>
                     <div class="error-message" id="free-imei-error"></div>
+                    
+                    <!-- Скрытые элементы для сканера -->
+                    <input type="file" id="image-input" accept="image/*" capture="environment" style="display: none;">
+                    <video id="scanner-video" autoplay playsinline style="display: none; width: 100%;"></video>
+                    <canvas id="scanner-canvas" style="display: none;"></canvas>
+                    <button id="capture-btn" class="btn btn-primary mt-2" style="display: none;">
+                        <i class="fas fa-camera me-2"></i>გადაღება
+                    </button>
                 </div>
                 
                 <button class="btn-primary mt-3 w-100" id="free-check-btn">
@@ -607,6 +633,109 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            const scannerBtn = document.getElementById('scanner-btn');
+            const imageInput = document.getElementById('image-input');
+            const videoElement = document.getElementById('scanner-video');
+            const canvasElement = document.getElementById('scanner-canvas');
+            const captureBtn = document.getElementById('capture-btn');
+            const imeiInput = document.getElementById('free-imei-input');
+            const spinner = document.getElementById('free-check-spinner');
+            
+            // Обработчик для выбора файла
+            scannerBtn.addEventListener('click', () => {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    initCameraScanner();
+                } else {
+                    imageInput.click();
+                }
+            });
+            
+            // Обработчик загрузки файла
+            imageInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    processImageFile(e.target.files[0]);
+                }
+            });
+            
+            // Обработчик кнопки захвата с камеры
+            captureBtn.addEventListener('click', captureImage);
+            
+            // Определение мобильного устройства
+            window.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+                .test(navigator.userAgent);
+            
+            async function initCameraScanner() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: 'environment' } 
+                    });
+                    
+                    videoElement.srcObject = stream;
+                    videoElement.style.display = 'block';
+                    captureBtn.style.display = 'block';
+                    scannerBtn.style.display = 'none';
+                    
+                    videoElement.addEventListener('loadedmetadata', () => {
+                        canvasElement.width = videoElement.videoWidth;
+                        canvasElement.height = videoElement.videoHeight;
+                    });
+                } catch (err) {
+                    console.error('Camera error:', err);
+                    alert('Camera access denied. Please upload an image instead.');
+                    imageInput.click();
+                }
+            }
+            
+            function captureImage() {
+                const context = canvasElement.getContext('2d');
+                context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+                
+                canvasElement.toBlob((blob) => {
+                    processImageFile(blob);
+                    
+                    // Остановка камеры
+                    videoElement.srcObject.getTracks().forEach(track => track.stop());
+                    videoElement.style.display = 'none';
+                    captureBtn.style.display = 'none';
+                    scannerBtn.style.display = 'block';
+                }, 'image/jpeg', 0.9);
+            }
+            
+            async function processImageFile(file) {
+                spinner.style.display = 'flex';
+                
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                try {
+                    const response = await fetch('/scan_imei', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': getCSRFToken()
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.imei) {
+                        imeiInput.value = data.imei;
+                        // Автоматически запускаем проверку
+                        setTimeout(performFreeCheck, 500);
+                    } else {
+                        document.getElementById('free-imei-error').textContent = 
+                            data.error || 'Could not find IMEI in image';
+                        document.getElementById('free-imei-error').style.display = 'block';
+                    }
+                } catch (error) {
+                    document.getElementById('free-imei-error').textContent = 
+                        'Scanning failed: ' + error.message;
+                    document.getElementById('free-imei-error').style.display = 'block';
+                } finally {
+                    spinner.style.display = 'none';
+                }
+            }
+            
             document.getElementById('free-check-btn').addEventListener('click', performFreeCheck);
             document.getElementById('free-close-modal').addEventListener('click', closeFreeModal);
             document.getElementById('free-modal-backdrop').addEventListener('click', closeFreeModal);
@@ -627,4 +756,4 @@
         });
     </script>
 </body>
-    </html>
+</html>
