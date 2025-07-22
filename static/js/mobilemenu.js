@@ -1,20 +1,4 @@
 (function() {
-    // Добавляем стиль для скрытия кнопки при загрузке
-    const initialStyle = document.createElement('style');
-    initialStyle.textContent = `
-        #kodiMenuBottom {
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-        
-        .kodi-floating-avatar {
-            opacity: 0;
-            transform: scale(0.8) translateX(-20px);
-            transition: all 0.5s ease;
-        }
-    `;
-    document.head.appendChild(initialStyle);
-
     // Проверка и добавление FontAwesome
     if (!document.querySelector('link[href*="font-awesome"]')) {
         const fontAwesomeLink = document.createElement('link');
@@ -90,9 +74,8 @@
             z-index: 1050;
             padding-bottom: env(safe-area-inset-bottom, 5px);
             transform: translateY(0);
-            transition: transform 0.4s ease, opacity 0.5s ease;
+            transition: transform 0.4s ease;
             display: block;
-            opacity: 1;
         }
         
         .kodi-menu-bottom.hidden {
@@ -229,8 +212,6 @@
             overflow: hidden;
             margin: 0 auto;
             background: transparent !important;
-            opacity: 1 !important;
-            transform: scale(1) translateX(0) !important;
         }
         
         .kodi-avatar-background {
@@ -1052,26 +1033,5 @@
                 }, 300);
             }, false);
         }
-    });
-
-    // Показываем элементы после полной загрузки
-    window.addEventListener('load', function() {
-        // Показываем кнопку меню
-        const menuBottom = document.getElementById('kodiMenuBottom');
-        if (menuBottom) {
-            // Убираем начальную прозрачность
-            setTimeout(() => {
-                menuBottom.style.opacity = '1';
-            }, 100);
-        }
-        
-        // Запускаем анимацию аватара
-        const avatars = document.querySelectorAll('.kodi-floating-avatar');
-        avatars.forEach(avatar => {
-            setTimeout(() => {
-                avatar.style.opacity = '1';
-                avatar.style.transform = 'scale(1) translateX(0)';
-            }, 300);
-        });
     });
 })();
