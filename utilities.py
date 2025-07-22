@@ -6,14 +6,18 @@ import requests
 import hmac
 import json
 import logging
+import numpy as np
 from functools import lru_cache
 from datetime import datetime
+from PIL import Image, ImageEnhance
+import easyocr
 from unlockimei24 import init_unlock_service  # Исправленный импорт
 from price import get_current_prices
 import cloudinary
 import cloudinary.uploader
 from cloudinary.utils import cloudinary_url
 import os
+import io
 
 # Настройка логгера для модуля
 logger = logging.getLogger(__name__)
@@ -172,3 +176,63 @@ def send_webhook_event(event_type, payload, webhooks_collection):
             return True
         except Exception:
             return False
+
+# ======================================
+# 6. Функции для сканирования IMEI
+# ======================================
+def preprocess_image(image_bytes):
+    """Улучшает качество изображения для распознавания текста"""
+    try:
+        image = Image.open(io.BytesIO(image_bytes))
+        
+        # Увеличение контраста
+        enhancer = ImageEnhance.Contrast(image)
+        image = enhancer.enhance(2.0)
+        
+        # Увеличение резкости
+        enhancer = ImageEnhance.Sharpness(image)
+        image = enhancer.enhance(2.0)
+        
+        # Преобразование в оттенки серого
+        image = image.convert('L')
+        
+        # Преобразование в массив numpy для EasyOCR
+        return np.array(image)
+    except Exception as e:
+        logger.error(f"Image preprocessing error: {str(e)}")
+        return None
+
+def extract_imei_from_image(image_bytes):
+    """Извлекает IMEI из изображения с помощью OCR"""
+    try:
+        # Инициализация EasyOCR (делаем один раз)
+        if not hasattr(extract_imei_from_image, 'reader'):
+            extract_imei_from_image.reader = easyocr.Reader(['en'])
+        
+        # Предобработка изображения
+        processed_image = preprocess_image(image_bytes)
+        if processed_image is None:
+            return None
+        
+        # Распознавание текста
+        results = extract_imei_from_image.reader.readtext(
+            processed_image,
+            detail=0,
+            paragraph=False,
+            allowlist='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        )
+        
+        # Поиск IMEI в распознанных строках
+        for text in results:
+            # Удаление невалидных символов
+            cleaned = re.sub(r'[^0-9A-Z]', '', text.upper())
+            
+            # Проверка на IMEI (14-17 цифр)
+            imei_match = re.search(r'(?<!\d)(\d{14,17})(?!\d)', cleaned)
+            if imei_match:
+                return imei_match.group(1)
+        
+        return None
+    except Exception as e:
+        logger.error(f"IMEI extraction error: {str(e)}")
+        return None
