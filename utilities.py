@@ -6,11 +6,9 @@ import requests
 import hmac
 import json
 import logging
-import numpy as np
 from functools import lru_cache
 from datetime import datetime
 from PIL import Image, ImageEnhance
-import easyocr
 from unlockimei24 import init_unlock_service  # Исправленный импорт
 from price import get_current_prices
 import cloudinary
