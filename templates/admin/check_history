@@ -1,0 +1,95 @@
+{% extends "admin/admin_base.html" %}
+
+{% block content %}
+<!-- ========================================== -->
+<!-- Check History Section -->
+<!-- ========================================== -->
+<div class="card">
+    <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <h5 class="mb-2 mb-md-0">Check History</h5>
+        <div>
+            <span class="badge paid-badge me-1">Paid: ${{ "%.2f"|format(current_prices.paid) }}</span>
+            <span class="badge bg-primary">Premium: ${{ "%.2f"|format(current_prices.premium) }}</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <form class="row g-2 mb-3" method="get">
+            <div class="col-md-8">
+                <input type="text" class="form-control" name="imei" 
+                       placeholder="Search by IMEI..." value="{{ imei_query }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Search</button>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('admin.check_history') }}" class="btn btn-outline-secondary w-100">Reset</a>
+            </div>
+        </form>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>IMEI</th>
+                        <th>Service</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for check in checks %}
+                    <tr>
+                        <td>{{ check.timestamp }}</td>
+                        <td>{{ check.imei }}</td>
+                        <td>
+                            <span class="badge {% if check.service_type == 'premium' %}bg-primary{% else %}bg-info{% endif %}">
+                                {{ check.service_type|capitalize }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if check.paid %}
+                                <span class="text-success fw-bold">{{ check.amount }}</span>
+                            {% else %}
+                                <span class="text-muted">Free</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if check.paid %}
+                                <span class="badge bg-success">{{ check.payment_status|capitalize }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">N/A</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center">No records found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <nav>
+            <ul class="pagination justify-content-center flex-wrap">
+                {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page-1 }}&imei={{ imei_query }}">Previous</a>
+                    </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">{{ page }}</span>
+                </li>
+                
+                {% if checks|length == per_page %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page+1 }}&imei={{ imei_query }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endblock %}
