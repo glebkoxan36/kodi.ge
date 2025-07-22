@@ -238,6 +238,77 @@
             cursor: pointer;
             text-decoration: underline;
         }
+
+        /* Verification Modal Styles */
+        .verification-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .verification-modal.show {
+            display: flex;
+        }
+        
+        .verification-content {
+            background: rgba(18, 26, 43, 0.95);
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .verification-content h3 {
+            color: #00e5ff;
+            margin-bottom: 20px;
+        }
+        
+        .verification-content p {
+            margin-bottom: 20px;
+            color: #ffffff;
+            font-size: 16px;
+        }
+        
+        .verification-input {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            border: 1px solid #2c3e50;
+            background: #0d1424;
+            color: #ffffff;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 5px;
+        }
+        
+        .verification-error {
+            color: #ff4d4d;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .resend-link {
+            color: #00e5ff;
+            cursor: pointer;
+            margin-top: 15px;
+            display: block;
+        }
+        
+        .resend-timer {
+            display: none;
+            color: #6c757d;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -425,6 +496,25 @@
             
             <div class="text-center">
                 <button class="btn-primary" id="acceptPolicyBtn">მე ვეთანხმები</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verification Modal -->
+    <div class="verification-modal" id="verificationModal">
+        <div class="verification-content">
+            <button class="close-modal" onclick="closeVerificationModal()">&times;</button>
+            <h3>ელ. ფოსტის დადასტურება</h3>
+            <p>ჩვენ გამოგიგზავნეთ 6-ნიშნა კოდი თქვენს ელ. ფოსტაზე. გთხოვთ შეიყვანოთ იგი ქვემოთ მოცემულ ველში:</p>
+            
+            <input type="text" id="verificationCode" class="verification-input" maxlength="6" placeholder="000000">
+            <div id="verification_error" class="verification-error"></div>
+            
+            <button class="btn-primary" onclick="verifyEmail()" style="width:100%;">დადასტურება</button>
+            
+            <a class="resend-link" onclick="resendVerification()">კოდის ხელახლა გაგზავნა</a>
+            <div id="resendTimer" class="resend-timer">
+                ხელახლა გაგზავნა შესაძლებელი იქნება: <span id="countdown">120</span> წამში
             </div>
         </div>
     </div>
@@ -745,7 +835,7 @@
                     formData.set('birth_date', formattedDate);
                 }
                 
-                const response = await fetch('/register', {
+                const response = await fetch('/auth/register', {
                     method: 'POST',
                     body: formData,
                     credentials: 'include'
@@ -753,7 +843,11 @@
                 
                 const data = await response.json();
                 
-                if (data.success) {
+                if (data.verify_required) {
+                    // Show verification modal
+                    document.getElementById('verificationModal').classList.add('show');
+                    startResendTimer();
+                } else if (data.success) {
                     registerBtn.innerHTML = '<i class="fas fa-check"></i> წარმატებული რეგისტრაცია';
                     registerBtn.style.background = 'var(--success-color)';
                     
@@ -776,6 +870,92 @@
                 showError('general_error', 'სერვერული შეცდომა. გთხოვთ სცადოთ მოგვიანებით');
             }
         });
+        
+        function closeVerificationModal() {
+            document.getElementById('verificationModal').classList.remove('show');
+        }
+        
+        async function verifyEmail() {
+            const code = document.getElementById('verificationCode').value;
+            const errorElement = document.getElementById('verification_error');
+            
+            if (!code || code.length !== 6) {
+                errorElement.textContent = 'გთხოვთ შეიყვანოთ 6-ნიშნა კოდი';
+                errorElement.style.display = 'block';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/auth/verify-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ code: code }),
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('ვერიფიკაცია წარმატებით დასრულდა!');
+                    window.location.href = '/user/dashboard';
+                } else {
+                    errorElement.textContent = data.message;
+                    errorElement.style.display = 'block';
+                }
+            } catch (error) {
+                errorElement.textContent = 'სერვერული შეცდომა';
+                errorElement.style.display = 'block';
+            }
+        }
+        
+        async function resendVerification() {
+            const resendTimer = document.getElementById('resendTimer');
+            const countdownElement = document.getElementById('countdown');
+            
+            // Disable resend button during cooldown
+            if (resendTimer.style.display === 'block') {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/auth/resend-verification', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('ახალი კოდი გამოგზავნილია თქვენს ელ. ფოსტაზე');
+                    startResendTimer();
+                } else {
+                    alert(data.message || 'კოდის გაგზავნა ვერ მოხერხდა');
+                }
+            } catch (error) {
+                alert('სერვერული შეცდომა');
+            }
+        }
+        
+        function startResendTimer() {
+            const resendTimer = document.getElementById('resendTimer');
+            const countdownElement = document.getElementById('countdown');
+            let seconds = 120;
+            
+            resendTimer.style.display = 'block';
+            countdownElement.textContent = seconds;
+            
+            const timer = setInterval(() => {
+                seconds--;
+                countdownElement.textContent = seconds;
+                
+                if (seconds <= 0) {
+                    clearInterval(timer);
+                    resendTimer.style.display = 'none';
+                }
+            }, 1000);
+        }
         
         document.getElementById('clerk-btn').addEventListener('click', () => {
             window.location.href = "https://kodi.ge.clerk.accounts.dev/sign-up";
@@ -829,7 +1009,10 @@
             if (e.target === document.getElementById('policyModal')) {
                 document.getElementById('policyModal').classList.remove('show');
             }
+            if (e.target === document.getElementById('verificationModal')) {
+                closeVerificationModal();
+            }
         });
     </script>
 </body>
-        </html>
+                                                                           </html>
