@@ -1,0 +1,66 @@
+{% extends "admin/admin_base.html" %}
+
+{% block content %}
+<!-- ========================================== -->
+<!-- Database Management - Edit Document -->
+<!-- ========================================== -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+    <h2 class="mb-3 mb-md-0">Edit Document</h2>
+    <div>
+        <a href="{{ url_for('admin.collection_view', collection_name=collection_name) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Collection
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        Collection: {{ collection_name }} | ID: {{ doc_id }}
+    </div>
+    
+    <div class="card-body">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST">
+            <!-- CSRF Token -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            {% for key, value in document.items() %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">{{ key }}</label>
+                {% if key == '_id' %}
+                    <input type="text" class="form-control" 
+                           name="field_{{ key }}" value="{{ value }}" readonly>
+                {% elif value is mapping or value is sequence %}
+                    <textarea class="form-control" rows="4" 
+                              name="field_{{ key }}" 
+                              placeholder="Enter JSON data">{{ value|tojson }}</textarea>
+                {% else %}
+                    <input type="text" class="form-control" 
+                           name="field_{{ key }}" value="{{ value }}">
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-save me-1"></i> Save Changes
+                </button>
+                <a href="{{ url_for('admin.collection_view', collection_name=collection_name) }}" 
+                   class="btn btn-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
