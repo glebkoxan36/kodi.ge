@@ -1,0 +1,123 @@
+{% extends "admin/admin_base.html" %}
+
+{% block content %}
+<!-- Webhooks Management -->
+<div class="card">
+    <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <h3 class="mb-0">Webhooks Management</h3>
+        <button type="button" class="btn btn-success mt-2 mt-md-0" data-bs-toggle="modal" data-bs-target="#addWebhookModal">
+            <i class="bi bi-plus-circle me-1"></i> Add Webhook
+        </button>
+    </div>
+    <div class="card-body">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>URL</th>
+                        <th>Events</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Last Delivery</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for webhook in webhooks %}
+                    <tr>
+                        <td class="document-id">{{ webhook.url|truncate(30) }}</td>
+                        <td>
+                            {% for event in webhook.events %}
+                            <span class="badge bg-info me-1">{{ event }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if webhook.active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ webhook.created_at }}</td>
+                        <td>{{ webhook.last_delivery if webhook.last_delivery else 'Never' }}</td>
+                        <td class="actions-cell">
+                            <form method="POST" action="{{ url_for('admin.toggle_webhook', webhook_id=webhook._id) }}" class="d-inline me-1">
+                                <!-- CSRF Token -->
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm {% if webhook.active %}btn-warning{% else %}btn-success{% endif %}">
+                                    {% if webhook.active %}
+                                    <i class="bi bi-pause"></i> Deactivate
+                                    {% else %}
+                                    <i class="bi bi-play"></i> Activate
+                                    {% endif %}
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin.delete_webhook', webhook_id=webhook._id) }}" class="d-inline">
+                                <!-- CSRF Token -->
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-danger" 
+                                        onclick="return confirm('Permanently delete this webhook?')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">No webhooks configured</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Webhook Modal -->
+<div class="modal fade" id="addWebhookModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('admin.manage_webhooks') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Webhook</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- CSRF Token -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Endpoint URL</label>
+                        <input type="url" class="form-control" name="url" required placeholder="https://example.com/webhook">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Events (comma separated)</label>
+                        <input type="text" class="form-control" name="events" 
+                               placeholder="imei_check_completed, payment_success" required>
+                        <div class="form-text">Available events: imei_check_completed, payment_success</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Secret Key (optional)</label>
+                        <input type="text" class="form-control" name="secret" placeholder="Your secret for HMAC verification">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Webhook</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
