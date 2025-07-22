@@ -5,10 +5,59 @@ import hashlib
 import requests
 import hmac
 import json
+import logging
 from functools import lru_cache
 from datetime import datetime
 from unlockimei24 import init_unlock_service  # Исправленный импорт
 from price import get_current_prices
+import cloudinary
+import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
+import os
+
+# Настройка логгера для модуля
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.FileHandler('logs/utilities.log')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+# Настройка Cloudinary
+cloudinary.config( 
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME', 'dqhnkwgvo'),
+    api_key=os.getenv('CLOUDINARY_API_KEY', '886581942952565'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET', '8PKil_iXRy2Ggpi60Ihwm84Fa3A'),
+    secure=True
+)
+
+# ======================================
+# Функции для работы с Cloudinary
+# ======================================
+def upload_avatar_to_cloudinary(image_bytes, public_id):
+    """
+    Загружает изображение в Cloudinary
+    :param image_bytes: BytesIO объект с изображением
+    :param public_id: Публичный ID для изображения
+    :return: URL загруженного изображения
+    """
+    try:
+        upload_result = cloudinary.uploader.upload(
+            image_bytes,
+            public_id=public_id,
+            unique_filename=False,
+            overwrite=True,
+            folder="user_avatars",
+            transformation=[
+                {'width': 200, 'height': 200, 'crop': "fill"},
+                {'quality': "auto:best"},
+                {'fetch_format': "auto"}
+            ]
+        )
+        return upload_result['secure_url']
+    except Exception as e:
+        logger.error(f"Cloudinary upload error: {str(e)}")
+        return None
 
 # ======================================
 # 1. Вспомогательные функции
