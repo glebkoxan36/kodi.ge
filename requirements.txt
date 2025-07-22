@@ -19,3 +19,4 @@ urllib3
 PyJWT
 Pillow
 cloudinary
+sib-api-v3-sdk
