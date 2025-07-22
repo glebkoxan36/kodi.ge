@@ -1,0 +1,75 @@
+{% extends "admin/admin_base.html" %}
+
+{% block content %}
+<!-- ========================================== -->
+<!-- Database Management - Add Document -->
+<!-- ========================================== -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+    <h2 class="mb-3 mb-md-0">Add New Document</h2>
+    <div>
+        <a href="{{ url_for('admin.collection_view', collection_name=collection_name) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Collection
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        Collection: {{ collection_name }}
+    </div>
+    
+    <div class="card-body">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST">
+            <!-- CSRF Token -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div id="fields-container">
+                <div class="field-group">
+                    <div class="row g-2">
+                        <div class="col-md-5 col-5">
+                            <input type="text" class="form-control" 
+                                   placeholder="Field name" name="field_names[]" required>
+                        </div>
+                        <div class="col-md-6 col-6">
+                            <input type="text" class="form-control" 
+                                   placeholder="Value" name="field_values[]" required>
+                        </div>
+                        <div class="col-md-1 col-1">
+                            <button type="button" class="btn btn-danger remove-field w-100">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mt-3">
+                <button type="button" id="add-field" class="btn btn-secondary mb-2 mb-md-0">
+                    <i class="bi bi-plus-circle me-1"></i> Add Field
+                </button>
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-1"></i> Create Document
+                    </button>
+                    <a href="{{ url_for('admin.collection_view', collection_name=collection_name) }}" 
+                       class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
