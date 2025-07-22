@@ -1,5 +1,5 @@
 from flask import render_template, request, flash, redirect, url_for, session, current_app
-from . import admin_bp
+from .bp import admin_bp
 from .auth_decorators import admin_required
 from db import (
     checks_collection, prices_collection, phonebase_collection,
@@ -24,24 +24,30 @@ def admin_dashboard():
         # Выручка
         total_revenue = 0
         if checks_collection:
-            revenue_cursor = checks_collection.aggregate([
-                {"$match": {"paid": True}},
-                {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
-            ])
-            revenue_data = list(revenue_cursor)
-            total_revenue = revenue_data[0]['total'] if revenue_data else 0
+            try:
+                revenue_cursor = checks_collection.aggregate([
+                    {"$match": {"paid": True}},
+                    {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+                ])
+                revenue_data = list(revenue_cursor)
+                total_revenue = revenue_data[0]['total'] if revenue_data else 0
+            except:
+                total_revenue = 0
         
         # Логи парсера
         parser_logs = []
         if parser_logs_collection:
-            parser_logs = list(
-                parser_logs_collection.find()
-                .sort('timestamp', -1)
-                .limit(10)
-            )
-            for log in parser_logs:
-                log['timestamp'] = log['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
-                log['_id'] = str(log['_id'])
+            try:
+                parser_logs = list(
+                    parser_logs_collection.find()
+                    .sort('timestamp', -1)
+                    .limit(10)
+                )
+                for log in parser_logs:
+                    log['timestamp'] = log['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+                    log['_id'] = str(log['_id'])
+            except:
+                parser_logs = []
         
         # Статистика телефонов
         total_phones = phonebase_collection.count_documents({}) if phonebase_collection else 0
