@@ -41,7 +41,7 @@ from utilities import (
     get_unlock_services,
     place_unlock_order as utils_place_unlock_order,
     check_unlock_status as utils_check_unlock_status,
-    extract_imei_from_image  # Добавлен импорт новой функции
+    
 )
 
 # Настройка корневого логгера
@@ -1249,38 +1249,6 @@ def check_unlock_status():
             'message': 'Internal server error'
         }), 500
 
-# ======================================
-# Роут для сканирования IMEI из изображения
-# ======================================
-
-@app.route('/scan_imei', methods=['POST'])
-@csrf.exempt
-def scan_imei():
-    """Обработка изображения для извлечения IMEI"""
-    logger.info("Received image for IMEI scanning")
-    
-    if 'image' not in request.files:
-        logger.warning("No image provided in scan request")
-        return jsonify({'error': 'No image provided'}), 400
-    
-    image_file = request.files['image']
-    if image_file.filename == '':
-        logger.warning("Empty filename in scan request")
-        return jsonify({'error': 'Empty filename'}), 400
-    
-    try:
-        image_bytes = image_file.read()
-        imei = extract_imei_from_image(image_bytes)
-        
-        if imei:
-            logger.info(f"IMEI extracted: {imei}")
-            return jsonify({'imei': imei})
-        else:
-            logger.warning("IMEI not found in image")
-            return jsonify({'error': 'IMEI not found in image'}), 404
-    except Exception as e:
-        logger.exception(f"Error processing image: {str(e)}")
-        return jsonify({'error': str(e)}), 500
 
 # Регистрация блюпринтов
 app.register_blueprint(auth_bp)
