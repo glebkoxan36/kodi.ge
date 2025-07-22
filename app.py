@@ -31,7 +31,7 @@ from user_dashboard import user_bp
 from ifreeapi import perform_api_check
 from db import client, db, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection
 from stripepay import StripePayment
-from admin_routes import admin_bp
+from admin import admin_bp  # Измененный импорт для новой структуры админки
 from price import get_current_prices, get_service_price, init_prices
 from utilities import (
     validate_imei, 
@@ -48,9 +48,20 @@ from utilities import (
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.DEBUG)
 
+# Создаем директорию для логов если ее не существует
+log_dir = '/kodige/mexsiereb'
+try:
+    os.makedirs(log_dir, exist_ok=True)
+    root_logger.info(f"Log directory created: {log_dir}")
+except Exception as e:
+    root_logger.error(f"Failed to create log directory: {str(e)}")
+    # Если не удалось создать, используем текущую директорию
+    log_dir = '.'
+
 # Обработчик для записи в файл
+log_file_path = os.path.join(log_dir, 'app.log')
 file_handler = RotatingFileHandler(
-    'app.log', 
+    log_file_path, 
     maxBytes=1024 * 1024 * 5,  # 5 MB
     backupCount=3
 )
@@ -1253,7 +1264,7 @@ def check_unlock_status():
 # Регистрация блюпринтов
 app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
-app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(admin_bp, url_prefix='/admin')  # Регистрация нового админского Blueprint
 
 # Установка CSRF-куки
 @app.after_request
