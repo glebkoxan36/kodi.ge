@@ -14,6 +14,7 @@ logger.setLevel(logging.INFO)
 def init_logger():
     """Инициализация логгера для модуля"""
     if not os.path.exists('logs'):
+      try: 
         os.makedirs('logs, exist_ok=True')
     handler = logging.FileHandler('logs/db.log')
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
