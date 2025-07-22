@@ -3,7 +3,6 @@
     const initialStyle = document.createElement('style');
     initialStyle.textContent = `
         #kodiMenuBottom {
-            display: none !important;
             opacity: 0;
             transition: opacity 0.5s ease;
         }
@@ -91,8 +90,9 @@
             z-index: 1050;
             padding-bottom: env(safe-area-inset-bottom, 5px);
             transform: translateY(0);
-            transition: transform 0.4s ease;
-            opacity: 1 !important;
+            transition: transform 0.4s ease, opacity 0.5s ease;
+            display: block;
+            opacity: 1;
         }
         
         .kodi-menu-bottom.hidden {
@@ -1059,7 +1059,7 @@
         // Показываем кнопку меню
         const menuBottom = document.getElementById('kodiMenuBottom');
         if (menuBottom) {
-            menuBottom.style.display = 'block';
+            // Убираем начальную прозрачность
             setTimeout(() => {
                 menuBottom.style.opacity = '1';
             }, 100);
