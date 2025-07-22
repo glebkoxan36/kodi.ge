@@ -1,0 +1,33 @@
+{% extends "admin/admin_base.html" %}
+
+{% block content %}
+<!-- ========================================== -->
+<!-- Dashboard Section -->
+<!-- ========================================== -->
+<div class="row g-3">
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_checks }}</div>
+            <div class="stat-label">Total Checks</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="stat-value text-success">{{ paid_checks }}</div>
+            <div class="stat-label">Paid Checks</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="stat-value">{{ free_checks }}</div>
+            <div class="stat-label">Free Checks</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="stat-value revenue">${{ "%.2f"|format(total_revenue) }}</div>
+            <div class="stat-label">Total Revenue</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
