@@ -1,5 +1,5 @@
 from flask import render_template, request, flash, redirect, url_for, session, current_app
-from . import admin_bp
+from .bp import admin_bp
 from .auth_decorators import admin_required
 from bson import ObjectId
 from werkzeug.security import generate_password_hash
