@@ -1,4 +1,4 @@
-from flask import render_template
+from flask import render_template, current_app
 from . import admin_bp
 from .auth_decorators import admin_required
 from db import (
@@ -10,8 +10,9 @@ from db import (
 @admin_required
 def system_status():
     try:
-        with current_app.test_client() as client:
-            response = client.get('/health')
+        # Используем current_app для создания тестового клиента
+        with current_app.test_client() as test_client:
+            response = test_client.get('/health')
             health_data = response.get_json() or {}
         
         stats = {
