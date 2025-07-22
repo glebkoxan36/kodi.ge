@@ -16,6 +16,9 @@ import cloudinary.uploader
 from cloudinary.utils import cloudinary_url
 import os
 import io
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
+import time
 
 # Настройка логгера для модуля
 logger = logging.getLogger(__name__)
@@ -175,3 +178,94 @@ def send_webhook_event(event_type, payload, webhooks_collection):
         except Exception:
             return False
 
+# ======================================
+# 6. Функции для верификации по email
+# ======================================
+
+BREVO_API_KEY = os.getenv('BREVO_API_KEY', 'xkeysib-...')  # Ваш API-ключ
+
+def send_verification_email(email, verification_code):
+    """Отправляет email с кодом верификации через Brevo"""
+    configuration = sib_api_v3_sdk.Configuration()
+    configuration.api_key['api-key'] = BREVO_API_KEY
+    
+    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
+    
+    subject = "შეამოწმეთ თქვენი ელ. ფოსტა"
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #333;">ელ. ფოსტის დადასტურება</h2>
+            <p style="color: #555; font-size: 16px;">გამარჯობა,</p>
+            <p style="color: #555; font-size: 16px;">გმადლობთ რომ დარეგისტრირდით ჩვენს სერვისზე. გთხოვთ გამოიყენოთ ქვემოთ მოცემული კოდი თქვენი ელ. ფოსტის დასადასტურებლად:</p>
+            
+            <div style="background: #f8f9fa; padding: 20px; text-align: center; margin: 20px 0; border-radius: 5px;">
+                <h1 style="margin: 0; font-size: 32px; letter-spacing: 3px; color: #333;">{verification_code}</h1>
+            </div>
+            
+            <p style="color: #555; font-size: 16px;">ეს კოდი 5 წუთის განმავლობაში იქნება მოქმედი.</p>
+            <p style="color: #555; font-size: 16px;">პატივისცემით,<br>IMEI Checker გუნდი</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    sender = {"name": "IMEI Checker", "email": "noreply@imeicheck.ge"}
+    to = [{"email": email}]
+    
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+        to=to,
+        html_content=html_content,
+        sender=sender,
+        subject=subject
+    )
+    
+    try:
+        api_response = api_instance.send_transac_email(send_smtp_email)
+        logger.info(f"Verification email sent to {email}: {api_response}")
+        return True
+    except ApiException as e:
+        logger.error(f"Exception when sending email: {e}")
+        return False
+
+def generate_verification_code(length=6):
+    """Генерирует случайный цифровой код"""
+    return ''.join(secrets.choice('0123456789') for _ in range(length))
+
+def store_verification_data(email, code, storage):
+    """Сохраняет данные верификации"""
+    storage[email] = {
+        'code': code,
+        'timestamp': time.time(),
+        'attempts': 0
+    }
+    logger.info(f"Stored verification data for {email}")
+
+def verify_code(email, code, storage):
+    """Проверяет код верификации"""
+    data = storage.get(email)
+    if not data:
+        logger.warning(f"No verification data for {email}")
+        return False, "კოდი ვერ მოიძებნა ან ვადა გაუვიდა"
+    
+    # Проверяем время действия (5 минут)
+    if time.time() - data['timestamp'] > 300:
+        logger.warning(f"Verification code expired for {email}")
+        return False, "კოდის ვადა გაუვიდა"
+    
+    # Проверяем попытки
+    if data['attempts'] >= 3:
+        logger.warning(f"Too many attempts for {email}")
+        return False, "ძალიან ბევრი მცდელობა"
+    
+    # Увеличиваем счетчик попыток
+    storage[email]['attempts'] += 1
+    
+    if data['code'] == code:
+        logger.info(f"Verification successful for {email}")
+        return True, "ვერიფიკაცია წარმატებით დასრულდა"
+    
+    logger.warning(f"Invalid code for {email}")
+    return False, "არასწორი კოდი"
