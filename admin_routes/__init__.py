@@ -1,12 +1,10 @@
 from flask import Blueprint
+from .auth_decorators import login_required, admin_required
+from .audit_log import log_audit_event
 
-# Создаем Blueprint для админки с префиксом URL
-admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+admin_bp = Blueprint('admin', __name__)
 
-# Явно экспортируем admin_bp
-__all__ = ['admin_bp']
-
-# Импорт всех роутов ПОСЛЕ создания admin_bp
+# Импорт всех роутов
 from . import dashboard
 from . import price_management
 from . import check_history
