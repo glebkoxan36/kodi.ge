@@ -1,10 +1,8 @@
 from flask import Blueprint
-from .auth_decorators import login_required, admin_required
-from .audit_log import log_audit_event
 
 admin_bp = Blueprint('admin', __name__)
 
-# Импорт всех роутов
+# Импорт всех роутов ПОСЛЕ создания admin_bp
 from . import dashboard
 from . import price_management
 from . import check_history
