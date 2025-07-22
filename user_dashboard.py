@@ -102,6 +102,12 @@ def generate_avatar_color(name):
     char_code = ord(name[0].lower())
     return colors[char_code % len(colors)]
 
+# Функция для получения версии аватара
+def get_avatar_version(user):
+    if 'avatar_updated_at' in user:
+        return int(user['avatar_updated_at'].timestamp())
+    return 0
+
 # Роуты для страниц
 @user_bp.route('/dashboard')
 @login_required
@@ -133,6 +139,9 @@ def dashboard():
     # Генерируем цвет аватара
     avatar_color = generate_avatar_color(f"{user.get('first_name', '')} {user.get('last_name', '')}")
     
+    # Получаем версию аватара для кэша
+    avatar_version = get_avatar_version(user)
+    
     # Форматируем даты для шаблона
     for check in checks:
         check['formatted_timestamp'] = check['timestamp'].strftime('%d.%m.%Y %H:%M')
@@ -149,6 +158,7 @@ def dashboard():
         last_payments=payments,
         total_checks=total_checks,
         avatar_color=avatar_color,
+        avatar_version=avatar_version,
         stripe_public_key=STRIPE_PUBLIC_KEY
     )
 
@@ -422,11 +432,15 @@ def upload_avatar():
             # Сохраняем с оптимизацией
             result.save(file_path, 'PNG', optimize=True)
             
-            # Сохраняем путь в базе данных
+            # Сохраняем путь в базе данных с меткой времени
             avatar_url = f"/static/avatars/{new_filename}"
+            update_data = {
+                'avatar_url': avatar_url,
+                'avatar_updated_at': datetime.utcnow()
+            }
             regular_users_collection.update_one(
                 {'_id': ObjectId(user_id)},
-                {'$set': {'avatar_url': avatar_url}}
+                {'$set': update_data}
             )
             
             return jsonify({
