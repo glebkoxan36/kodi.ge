@@ -1,5 +1,5 @@
 from flask import render_template, current_app
-from . import admin_bp
+from .bp import admin_bp
 from .auth_decorators import admin_required
 from db import (
     checks_collection, webhooks_collection, 
