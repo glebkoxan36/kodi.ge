@@ -1251,7 +1251,7 @@ def check_unlock_status():
 
 
 # Регистрация блюпринтов
-app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(admin_bp, url_prefix='/admin')
 
