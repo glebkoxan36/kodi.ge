@@ -11,6 +11,8 @@ from stripepay import StripePayment
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageDraw
+from io import BytesIO
+from utilities import upload_avatar_to_cloudinary
 
 # Настройка логгера
 logger = logging.getLogger(__name__)
@@ -369,7 +371,7 @@ def stripe_webhook():
         logger.exception("Webhook processing error")
         return jsonify({'error': str(e)}), 500
 
-# Новый роут для загрузки аватара
+# Роут для загрузки аватара в Cloudinary
 @user_bp.route('/upload-avatar', methods=['POST'])
 @login_required
 def upload_avatar():
@@ -385,16 +387,6 @@ def upload_avatar():
         filename = secure_filename(file.filename)
         if not filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
             return jsonify({'success': False, 'error': 'Invalid file type'}), 400
-        
-        # Создаем папку для аватаров, если ее нет
-        upload_folder = os.path.join(current_app.root_path, 'static', 'avatars')
-        os.makedirs(upload_folder, exist_ok=True)
-        
-        # Генерируем уникальное имя файла
-        user_id = str(g.user['_id'])
-        ext = filename.rsplit('.', 1)[1].lower()
-        new_filename = f"{user_id}.{ext}"
-        file_path = os.path.join(upload_folder, new_filename)
         
         try:
             # Открываем изображение
@@ -429,11 +421,22 @@ def upload_avatar():
             # Сжимаем изображение до 200x200
             result.thumbnail((200, 200))
             
-            # Сохраняем с оптимизацией
-            result.save(file_path, 'PNG', optimize=True)
+            # Сохраняем в буфер памяти
+            buffer = BytesIO()
+            result.save(buffer, format="PNG")
+            buffer.seek(0)
             
-            # Сохраняем путь в базе данных с меткой времени
-            avatar_url = f"/static/avatars/{new_filename}"
+            # Генерируем уникальный public_id
+            user_id = str(g.user['_id'])
+            public_id = f"avatar_{user_id}"
+            
+            # Загружаем в Cloudinary
+            avatar_url = upload_avatar_to_cloudinary(buffer, public_id)
+            
+            if not avatar_url:
+                return jsonify({'success': False, 'error': 'Cloudinary upload failed'}), 500
+            
+            # Обновляем данные пользователя
             update_data = {
                 'avatar_url': avatar_url,
                 'avatar_updated_at': datetime.utcnow()
