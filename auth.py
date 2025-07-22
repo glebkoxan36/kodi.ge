@@ -22,13 +22,15 @@ logger.setLevel(logging.INFO)
 
 def init_logger():
     """Инициализация логгера для модуля"""
+    # Создаем папку для логов если не существует
+    os.makedirs('logs', exist_ok=True)
+    
     handler = logging.FileHandler('logs/auth.log')
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
 init_logger()
-os.makedirs('logs', exist_ok=True)
 
 auth_bp = Blueprint('auth', __name__)
 
