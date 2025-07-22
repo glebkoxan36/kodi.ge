@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ka">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>База спецификаций телефонов</title>
+    <title>ტელეფონების სპეციფიკაციების ბაზა</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='compares.css') }}">
@@ -29,55 +29,55 @@
 </head>
 <body>
     <div class="container mt-5">
-        <!-- Режимы работы -->
+        <!-- რეჟიმები -->
         <div class="mode-switcher mb-4">
             <button id="singleModeBtn" class="btn btn-outline-primary mode-btn">
-                <i class="fas fa-mobile-alt me-2"></i>Одиночный
+                <i class="fas fa-mobile-alt me-2"></i>მარტოხელა
             </button>
             <button id="compareModeBtn" class="btn btn-outline-primary mode-btn">
-                <i class="fas fa-exchange-alt me-2"></i>Сравнение
+                <i class="fas fa-exchange-alt me-2"></i>შედარება
             </button>
         </div>
 
         <div id="mainContent" style="display: none;">
-            <!-- Контейнер для выбора телефонов в режиме сравнения -->
+            <!-- ტელეფონების არჩევა შედარების რეჟიმში -->
             <div id="compareSelection" class="compare-selection mb-4" style="display: none;">
                 <div class="phone-selectors-container">
                     <div class="phone-selector">
                         <div class="selector-header">
-                            <h4>Телефон 1</h4>
+                            <h4>ტელეფონი 1</h4>
                         </div>
                         <div class="phone-preview" id="phonePreview1">
                             <div class="placeholder">
                                 <i class="fas fa-plus"></i>
-                                <p>Выберите телефон</p>
+                                <p>აირჩიეთ ტელეფონი</p>
                             </div>
                         </div>
                         <button class="btn btn-outline-secondary mt-2 select-phone-btn" data-phone="1">
-                            Выбрать телефон
+                            ტელეფონის არჩევა
                         </button>
                     </div>
                     <div class="phone-selector">
                         <div class="selector-header">
-                            <h4>Телефон 2</h4>
+                            <h4>ტელეფონი 2</h4>
                         </div>
                         <div class="phone-preview" id="phonePreview2">
                             <div class="placeholder">
                                 <i class="fas fa-plus"></i>
-                                <p>Выберите телефон</p>
+                                <p>აირჩიეთ ტელეფონი</p>
                             </div>
                         </div>
                         <button class="btn btn-outline-secondary mt-2 select-phone-btn" data-phone="2">
-                            Выбрать телефон
+                            ტელეფონის არჩევა
                         </button>
                     </div>
                 </div>
                 <div class="compare-controls">
                     <button id="startCompareBtn" class="btn btn-success" disabled>
-                        <i class="fas fa-balance-scale me-2"></i>Сравнить
+                        <i class="fas fa-balance-scale me-2"></i>შედარება
                     </button>
                     <button id="clearCompareBtn" class="btn btn-outline-danger">
-                        <i class="fas fa-times me-2"></i>Очистить
+                        <i class="fas fa-times me-2"></i>გასუფთავება
                     </button>
                 </div>
             </div>
@@ -87,18 +87,18 @@
                     <div class="search-box">
                         <div class="input-group">
                             <input type="text" id="phoneSearch" class="form-control" 
-                                   placeholder="Введите бренд или модель телефона...">
+                                   placeholder="შეიყვანეთ ბრენდი ან მოდელი...">
                         </div>
                     </div>
                 </div>
                 <div class="phone-grid">
-                    <!-- Результаты поиска будут здесь -->
+                    <!-- ძიების შედეგები აქ გამოჩნდება -->
                 </div>
             </div>
 
             <div id="phoneDetails" class="specs-container mt-5" style="display: none;">
                 <button id="backToResults" class="btn btn-secondary mb-4">
-                    <i class="fas fa-arrow-left me-2"></i>Назад к результатам
+                    <i class="fas fa-arrow-left me-2"></i>უკან შედეგებთან
                 </button>
                 
                 <div class="specs-header">
@@ -109,14 +109,14 @@
                 </div>
                 
                 <div class="spec-items mt-4" id="specsContainer">
-                    <!-- Спецификации будут здесь -->
+                    <!-- სპეციფიკაციები აქ გამოჩნდება -->
                 </div>
             </div>
 
-            <!-- Контейнер для сравнения -->
+            <!-- შედარების კონტეინერი -->
             <div id="compareDetails" class="compare-container mt-5" style="display: none;">
                 <button id="backFromCompare" class="btn btn-secondary mb-4">
-                    <i class="fas fa-arrow-left me-2"></i>Назад к выбору
+                    <i class="fas fa-arrow-left me-2"></i>უკან არჩევანზე
                 </button>
                 
                 <div class="compare-header">
@@ -133,12 +133,12 @@
                     </div>
                 </div>
                 
-                <!-- Контейнер для результатов сравнения -->
+                <!-- შედარების შედეგები -->
                 <div id="comparisonResults"></div>
                 
-                <!-- КОНТЕЙНЕР ДЛЯ СПЕЦИФИКАЦИЙ -->
+                <!-- სპეციფიკაციების კონტეინერი -->
                 <div class="compare-specs-grid" id="compareSpecs">
-                    <!-- Спецификации для сравнения будут здесь -->
+                    <!-- სპეციფიკაციები შედარებისთვის აქ გამოჩნდება -->
                 </div>
             </div>
         </div>
@@ -146,10 +146,10 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Текущий режим
+        // მიმდინარე რეჟიმი
         let currentMode = null;
         
-        // Элементы интерфейса
+        // ინტერფეისის ელემენტები
         const mainContent = document.getElementById('mainContent');
         const singleModeBtn = document.getElementById('singleModeBtn');
         const compareModeBtn = document.getElementById('compareModeBtn');
@@ -173,65 +173,65 @@
         const compareSpecsContainer = document.getElementById('compareSpecs');
         const comparisonResults = document.getElementById('comparisonResults');
         
-        // Элементы превью телефонов
+        // ტელეფონის პრევიუ ელემენტები
         const phonePreviews = {
             1: document.getElementById('phonePreview1'),
             2: document.getElementById('phonePreview2')
         };
         
-        // Выбранные для сравнения телефоны
+        // შედარებისთვის შერჩეული ტელეფონები
         let selectedPhones = {
             1: null,
             2: null
         };
         
-        // Функции для работы с режимами
+        // რეჟიმებთან მუშაობის ფუნქციები
         function resetMode() {
-            // Сбрасываем текущий режим
+            // აღადგენს მიმდინარე რეჟიმს
             currentMode = null;
             
-            // Сбрасываем кнопки
+            // აღადგენს ღილაკებს
             singleModeBtn.classList.remove('active');
             compareModeBtn.classList.remove('active');
             
-            // Скрываем основной контент
+            // ამალებს მთავარ კონტენტს
             mainContent.style.display = 'none';
             
-            // Сбрасываем выбранные телефоны
+            // აღადგენს შერჩეულ ტელეფონებს
             selectedPhones = { 1: null, 2: null };
             phonePreviews[1].innerHTML = `
                 <div class="placeholder">
                     <i class="fas fa-plus"></i>
-                    <p>Выберите телефон</p>
+                    <p>აირჩიეთ ტელეფონი</p>
                 </div>
             `;
             phonePreviews[2].innerHTML = `
                 <div class="placeholder">
                     <i class="fas fa-plus"></i>
-                    <p>Выберите телефон</p>
+                    <p>აირჩიეთ ტელეფონი</p>
                 </div>
             `;
             startCompareBtn.disabled = true;
         }
         
         function setActiveMode(mode) {
-            // Устанавливаем новый режим
+            // აყენებს ახალ რეჟიმს
             currentMode = mode;
             
-            // Обновляем кнопки
+            // განაახლებს ღილაკებს
             singleModeBtn.classList.toggle('active', mode === 'single');
             compareModeBtn.classList.toggle('active', mode === 'compare');
             
-            // Показываем основной контент
+            // აჩვენებს მთავარ კონტენტს
             mainContent.style.display = 'block';
             
-            // Скрываем все подразделы
+            // ამალებს ყველა ქვეგანყოფილებას
             compareSelection.style.display = 'none';
             searchResults.style.display = 'none';
             phoneDetails.style.display = 'none';
             compareDetails.style.display = 'none';
             
-            // Показываем нужный раздел в зависимости от режима
+            // რეჟიმის მიხედვით აჩვენებს შესაბამის განყოფილებას
             if (mode === 'compare') {
                 compareSelection.style.display = 'block';
             } else if (mode === 'single') {
@@ -240,7 +240,7 @@
             }
         }
         
-        // Обработчики переключения режимов
+        // რეჟიმის გადართვის დამმუშავებლები
         singleModeBtn.addEventListener('click', function() {
             if (currentMode === 'single') {
                 resetMode();
@@ -257,26 +257,26 @@
             }
         });
         
-        // Весовые коэффициенты для групп характеристик
+        // მახასიათებელთა ჯგუფების წონები
         const groupWeights = {
-            "Основные": 0.05,
-            "Дисплей": 0.15,
-            "Процессор": 0.25,
-            "Камера": 0.20,
-            "Батарея": 0.15,
-            "Корпус": 0.05,
-            "Связь": 0.05,
-            "Аудио": 0.03,
-            "Безопасность": 0.02,
-            "Дополнительно": 0.03,
-            "Комплектация": 0.01,
-            "Экология": 0.01,
-            "Цена": 0.10
+            "ძირითადი": 0.05,
+            "ეკრანი": 0.15,
+            "პროცესორი": 0.25,
+            "კამერა": 0.20,
+            "ბატარეა": 0.15,
+            "კორპუსი": 0.05,
+            "კავშირი": 0.05,
+            "აუდიო": 0.03,
+            "უსაფრთხოება": 0.02,
+            "დამატებითი": 0.03,
+            "კომპლექტაცია": 0.01,
+            "ეკოლოგია": 0.01,
+            "ფასი": 0.10
         };
 
-        // Правила преобразования нечисловых значений в баллы
+        // არარიცხვითი მნიშვნელობების ქულებად გადაყვანის წესები
         const converters = {
-            "Тип дисплея": {
+            "ეკრანის ტიპი": {
                 "AMOLED": 10,
                 "OLED": 9,
                 "Dynamic AMOLED": 10,
@@ -286,76 +286,76 @@
                 "TFT": 5,
                 "LCD": 6
             },
-            "Защитное стекло": {
+            "დამცავი მინა": {
                 "Gorilla Glass Victus 2": 10,
                 "Gorilla Glass Victus": 9,
                 "Gorilla Glass 7": 8,
                 "Gorilla Glass 6": 7,
                 "Gorilla Glass 5": 6
             },
-            "Материал корпуса": {
-                "Титан": 10,
-                "Алюминий": 8,
-                "Магний": 7,
-                "Стекло": 6,
-                "Пластик": 4
+            "კორპუსის მასალა": {
+                "ტიტანი": 10,
+                "ალუმინი": 8,
+                "მაგნიუმი": 7,
+                "მინა": 6,
+                "პლასტიკი": 4
             },
-            "Защита от воды": {
+            "წყალდაცვა": {
                 "IP68": 10,
                 "IP67": 8,
                 "IP54": 5
             },
-            "Тип SIM": {
+            "SIM ბარათის ტიპი": {
                 "eSIM + nanoSIM": 10,
-                "Двойная nanoSIM": 8,
+                "ორმაგი nanoSIM": 8,
                 "nanoSIM + microSD": 7,
-                "Одиночная nanoSIM": 5
+                "ერთი nanoSIM": 5
             },
-            "Аудиоразъем": {
-                "Есть": 10,
-                "Нет": 5
+            "აუდიოგამოსასვლელი": {
+                "არის": 10,
+                "არა": 5
             },
-            "Сканер отпечатков": {
-                "Ультразвуковой в дисплее": 10,
-                "Оптический в дисплее": 8,
-                "Боковой": 7,
-                "На задней панели": 6
+            "თითის ანაბეჭდის სკანერი": {
+                "ულტრაბგერითი ეკრანში": 10,
+                "ოპტიკური ეკრანში": 8,
+                "გვერდითი": 7,
+                "უკანა პანელზე": 6
             }
         };
 
-        // Правила сравнения для числовых характеристик
+        // შედარების წესები რიცხვითი მახასიათებლებისთვის
         const comparisonRules = {
-            "Размер дисплея (дюймы)": { higherBetter: true },
-            "Пиковая яркость (нит)": { higherBetter: true },
-            "Частота обновления (Гц)": { higherBetter: true },
-            "Плотность пикселей (PPI)": { higherBetter: true },
-            "ОЗУ (ГБ)": { higherBetter: true },
-            "ПЗУ (ГБ)": { higherBetter: true },
-            "Емкость батареи (mAh)": { higherBetter: true },
-            "Время работы от батареи (ч)": { higherBetter: true },
-            "Пиковая мощность": { higherBetter: true },
-            "Оценка AnTuTu": { higherBetter: true },
-            "Geekbench (одиночное ядро)": { higherBetter: true },
-            "Geekbench (многоядерное)": { higherBetter: true },
-            "Основная камера (Мп)": { higherBetter: true },
-            "Фронтальная камера (Мп)": { higherBetter: true },
-            "Вес (г)": { higherBetter: false },
-            "Толщина (мм)": { higherBetter: false },
-            "Стартовая цена (руб)": { higherBetter: false },
-            "Текущая цена (руб)": { higherBetter: false }
+            "ეკრანის ზომა (დუიმი)": { higherBetter: true },
+            "მაქსიმალური სიკაშკაშე (ნიტი)": { higherBetter: true },
+            "განახლების სიხშირე (ჰც)": { higherBetter: true },
+            "პიქსელების სიმჭიდროვე (PPI)": { higherBetter: true },
+            "ოპერატიული მეხსიერება (GB)": { higherBetter: true },
+            "მუდმივი მეხსიერება (GB)": { higherBetter: true },
+            "ბატარეის სიმძლავრე (mAh)": { higherBetter: true },
+            "მუშაობის დრო (სთ)": { higherBetter: true },
+            "მაქსიმალური სიმძლავრე": { higherBetter: true },
+            "AnTuTu შეფასება": { higherBetter: true },
+            "Geekbench (ერთი ბირთვი)": { higherBetter: true },
+            "Geekbench (მრავალი ბირთვი)": { higherBetter: true },
+            "მთავარი კამერა (MP)": { higherBetter: true },
+            "წინა კამერა (MP)": { higherBetter: true },
+            "წონა (გ)": { higherBetter: false },
+            "სისქე (მმ)": { higherBetter: false },
+            "საწყისი ფასი (₾)": { higherBetter: false },
+            "მიმდინარე ფასი (₾)": { higherBetter: false }
         };
 
-        // Функция для извлечения чисел из строк
+        // რიცხვების ამოღება სტრიქონებიდან
         function extractNumber(str) {
             if (!str) return null;
             
-            // Попробуем найти число с плавающей точкой
+            // მცურავი წერტილით რიცხვის ძებნა
             const match = str.match(/(\d+[\.,]?\d*)/);
             if (match) {
                 return parseFloat(match[0].replace(',', '.'));
             }
             
-            // Попробуем найти целое число
+            // მთელი რიცხვის ძებნა
             const intMatch = str.match(/\d+/);
             if (intMatch) {
                 return parseInt(intMatch[0]);
@@ -364,29 +364,29 @@
             return null;
         }
 
-        // Функция нормализации значений
+        // მნიშვნელობების ნორმალიზაცია
         function normalizeValue(specName, value) {
-            // Если есть специальный конвертер - используем его
+            // თუ არის სპეციალური გადამყვანი - გამოვიყენოთ
             if (converters[specName] && converters[specName][value]) {
                 return converters[specName][value];
             }
             
-            // Если значение - число, возвращаем как есть
+            // თუ მნიშვნელობა რიცხვია, დავაბრუნოთ როგორც არის
             if (!isNaN(value) && value !== "") {
                 return parseFloat(value);
             }
             
-            // Пробуем извлечь число из строки
+            // სტრიქონიდან რიცხვის ამოღება
             const num = extractNumber(value);
             if (num !== null) {
                 return num;
             }
             
-            // Если ничего не получилось - возвращаем исходное значение
+            // თუ ვერაფერი გამოვიდა - დავაბრუნოთ საწყისი მნიშვნელობა
             return value;
         }
 
-        // Функция сравнения характеристик
+        // მახასიათებლების შედარება
         function compareSpecs(phone1, phone2) {
             const scores = {
                 phone1: 0,
@@ -394,23 +394,23 @@
                 groupScores: {}
             };
             
-            // Временные хранилища для промежуточных баллов
+            // დროებითი შენახვა შუალედური ქულებისთვის
             const groupPoints = {
                 phone1: {},
                 phone2: {}
             };
             
-            // Инициализация групп
+            // ჯგუფების ინიციალიზაცია
             Object.keys(specGroups).forEach(group => {
                 groupPoints.phone1[group] = 0;
                 groupPoints.phone2[group] = 0;
                 scores.groupScores[group] = { phone1: 0, phone2: 0 };
             });
             
-            // Счетчики характеристик в группах
+            // მახასიათებლების მრიცხველები ჯგუფებში
             const groupCounts = {};
             
-            // Проходим по всем группам характеристик
+            // გავივლით ყველა მახასიათებლების ჯგუფს
             Object.entries(specGroups).forEach(([groupName, specs]) => {
                 groupCounts[groupName] = 0;
                 
@@ -418,22 +418,22 @@
                     const value1 = phone1[spec];
                     const value2 = phone2[spec];
                     
-                    // Пропускаем если отсутствуют значения
+                    // გამოტოვება თუ მნიშვნელობები არ არის
                     if (!value1 && !value2) return;
                     
                     const norm1 = normalizeValue(spec, value1);
                     const norm2 = normalizeValue(spec, value2);
                     
-                    // Пропускаем если не удалось нормализовать
+                    // გამოტოვება თუ ნორმალიზაცია ვერ მოხერხდა
                     if (typeof norm1 !== 'number' || typeof norm2 !== 'number') return;
                     
                     groupCounts[groupName]++;
                     
-                    // Определяем правило сравнения
+                    // შედარების წესის განსაზღვრა
                     const rule = comparisonRules[spec] || { higherBetter: true };
                     const { higherBetter } = rule;
                     
-                    // Рассчитываем баллы в зависимости от типа сравнения
+                    // ქულების გამოთვლა შედარების ტიპის მიხედვით
                     if (higherBetter) {
                         if (norm1 > norm2) {
                             groupPoints.phone1[groupName] += 10;
@@ -460,14 +460,14 @@
                 });
             });
             
-            // Рассчитываем итоговые баллы с учетом весов
+            // საბოლოო ქულების გამოთვლა წონების გათვალისწინებით
             Object.keys(groupPoints.phone1).forEach(group => {
                 if (groupCounts[group] > 0) {
-                    // Средний балл в группе
+                    // საშუალო ქულა ჯგუფში
                     const avg1 = groupPoints.phone1[group] / groupCounts[group];
                     const avg2 = groupPoints.phone2[group] / groupCounts[group];
                     
-                    // Применяем весовой коэффициент
+                    // წონის კოეფიციენტის გამოყენება
                     const weight = groupWeights[group] || 0.05;
                     const weighted1 = avg1 * weight;
                     const weighted2 = avg2 * weight;
@@ -475,7 +475,7 @@
                     scores.phone1 += weighted1;
                     scores.phone2 += weighted2;
                     
-                    // Сохраняем для отображения
+                    // შენახვა ჩვენებისთვის
                     scores.groupScores[group] = {
                         phone1: Math.round(avg1),
                         phone2: Math.round(avg2)
@@ -483,55 +483,55 @@
                 }
             });
             
-            // Округляем общие баллы
+            // საერთო ქულების დამრგვალება
             scores.phone1 = Math.round(scores.phone1 * 100);
             scores.phone2 = Math.round(scores.phone2 * 100);
             
-            // Определяем победителя
+            // გამარჯვებულის განსაზღვრა
             if (scores.phone1 > scores.phone2) {
                 scores.winner = 1;
             } else if (scores.phone2 > scores.phone1) {
                 scores.winner = 2;
             } else {
-                scores.winner = 0; // Ничья
+                scores.winner = 0; // ფრე
             }
             
             return scores;
         }
 
-        // Функция для отображения результатов сравнения
+        // შედარების შედეგების ჩვენება
         function displayComparisonResults(scores, phone1, phone2) {
-            const brand1 = phone1.Бренд || phone1.Brand || 'Телефон 1';
-            const model1 = phone1.Модель || phone1.Model || 'Неизвестно';
-            const brand2 = phone2.Бренд || phone2.Brand || 'Телефон 2';
-            const model2 = phone2.Модель || phone2.Model || 'Неизвестно';
+            const brand1 = phone1.ბრენდი || phone1.Brand || 'ტელეფონი 1';
+            const model1 = phone1.მოდელი || phone1.Model || 'უცნობი';
+            const brand2 = phone2.ბრენდი || phone2.Brand || 'ტელეფონი 2';
+            const model2 = phone2.მოდელი || phone2.Model || 'უცნობი';
             
-            // Определяем классы для карточек
+            // ბარათების კლასების განსაზღვრა
             const phone1Class = scores.winner === 1 ? 'winner-card' : (scores.winner === 0 ? 'draw-card' : 'loser-card');
             const phone2Class = scores.winner === 2 ? 'winner-card' : (scores.winner === 0 ? 'draw-card' : 'loser-card');
             
-            // Создаем HTML для результатов
+            // შედეგების HTML-ის შექმნა
             let resultsHTML = `
                 <div class="comparison-result">
                     <div class="winner-banner text-center">
                         <h3 class="mb-3">
                             ${scores.winner === 0 ? 
-                                '<i class="fas fa-handshake me-2"></i> Ничья!' : 
-                                `<i class="fas fa-trophy me-2"></i> Победитель: ${scores.winner === 1 ? brand1 + ' ' + model1 : brand2 + ' ' + model2}`
+                                '<i class="fas fa-handshake me-2"></i> ფრე!' : 
+                                `<i class="fas fa-trophy me-2"></i> გამარჯვებული: ${scores.winner === 1 ? brand1 + ' ' + model1 : brand2 + ' ' + model2}`
                             }
                         </h3>
-                        <h4>Общий балл: ${scores.phone1} vs ${scores.phone2}</h4>
+                        <h4>ჯამური ქულა: ${scores.phone1} vs ${scores.phone2}</h4>
                     </div>
                     
                     <div class="score-summary">
-                        <h4 class="text-center mb-4"><i class="fas fa-chart-bar me-2"></i>Результаты по категориям</h4>
+                        <h4 class="text-center mb-4"><i class="fas fa-chart-bar me-2"></i>შედეგები კატეგორიების მიხედვით</h4>
                         <div class="score-cards-container">
                             <div class="score-card ${phone1Class}">
                                 <h4 class="text-center mb-3">${brand1} ${model1}</h4>
                                 <div class="space-y-3">
             `;
             
-            // Добавляем баллы по группам для первого телефона
+            // პირველი ტელეფონის ჯგუფების ქულების დამატება
             Object.entries(scores.groupScores).forEach(([group, groupScores]) => {
                 if (groupScores.phone1 > 0 || groupScores.phone2 > 0) {
                     resultsHTML += `
@@ -554,7 +554,7 @@
                                 <div class="space-y-3">
             `;
             
-            // Добавляем баллы по группам для второго телефона
+            // მეორე ტელეფონის ჯგუფების ქულების დამატება
             Object.entries(scores.groupScores).forEach(([group, groupScores]) => {
                 if (groupScores.phone1 > 0 || groupScores.phone2 > 0) {
                     resultsHTML += `
@@ -579,75 +579,72 @@
             return resultsHTML;
         }
 
-        // Кэш данных телефонов
+        // ტელეფონების მონაცემთა ქეში
         let phoneCache = {};
         
-        // Группы характеристик
+        // მახასიათებელთა ჯგუფები
         const specGroups = {
-            "Основные": [
-                "Год выпуска", "ОС", "Версия ОС", "Оболочка ОС", "Политика обновлений",
-                "Последний патч безопасности"
+            "ძირითადი": [
+                "გამოშვების წელი", "ოპერაციული სისტემა", "OS ვერსია", "OS გარსაცმი", "განახლების პოლიტიკა",
+                "უკანასკნელი უსაფრთხოების განახლება"
             ],
-            "Дисплей": [
-                "Размер дисплея (дюймы)", "Разрешение дисплея", "Тип дисплея", 
-                "Частота обновления (Гц)", "Пиковая яркость (нит)", "Поддержка HDR",
-                "Защитное стекло", "Соотношение экран/корпус", "Плотность пикселей (PPI)"
+            "ეკრანი": [
+                "ეკრანის ზომა (დუიმი)", "ეკრანის გაფართოება", "ეკრანის ტიპი", 
+                "განახლების სიხშირე (ჰც)", "მაქსიმალური სიკაშკაშე (ნიტი)", "HDR მხარდაჭერა",
+                "დამცავი მინა", "ეკრანი/კორპუსის თანაფარდობა", "პიქსელების სიმჭიდროვე (PPI)"
             ],
-            "Процессор": [
-                "Процессор", "Архитектура CPU", "GPU", "Архитектура GPU", "NPU", "ISP", "Модем",
-                "ОЗУ (ГБ)", "Тип ОЗУ", "Частота ОЗУ (МГц)", "ПЗУ (ГБ)", "Тип ПЗУ", "Скорость ПЗУ",
-                "Система охлаждения", "Площадь охлаждения (мм²)", "Оценка AnTuTu", 
-                "Geekbench (одиночное ядро)", "Geekbench (многоядерное)"
+            "პროცესორი": [
+                "პროცესორი", "CPU არქიტექტურა", "GPU", "GPU არქიტექტურა", "NPU", "ISP", "მოდემი",
+                "ოპერატიული მეხსიერება (GB)", "ოპერატიული მეხსიერების ტიპი", "ოპერატიული მეხსიერების სიხშირე (მჰც)", "მუდმივი მეხსიერება (GB)", "მუდმივი მეხსიერების ტიპი", "მუდმივი მეხსიერების სიჩქარე",
+                "გაგრილების სისტემა", "გაგრილების ფართობი (მმ²)", "AnTuTu შეფასება", 
+                "Geekbench (ერთი ბირთვი)", "Geekbench (მრავალი ბირთვი)"
             ],
-            "Камера": [
-                "Основная камера (Мп)", "Сверхширокоугольная камера (Мп)", "Телефото 1 (Мп)", 
-                "Телефото 2 (Мп)", "Фронтальная камера (Мп)", "Размер сенсора (основной)", 
-                "Размер пикселя (основной)", "Возможности зума", "Видеозапись", "Замедленная съемка",
-                "Функции камеры"
+            "კამერა": [
+                "მთავარი კამერა (MP)", "ულტრაფართო კამერა (MP)", "ტელე კამერა 1 (MP)", 
+                "ტელე კამერა 2 (MP)", "წინა კამერა (MP)", "სენსორის ზომა (მთავარი)", 
+                "პიქსელის ზომა (მთავარი)", "ზუმის შესაძლებლობები", "ვიდეო ჩაწერა", "ნელი მოძრაობა",
+                "კამერის ფუნქციები"
             ],
-            "Батарея": [
-                "Емкость батареи (mAh)", "Тип батареи", "Быстрая зарядка", "Беспроводная зарядка",
-                "Обратная беспроводная зарядка", "Интерфейс зарядки", "Время работы от батареи (ч)",
-                "Потребление в режиме ожидания", "Пиковая мощность"
+            "ბატარეა": [
+                "ბატარეის სიმძლავრე (mAh)", "ბატარეის ტიპი", "სწრაფი დატენვა",
+                "უსადენო დატენვა", "უკუსადენო დატენვა", "დატენვის ინტერფეისი", "მუშაობის დრო (სთ)",
+                "მოსვენების რეჟიმში მოხმარება", "მაქსიმალური სიმძლავრე"
             ],
-            "Корпус": [
-                "Вес (г)", "Габариты (мм)", "Материал корпуса", "Защита от воды", "Защита от пыли",
-                "Сертификат защиты", "Материал рамки", "Материал задней панели", "Цвета"
+            "კორპუსი": [
+                "წონა (გ)", "ზომები (მმ)", "კორპუსის მასალა", "წყალდაცვა", "მტვრედაცვა",
+                "დაცვის სერტიფიკატი", "ჩარჩოს მასალა", "უკანა პანელის მასალა", "ფერები"
             ],
-            "Связь": [
-                "Поддержка 5G", "Диапазоны 5G", "Поддержка mmWave", "Слоты SIM", "Тип SIM", 
-                "Wi-Fi", "Особенности Wi-Fi", "Bluetooth", "Кодеки Bluetooth", "NFC", "ИК-порт", 
-                "Версия USB", "GPS", "Спутниковая связь"
+            "კავშირი": [
+                "5G მხარდაჭერა", "5G დიაპაზონები", "mmWave მხარდაჭერა", "SIM სლოტები", "SIM ბარათის ტიპი", 
+                "Wi-Fi", "Wi-Fi მახასიათებლები", "Bluetooth", "Bluetooth კოდეკები", "NFC", "ინფრაწითელი პორტი", 
+                "USB ვერსია", "GPS", "სატელიტური კავშირი"
             ],
-            "Аудио": [
-                "Динамики", "Аудионастройка", "Микрофоны", "Аудиоразъем", "Пространственный звук"
+            "აუდიო": [
+                "დინამიკები", "აუდიო კონფიგურაცია", "მიკროფონები", "აუდიოგამოსასვლელი", "სივრცული ხმა"
             ],
-            "Безопасность": [
-                "Сканер отпечатков", "Разблокировка по лицу", "Акселерометр", "Гироскоп", 
-                "Датчик приближения", "Компас", "Барометр", "Датчик освещенности", "Датчик Холла", 
-                "LiDAR", "Термометр", "Датчик SpO2"
+            "უსაფრთხოება": [
+                "თითის ანაბეჭდის სკანერი", "სახით განბლოკვა", "აქსელერომეტრი", "გიროსკოპი", 
+                "სიახლოვის სენსორი", "კომპასი", "ბარომეტრი", "განათების სენსორი", "ჰოლის სენსორი", 
+                "LiDAR", "თერმომეტრი", "SpO2 სენსორი"
             ],
-            "Дополнительно": [
-                "Поддержка стилуса", "Тип стилуса", "Режим рабочего стола", "Поддержка VR", 
-                "ИИ-функции", "Игровые функции", "Безопасный чип"
+            "დამატებითი": [
+                "სტილუსის მხარდაჭერა", "სტილუსის ტიპი", "სამუშაო მაგიდის რეჟიმი", "VR მხარდაჭერა", 
+                "AI ფუნქციები", "თამაშის ფუნქციები", "უსაფრთხოების ჩიპი"
             ],
-            "Комплектация": [
-                "Зарядное устройство в комплекте", "Тип кабеля", "Адаптер в комплекте", 
-                "Наушники в комплекте", "Чехол в комплекте"
+            "კომპლექტაცია": [
+                "დამტენი კომპლექტში", "კაბელის ტიპი", "ადაპტერი კომპლექტში", 
+                "ყურსასმენები კომპლექტში", "ქავერი კომპლექტში"
             ],
-            "Экология": [
-                "Переработанные материалы", "Упаковка", "Экосертификаты", "Индекс ремонтопригодности",
-                "Циклы батареи"
+            "ეკოლოგია": [
+                "გადამუშავებული მასალები", "შეფუთვა", "ეკოსერტიფიკატები", "რემონტის ინდექსი",
+                "ბატარეის ციკლები"
             ],
-            "Безопасность (SAR)": [
-                "SAR (голова)", "SAR (тело)"
-            ],
-            "Цена": [
-                "Стартовая цена (руб)", "Текущая цена (руб)", "Доступность", "Гарантия (мес)"
+            "ფასი": [
+                "საწყისი ფასი (₾)", "მიმდინარე ფასი (₾)", "ხელმისაწვდომობა", "გარანტია (თვე)"
             ]
         };
         
-        // Выбор телефона для сравнения
+        // შედარებისთვის ტელეფონის არჩევა
         selectPhoneBtns.forEach(btn => {
             btn.addEventListener('click', function() {
                 const phoneNum = parseInt(this.getAttribute('data-phone'));
@@ -656,61 +653,61 @@
         });
         
         function openPhoneSelection(phoneNum) {
-            // Сохраняем номер телефона, который выбираем
+            // ტელეფონის ნომრის შენახვა
             sessionStorage.setItem('selectingFor', phoneNum);
             
-            // Очищаем поисковый запрос
+            // ძიების ველის გასუფთავება
             phoneSearch.value = '';
             
-            // Показываем результаты поиска
+            // ძიების შედეგების ჩვენება
             searchResults.style.display = 'block';
             compareSelection.style.display = 'none';
             phoneDetails.style.display = 'none';
             compareDetails.style.display = 'none';
             
-            // Очищаем предыдущие результаты
+            // წინა შედეგების გასუფთავება
             document.querySelector('.phone-grid').innerHTML = '';
             
-            // Фокусируемся на поле поиска
+            // ველზე ფოკუსირება
             phoneSearch.focus();
         }
         
-        // Кнопка сравнения
+        // შედარების ღილაკი
         startCompareBtn.addEventListener('click', startComparison);
         
-        // Очистка выбора
+        // არჩევის გასუფთავება
         clearCompareBtn.addEventListener('click', function() {
             selectedPhones = {
                 1: null,
                 2: null
             };
             
-            // Очищаем превью
+            // პრევიუების გასუფთავება
             phonePreviews[1].innerHTML = `
                 <div class="placeholder">
                     <i class="fas fa-plus"></i>
-                    <p>Выберите телефон</p>
+                    <p>აირჩიეთ ტელეფონი</p>
                 </div>
             `;
             
             phonePreviews[2].innerHTML = `
                 <div class="placeholder">
                     <i class="fas fa-plus"></i>
-                    <p>Выберите телефон</p>
+                    <p>აირჩიეთ ტელეფონი</p>
                 </div>
             `;
             
-            // Блокируем кнопку сравнения
+            // შედარების ღილაკის დაბლოკვა
             startCompareBtn.disabled = true;
         });
         
-        // Назад из режима сравнения
+        // შედარების რეჟიმიდან დაბრუნება
         backFromCompare.addEventListener('click', function() {
             compareDetails.style.display = 'none';
             compareSelection.style.display = 'block';
         });
         
-        // Live-поиск с задержкой
+        // ძებნა დაყოვნებით
         function debounce(func, wait) {
             let timeout;
             return function() {
@@ -730,10 +727,10 @@
             }
         }, 300));
         
-        // Функция поиска телефонов
+        // ტელეფონების ძებნის ფუნქცია
         function searchPhones(query) {
             const phoneGrid = document.querySelector('.phone-grid');
-            phoneGrid.innerHTML = '<div class="text-center py-5"><div class="spinner"></div><p>Идет поиск...</p></div>';
+            phoneGrid.innerHTML = '<div class="text-center py-5"><div class="spinner"></div><p>მიმდინარეობს ძებნა...</p></div>';
             
             fetch(`/compare/search?q=${encodeURIComponent(query)}`)
                 .then(response => response.json())
@@ -741,32 +738,32 @@
                     displaySearchResults(data);
                 })
                 .catch(error => {
-                    phoneGrid.innerHTML = '<div class="text-center py-4">Ошибка при поиске</div>';
+                    phoneGrid.innerHTML = '<div class="text-center py-4">ძებნის შეცდომა</div>';
                     console.error('Error:', error);
                 });
         }
 
-        // Отображение результатов поиска
+        // ძიების შედეგების ჩვენება
         function displaySearchResults(phones) {
             const phoneGrid = document.querySelector('.phone-grid');
             
             if (!phones || phones.length === 0) {
-                phoneGrid.innerHTML = '<div class="text-center py-4">Телефоны не найдены</div>';
+                phoneGrid.innerHTML = '<div class="text-center py-4">ტელეფონები ვერ მოიძებნა</div>';
                 return;
             }
 
             let html = '';
             phones.forEach(phone => {
-                // Определяем бренд и модель с учетом языка
-                const brand = phone.Бренд || phone.Brand || 'Неизвестный бренд';
-                const model = phone.Модель || phone.Model || 'Неизвестная модель';
+                // ბრენდისა და მოდელის განსაზღვრა ენის მიხედვით
+                const brand = phone.ბრენდი || phone.Brand || 'უცნობი ბრენდი';
+                const model = phone.მოდელი || phone.Model || 'უცნობი მოდელი';
                 
-                // Формируем путь к изображению (с учетом новой структуры)
+                // სურათის გზის ფორმირება
                 const brandFolder = brand.replace(/\s+/g, '_').toLowerCase();
                 const modelName = model.replace(/\s+/g, '_').toLowerCase();
                 const imagePath = `/static/img/phones/${brandFolder}/${modelName}.jpg`;
                 
-                // Сохраняем в кэш
+                // ქეშში შენახვა
                 phoneCache[phone._id] = phone;
                 
                 html += `
@@ -777,9 +774,9 @@
                         </div>
                         <div class="card-body text-center mt-3">
                             <h5>${brand} ${model}</h5>
-                            <p>${phone['Год выпуска'] || phone.Year || ''} • ${phone.ОС || phone.OS || ''}</p>
+                            <p>${phone['გამოშვების წელი'] || phone.Year || ''} • ${phone.ოპერაციული სისტემა || phone.OS || ''}</p>
                             <button class="btn btn-primary view-details-btn">
-                                <i class="fas fa-info-circle me-2"></i>${currentMode === 'single' ? 'Подробнее' : 'Выбрать'}
+                                <i class="fas fa-info-circle me-2"></i>${currentMode === 'single' ? 'დეტალურად' : 'არჩევა'}
                             </button>
                         </div>
                     </div>
@@ -787,7 +784,7 @@
             });
             phoneGrid.innerHTML = html;
 
-            // Добавляем обработчики событий
+            // დამამუშავებლების დამატება
             document.querySelectorAll('.view-details-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const phoneId = this.closest('.phone-card').getAttribute('data-id');
@@ -801,7 +798,7 @@
             });
         }
         
-        // Загрузка деталей телефона
+        // ტელეფონის დეტალების ჩატვირთვა
         function loadPhoneDetails(phoneId) {
             if (phoneCache[phoneId]) {
                 displayPhoneDetails(phoneCache[phoneId]);
@@ -812,18 +809,18 @@
                         phoneCache[phoneId] = phone;
                         displayPhoneDetails(phone);
                     })
-                    .catch(error => console.error('Ошибка:', error));
+                    .catch(error => console.error('შეცდომა:', error));
             }
         }
         
-        // Отображение деталей телефона с группировкой
+        // ტელეფონის დეტალების ჯგუფებად ჩვენება
         function displayPhoneDetails(phone) {
-            const brand = phone.Бренд || phone.Brand || 'Неизвестный бренд';
-            const model = phone.Модель || phone.Model || 'Неизвестная модель';
+            const brand = phone.ბრენდი || phone.Brand || 'უცნობი ბრენდი';
+            const model = phone.მოდელი || phone.Model || 'უცნობი მოდელი';
             
             phoneTitle.textContent = `${brand} ${model}`;
             
-            // Формируем путь к изображению (с учетом новой структуры)
+            // სურათის გზის ფორმირება
             const brandFolder = brand.replace(/\s+/g, '_').toLowerCase();
             const modelName = model.replace(/\s+/g, '_').toLowerCase();
             phoneImage.src = `/static/img/phones/${brandFolder}/${modelName}.jpg`;
@@ -831,7 +828,7 @@
             
             let specsHTML = '';
             
-            // Создаем группы характеристик
+            // მახასიათებელთა ჯგუფების შექმნა
             for (const [groupName, groupSpecs] of Object.entries(specGroups)) {
                 let groupHTML = '';
                 
@@ -866,7 +863,7 @@
             phoneDetails.style.display = 'block';
         }
         
-        // Выбор телефона для сравнения
+        // შედარებისთვის ტელეფონის არჩევა
         function selectPhoneForComparison(phoneId) {
             const phone = phoneCache[phoneId];
             if (!phone) return;
@@ -876,14 +873,14 @@
             
             const phoneNum = parseInt(selectingFor);
             
-            // Сохраняем выбранный телефон
+            // შერჩეული ტელეფონის შენახვა
             selectedPhones[phoneNum] = phoneId;
             
-            // Обновляем превью
-            const brand = phone.Бренд || phone.Brand || 'Неизвестный бренд';
-            const model = phone.Модель || phone.Model || 'Неизвестная модель';
+            // პრევიუის განახლება
+            const brand = phone.ბრენდი || phone.Brand || 'უცნობი ბრენდი';
+            const model = phone.მოდელი || phone.Model || 'უცნობი მოდელი';
             
-            // Формируем путь к изображению (с учетом новой структуры)
+            // სურათის გზის ფორმირება
             const brandFolder = brand.replace(/\s+/g, '_').toLowerCase();
             const modelName = model.replace(/\s+/g, '_').toLowerCase();
             const imagePath = `/static/img/phones/${brandFolder}/${modelName}.jpg`;
@@ -894,7 +891,7 @@
                          class="phone-thumb-sm" onerror="this.src='/static/placeholder.jpg'">
                     <div class="phone-info">
                         <strong>${brand} ${model}</strong>
-                        <div>${phone['Год выпуска'] || phone.Year || ''}</div>
+                        <div>${phone['გამოშვების წელი'] || phone.Year || ''}</div>
                     </div>
                     <button class="btn btn-sm btn-outline-danger remove-phone" data-phone="${phoneNum}">
                         <i class="fas fa-times"></i>
@@ -902,7 +899,7 @@
                 </div>
             `;
             
-            // Добавляем обработчик для кнопки удаления
+            // წაშლის ღილაკის დამამუშავებლის დამატება
             phonePreviews[phoneNum].querySelector('.remove-phone').addEventListener('click', function(e) {
                 e.stopPropagation();
                 const num = this.getAttribute('data-phone');
@@ -910,33 +907,33 @@
                 phonePreviews[num].innerHTML = `
                     <div class="placeholder">
                         <i class="fas fa-plus"></i>
-                        <p>Выберите телефон</p>
+                        <p>აირჩიეთ ტელეფონი</p>
                     </div>
                 `;
                 checkCompareReadiness();
             });
             
-            // Возвращаемся к выбору телефонов
+            // ტელეფონების არჩევანზე დაბრუნება
             compareSelection.style.display = 'block';
             searchResults.style.display = 'none';
             
-            // Проверяем готовность к сравнению
+            // შედარების მზადყოფნის შემოწმება
             checkCompareReadiness();
         }
         
-        // Проверка готовности к сравнению
+        // შედარების მზადყოფნის შემოწმება
         function checkCompareReadiness() {
             startCompareBtn.disabled = !(selectedPhones[1] && selectedPhones[2]);
         }
         
-        // Функция генерации сетки сравнения
+        // შედარების ბადის გენერირების ფუნქცია
         function generateComparisonGrid(phone1, phone2) {
             let html = '';
             
-            // Исключаемые поля
-            const excludeFields = ['_id', 'ID', 'Бренд', 'Brand', 'Модель', 'Model'];
+            // გამოსარიცხი ველები
+            const excludeFields = ['_id', 'ID', 'ბრენდი', 'Brand', 'მოდელი', 'Model'];
             
-            // Собираем все характеристики для группы "Другое"
+            // სხვა მახასიათებლების შეგროვება "სხვა" ჯგუფისთვის
             const otherSpecs = new Set();
             for (const key in phone1) {
                 if (!excludeFields.includes(key) && phone1[key]) {
@@ -949,7 +946,7 @@
                 }
             }
             
-            // Создаем группы характеристик
+            // მახასიათებელთა ჯგუფების შექმნა
             for (const [groupName, groupSpecs] of Object.entries(specGroups)) {
                 let groupHasSpec = false;
                 let groupHTML = '';
@@ -987,7 +984,7 @@
                 }
             }
             
-            // Добавляем группу "Другое"
+            // "სხვა" ჯგუფის დამატება
             if (otherSpecs.size > 0) {
                 let groupHTML = '';
                 for (const spec of otherSpecs) {
@@ -1007,7 +1004,7 @@
                     <div class="compare-spec-group">
                         <div class="compare-group-header">
                             <i class="fas fa-circle"></i>
-                            <h4>Другие характеристики</h4>
+                            <h4>სხვა მახასიათებლები</h4>
                         </div>
                         <div class="compare-spec-items">
                             ${groupHTML}
@@ -1019,7 +1016,7 @@
             compareSpecsContainer.innerHTML = html;
         }
 
-        // Запуск сравнения
+        // შედარების დაწყება
         function startComparison() {
             const phoneId1 = selectedPhones[1];
             const phoneId2 = selectedPhones[2];
@@ -1031,23 +1028,23 @@
             
             if (!phone1 || !phone2) return;
             
-            // Показываем контейнер сравнения
+            // შედარების კონტეინერის ჩვენება
             compareSelection.style.display = 'none';
             compareDetails.style.display = 'block';
             
-            // Удаляем предыдущие результаты, если есть
+            // წინა შედეგების წაშლა
             comparisonResults.innerHTML = '';
             
-            // Заполняем заголовки
-            const brand1 = phone1.Бренд || phone1.Brand || 'Неизвестный бренд';
-            const model1 = phone1.Модель || phone1.Model || 'Неизвестная модель';
-            const brand2 = phone2.Бренд || phone2.Brand || 'Неизвестный бренд';
-            const model2 = phone2.Модель || phone2.Model || 'Неизвестная модель';
+            // სათაურების შევსება
+            const brand1 = phone1.ბრენდი || phone1.Brand || 'უცნობი ბრენდი';
+            const model1 = phone1.მოდელი || phone1.Model || 'უცნობი';
+            const brand2 = phone2.ბრენდი || phone2.Brand || 'უცნობი ბრენდი';
+            const model2 = phone2.მოდელი || phone2.Model || 'უცნობი';
             
             compareTitle1.textContent = `${brand1} ${model1}`;
             compareTitle2.textContent = `${brand2} ${model2}`;
             
-            // Загружаем изображения
+            // სურათების ჩატვირთვა
             const brandFolder1 = brand1.replace(/\s+/g, '_').toLowerCase();
             const modelName1 = model1.replace(/\s+/g, '_').toLowerCase();
             const imagePath1 = `/static/img/phones/${brandFolder1}/${modelName1}.jpg`;
@@ -1067,15 +1064,15 @@
                 this.src = '/static/placeholder.jpg';
             };
             
-            // Генерируем таблицу сравнения
+            // შედარების ცხრილის გენერირება
             generateComparisonGrid(phone1, phone2);
             
-            // Рассчитываем баллы и выводим результаты
+            // ქულების გამოთვლა და შედეგების ჩვენება
             const scores = compareSpecs(phone1, phone2);
             comparisonResults.innerHTML = displayComparisonResults(scores, phone1, phone2);
         }
 
-        // Обработчик кнопки "Назад"
+        // "უკან" ღილაკის დამამუშავებელი
         backToResults.addEventListener('click', function() {
             phoneDetails.style.display = 'none';
             if (currentMode === 'single') {
@@ -1087,4 +1084,4 @@
     });
     </script>
 </body>
-</html>
+    </html>
