@@ -1074,50 +1074,7 @@ def send_webhook_event(event_type, payload):
                 }}
             )
 
-# ======================================
-# Carousel Image Upload Endpoints
-# ======================================
 
-@app.route('/create-carousel-folder', methods=['POST'])
-def create_carousel_folder():
-    data = request.json
-    path = data.get('path', 'static/img/carousel')
-    
-    try:
-        os.makedirs(path, exist_ok=True)
-        logger.info(f"Carousel folder created: {path}")
-        return jsonify({'success': True})
-    except Exception as e:
-        logger.error(f"Error creating carousel folder: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/upload-carousel-image', methods=['POST'])
-def upload_carousel_image():
-    if 'carouselImage' not in request.files:
-        logger.warning("No file in carousel upload")
-        return jsonify({'success': False, 'error': 'ფაილი არ არის ატვირთული'}), 400
-    
-    file = request.files['carouselImage']
-    if file.filename == '':
-        logger.warning("Empty filename in carousel upload")
-        return jsonify({'success': False, 'error': 'ფაილი არ არის არჩეული'}), 400
-    
-    try:
-        upload_folder = 'static/img/carousel'
-        os.makedirs(upload_folder, exist_ok=True)
-        
-        filename = f"carousel_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
-        file_path = os.path.join(upload_folder, filename)
-        file.save(file_path)
-        logger.info(f"Carousel image uploaded: {file_path}")
-        
-        return jsonify({
-            'success': True, 
-            'filePath': f'/{file_path}'
-        })
-    except Exception as e:
-        logger.error(f"Error uploading carousel image: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ======================================
 # Unlock Service Endpoints
