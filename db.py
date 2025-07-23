@@ -13,13 +13,23 @@ logger.setLevel(logging.INFO)
 
 def init_logger():
     """Инициализация логгера для модуля"""
-    if not os.path.exists('logs'):
-      
-        os.makedirs(logs, exist_ok=True)
-    handler = logging.FileHandler('logs/db.log')
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+    log_dir = 'logs'
+    try:
+        # Создаем директорию для логов, если её нет
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
+    except Exception as e:
+        logger.error(f"Failed to create log directory: {str(e)}")
+        return  # Выходим, так как не можем создать директорию
+
+    try:
+        # Настраиваем файловый обработчик
+        handler = logging.FileHandler(os.path.join(log_dir, 'db.log'))
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+    except Exception as e:
+        logger.error(f"Failed to set up file handler: {str(e)}")
 
 init_logger()
 
