@@ -57,6 +57,10 @@ def init_admin_user(db):
     """Создает администратора по умолчанию если не существует"""
     try:
         logger.info("Checking admin user existence")
+        if db is None or db.admin_users is None:
+            logger.error("Database or admin_users collection is not available")
+            return
+            
         if not db.admin_users.find_one({'username': 'admin'}):
             admin_password = os.getenv('ADMIN_PASSWORD', 'securepassword')
             db.admin_users.insert_one({
@@ -75,7 +79,7 @@ def init_admin_user(db):
 logger.info("Initializing MongoDB client")
 client = init_mongodb()
 
-# Глобальные переменные для коллекций
+# Глобальные переменные для коллекций с явной инициализацией None
 db = None
 regular_users_collection = None
 checks_collection = None
@@ -90,9 +94,9 @@ audit_logs_collection = None
 api_keys_collection = None
 webhooks_collection = None
 
-# Инициализация коллекций даже если подключение не удалось
+# Инициализация коллекций
 try:
-    if client:
+    if client is not None:
         db = client['imei_checker']
         
         # Основные коллекции
@@ -116,7 +120,7 @@ try:
         
 except PyMongoError as e:
     logger.error(f"MongoDB initialization error: {str(e)}")
-    # Создаем заглушки для коллекций
+    # Явное сохранение None для всех коллекций
     regular_users_collection = None
     checks_collection = None
     payments_collection = None
@@ -132,7 +136,7 @@ except PyMongoError as e:
     
 except Exception as e:
     logger.error(f"Unexpected initialization error: {str(e)}")
-    # Создаем заглушки для коллекций
+    # Явное сохранение None для всех коллекций
     regular_users_collection = None
     checks_collection = None
     payments_collection = None
