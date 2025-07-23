@@ -1,7 +1,7 @@
 import os
 import logging
 from datetime import datetime
-from pymongo import MongoClient
+from db import prices_collection  # Исправлено: правильный импорт коллекции
 
 logger = logging.getLogger(__name__)
 
