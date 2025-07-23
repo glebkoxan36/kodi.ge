@@ -129,6 +129,13 @@ cache.init_app(app)
 logger = logging.getLogger(__name__)
 logger.info("Application starting")
 
+# Инициализация цен после подключения к БД
+if client:
+    logger.info("Initializing prices")
+    init_prices()
+else:
+    logger.warning("Skipping price initialization - MongoDB not available")
+
 # Конфигурация API разблокировки
 app.config['UNLOCK_API_EMAIL'] = 'glebkoxan36@gmail.com'
 app.config['UNLOCK_API_KEY'] = 'YHN-H96-H1F-OA1-AF7-3HX-9BV-MXF'
@@ -1405,10 +1412,7 @@ def create_indexes():
             logger.error(f"Error creating indexes: {str(e)}")
 
 if __name__ == '__main__':
-    # Инициализация цен
-    if db:
-        init_prices()
-    
+    # Создание индексов
     create_indexes()
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting application on port {port}")
@@ -1417,4 +1421,4 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production'
-        )
+            )
