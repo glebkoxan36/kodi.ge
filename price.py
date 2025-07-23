@@ -29,10 +29,12 @@ DEFAULT_PRICES = {
 def init_prices():
     """Инициализация цен в базе данных"""
     try:
-        if not prices_collection:
+        # Явная проверка на None
+        if prices_collection is None:
             logger.warning("Prices collection not available")
             return
             
+        # Исправленный подсчет документов
         if prices_collection.count_documents({}) == 0:
             price_doc = {
                 'prices': DEFAULT_PRICES,
@@ -47,7 +49,8 @@ def init_prices():
 def get_current_prices():
     """Возвращает текущие цены из базы"""
     try:
-        if prices_collection:
+        # Явная проверка на None
+        if prices_collection is not None:
             prices_doc = prices_collection.find_one(sort=[('updated_at', -1)])
             if prices_doc:
                 return prices_doc.get('prices', {})
