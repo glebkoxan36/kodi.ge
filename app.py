@@ -31,7 +31,7 @@ from user_dashboard import user_bp
 from ifreeapi import perform_api_check
 from db import client, db, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection
 from stripepay import StripePayment
-from admin_routes import admin_bp  # Исправленный импорт
+from admin_routes import admin_bp
 from price import get_current_prices, get_service_price, init_prices
 from utilities import (
     validate_imei, 
@@ -1264,7 +1264,7 @@ def check_unlock_status():
 # Регистрация блюпринтов
 app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
-app.register_blueprint(admin_bp)  # Исправленная регистрация
+app.register_blueprint(admin_bp, url_prefix='/admin')
 
 # Установка CSRF-куки
 @app.after_request
@@ -1417,4 +1417,4 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production'
-                         )
+        )
