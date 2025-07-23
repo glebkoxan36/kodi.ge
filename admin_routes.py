@@ -110,7 +110,7 @@ def admin_dashboard():
         brands = phonebase_collection.distinct("brand") if phonebase_collection is not None else []
         
         return render_template(
-            'admin.html',
+            'admin/dashboard.html',
             total_checks=total_checks,
             paid_checks=paid_checks,
             free_checks=free_checks,
@@ -210,7 +210,7 @@ def price_management():
         ]
         
         return render_template(
-            'admin.html',
+            'admin/price_management.html',
             current_prices=formatted_prices,
             price_history=price_history,
             apple_services=apple_services,
@@ -265,7 +265,7 @@ def check_history():
             check['_id'] = str(check['_id'])
         
         return render_template(
-            'admin.html',
+            'admin/check_history.html',
             checks=checks,
             total_checks=total_checks,
             imei_query=imei_query,
@@ -293,7 +293,7 @@ def db_management():
             collection_counts[name] = db[name].count_documents({}) if client is not None else 0
         
         return render_template(
-            'admin.html',
+            'admin/db_management.html',
             active_section='db_management',
             collections=collections,
             collection_counts=collection_counts
@@ -336,7 +336,7 @@ def collection_view(collection_name):
                 documents.append(doc)
             
         return render_template(
-            'admin.html',
+            'admin/collection_view.html',
             active_section='db_management',
             collection_name=collection_name,
             documents=documents,
@@ -388,7 +388,7 @@ def edit_document(collection_name, doc_id):
         doc['_id'] = str(doc['_id'])
         
         return render_template(
-            'admin.html',
+            'admin/edit_document.html',
             active_section='db_management',
             collection_name=collection_name,
             doc_id=doc_id,
@@ -425,7 +425,7 @@ def add_document(collection_name):
                 flash(f'Error adding document: {str(e)}', 'danger')
         
         return render_template(
-            'admin.html',
+            'admin/add_document.html',
             active_section='db_management',
             collection_name=collection_name
         )
@@ -473,7 +473,7 @@ def manage_users():
             user['created_at'] = user['created_at'].strftime('%Y-%m-%d %H:%M')
         
         return render_template(
-            'admin.html',
+            'admin/manage_users.html',
             active_section='manage_users',
             users=users
         )
@@ -548,7 +548,7 @@ def manage_regular_users():
             user['balance'] = user.get('balance', 0.0)
         
         return render_template(
-            'admin.html',
+            'admin/manage_regular_users.html',
             active_section='manage_regular_users',
             users=users,
             page=page,
@@ -594,7 +594,7 @@ def view_regular_user(user_id):
             payment['timestamp'] = payment['timestamp'].strftime('%Y-%m-%d %H:%M')
         
         return render_template(
-            'admin.html',
+            'admin/view_regular_users.html',
             active_section='view_regular_user',
             user=user,
             checks=checks,
@@ -654,7 +654,7 @@ def edit_regular_user(user_id):
             user['birth_date'] = user['birth_date'].strftime('%Y-%m-%d')
 
         return render_template(
-            'admin.html',
+            'admin/edit_regular_users.html',
             active_section='edit_regular_user',
             user=user
         )
@@ -773,7 +773,7 @@ def manage_api_keys():
                 key['last_used'] = key['last_used'].strftime('%Y-%m-%d %H:%M')
         
         return render_template(
-            'admin.html',
+            'admin/manage_api_keys.html',
             active_section='api_keys',
             api_keys=api_keys
         )
@@ -860,7 +860,7 @@ def manage_webhooks():
                 wh['last_delivery'] = wh['last_delivery'].strftime('%Y-%m-%d %H:%M')
         
         return render_template(
-            'admin.html',
+            'admin/manage_webhooks.html',
             active_section='webhooks',
             webhooks=webhooks
         )
@@ -941,7 +941,7 @@ def system_status():
                 event['timestamp'] = event['timestamp'].strftime('%Y-%m-%d %H:%M')
         
         return render_template(
-            'admin.html',
+            'admin/system_status.html',
             active_section='system_status',
             health_data=health_data,
             system_stats=stats,
