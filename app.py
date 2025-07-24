@@ -470,15 +470,20 @@ def background_check_task(self, imei, service_type, session_id):
 # ======================================
 # Основные маршруты приложения
 # ======================================
-
 @app.route('/')
 @cache.cached(timeout=300, unless=lambda: 'user_id' in session or 'admin_id' in session)
 def index():
     logger.info("Home page access")
     prices = get_current_prices()
+    
+    # Добавляем получение карусельных слайдов
+    carousel_slides = list(db.carousel_slides.find().sort("order", 1))
+    
     return render_template(
         'index.html',
         stripe_public_key=STRIPE_PUBLIC_KEY,
+        carousel_slides=carousel_slides,
+        prices=prices
     )
     
     def index():
