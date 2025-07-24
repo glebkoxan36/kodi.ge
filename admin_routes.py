@@ -471,8 +471,9 @@ def add_carousel_slide():
             image_bytes = image_file.read()
             image_url, public_id = upload_carousel_image(image_bytes)
             
+            # Проверяем успешность загрузки
             if not image_url:
-                flash('Image upload failed', 'danger')
+                flash('Image upload failed. Please try again.', 'danger')
                 return redirect(url_for('admin.add_carousel_slide'))
             
             # Сохраняем в базу
@@ -516,17 +517,23 @@ def edit_carousel_slide(slide_id):
             image_file = request.files.get('image')
             if image_file:
                 try:
-                    # Удаляем старое изображение
-                    if slide.get('public_id'):
-                        cloudinary.uploader.destroy(slide['public_id'])
-                    
-                    # Загружаем новое
+                    # Загружаем новое изображение
                     image_bytes = image_file.read()
-                    image_url, public_id = upload_carousel_image(image_bytes)
+                    new_image_url, new_public_id = upload_carousel_image(image_bytes)
                     
-                    if image_url:
-                        update_data['image_url'] = image_url
-                        update_data['public_id'] = public_id
+                    if new_image_url:
+                        # Удаляем старое изображение
+                        if slide.get('public_id'):
+                            try:
+                                cloudinary.uploader.destroy(slide['public_id'])
+                            except Exception as cloud_err:
+                                current_app.logger.error(f"Error deleting old image: {str(cloud_err)}")
+                        
+                        # Обновляем данные
+                        update_data['image_url'] = new_image_url
+                        update_data['public_id'] = new_public_id
+                    else:
+                        flash('New image upload failed. Keeping old image.', 'warning')
                 except Exception as e:
                     flash(f'Image upload error: {str(e)}', 'danger')
             
