@@ -486,10 +486,6 @@ def index():
         prices=prices
     )
     
-    def index():
-    carousel_slides = list(db.carousel_slides.find().sort("order", 1))
-    return render_template('index.html', carousel_slides=carousel_slides)
-    
 @app.route('/contacts')
 @cache.cached(timeout=3600)
 def contacts_page():
