@@ -71,12 +71,13 @@ def upload_carousel_image(image_bytes):
     :return: URL загруженного изображения и public_id
     """
     try:
+        # Убрана обрезка (crop: fill) и изменены параметры для сохранения пропорций 16:9
         upload_result = cloudinary.uploader.upload(
             image_bytes,
             folder="carousel",
             transformation=[
-                # Изменено: сохраняем пропорции, заполняем область
-                {'width': 1200, 'height': 600, 'crop': "fill", 'gravity': "auto"},
+                # Сохранение пропорций 16:9 без обрезки
+                {'width': 1200, 'height': 675, 'crop': "scale"},
                 {'quality': "auto:best"}
             ]
         )
