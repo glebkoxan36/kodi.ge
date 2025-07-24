@@ -70,7 +70,17 @@
         }
         /* Added for carousel content positioning */
         .carousel-content {
-            margin-top: -30px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            z-index: 10;
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
         }
         /* Ensure white text in IMEI info section */
         #imei-info .card-body,
@@ -95,6 +105,65 @@
         
         #scanner-btn {
             cursor: pointer;
+        }
+        
+        /* Carousel styles */
+        .carousel {
+            position: relative;
+            height: 400px;
+            overflow: hidden;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .carousel-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .slide.active {
+            opacity: 1;
+            z-index: 1;
+        }
+        
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .carousel-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .carousel-control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+        }
+        
+        .carousel-control.active {
+            background: white;
         }
     </style>
 </head>
@@ -124,7 +193,19 @@
             
             <div class="carousel" id="carousel-container">
                 <div class="carousel-inner">
-                    <div class="slide">
+                    {% for slide in carousel_slides %}
+                    <div class="slide {% if loop.first %}active{% endif %}" style="background-image: url('{{ slide.image_url }}');">
+                        <div class="carousel-content">
+                            {% if slide.title %}<h3>{{ slide.title }}</h3>{% endif %}
+                            {% if slide.description %}<p>{{ slide.description }}</p>{% endif %}
+                            {% if slide.link %}
+                            <a href="{{ slide.link }}" class="btn btn-primary">Learn More</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Default slides if no slides in DB -->
+                    <div class="slide active">
                         <div class="placeholder">
                             <div class="carousel-content">
                                 <div class="logo-animated">
@@ -171,6 +252,13 @@
                             </div>
                         </div>
                     </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="carousel-controls" id="carousel-controls">
+                    {% for i in range(carousel_slides|length or 3) %}
+                    <div class="carousel-control {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}"></div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -640,6 +728,33 @@
             const captureBtn = document.getElementById('capture-btn');
             const imeiInput = document.getElementById('free-imei-input');
             const spinner = document.getElementById('free-check-spinner');
+            
+            // Carousel functionality
+            const slides = document.querySelectorAll('.slide');
+            const controls = document.querySelectorAll('.carousel-control');
+            let currentSlide = 0;
+            
+            function showSlide(index) {
+                slides.forEach(slide => slide.classList.remove('active'));
+                controls.forEach(control => control.classList.remove('active'));
+                
+                slides[index].classList.add('active');
+                controls[index].classList.add('active');
+                currentSlide = index;
+            }
+            
+            function nextSlide() {
+                const nextIndex = (currentSlide + 1) % slides.length;
+                showSlide(nextIndex);
+            }
+            
+            // Add click events to controls
+            controls.forEach((control, index) => {
+                control.addEventListener('click', () => showSlide(index));
+            });
+            
+            // Auto rotate slides
+            setInterval(nextSlide, 5000);
             
             // Обработчик для выбора файла
             scannerBtn.addEventListener('click', () => {
