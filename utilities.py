@@ -9,7 +9,7 @@ import logging
 from functools import lru_cache
 from datetime import datetime
 from PIL import Image, ImageEnhance
-from unlockimei24 import init_unlock_service  # Исправленный импорт
+from unlockimei24 import init_unlock_service
 from price import get_current_prices
 import cloudinary
 import cloudinary.uploader
@@ -63,6 +63,32 @@ def upload_avatar_to_cloudinary(image_bytes, public_id):
     except Exception as e:
         logger.error(f"Cloudinary upload error: {str(e)}")
         return None
+
+def upload_carousel_image(image_bytes, public_id=None):
+    """
+    Загружает изображение для карусели в Cloudinary
+    :param image_bytes: BytesIO объект с изображением
+    :param public_id: Публичный ID для изображения (опционально)
+    :return: URL загруженного изображения
+    """
+    try:
+        public_id = public_id or f"carousel_{secrets.token_hex(6)}"
+        upload_result = cloudinary.uploader.upload(
+            image_bytes,
+            public_id=public_id,
+            unique_filename=False,
+            overwrite=True,
+            folder="carousel",
+            transformation=[
+                {'width': 800, 'height': 400, 'crop': "fill"},
+                {'quality': "auto:best"},
+                {'fetch_format': "auto"}
+            ]
+        )
+        return upload_result['secure_url'], public_id
+    except Exception as e:
+        logger.error(f"Cloudinary carousel upload error: {str(e)}")
+        return None, None
 
 # ======================================
 # 1. Вспомогательные функции
@@ -122,21 +148,19 @@ def get_android_services_data():
 # ======================================
 # 4. Функции для сервиса разблокировки
 # ======================================
-# Удалена локальная init_unlock_service - теперь используется импортированная
-
 def get_unlock_services():
     """Получение списка сервисов разблокировки"""
-    unlock_service = init_unlock_service()  # Используем импортированную функцию
+    unlock_service = init_unlock_service()
     return unlock_service.get_services()
 
 def place_unlock_order(imei, service_id):
     """Создание заказа на разблокировку"""
-    unlock_service = init_unlock_service()  # Используем импортированную функцию
+    unlock_service = init_unlock_service()
     return unlock_service.place_order(imei, service_id)
 
 def check_unlock_status(refid):
     """Проверка статуса заказа на разблокировку"""
-    unlock_service = init_unlock_service()  # Используем импортированную функцию
+    unlock_service = init_unlock_service()
     return unlock_service.get_order_status(refid)
 
 # ======================================
