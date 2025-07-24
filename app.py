@@ -29,7 +29,7 @@ import requests
 from auth import auth_bp
 from user_dashboard import user_bp
 from ifreeapi import perform_api_check
-from db import client, db, regular_users_collection, checks_collection, payments_collection, refunds_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection
+from db import client, db, regular_users_collection, checks_collection, payments_collection, refunds_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection, phonebase_collection
 from stripepay import StripePayment
 from admin_routes import admin_bp
 from price import get_current_prices, get_service_price, init_prices
@@ -957,6 +957,45 @@ def get_balance():
         return jsonify({'error': 'Server error'}), 500
 
 # ======================================
+# Роут для сравнения телефонов
+# ======================================
+
+@app.route('/compare')
+@cache.cached(timeout=3600)
+def compare_phones():
+    """Страница сравнения характеристик телефонов"""
+    logger.info("Phone comparison page accessed")
+    return render_template('compare.html')
+
+@app.route('/api/search_phones')
+def search_phones():
+    """API для поиска телефонов в базе"""
+    query = request.args.get('query', '').lower().strip()
+    
+    if not query:
+        return jsonify([])
+    
+    try:
+        # Поиск по бренду и модели
+        regex = re.compile(f'.*{re.escape(query)}.*', re.IGNORECASE)
+        results = list(phonebase_collection.find({
+            "$or": [
+                {"Бренд": regex},
+                {"Модель": regex}
+            ]
+        }).limit(10))
+        
+        # Преобразование ObjectId в строки
+        for phone in results:
+            phone['_id'] = str(phone['_id'])
+            
+        return jsonify(results)
+        
+    except Exception as e:
+        logger.error(f"Phone search error: {str(e)}")
+        return jsonify([])
+
+# ======================================
 # Webhook Manager
 # ======================================
 
@@ -1146,6 +1185,7 @@ def create_indexes():
             checks_collection.create_index([("stripe_session_id", 1)])
             checks_collection.create_index([("user_id", 1)])
             checks_collection.create_index([("timestamp", -1)])
+            phonebase_collection.create_index([("Бренд", "text"), ("Модель", "text")])
             logger.info("Database indexes created")
         except Exception as e:
             logger.error(f"Error creating indexes: {str(e)}")
