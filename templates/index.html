@@ -76,6 +76,13 @@
             border-radius: 15px;
             margin: 30px 0;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            background-color: #000; /* Чёрный фон на случай загрузки */
+        }
+
+        .carousel-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
         }
 
         .slide {
@@ -84,16 +91,21 @@
             height: 100%;
             opacity: 0;
             transition: opacity 1s ease-in-out;
-            background-size: contain; /* Изменено с cover на contain */
-            background-position: center;
-            background-repeat: no-repeat;
-            background-color: #000; /* Фон для изображений с прозрачностью */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        /* Обновленные стили для контента */
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ключевое свойство */
+            display: block;
+        }
+
         .carousel-content {
             position: absolute;
-            bottom: 20px;
+            bottom: 0;
             left: 0;
             width: 100%;
             text-align: center;
@@ -101,7 +113,6 @@
             z-index: 10;
             background: rgba(0,0,0,0.5);
             padding: 15px 0;
-            border-radius: 0;
         }
         
         /* Ensure white text in IMEI info section */
@@ -191,8 +202,8 @@
             <div class="carousel" id="carousel-container">
                 <div class="carousel-inner">
                     {% for slide in carousel_slides %}
-                    <div class="slide {% if loop.first %}active{% endif %}" 
-                         style="background-image: url('{{ slide.image_url }}');">
+                    <div class="slide {% if loop.first %}active{% endif %}">
+                        <img src="{{ slide.image_url }}" alt="Carousel image">
                         {% if slide.title or slide.description %}
                         <div class="carousel-content">
                             {% if slide.title %}<h3>{{ slide.title }}</h3>{% endif %}
@@ -868,6 +879,44 @@
                     console.warn('Error updating counters:', e);
                 }
             }, 5000);
+
+            // Функция для адаптации изображений в карусели
+            function resizeCarouselSlides() {
+                const slides = document.querySelectorAll('.slide');
+                const carousel = document.getElementById('carousel-container');
+                
+                slides.forEach(slide => {
+                    const img = slide.querySelector('img');
+                    if (!img) return;
+                    
+                    const containerRatio = carousel.offsetWidth / carousel.offsetHeight;
+                    const imgRatio = img.naturalWidth / img.naturalHeight;
+                    
+                    if (containerRatio > imgRatio) {
+                        img.style.width = '100%';
+                        img.style.height = 'auto';
+                        img.style.objectPosition = 'center center';
+                    } else {
+                        img.style.width = 'auto';
+                        img.style.height = '100%';
+                        img.style.objectPosition = 'center center';
+                    }
+                });
+            }
+
+            // Вызывать при загрузке и изменении размера окна
+            window.addEventListener('load', () => {
+                resizeCarouselSlides();
+                // Запускать каждые 500ms в течение 3 секунд на случай асинхронной загрузки
+                let counter = 0;
+                const interval = setInterval(() => {
+                    resizeCarouselSlides();
+                    counter++;
+                    if (counter > 6) clearInterval(interval);
+                }, 500);
+            });
+
+            window.addEventListener('resize', resizeCarouselSlides);
         });
     </script>
 </body>
