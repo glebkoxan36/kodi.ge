@@ -480,7 +480,11 @@ def index():
         'index.html',
         stripe_public_key=STRIPE_PUBLIC_KEY,
     )
-
+    
+    def index():
+    carousel_slides = list(db.carousel_slides.find().sort("order", 1))
+    return render_template('index.html', carousel_slides=carousel_slides)
+    
 @app.route('/contacts')
 @cache.cached(timeout=3600)
 def contacts_page():
