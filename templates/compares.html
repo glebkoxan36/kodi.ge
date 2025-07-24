@@ -146,6 +146,68 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // მახასიათებელთა ჯგუფები (გადატანილი გლობალურ სფეროში)
+        const specGroups = {
+            "ძირითადი": [
+                "გამოშვების წელი", "ოპერაციული სისტემა", "OS ვერსია", "OS გარსაცმი", "განახლების პოლიტიკა",
+                "უკანასკნელი უსაფრთხოების განახლება"
+            ],
+            "ეკრანი": [
+                "ეკრანის ზომა (დუიმი)", "ეკრანის გაფართოება", "ეკრანის ტიპი", 
+                "განახლების სიხშირე (ჰც)", "მაქსიმალური სიკაშკაშე (ნიტი)", "HDR მხარდაჭერა",
+                "დამცავი მინა", "ეკრანი/კორპუსის თანაფარდობა", "პიქსელების სიმჭიდროვე (PPI)"
+            ],
+            "პროცესორი": [
+                "პროცესორი", "CPU არქიტექტურა", "GPU", "GPU არქიტექტურა", "NPU", "ISP", "მოდემი",
+                "ოპერატიული მეხსიერება (GB)", "ოპერატიული მეხსიერების ტიპი", "ოპერატიული მეხსიერების სიხშირე (მჰც)", "მუდმივი მეხსიერება (GB)", "მუდმივი მეხსიერების ტიპი", "მუდმივი მეხსიერების სიჩქარე",
+                "გაგრილების სისტემა", "გაგრილების ფართობი (მმ²)", "AnTuTu შეფასება", 
+                "Geekbench (ერთი ბირთვი)", "Geekbench (მრავალი ბირთვი)"
+            ],
+            "კამერა": [
+                "მთავარი კამერა (MP)", "ულტრაფართო კამერა (MP)", "ტელე კამერა 1 (MP)", 
+                "ტელე კამერა 2 (MP)", "წინა კამერა (MP)", "სენსორის ზომა (მთავარი)", 
+                "პიქსელის ზომა (მთავარი)", "ზუმის შესაძლებლობები", "ვიდეო ჩაწერა", "ნელი მოძრაობა",
+                "კამერის ფუნქციები"
+            ],
+            "ბატარეა": [
+                "ბატარეის სიმძლავრე (mAh)", "ბატარეის ტიპი", "სწრაფი დატენვა",
+                "უსადენო დატენვა", "უკუსადენო დატენვა", "დატენვის ინტერფეისი", "მუშაობის დრო (სთ)",
+                "მოსვენების რეჟიმში მოხმარება", "მაქსიმალური სიმძლავრე"
+            ],
+            "კორპუსი": [
+                "წონა (გ)", "ზომები (მმ)", "კორპუსის მასალა", "წყალდაცვა", "მტვრედაცვა",
+                "დაცვის სერტიფიკატი", "ჩარჩოს მასალა", "უკანა პანელის მასალა", "ფერები"
+            ],
+            "კავშირი": [
+                "5G მხარდაჭერა", "5G დიაპაზონები", "mmWave მხარდაჭერა", "SIM სლოტები", "SIM ბარათის ტიპი", 
+                "Wi-Fi", "Wi-Fi მახასიათებლები", "Bluetooth", "Bluetooth კოდეკები", "NFC", "ინფრაწითელი პორტი", 
+                "USB ვერსია", "GPS", "სატელიტური კავშირი"
+            ],
+            "აუდიო": [
+                "დინამიკები", "აუდიო კონფიგურაცია", "მიკროფონები", "აუდიოგამოსასვლელი", "სივრცული ხმა"
+            ],
+            "უსაფრთხოება": [
+                "თითის ანაბეჭდის სკანერი", "სახით განბლოკვა", "აქსელერომეტრი", "გიროსკოპი", 
+                "სიახლოვის სენსორი", "კომპასი", "ბარომეტრი", "განათების სენსორი", "ჰოლის სენსორი", 
+                "LiDAR", "თერმომეტრი", "SpO2 სენსორი"
+            ],
+            "დამატებითი": [
+                "სტილუსის მხარდაჭერა", "სტილუსის ტიპი", "სამუშაო მაგიდის რეჟიმი", "VR მხარდაჭერა", 
+                "AI ფუნქციები", "თამაშის ფუნქციები", "უსაფრთხოების ჩიპი"
+            ],
+            "კომპლექტაცია": [
+                "დამტენი კომპლექტში", "კაბელის ტიპი", "ადაპტერი კომპლექტში", 
+                "ყურსასმენები კომპლექტში", "ქავერი კომპლექტში"
+            ],
+            "ეკოლოგია": [
+                "გადამუშავებული მასალები", "შეფუთვა", "ეკოსერტიფიკატები", "რემონტის ინდექსი",
+                "ბატარეის ციკლები"
+            ],
+            "ფასი": [
+                "საწყისი ფასი (₾)", "მიმდინარე ფასი (₾)", "ხელმისაწვდომობა", "გარანტია (თვე)"
+            ]
+        };
+
         // მიმდინარე რეჟიმი
         let currentMode = null;
         
@@ -582,68 +644,6 @@
         // ტელეფონების მონაცემთა ქეში
         let phoneCache = {};
         
-        // მახასიათებელთა ჯგუფები
-        const specGroups = {
-            "ძირითადი": [
-                "გამოშვების წელი", "ოპერაციული სისტემა", "OS ვერსია", "OS გარსაცმი", "განახლების პოლიტიკა",
-                "უკანასკნელი უსაფრთხოების განახლება"
-            ],
-            "ეკრანი": [
-                "ეკრანის ზომა (დუიმი)", "ეკრანის გაფართოება", "ეკრანის ტიპი", 
-                "განახლების სიხშირე (ჰც)", "მაქსიმალური სიკაშკაშე (ნიტი)", "HDR მხარდაჭერა",
-                "დამცავი მინა", "ეკრანი/კორპუსის თანაფარდობა", "პიქსელების სიმჭიდროვე (PPI)"
-            ],
-            "პროცესორი": [
-                "პროცესორი", "CPU არქიტექტურა", "GPU", "GPU არქიტექტურა", "NPU", "ISP", "მოდემი",
-                "ოპერატიული მეხსიერება (GB)", "ოპერატიული მეხსიერების ტიპი", "ოპერატიული მეხსიერების სიხშირე (მჰც)", "მუდმივი მეხსიერება (GB)", "მუდმივი მეხსიერების ტიპი", "მუდმივი მეხსიერების სიჩქარე",
-                "გაგრილების სისტემა", "გაგრილების ფართობი (მმ²)", "AnTuTu შეფასება", 
-                "Geekbench (ერთი ბირთვი)", "Geekbench (მრავალი ბირთვი)"
-            ],
-            "კამერა": [
-                "მთავარი კამერა (MP)", "ულტრაფართო კამერა (MP)", "ტელე კამერა 1 (MP)", 
-                "ტელე კამერა 2 (MP)", "წინა კამერა (MP)", "სენსორის ზომა (მთავარი)", 
-                "პიქსელის ზომა (მთავარი)", "ზუმის შესაძლებლობები", "ვიდეო ჩაწერა", "ნელი მოძრაობა",
-                "კამერის ფუნქციები"
-            ],
-            "ბატარეა": [
-                "ბატარეის სიმძლავრე (mAh)", "ბატარეის ტიპი", "სწრაფი დატენვა",
-                "უსადენო დატენვა", "უკუსადენო დატენვა", "დატენვის ინტერფეისი", "მუშაობის დრო (სთ)",
-                "მოსვენების რეჟიმში მოხმარება", "მაქსიმალური სიმძლავრე"
-            ],
-            "კორპუსი": [
-                "წონა (გ)", "ზომები (მმ)", "კორპუსის მასალა", "წყალდაცვა", "მტვრედაცვა",
-                "დაცვის სერტიფიკატი", "ჩარჩოს მასალა", "უკანა პანელის მასალა", "ფერები"
-            ],
-            "კავშირი": [
-                "5G მხარდაჭერა", "5G დიაპაზონები", "mmWave მხარდაჭერა", "SIM სლოტები", "SIM ბარათის ტიპი", 
-                "Wi-Fi", "Wi-Fi მახასიათებლები", "Bluetooth", "Bluetooth კოდეკები", "NFC", "ინფრაწითელი პორტი", 
-                "USB ვერსია", "GPS", "სატელიტური კავშირი"
-            ],
-            "აუდიო": [
-                "დინამიკები", "აუდიო კონფიგურაცია", "მიკროფონები", "აუდიოგამოსასვლელი", "სივრცული ხმა"
-            ],
-            "უსაფრთხოება": [
-                "თითის ანაბეჭდის სკანერი", "სახით განბლოკვა", "აქსელერომეტრი", "გიროსკოპი", 
-                "სიახლოვის სენსორი", "კომპასი", "ბარომეტრი", "განათების სენსორი", "ჰოლის სენსორი", 
-                "LiDAR", "თერმომეტრი", "SpO2 სენსორი"
-            ],
-            "დამატებითი": [
-                "სტილუსის მხარდაჭერა", "სტილუსის ტიპი", "სამუშაო მაგიდის რეჟიმი", "VR მხარდაჭერა", 
-                "AI ფუნქციები", "თამაშის ფუნქციები", "უსაფრთხოების ჩიპი"
-            ],
-            "კომპლექტაცია": [
-                "დამტენი კომპლექტში", "კაბელის ტიპი", "ადაპტერი კომპლექტში", 
-                "ყურსასმენები კომპლექტში", "ქავერი კომპლექტში"
-            ],
-            "ეკოლოგია": [
-                "გადამუშავებული მასალები", "შეფუთვა", "ეკოსერტიფიკატები", "რემონტის ინდექსი",
-                "ბატარეის ციკლები"
-            ],
-            "ფასი": [
-                "საწყისი ფასი (₾)", "მიმდინარე ფასი (₾)", "ხელმისაწვდომობა", "გარანტია (თვე)"
-            ]
-        };
-        
         // შედარებისთვის ტელეფონის არჩევა
         selectPhoneBtns.forEach(btn => {
             btn.addEventListener('click', function() {
@@ -730,6 +730,8 @@
         // ტელეფონების ძებნის ფუნქცია
         function searchPhones(query) {
             const phoneGrid = document.querySelector('.phone-grid');
+            if (!phoneGrid) return;
+            
             phoneGrid.innerHTML = '<div class="text-center py-5"><div class="spinner"></div><p>მიმდინარეობს ძებნა...</p></div>';
             
             fetch(`/compare/search?q=${encodeURIComponent(query)}`)
@@ -746,6 +748,7 @@
         // ძიების შედეგების ჩვენება
         function displaySearchResults(phones) {
             const phoneGrid = document.querySelector('.phone-grid');
+            if (!phoneGrid) return;
             
             if (!phones || phones.length === 0) {
                 phoneGrid.innerHTML = '<div class="text-center py-4">ტელეფონები ვერ მოიძებნა</div>';
@@ -787,7 +790,10 @@
             // დამამუშავებლების დამატება
             document.querySelectorAll('.view-details-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const phoneId = this.closest('.phone-card').getAttribute('data-id');
+                    const phoneCard = this.closest('.phone-card');
+                    if (!phoneCard) return;
+                    
+                    const phoneId = phoneCard.getAttribute('data-id');
                     
                     if (currentMode === 'single') {
                         loadPhoneDetails(phoneId);
@@ -815,6 +821,8 @@
         
         // ტელეფონის დეტალების ჯგუფებად ჩვენება
         function displayPhoneDetails(phone) {
+            if (!phoneTitle || !phoneImage || !specsContainer) return;
+            
             const brand = phone.ბრენდი || phone.Brand || 'უცნობი ბრენდი';
             const model = phone.მოდელი || phone.Model || 'უცნობი მოდელი';
             
@@ -859,8 +867,8 @@
             }
             
             specsContainer.innerHTML = specsHTML;
-            searchResults.style.display = 'none';
-            phoneDetails.style.display = 'block';
+            if (searchResults) searchResults.style.display = 'none';
+            if (phoneDetails) phoneDetails.style.display = 'block';
         }
         
         // შედარებისთვის ტელეფონის არჩევა
@@ -900,22 +908,25 @@
             `;
             
             // წაშლის ღილაკის დამამუშავებლის დამატება
-            phonePreviews[phoneNum].querySelector('.remove-phone').addEventListener('click', function(e) {
-                e.stopPropagation();
-                const num = this.getAttribute('data-phone');
-                selectedPhones[num] = null;
-                phonePreviews[num].innerHTML = `
-                    <div class="placeholder">
-                        <i class="fas fa-plus"></i>
-                        <p>აირჩიეთ ტელეფონი</p>
-                    </div>
-                `;
-                checkCompareReadiness();
-            });
+            const removeBtn = phonePreviews[phoneNum].querySelector('.remove-phone');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const num = this.getAttribute('data-phone');
+                    selectedPhones[num] = null;
+                    phonePreviews[num].innerHTML = `
+                        <div class="placeholder">
+                            <i class="fas fa-plus"></i>
+                            <p>აირჩიეთ ტელეფონი</p>
+                        </div>
+                    `;
+                    checkCompareReadiness();
+                });
+            }
             
             // ტელეფონების არჩევანზე დაბრუნება
-            compareSelection.style.display = 'block';
-            searchResults.style.display = 'none';
+            if (compareSelection) compareSelection.style.display = 'block';
+            if (searchResults) searchResults.style.display = 'none';
             
             // შედარების მზადყოფნის შემოწმება
             checkCompareReadiness();
@@ -923,11 +934,14 @@
         
         // შედარების მზადყოფნის შემოწმება
         function checkCompareReadiness() {
+            if (!startCompareBtn) return;
             startCompareBtn.disabled = !(selectedPhones[1] && selectedPhones[2]);
         }
         
         // შედარების ბადის გენერირების ფუნქცია
         function generateComparisonGrid(phone1, phone2) {
+            if (!compareSpecsContainer) return;
+            
             let html = '';
             
             // გამოსარიცხი ველები
@@ -1029,11 +1043,11 @@
             if (!phone1 || !phone2) return;
             
             // შედარების კონტეინერის ჩვენება
-            compareSelection.style.display = 'none';
-            compareDetails.style.display = 'block';
+            if (compareSelection) compareSelection.style.display = 'none';
+            if (compareDetails) compareDetails.style.display = 'block';
             
             // წინა შედეგების წაშლა
-            comparisonResults.innerHTML = '';
+            if (comparisonResults) comparisonResults.innerHTML = '';
             
             // სათაურების შევსება
             const brand1 = phone1.ბრენდი || phone1.Brand || 'უცნობი ბრენდი';
@@ -1041,8 +1055,8 @@
             const brand2 = phone2.ბრენდი || phone2.Brand || 'უცნობი ბრენდი';
             const model2 = phone2.მოდელი || phone2.Model || 'უცნობი';
             
-            compareTitle1.textContent = `${brand1} ${model1}`;
-            compareTitle2.textContent = `${brand2} ${model2}`;
+            if (compareTitle1) compareTitle1.textContent = `${brand1} ${model1}`;
+            if (compareTitle2) compareTitle2.textContent = `${brand2} ${model2}`;
             
             // სურათების ჩატვირთვა
             const brandFolder1 = brand1.replace(/\s+/g, '_').toLowerCase();
@@ -1053,35 +1067,42 @@
             const modelName2 = model2.replace(/\s+/g, '_').toLowerCase();
             const imagePath2 = `/static/img/phones/${brandFolder2}/${modelName2}.jpg`;
             
-            compareImage1.src = imagePath1;
-            compareImage2.src = imagePath2;
+            if (compareImage1) {
+                compareImage1.src = imagePath1;
+                compareImage1.onerror = function() { 
+                    this.src = '/static/placeholder.jpg';
+                };
+            }
             
-            compareImage1.onerror = function() { 
-                this.src = '/static/placeholder.jpg';
-            };
-            
-            compareImage2.onerror = function() { 
-                this.src = '/static/placeholder.jpg';
-            };
+            if (compareImage2) {
+                compareImage2.src = imagePath2;
+                compareImage2.onerror = function() { 
+                    this.src = '/static/placeholder.jpg';
+                };
+            }
             
             // შედარების ცხრილის გენერირება
             generateComparisonGrid(phone1, phone2);
             
             // ქულების გამოთვლა და შედეგების ჩვენება
             const scores = compareSpecs(phone1, phone2);
-            comparisonResults.innerHTML = displayComparisonResults(scores, phone1, phone2);
+            if (comparisonResults) {
+                comparisonResults.innerHTML = displayComparisonResults(scores, phone1, phone2);
+            }
         }
 
         // "უკან" ღილაკის დამამუშავებელი
-        backToResults.addEventListener('click', function() {
-            phoneDetails.style.display = 'none';
-            if (currentMode === 'single') {
-                searchResults.style.display = 'block';
-            } else {
-                compareSelection.style.display = 'block';
-            }
-        });
+        if (backToResults) {
+            backToResults.addEventListener('click', function() {
+                if (phoneDetails) phoneDetails.style.display = 'none';
+                if (currentMode === 'single') {
+                    if (searchResults) searchResults.style.display = 'block';
+                } else {
+                    if (compareSelection) compareSelection.style.display = 'block';
+                }
+            });
+        }
     });
     </script>
 </body>
-    </html>
+</html>
