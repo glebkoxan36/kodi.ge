@@ -12,7 +12,9 @@ from db import (
     api_keys_collection, webhooks_collection, db, regular_users_collection,
     payments_collection
 )
-from price import get_current_prices, DEFAULT_PRICES  # Добавлено
+from price import get_current_prices, DEFAULT_PRICES
+from utilities import upload_carousel_image  # Импорт новой функции
+import cloudinary.uploader
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -251,9 +253,6 @@ def check_history():
         
         # Получаем текущие цены
         current_prices = get_current_prices()
-        # Для отображения в шаблоне нам нужны только две цены: paid и premium, но они больше не используются для отображения в таблице истории.
-        # Вместо этого мы будем использовать индивидуальные цены для каждого сервиса, но в истории они уже сохранены.
-        # Поэтому в шаблоне мы просто отобразим сохраненную сумму.
         
         # Форматируем данные для отображения
         for check in checks:
@@ -433,6 +432,139 @@ def add_document(collection_name):
         current_app.logger.error(f"Add document error: {str(e)}")
         flash(f'Error loading form: {str(e)}', 'danger')
         return redirect(url_for('admin.collection_view', collection_name=collection_name))
+
+# ======================================
+# Управление каруселью
+# ======================================
+@admin_bp.route('/carousel', methods=['GET'])
+@admin_required
+def manage_carousel():
+    """Управление каруселью главной страницы"""
+    try:
+        slides = list(db.carousel_slides.find().sort("order", 1))
+        return render_template(
+            'admin/manage_carousel.html',
+            slides=slides,
+            active_section='carousel'
+        )
+    except Exception as e:
+        flash(f'Error loading carousel: {str(e)}', 'danger')
+        return redirect(url_for('admin.admin_dashboard'))
+
+@admin_bp.route('/carousel/add', methods=['GET', 'POST'])
+@admin_required
+def add_carousel_slide():
+    """Добавление нового слайда карусели"""
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        link = request.form.get('link')
+        order = int(request.form.get('order', 0))
+        image_file = request.files.get('image')
+        
+        if not image_file:
+            flash('Image is required', 'danger')
+            return redirect(url_for('admin.add_carousel_slide'))
+        
+        try:
+            # Загружаем изображение
+            image_bytes = image_file.read()
+            image_url, public_id = upload_carousel_image(image_bytes)
+            
+            if not image_url:
+                flash('Image upload failed', 'danger')
+                return redirect(url_for('admin.add_carousel_slide'))
+            
+            # Сохраняем в базу
+            db.carousel_slides.insert_one({
+                'title': title,
+                'description': description,
+                'image_url': image_url,
+                'public_id': public_id,
+                'link': link,
+                'order': order,
+                'created_at': datetime.utcnow()
+            })
+            
+            flash('Slide added successfully', 'success')
+            return redirect(url_for('admin.manage_carousel'))
+        except Exception as e:
+            flash(f'Error: {str(e)}', 'danger')
+    
+    return render_template('admin/add_carousel_slide.html')
+
+@admin_bp.route('/carousel/edit/<slide_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_carousel_slide(slide_id):
+    """Редактирование слайда карусели"""
+    try:
+        slide = db.carousel_slides.find_one({'_id': ObjectId(slide_id)})
+        if not slide:
+            flash('Slide not found', 'danger')
+            return redirect(url_for('admin.manage_carousel'))
+        
+        if request.method == 'POST':
+            update_data = {
+                'title': request.form.get('title'),
+                'description': request.form.get('description'),
+                'link': request.form.get('link'),
+                'order': int(request.form.get('order', 0)),
+                'updated_at': datetime.utcnow()
+            }
+            
+            # Обработка новой картинки
+            image_file = request.files.get('image')
+            if image_file:
+                try:
+                    # Удаляем старое изображение
+                    if slide.get('public_id'):
+                        cloudinary.uploader.destroy(slide['public_id'])
+                    
+                    # Загружаем новое
+                    image_bytes = image_file.read()
+                    image_url, public_id = upload_carousel_image(image_bytes)
+                    
+                    if image_url:
+                        update_data['image_url'] = image_url
+                        update_data['public_id'] = public_id
+                except Exception as e:
+                    flash(f'Image upload error: {str(e)}', 'danger')
+            
+            db.carousel_slides.update_one(
+                {'_id': ObjectId(slide_id)},
+                {'$set': update_data}
+            )
+            flash('Slide updated successfully', 'success')
+            return redirect(url_for('admin.manage_carousel'))
+        
+        return render_template('admin/edit_carousel_slide.html', slide=slide)
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('admin.manage_carousel'))
+
+@admin_bp.route('/carousel/delete/<slide_id>', methods=['POST'])
+@admin_required
+def delete_carousel_slide(slide_id):
+    """Удаление слайда карусели"""
+    try:
+        slide = db.carousel_slides.find_one({'_id': ObjectId(slide_id)})
+        if slide:
+            # Удаляем изображение из Cloudinary
+            if slide.get('public_id'):
+                try:
+                    cloudinary.uploader.destroy(slide['public_id'])
+                except Exception as e:
+                    current_app.logger.error(f"Error deleting carousel image: {str(e)}")
+            
+            # Удаляем из базы
+            db.carousel_slides.delete_one({'_id': ObjectId(slide_id)})
+            flash('Slide deleted successfully', 'success')
+        else:
+            flash('Slide not found', 'warning')
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin.manage_carousel'))
 
 # ======================================
 # Управление администраторами
