@@ -111,21 +111,19 @@
         .carousel-container {
             position: relative;
             width: 100%;
-            padding-top: 40%; /* Соотношение 5:2 для десктопов */
             margin: 30px 0;
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            background: #000; /* Черный фон для незаполненных областей */
+            background: #000;
+            /* Соотношение сторон 16:9 */
+            aspect-ratio: 16/9;
         }
         
         .carousel {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            overflow: hidden;
+            position: relative;
+            width: 100%;
+            height: 100%;
         }
         
         .carousel-inner {
@@ -140,14 +138,20 @@
             height: 100%;
             opacity: 0;
             transition: opacity 1s ease-in-out;
-            background-size: cover; /* Покрытие всей области */
-            background-position: center; /* Центрирование изображения */
-            background-repeat: no-repeat;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
         .slide.active {
             opacity: 1;
             z-index: 1;
+        }
+        
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         
         .carousel-controls {
@@ -174,20 +178,9 @@
         
         /* Mobile specific styles */
         @media (max-width: 768px) {
-            .carousel-container {
-                padding-top: 70%; /* Более высокое соотношение для мобильных */
-            }
-            
             .carousel-content {
                 width: 95%;
                 padding: 15px;
-            }
-        }
-        
-        /* Desktop specific styles */
-        @media (min-width: 1200px) {
-            .carousel-container {
-                padding-top: 35%; /* Меньшая высота для больших экранов */
             }
         }
     </style>
@@ -220,7 +213,8 @@
                 <div class="carousel" id="carousel-container">
                     <div class="carousel-inner">
                         {% for slide in carousel_slides %}
-                        <div class="slide {% if loop.first %}active{% endif %}" style="background-image: url('{{ slide.image_url }}');">
+                        <div class="slide {% if loop.first %}active{% endif %}">
+                            <img src="{{ slide.image_url }}" alt="Carousel slide">
                             <div class="carousel-content">
                                 {% if slide.title %}<h3>{{ slide.title }}</h3>{% endif %}
                                 {% if slide.description %}<p>{{ slide.description }}</p>{% endif %}
