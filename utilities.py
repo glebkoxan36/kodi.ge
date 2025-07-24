@@ -64,28 +64,22 @@ def upload_avatar_to_cloudinary(image_bytes, public_id):
         logger.error(f"Cloudinary upload error: {str(e)}")
         return None
 
-def upload_carousel_image(image_bytes, public_id=None):
+def upload_carousel_image(image_bytes):
     """
     Загружает изображение для карусели в Cloudinary
     :param image_bytes: BytesIO объект с изображением
-    :param public_id: Публичный ID для изображения (опционально)
-    :return: URL загруженного изображения
+    :return: URL загруженного изображения и public_id
     """
     try:
-        public_id = public_id or f"carousel_{secrets.token_hex(6)}"
         upload_result = cloudinary.uploader.upload(
             image_bytes,
-            public_id=public_id,
-            unique_filename=False,
-            overwrite=True,
             folder="carousel",
             transformation=[
                 {'width': 800, 'height': 400, 'crop': "fill"},
-                {'quality': "auto:best"},
-                {'fetch_format': "auto"}
+                {'quality': "auto:best"}
             ]
         )
-        return upload_result['secure_url'], public_id
+        return upload_result['secure_url'], upload_result['public_id']
     except Exception as e:
         logger.error(f"Cloudinary carousel upload error: {str(e)}")
         return None, None
