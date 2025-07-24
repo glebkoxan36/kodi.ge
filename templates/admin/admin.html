@@ -91,6 +91,12 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'admin.manage_carousel' %}active{% endif %}" 
+                                   href="{{ url_for('admin.manage_carousel') }}">
+                                    <i class="bi bi-images"></i> Carousel
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link {% if request.endpoint == 'admin.system_status' %}active{% endif %}" 
                                    href="{{ url_for('admin.system_status') }}">
                                     <i class="bi bi-heart-pulse"></i> System Status
@@ -152,6 +158,12 @@
                         <a class="nav-link {% if request.endpoint == 'admin.manage_regular_users' %}active{% endif %}" 
                            href="{{ url_for('admin.manage_regular_users') }}">
                             <i class="bi bi-people-fill"></i> User Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.manage_carousel' %}active{% endif %}" 
+                           href="{{ url_for('admin.manage_carousel') }}">
+                            <i class="bi bi-images"></i> Carousel
                         </a>
                     </li>
                     <li class="nav-item">
