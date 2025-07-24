@@ -9,7 +9,6 @@ import logging
 from functools import lru_cache
 from datetime import datetime
 from PIL import Image, ImageEnhance
-from unlockimei24 import init_unlock_service
 from price import get_current_prices
 import cloudinary
 import cloudinary.uploader
@@ -140,24 +139,6 @@ def get_android_services_data():
         'frp': f"{prices['frp'] / 100:.2f}₾",
         'sim_lock_android': f"{prices['sim_lock_android'] / 100:.2f}₾",
     }
-
-# ======================================
-# 4. Функции для сервиса разблокировки
-# ======================================
-def get_unlock_services():
-    """Получение списка сервисов разблокировки"""
-    unlock_service = init_unlock_service()
-    return unlock_service.get_services()
-
-def place_unlock_order(imei, service_id):
-    """Создание заказа на разблокировку"""
-    unlock_service = init_unlock_service()
-    return unlock_service.place_order(imei, service_id)
-
-def check_unlock_status(refid):
-    """Проверка статуса заказа на разблокировку"""
-    unlock_service = init_unlock_service()
-    return unlock_service.get_order_status(refid)
 
 # ======================================
 # 5. Вспомогательные функции для вебхуков
