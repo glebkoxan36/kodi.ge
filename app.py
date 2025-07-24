@@ -29,7 +29,7 @@ import requests
 from auth import auth_bp
 from user_dashboard import user_bp
 from ifreeapi import perform_api_check
-from db import client, db, regular_users_collection, checks_collection, payments_collection, refunds_collection, phonebase_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection
+from db import client, db, regular_users_collection, checks_collection, payments_collection, refunds_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection
 from stripepay import StripePayment
 from admin_routes import admin_bp
 from price import get_current_prices, get_service_price, init_prices
@@ -38,10 +38,6 @@ from utilities import (
     generate_avatar_color, 
     get_apple_services_data, 
     get_android_services_data,
-    get_unlock_services,
-    place_unlock_order as utils_place_unlock_order,
-    check_unlock_status as utils_check_unlock_status,
-    
 )
 
 # Настройка корневого логгера
@@ -136,10 +132,6 @@ if client:
 else:
     logger.warning("Skipping price initialization - MongoDB not available")
 
-# Конфигурация API разблокировки
-app.config['UNLOCK_API_EMAIL'] = 'glebkoxan36@gmail.com'
-app.config['UNLOCK_API_KEY'] = 'YHN-H96-H1F-OA1-AF7-3HX-9BV-MXF'
-
 # Конфигурация сессии
 app.config.update(
     SESSION_TYPE='mongodb',
@@ -165,10 +157,7 @@ app.config.update(
         'get_check_result',
         'health',
         'auth.facebook_callback',
-        'unlock_services',
-        'place_unlock_order',
-        'check_unlock_status',
-        'scan_imei'  # Добавлен новый роут в исключения CSRF
+        'scan_imei'
     ]
 )
 Session(app)
@@ -506,67 +495,6 @@ def policy_page():
     """Страница политики конфиденциальности"""
     logger.info("Policy page access")
     return render_common_template('politika.html')
-
-@app.route('/compares')
-@cache.cached(timeout=3600)
-def compares_page():
-    """Страница сравнения спецификаций телефонов"""
-    logger.info("Compares page access")
-    return render_common_template('compares.html')
-
-# ======================================
-# API для сравнения телефонов
-# ======================================
-
-@app.route('/compare/search')
-def compare_search():
-    """Поиск телефонов для сравнения"""
-    query = request.args.get('q', '').strip()
-    logger.info(f"Phone search: {query}")
-    if not query or len(query) < 2:
-        logger.debug("Search query too short")
-        return jsonify([])
-
-    try:
-        regex_query = re.compile(f'.*{re.escape(query)}.*', re.IGNORECASE)
-        
-        results = phonebase_collection.find({
-            '$or': [
-                {'Бренд': regex_query},
-                {'Модель': regex_query},
-                {'Brand': regex_query},
-                {'Model': regex_query}
-            ]
-        }).limit(20)
-        
-        phones = list(results)
-        
-        for phone in phones:
-            phone['_id'] = str(phone['_id'])
-        
-        logger.debug(f"Found {len(phones)} phones for query: {query}")
-        return jsonify(phones)
-    
-    except Exception as e:
-        logger.error(f"Phone search error: {str(e)}")
-        return jsonify({'error': 'Database error'}), 500
-
-@app.route('/compare/phone/<phone_id>')
-def get_phone_details(phone_id):
-    """Получение деталей телефона по ID"""
-    logger.info(f"Phone details request: {phone_id}")
-    try:
-        phone = phonebase_collection.find_one({'_id': ObjectId(phone_id)})
-        if not phone:
-            logger.warning(f"Phone not found: {phone_id}")
-            return jsonify({'error': 'Phone not found'}), 404
-        
-        phone['_id'] = str(phone['_id'])
-        return jsonify(phone)
-    
-    except Exception as e:
-        logger.error(f"Phone details error: {str(e)}")
-        return jsonify({'error': 'Invalid phone ID'}), 400
 
 # ======================================
 # Роут для страницы проверки Apple IMEI
@@ -1079,157 +1007,6 @@ def send_webhook_event(event_type, payload):
                 }}
             )
 
-
-
-# ======================================
-# Unlock Service Endpoints
-# ======================================
-
-@app.route('/unlock')
-def unlock_page():
-    """Страница разблокировки телефонов"""
-    logger.info("Accessing unlock page")
-    try:
-        return render_template('unlock.html')
-    except Exception as e:
-        logger.exception(f"Error rendering unlock template: {str(e)}")
-        return "Server error", 500
-
-@app.route('/unlock/services')
-def unlock_services():
-    """API для получения списка сервисов разблокировки"""
-    logger.info("Request to /unlock/services")
-    try:
-        services_data = get_unlock_services()
-        logger.info(f"Services data received: {services_data}")
-
-        if not services_data:
-            logger.error("No services data received")
-            return jsonify({
-                'status': 'error',
-                'message': 'Failed to get services'
-            }), 500
-
-        # Проверяем тип данных
-        if isinstance(services_data, list):
-            services_list = services_data
-        elif isinstance(services_data, dict):
-            # Преобразуем словарь в список значений
-            services_list = list(services_data.values())
-        else:
-            logger.error(f"Unexpected services data type: {type(services_data)}")
-            return jsonify({
-                'status': 'error',
-                'message': 'Invalid services data format'
-            }), 500
-
-        services = []
-        for service in services_list:
-            # Пропускаем элементы, которые не являются словарями
-            if not isinstance(service, dict):
-                logger.warning("Service entry is not a dict, skipping")
-                continue
-
-            # Получаем ID - он может быть числом или строкой
-            service_id = service.get('id')
-            if service_id is None:
-                logger.warning("Service entry has no id, skipping")
-                continue
-
-            services.append({
-                'id': str(service_id),
-                'name': service.get('name', 'Unlock Service'),
-                'price': service.get('price', '0.00'),
-                'description': service.get('description', '')
-            })
-
-        logger.info(f"Returning {len(services)} services")
-        return jsonify({
-            'status': 'success',
-            'services': services
-        })
-    except Exception as e:
-        logger.exception(f"Error in unlock_services: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': 'Internal server error'
-        }), 500
-
-@app.route('/unlock/place-order', methods=['POST'])
-def place_unlock_order():
-    """Отправка заказа на разблокировку"""
-    try:
-        data = request.get_json()
-        imei = data.get('imei', '').strip()
-        service_id = data.get('service_id', '')
-        
-        # Валидация IMEI
-        if not re.match(r'^\d{15,17}$', imei):
-            return jsonify({
-                'status': 'error',
-                'message': 'Invalid IMEI format (15-17 digits required)'
-            }), 400
-        
-        if not service_id or not service_id.isdigit():
-            return jsonify({
-                'status': 'error',
-                'message': 'Invalid service ID'
-            }), 400
-        
-        result = utils_place_unlock_order(imei, service_id)
-        
-        if result.get('STATUS') == 'error':
-            return jsonify({
-                'status': 'error',
-                'message': result.get('MESSAGE', 'Unlock failed')
-            }), 400
-        
-        return jsonify({
-            'status': 'success',
-            'data': result
-        })
-        
-    except Exception as e:
-        logger.exception(f"Error placing unlock order: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': 'Internal server error'
-        }), 500
-
-@app.route('/unlock/check-status', methods=['POST'])
-def check_unlock_status():
-    """Проверка статуса заказа"""
-    try:
-        data = request.get_json()
-        refid = data.get('refid', '')
-        
-        if not refid:
-            return jsonify({
-                'status': 'error',
-                'message': 'Reference ID is required'
-            }), 400
-        
-        result = utils_check_unlock_status(refid)
-        
-        if result.get('STATUS') == 'error':
-            return jsonify({
-                'status': 'error',
-                'message': result.get('MESSAGE', 'Status check failed')
-            }), 400
-        
-        return jsonify({
-            'status': 'success',
-            'data': result
-        })
-        
-    except Exception as e:
-        logger.exception(f"Error checking unlock status: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': 'Internal server error'
-        }), 500
-
-
 # Регистрация блюпринтов
 app.register_blueprint(auth_bp)
 app.register_blueprint(user_bp)
@@ -1383,4 +1160,4 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production'
-            )
+        )
