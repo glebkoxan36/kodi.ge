@@ -1,0 +1,51 @@
+{% extends 'admin.html' %}
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5>Carousel Management</h5>
+        <a href="{{ url_for('admin.add_carousel_slide') }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Slide
+        </a>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Preview</th>
+                    <th>Title</th>
+                    <th>Order</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slide in slides %}
+                <tr>
+                    <td>
+                        <img src="{{ slide.image_url }}" alt="Preview" style="max-height: 50px;">
+                    </td>
+                    <td>{{ slide.title }}</td>
+                    <td>{{ slide.order }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.edit_carousel_slide', slide_id=slide._id) }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('admin.delete_carousel_slide', slide_id=slide._id) }}" 
+                              class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Are you sure?')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center">No slides found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
