@@ -68,15 +68,16 @@ def upload_carousel_image(image_bytes):
     """
     Загружает изображение для карусели в Cloudinary
     :param image_bytes: BytesIO объект с изображением
-    :return: URL загруженженного изображения и public_id
+    :return: URL загруженного изображения и public_id
     """
     try:
         upload_result = cloudinary.uploader.upload(
             image_bytes,
             folder="carousel",
             transformation=[
-                {'quality': "auto:best"},
-                {'fetch_format': "auto"}
+                # Изменено: сохраняем пропорции, заполняем область
+                {'width': 1200, 'height': 600, 'crop': "fill", 'gravity': "auto"},
+                {'quality': "auto:best"}
             ]
         )
         return upload_result['secure_url'], upload_result['public_id']
