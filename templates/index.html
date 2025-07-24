@@ -68,53 +68,20 @@
         .hero-section {
             padding-top: 30px;
         }
-        /* Обновленные стили для карусели */
-        .carousel {
-            position: relative;
-            height: 400px;
-            overflow: hidden;
-            border-radius: 15px;
-            margin: 30px 0;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            background-color: #000; /* Чёрный фон на случай загрузки */
-        }
-
-        .carousel-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-
-        .slide {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            transition: opacity 1s ease-in-out;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .slide img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* Ключевое свойство */
-            display: block;
-        }
-
+        /* Added for carousel content positioning */
         .carousel-content {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             text-align: center;
             color: white;
             z-index: 10;
             background: rgba(0,0,0,0.5);
-            padding: 15px 0;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
         }
-        
         /* Ensure white text in IMEI info section */
         #imei-info .card-body,
         #imei-info .card-body * {
@@ -141,10 +108,41 @@
         }
         
         /* Carousel styles */
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            padding-top: 40%; /* Соотношение 5:2 для десктопов */
+            margin: 30px 0;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            background: #000; /* Черный фон для незаполненных областей */
+        }
+        
+        .carousel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+        }
+        
         .carousel-inner {
             position: relative;
             width: 100%;
             height: 100%;
+        }
+        
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            background-size: cover; /* Покрытие всей области */
+            background-position: center; /* Центрирование изображения */
+            background-repeat: no-repeat;
         }
         
         .slide.active {
@@ -173,6 +171,25 @@
         .carousel-control.active {
             background: white;
         }
+        
+        /* Mobile specific styles */
+        @media (max-width: 768px) {
+            .carousel-container {
+                padding-top: 70%; /* Более высокое соотношение для мобильных */
+            }
+            
+            .carousel-content {
+                width: 95%;
+                padding: 15px;
+            }
+        }
+        
+        /* Desktop specific styles */
+        @media (min-width: 1200px) {
+            .carousel-container {
+                padding-top: 35%; /* Меньшая высота для больших экранов */
+            }
+        }
     </style>
 </head>
 <body>
@@ -199,77 +216,76 @@
                 <p class="lead">პროფესიონალური IMEI შემოწმების სერვისი</p>
             </div>
             
-            <div class="carousel" id="carousel-container">
-                <div class="carousel-inner">
-                    {% for slide in carousel_slides %}
-                    <div class="slide {% if loop.first %}active{% endif %}">
-                        <img src="{{ slide.image_url }}" alt="Carousel image">
-                        {% if slide.title or slide.description %}
-                        <div class="carousel-content">
-                            {% if slide.title %}<h3>{{ slide.title }}</h3>{% endif %}
-                            {% if slide.description %}<p>{{ slide.description }}</p>{% endif %}
-                            {% if slide.link %}
-                            <a href="{{ slide.link }}" class="btn btn-sm btn-primary">Learn More</a>
-                            {% endif %}
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% else %}
-                    <!-- Default slides if no slides in DB -->
-                    <div class="slide active">
-                        <div class="placeholder">
+            <div class="carousel-container">
+                <div class="carousel" id="carousel-container">
+                    <div class="carousel-inner">
+                        {% for slide in carousel_slides %}
+                        <div class="slide {% if loop.first %}active{% endif %}" style="background-image: url('{{ slide.image_url }}');">
                             <div class="carousel-content">
-                                <div class="logo-animated">
-                                    <div class="logo-ring"></div>
-                                    <div class="logo-ring"></div>
-                                    <div class="logo-ring"></div>
-                                    <div class="logo-core">
-                                        <div class="logo-letter">K</div>
-                                    </div>
-                                </div>
-                                <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
+                                {% if slide.title %}<h3>{{ slide.title }}</h3>{% endif %}
+                                {% if slide.description %}<p>{{ slide.description }}</p>{% endif %}
+                                {% if slide.link %}
+                                <a href="{{ slide.link }}" class="btn btn-primary">Learn More</a>
+                                {% endif %}
                             </div>
                         </div>
+                        {% else %}
+                        <!-- Default slides if no slides in DB -->
+                        <div class="slide active">
+                            <div class="placeholder">
+                                <div class="carousel-content">
+                                    <div class="logo-animated">
+                                        <div class="logo-ring"></div>
+                                        <div class="logo-ring"></div>
+                                        <div class="logo-ring"></div>
+                                        <div class="logo-core">
+                                            <div class="logo-letter">K</div>
+                                        </div>
+                                    </div>
+                                    <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="slide">
+                            <div class="placeholder">
+                                <div class="carousel-content">
+                                    <div class="logo-animated">
+                                        <div class="logo-ring"></div>
+                                        <div class="logo-ring"></div>
+                                        <div class="logo-ring"></div>
+                                        <div class="logo-core">
+                                            <div class="logo-letter">K</div>
+                                        </div>
+                                    </div>
+                                    <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="slide">
+                            <div class="placeholder">
+                                <div class="carousel-content">
+                                    <div class="logo-animated">
+                                        <div class="logo-ring"></div>
+                                        <div class="logo-ring"></div>
+                                        <div class="logo-ring"></div>
+                                        <div class="logo-core">
+                                            <div class="logo-letter">K</div>
+                                        </div>
+                                    </div>
+                                    <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
                     
-                    <div class="slide">
-                        <div class="placeholder">
-                            <div class="carousel-content">
-                                <div class="logo-animated">
-                                    <div class="logo-ring"></div>
-                                    <div class="logo-ring"></div>
-                                    <div class="logo-ring"></div>
-                                    <div class="logo-core">
-                                        <div class="logo-letter">K</div>
-                                    </div>
-                                </div>
-                                <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
-                            </div>
-                        </div>
+                    <div class="carousel-controls" id="carousel-controls">
+                        {% for i in range(carousel_slides|length or 3) %}
+                        <div class="carousel-control {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}"></div>
+                        {% endfor %}
                     </div>
-                    
-                    <div class="slide">
-                        <div class="placeholder">
-                            <div class="carousel-content">
-                                <div class="logo-animated">
-                                    <div class="logo-ring"></div>
-                                    <div class="logo-ring"></div>
-                                    <div class="logo-ring"></div>
-                                    <div class="logo-core">
-                                        <div class="logo-letter">K</div>
-                                    </div>
-                                </div>
-                                <div class="placeholder-text">აქ იქნება თქვენი რეკლამა</div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                
-                <div class="carousel-controls" id="carousel-controls">
-                    {% for i in range(carousel_slides|length or 3) %}
-                    <div class="carousel-control {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}"></div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -879,44 +895,6 @@
                     console.warn('Error updating counters:', e);
                 }
             }, 5000);
-
-            // Функция для адаптации изображений в карусели
-            function resizeCarouselSlides() {
-                const slides = document.querySelectorAll('.slide');
-                const carousel = document.getElementById('carousel-container');
-                
-                slides.forEach(slide => {
-                    const img = slide.querySelector('img');
-                    if (!img) return;
-                    
-                    const containerRatio = carousel.offsetWidth / carousel.offsetHeight;
-                    const imgRatio = img.naturalWidth / img.naturalHeight;
-                    
-                    if (containerRatio > imgRatio) {
-                        img.style.width = '100%';
-                        img.style.height = 'auto';
-                        img.style.objectPosition = 'center center';
-                    } else {
-                        img.style.width = 'auto';
-                        img.style.height = '100%';
-                        img.style.objectPosition = 'center center';
-                    }
-                });
-            }
-
-            // Вызывать при загрузке и изменении размера окна
-            window.addEventListener('load', () => {
-                resizeCarouselSlides();
-                // Запускать каждые 500ms в течение 3 секунд на случай асинхронной загрузки
-                let counter = 0;
-                const interval = setInterval(() => {
-                    resizeCarouselSlides();
-                    counter++;
-                    if (counter > 6) clearInterval(interval);
-                }, 500);
-            });
-
-            window.addEventListener('resize', resizeCarouselSlides);
         });
     </script>
 </body>
