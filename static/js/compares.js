@@ -463,7 +463,8 @@ if (typeof module !== 'undefined' && module.exports) {
         comparePhones,
         CPU_SCORES,
         GPU_SCORES,
-        SCORE_RULES
+        SCORE_RULES,
+        findBestMatch
     };
 } else {
     // Для браузера
@@ -472,6 +473,7 @@ if (typeof module !== 'undefined' && module.exports) {
         comparePhones,
         CPU_SCORES,
         GPU_SCORES,
-        SCORE_RULES
+        SCORE_RULES,
+        findBestMatch
     };
-    }
+}
