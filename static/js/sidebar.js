@@ -3,22 +3,22 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="sidebar">
             <style>
                 .sidebar {
-                    width: 220px;
+                    width: 240px;
                     height: 100vh;
-                    background: linear-gradient(135deg, #2c3e50, #1a1a2e);
-                    color: white;
+                    background: #121212;
+                    color: #e0e0e0;
                     position: fixed;
                     left: 0;
                     top: 0;
                     z-index: 100;
-                    box-shadow: 3px 0 15px rgba(0,0,0,0.4);
+                    box-shadow: 3px 0 15px rgba(0,0,0,0.6);
                     overflow-y: auto;
                     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
-                    transform: translateX(0);
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 }
                 
                 .sidebar:hover {
-                    box-shadow: 3px 0 20px rgba(0,0,0,0.6);
+                    box-shadow: 3px 0 20px rgba(0,0,0,0.8);
                 }
                 
                 .nav {
@@ -31,34 +31,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 .nav-link {
-                    color: #ecf0f1 !important;
-                    padding: 12px 20px;
+                    color: #e0e0e0 !important;
+                    padding: 14px 25px;
                     display: flex;
                     align-items: center;
-                    gap: 12px;
+                    gap: 15px;
                     transition: all 0.3s ease;
                     position: relative;
                     z-index: 2;
+                    font-size: 16px;
+                    text-decoration: none;
                 }
                 
                 .nav-link:hover {
-                    background: rgba(255,255,255,0.1);
-                    padding-left: 25px;
+                    background: rgba(64, 126, 201, 0.2);
+                    padding-left: 28px;
                 }
                 
                 .nav-link.active {
-                    background: #e74c3c;
-                    font-weight: bold;
+                    background: linear-gradient(90deg, rgba(64, 126, 201, 0.8), transparent);
+                    border-left: 4px solid #407ec9;
+                    font-weight: 600;
                 }
                 
                 .nav-link i {
                     width: 24px;
                     text-align: center;
                     transition: transform 0.3s ease;
+                    color: #a0c4ff;
                 }
                 
                 .submenu {
-                    background: rgba(0,0,0,0.2);
+                    background: rgba(30, 30, 30, 0.9);
                     padding: 0;
                     max-height: 0;
                     overflow: hidden;
@@ -71,14 +75,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 .submenu .nav-link {
-                    padding: 10px 20px 10px 50px;
-                    font-size: 0.9em;
+                    padding: 12px 25px 12px 60px;
+                    font-size: 15px;
                     opacity: 0.9;
+                    color: #d0d0d0 !important;
                 }
                 
                 .submenu .nav-link:hover {
-                    background: rgba(255,255,255,0.05);
-                    padding-left: 55px;
+                    background: rgba(64, 126, 201, 0.15);
+                    padding-left: 63px;
+                    color: #ffffff !important;
                 }
                 
                 .rotate-icon {
@@ -88,16 +94,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 .nav-link .fa-chevron-down {
                     margin-left: auto;
                     transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+                    color: #a0c4ff;
+                    font-size: 14px;
                 }
                 
                 .nav-item::after {
                     content: '';
                     position: absolute;
                     bottom: 0;
-                    left: 0;
-                    right: 0;
+                    left: 20px;
+                    right: 20px;
                     height: 1px;
-                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+                    background: rgba(80, 80, 80, 0.5);
                 }
                 
                 @keyframes fadeIn {
@@ -120,7 +128,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 .nav-item:nth-child(8) { animation-delay: 0.8s; }
                 .nav-item:nth-child(9) { animation-delay: 0.9s; }
                 .nav-item:nth-child(10) { animation-delay: 1.0s; }
+                
+                .logo-area {
+                    padding: 25px 20px 15px;
+                    text-align: center;
+                    border-bottom: 1px solid rgba(80, 80, 80, 0.5);
+                    margin-bottom: 15px;
+                }
+                
+                .logo-text {
+                    font-size: 22px;
+                    font-weight: 700;
+                    background: linear-gradient(90deg, #a0c4ff, #407ec9);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    letter-spacing: 1px;
+                }
             </style>
+            
+            <div class="logo-area">
+                <div class="logo-text">ჩექ-მობაილი</div>
+            </div>
             
             <ul class="nav flex-column">
                 <!-- მთავარი გვერდი -->
@@ -305,6 +333,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     icon.classList.remove('rotate-icon');
                     icon.style.transform = 'rotate(0deg)';
                 });
+            }
+        });
+        
+        // Подсветка активного пункта меню
+        const currentPath = window.location.pathname;
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('active');
             }
         });
     }
