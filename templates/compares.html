@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ტელეფონების სპეციფიკაციების ბაზა</title>
+    <title>ტელეფონების შედარება</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='compares.css') }}">
     <style>
         body {
             background: linear-gradient(135deg, #0f172a, #1e293b);
@@ -24,41 +22,6 @@
         
         .text-center {
             text-align: center;
-        }
-        
-        .mode-switcher {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
-        
-        .mode-btn {
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            border: 2px solid #3b82f6;
-            background-color: transparent;
-            color: #3b82f6;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-        }
-        
-        .mode-btn:hover {
-            background-color: #3b82f6;
-            color: white;
-        }
-        
-        .mode-btn.active {
-            background-color: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-        }
-        
-        .mode-btn i {
-            margin-right: 8px;
         }
         
         #mainContent {
@@ -109,27 +72,213 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        .spec-group {
+            margin-bottom: 25px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(15, 23, 42, 0.5);
+        }
+        
+        .spec-group-header {
+            background: #3b82f6;
+            padding: 10px 15px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .spec-group-body {
+            padding: 15px;
+        }
+        
+        .spec-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .spec-name {
+            font-weight: 500;
+        }
+        
+        .spec-value {
+            text-align: right;
+        }
+        
+        .comparison-category {
+            background: rgba(59, 130, 246, 0.15);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .comparison-winner {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: rgba(21, 128, 61, 0.2);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 3px solid #22c55e;
+        }
+        
+        .comparison-winner i {
+            margin-right: 10px;
+            color: #22c55e;
+        }
+        
+        .selected-phone {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .phone-thumb-sm {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            border-radius: 5px;
+        }
+        
+        .phone-selectors-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        
+        .phone-selector {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .compare-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .vs-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+        
+        .compare-header {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .compare-phone {
+            text-align: center;
+            flex: 1;
+        }
+        
+        /* მობილური ვერსიის სტილები */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            .phone-selectors-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .compare-controls {
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 15px;
+            }
+            
+            .compare-controls button {
+                width: 100%;
+            }
+            
+            .compare-header {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .vs-badge {
+                margin: 15px 0;
+                font-size: 1.5rem;
+                font-weight: bold;
+                padding: 5px 15px;
+                background: rgba(59, 130, 246, 0.3);
+                border-radius: 20px;
+            }
+            
+            /* შედარების შედეგების და სპეციფიკაციების თანმიმდევრობის შეცვლა */
+            .compare-container {
+                display: flex;
+                flex-direction: column;
+            }
+            
+            #comparisonResults {
+                order: 1;
+                margin-bottom: 20px;
+            }
+            
+            .compare-specs-grid {
+                order: 2;
+            }
+            
+            /* კომპაქტური ტაბულის სტილი */
+            .spec-item {
+                flex-direction: column;
+                padding: 8px 0;
+                font-size: 14px;
+            }
+            
+            .spec-name {
+                font-weight: 600;
+                margin-bottom: 3px;
+                color: #93c5fd;
+            }
+            
+            .spec-group-header {
+                padding: 8px 12px;
+                font-size: 1rem;
+            }
+            
+            .spec-group-body {
+                padding: 10px;
+            }
+            
+            .phone-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .phone-preview .placeholder {
+                padding: 15px;
+                text-align: center;
+                color: #94a3b8;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container mt-5">
-        <!-- რეჟიმები -->
-        <div class="mode-switcher mb-4">
-            <button id="singleModeBtn" class="btn mode-btn">
-                <i class="fas fa-mobile-alt"></i>მარტოხელა
-            </button>
-            <button id="compareModeBtn" class="btn mode-btn">
-                <i class="fas fa-exchange-alt"></i>შედარება
-            </button>
-        </div>
-
-        <div id="mainContent" style="display: none;">
-            <!-- ტელეფონების არჩევა შედარების რეჟიმში -->
-            <div id="compareSelection" class="compare-selection mb-4" style="display: none;">
+        <div id="mainContent">
+            <!-- ტელეფონების არჩევა შედარებისთვის -->
+            <div id="compareSelection" class="compare-selection mb-4">
                 <div class="phone-selectors-container">
                     <div class="phone-selector">
                         <div class="selector-header">
-                            <h4>ტელეფონი 1</h4>
+                            <h3>ტელეფონი 1</h3>
                         </div>
                         <div class="phone-preview" id="phonePreview1">
                             <div class="placeholder">
@@ -137,13 +286,18 @@
                                 <p>აირჩიეთ ტელეფონი</p>
                             </div>
                         </div>
-                        <button class="btn btn-outline-secondary mt-2 select-phone-btn" data-phone="1">
+                        <button class="btn btn-primary mt-2 select-phone-btn" data-phone="1">
                             ტელეფონის არჩევა
                         </button>
                     </div>
+                    
+                    <div class="vs-badge">
+                        <span>VS</span>
+                    </div>
+                    
                     <div class="phone-selector">
                         <div class="selector-header">
-                            <h4>ტელეფონი 2</h4>
+                            <h3>ტელეფონი 2</h3>
                         </div>
                         <div class="phone-preview" id="phonePreview2">
                             <div class="placeholder">
@@ -151,14 +305,14 @@
                                 <p>აირჩიეთ ტელეფონი</p>
                             </div>
                         </div>
-                        <button class="btn btn-outline-secondary mt-2 select-phone-btn" data-phone="2">
+                        <button class="btn btn-primary mt-2 select-phone-btn" data-phone="2">
                             ტელეფონის არჩევა
                         </button>
                     </div>
                 </div>
                 <div class="compare-controls">
                     <button id="startCompareBtn" class="btn btn-success" disabled>
-                        <i class="fas fa-balance-scale me-2"></i>შედარება
+                        <i class="fas fa-balance-scale me-2"></i>შედარების დაწყება
                     </button>
                     <button id="clearCompareBtn" class="btn btn-outline-danger">
                         <i class="fas fa-times me-2"></i>გასუფთავება
@@ -168,32 +322,18 @@
 
             <div id="searchResults" class="specs-container mt-5" style="display: none;">
                 <div class="search-results-header">
-                    <div class="search-box">
+                    <div class="search-box mb-4">
                         <div class="input-group">
                             <input type="text" id="phoneSearch" class="form-control" 
                                    placeholder="შეიყვანეთ ბრენდი ან მოდელი...">
+                            <button class="btn btn-outline-secondary" id="cancelSearchBtn">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
                 <div class="phone-grid">
                     <!-- ძიების შედეგები აქ გამოჩნდება -->
-                </div>
-            </div>
-
-            <div id="phoneDetails" class="specs-container mt-5" style="display: none;">
-                <button id="backToResults" class="btn btn-secondary mb-4">
-                    <i class="fas fa-arrow-left me-2"></i>უკან შედეგებთან
-                </button>
-                
-                <div class="specs-header">
-                    <div class="specs-phone">
-                        <img id="phoneImage" src="" alt="Phone" class="phone-thumb">
-                        <div id="phoneTitle" class="mt-3 h3 text-center"></div>
-                    </div>
-                </div>
-                
-                <div class="spec-items mt-4" id="specsContainer">
-                    <!-- სპეციფიკაციები აქ გამოჩნდება -->
                 </div>
             </div>
 
@@ -205,20 +345,20 @@
                 
                 <div class="compare-header">
                     <div class="compare-phone">
-                        <img id="compareImage1" src="" alt="Phone 1" class="phone-thumb">
-                        <div id="compareTitle1" class="mt-3 h4 text-center"></div>
+                        <img id="compareImage1" src="" alt="ტელეფონი 1" class="phone-thumb">
+                        <div id="compareTitle1" class="mt-3 h3"></div>
                     </div>
                     <div class="vs-badge">
                         <span>VS</span>
                     </div>
                     <div class="compare-phone">
-                        <img id="compareImage2" src="" alt="Phone 2" class="phone-thumb">
-                        <div id="compareTitle2" class="mt-3 h4 text-center"></div>
+                        <img id="compareImage2" src="" alt="ტელეფონი 2" class="phone-thumb">
+                        <div id="compareTitle2" class="mt-3 h3"></div>
                     </div>
                 </div>
                 
                 <!-- შედარების შედეგები -->
-                <div id="comparisonResults"></div>
+                <div id="comparisonResults" class="mb-5"></div>
                 
                 <!-- სპეციფიკაციების კონტეინერი -->
                 <div class="compare-specs-grid" id="compareSpecs">
@@ -230,82 +370,16 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Основные элементы интерфейса
-        const mainContent = document.getElementById('mainContent');
-        const singleModeBtn = document.getElementById('singleModeBtn');
-        const compareModeBtn = document.getElementById('compareModeBtn');
+        // ძირითადი ელემენტები
         const compareSelection = document.getElementById('compareSelection');
         const searchResults = document.getElementById('searchResults');
         const phoneSearch = document.getElementById('phoneSearch');
-        
-        // Текущий режим
-        let currentMode = null;
-        
-        // Функции управления режимами
-        function resetMode() {
-            currentMode = null;
-            if (singleModeBtn) singleModeBtn.classList.remove('active');
-            if (compareModeBtn) compareModeBtn.classList.remove('active');
-            if (mainContent) mainContent.style.display = 'none';
-        }
-        
-        function setActiveMode(mode) {
-            currentMode = mode;
-            
-            if (singleModeBtn) {
-                singleModeBtn.classList.toggle('active', mode === 'single');
-            }
-            if (compareModeBtn) {
-                compareModeBtn.classList.toggle('active', mode === 'compare');
-            }
-            
-            if (mainContent) {
-                mainContent.style.display = 'block';
-            }
-            
-            if (mode === 'single') {
-                if (compareSelection) compareSelection.style.display = 'none';
-                if (searchResults) searchResults.style.display = 'block';
-                if (phoneSearch) phoneSearch.focus();
-            } 
-            else if (mode === 'compare') {
-                if (searchResults) searchResults.style.display = 'none';
-                if (compareSelection) compareSelection.style.display = 'block';
-            }
-        }
-        
-        // Обработчики событий для кнопок режимов
-        if (singleModeBtn) {
-            singleModeBtn.addEventListener('click', function() {
-                if (currentMode === 'single') {
-                    resetMode();
-                } else {
-                    setActiveMode('single');
-                }
-            });
-        }
-        
-        if (compareModeBtn) {
-            compareModeBtn.addEventListener('click', function() {
-                if (currentMode === 'compare') {
-                    resetMode();
-                } else {
-                    setActiveMode('compare');
-                }
-            });
-        }
-
-        // Дополнительные переменные
-        const phoneDetails = document.getElementById('phoneDetails');
         const compareDetails = document.getElementById('compareDetails');
-        const phoneTitle = document.getElementById('phoneTitle');
-        const phoneImage = document.getElementById('phoneImage');
-        const specsContainer = document.getElementById('specsContainer');
-        const backToResults = document.getElementById('backToResults');
         const startCompareBtn = document.getElementById('startCompareBtn');
         const clearCompareBtn = document.getElementById('clearCompareBtn');
         const selectPhoneBtns = document.querySelectorAll('.select-phone-btn');
         const backFromCompare = document.getElementById('backFromCompare');
+        const cancelSearchBtn = document.getElementById('cancelSearchBtn');
         const compareTitle1 = document.getElementById('compareTitle1');
         const compareTitle2 = document.getElementById('compareTitle2');
         const compareImage1 = document.getElementById('compareImage1');
@@ -351,11 +425,11 @@
                 </div>
             `;
             
-            // API-ის მოწოდება (ჩაანაცვლეთ თქვენი API endpoint-ით)
+            // API-ის მოწოდება
             fetch(`/compare/search?q=${encodeURIComponent(query)}`)
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Network response was not ok');
+                        throw new Error('ქსელის პასუხი არასწორია');
                     }
                     return response.json();
                 })
@@ -370,7 +444,7 @@
                             <small>${error.message}</small>
                         </div>
                     `;
-                    console.error('Error:', error);
+                    console.error('შეცდომა:', error);
                 });
         }
 
@@ -408,8 +482,7 @@
                             <h5>${brand} ${model}</h5>
                             <p>${year} • ${os}</p>
                             <button class="btn btn-primary view-details-btn">
-                                <i class="fas fa-info-circle me-2"></i>
-                                ${currentMode === 'single' ? 'დეტალურად' : 'არჩევა'}
+                                <i class="fas fa-check me-2"></i>არჩევა
                             </button>
                         </div>
                     </div>
@@ -425,51 +498,43 @@
                     if (!phoneCard) return;
                     
                     const phoneId = phoneCard.getAttribute('data-id');
-                    
-                    if (currentMode === 'single') {
-                        loadPhoneDetails(phoneId);
-                    } else {
-                        selectPhoneForComparison(phoneId);
-                    }
+                    selectPhoneForComparison(phoneId);
                 });
             });
         }
         
-        // ტელეფონის დეტალების ჩატვირთვა
-        function loadPhoneDetails(phoneId) {
-            if (phoneCache[phoneId]) {
-                displayPhoneDetails(phoneCache[phoneId]);
-            } else {
-                fetch(`/compare/phone/${phoneId}`)
-                    .then(response => response.json())
-                    .then(phone => {
-                        phoneCache[phoneId] = phone;
-                        displayPhoneDetails(phone);
-                    })
-                    .catch(error => console.error('შეცდომა:', error));
-            }
-        }
-        
-        // ტელეფონის დეტალების ჩვენება
-        function displayPhoneDetails(phone) {
-            if (!phoneTitle || !phoneImage || !specsContainer) return;
-            
-            const brand = phone.ბრენდი || phone.Brand || 'უცნობი ბრენდი';
-            const model = phone.მოდელი || phone.Model || 'უცნობი მოდელი';
-            
-            phoneTitle.textContent = `${brand} ${model}`;
-            
-            // სურათის გზის ფორმირება
-            const brandFolder = brand.replace(/\s+/g, '_').toLowerCase();
-            const modelName = model.replace(/\s+/g, '_').toLowerCase();
-            phoneImage.src = `/static/img/phones/${brandFolder}/${modelName}.jpg`;
-            phoneImage.onerror = function() { 
-                this.src = '/static/placeholder.jpg'; 
+        // სპეციფიკაციების კატეგორიებად დაჯგუფება
+        function groupSpecifications(specs) {
+            const groups = {
+                general: { name: "ძირითადი მახასიათებლები", specs: [] },
+                display: { name: "ეკრანი", specs: [] },
+                camera: { name: "კამერა", specs: [] },
+                battery: { name: "ბატარეა", specs: [] },
+                other: { name: "სხვა", specs: [] }
             };
             
-            // დეტალების ჩვენება
-            if (searchResults) searchResults.style.display = 'none';
-            if (phoneDetails) phoneDetails.style.display = 'block';
+            // სპეციფიკაციების კატეგორიებად დაყოფა
+            for (const [key, value] of Object.entries(specs)) {
+                const lowerKey = key.toLowerCase();
+                
+                if (lowerKey.includes('ეკრან')) {
+                    groups.display.specs.push({ key, value });
+                } 
+                else if (lowerKey.includes('კამერა')) {
+                    groups.camera.specs.push({ key, value });
+                } 
+                else if (lowerKey.includes('ბატარეა')) {
+                    groups.battery.specs.push({ key, value });
+                } 
+                else if (['ბრენდი', 'მოდელი', 'ოპერაციული სისტემა', 'პროცესორი', 'RAM', 'ROM'].some(k => lowerKey.includes(k.toLowerCase()))) {
+                    groups.general.specs.push({ key, value });
+                } 
+                else {
+                    groups.other.specs.push({ key, value });
+                }
+            }
+            
+            return groups;
         }
         
         // შედარებისთვის ტელეფონის არჩევა
@@ -520,8 +585,172 @@
         
         // შედარების დაწყება
         function startComparison() {
-            // აქ დაემატება შედარების ლოგიკა
-            alert('შედარება დაწყებულია!');
+            if (!selectedPhones[1] || !selectedPhones[2]) return;
+            
+            // ორივე ტელეფონის დეტალების ჩატვირთვა
+            Promise.all([
+                loadPhoneData(selectedPhones[1]),
+                loadPhoneData(selectedPhones[2])
+            ]).then(([phone1, phone2]) => {
+                displayComparison(phone1, phone2);
+            }).catch(error => {
+                console.error('შედარების შეცდომა:', error);
+                alert('შედარების დროს მოხდა შეცდომა');
+            });
+        }
+        
+        // ტელეფონის მონაცემების ჩატვირთვა
+        function loadPhoneData(phoneId) {
+            return new Promise((resolve, reject) => {
+                if (phoneCache[phoneId]) {
+                    resolve(phoneCache[phoneId]);
+                } else {
+                    fetch(`/compare/phone/${phoneId}`)
+                        .then(response => response.json())
+                        .then(phone => {
+                            phoneCache[phoneId] = phone;
+                            resolve(phone);
+                        })
+                        .catch(reject);
+                }
+            });
+        }
+        
+        // შედარების ჩვენება
+        function displayComparison(phone1, phone2) {
+            const brand1 = phone1.ბრენდი || phone1.Brand || 'უცნობი ბრენდი';
+            const model1 = phone1.მოდელი || phone1.Model || 'უცნობი მოდელი';
+            const brand2 = phone2.ბრენდი || phone2.Brand || 'უცნობი ბრენდი';
+            const model2 = phone2.მოდელი || phone2.Model || 'უცნობი მოდელი';
+            
+            // სურათების დაყენება
+            const brandFolder1 = brand1.replace(/\s+/g, '_').toLowerCase();
+            const modelName1 = model1.replace(/\s+/g, '_').toLowerCase();
+            compareImage1.src = `/static/img/phones/${brandFolder1}/${modelName1}.jpg`;
+            compareImage1.onerror = function() { this.src = '/static/placeholder.jpg'; };
+            
+            const brandFolder2 = brand2.replace(/\s+/g, '_').toLowerCase();
+            const modelName2 = model2.replace(/\s+/g, '_').toLowerCase();
+            compareImage2.src = `/static/img/phones/${brandFolder2}/${modelName2}.jpg`;
+            compareImage2.onerror = function() { this.src = '/static/placeholder.jpg'; };
+            
+            // სათაურების დაყენება
+            compareTitle1.textContent = `${brand1} ${model1}`;
+            compareTitle2.textContent = `${brand2} ${model2}`;
+            
+            // შედარების შედეგების გენერირება
+            let resultsHTML = `
+                <div class="comparison-category">შედარების შედეგები</div>
+            `;
+            
+            // მარტივი შედარების ლოგიკა
+            if (phone1['ეკრანის ზომა'] && phone2['ეკრანის ზომა']) {
+                const screen1 = parseFloat(phone1['ეკრანის ზომა']);
+                const screen2 = parseFloat(phone2['ეკრანის ზომა']);
+                
+                if (screen1 > screen2) {
+                    resultsHTML += `
+                        <div class="comparison-winner">
+                            <i class="fas fa-trophy"></i>
+                            ${brand1} ${model1} აქვს უფრო დიდი ეკრანი (${screen1}" vs ${screen2}")
+                        </div>
+                    `;
+                } else if (screen2 > screen1) {
+                    resultsHTML += `
+                        <div class="comparison-winner">
+                            <i class="fas fa-trophy"></i>
+                            ${brand2} ${model2} აქვს უფრო დიდი ეკრანი (${screen2}" vs ${screen1}")
+                        </div>
+                    `;
+                }
+            }
+            
+            if (phone1['ბატარეის მოცულობა'] && phone2['ბატარეის მოცულობა']) {
+                const battery1 = parseInt(phone1['ბატარეის მოცულობა']);
+                const battery2 = parseInt(phone2['ბატარეის მოცულობა']);
+                
+                if (battery1 > battery2) {
+                    resultsHTML += `
+                        <div class="comparison-winner">
+                            <i class="fas fa-battery-full"></i>
+                            ${brand1} ${model1} აქვს უფრო დიდი ბატარეა (${battery1}mAh vs ${battery2}mAh)
+                        </div>
+                    `;
+                } else if (battery2 > battery1) {
+                    resultsHTML += `
+                        <div class="comparison-winner">
+                            <i class="fas fa-battery-full"></i>
+                            ${brand2} ${model2} აქვს უფრო დიდი ბატარეა (${battery2}mAh vs ${battery1}mAh)
+                        </div>
+                    `;
+                }
+            }
+            
+            if (!resultsHTML.includes('comparison-winner')) {
+                resultsHTML += `<p class="text-center py-3">ორივე მოდელს თავისი უპირატესობები აქვს</p>`;
+            }
+            
+            comparisonResults.innerHTML = resultsHTML;
+            
+            // სპეციფიკაციების შედარება
+            let specsHTML = `
+                <div class="comparison-category">ტექნიკური მახასიათებლები</div>
+            `;
+            
+            // სპეციფიკაციების კატეგორიების მიხედვით დაჯგუფება
+            const groups1 = groupSpecifications(phone1);
+            const groups2 = groupSpecifications(phone2);
+            
+            // ყველა კატეგორიის გაერთიანება
+            const allGroups = new Set([
+                ...Object.keys(groups1),
+                ...Object.keys(groups2)
+            ]);
+            
+            // თითოეული კატეგორიისთვის
+            for (const groupId of allGroups) {
+                const group1 = groups1[groupId] || { specs: [] };
+                const group2 = groups2[groupId] || { specs: [] };
+                
+                // ყველა სპეციფიკაციის გაერთიანება
+                const allSpecs = new Set([
+                    ...group1.specs.map(s => s.key),
+                    ...group2.specs.map(s => s.key)
+                ]);
+                
+                if (allSpecs.size === 0) continue;
+                
+                specsHTML += `
+                    <div class="spec-group">
+                        <div class="spec-group-header">${group1.name || group2.name}</div>
+                        <div class="spec-group-body">
+                `;
+                
+                // თითოეული სპეციფიკაციისთვის
+                for (const specName of allSpecs) {
+                    const spec1 = group1.specs.find(s => s.key === specName);
+                    const spec2 = group2.specs.find(s => s.key === specName);
+                    
+                    specsHTML += `
+                        <div class="spec-item">
+                            <div class="spec-name">${specName}</div>
+                            <div class="spec-value">${spec1 ? spec1.value : '-'}</div>
+                            <div class="spec-value">${spec2 ? spec2.value : '-'}</div>
+                        </div>
+                    `;
+                }
+                
+                specsHTML += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            compareSpecsContainer.innerHTML = specsHTML;
+            
+            // ინტერფეისის განახლება
+            if (compareSelection) compareSelection.style.display = 'none';
+            if (compareDetails) compareDetails.style.display = 'block';
         }
         
         // ძებნის ინიციალიზაცია
@@ -552,21 +781,45 @@
             });
         }
         
-        // უკან ღილაკის დამუშავება
-        if (backToResults) {
-            backToResults.addEventListener('click', function() {
-                if (phoneDetails) phoneDetails.style.display = 'none';
-                if (currentMode === 'single') {
-                    if (searchResults) searchResults.style.display = 'block';
-                } else {
-                    if (compareSelection) compareSelection.style.display = 'block';
-                }
-            });
-        }
-        
         // შედარების ღილაკის დამუშავება
         if (startCompareBtn) {
             startCompareBtn.addEventListener('click', startComparison);
+        }
+        
+        // გასუფთავების ღილაკი
+        if (clearCompareBtn) {
+            clearCompareBtn.addEventListener('click', function() {
+                selectedPhones = {1: null, 2: null};
+                phonePreviews[1].innerHTML = `
+                    <div class="placeholder">
+                        <i class="fas fa-plus"></i>
+                        <p>აირჩიეთ ტელეფონი</p>
+                    </div>
+                `;
+                phonePreviews[2].innerHTML = `
+                    <div class="placeholder">
+                        <i class="fas fa-plus"></i>
+                        <p>აირჩიეთ ტელეფონი</p>
+                    </div>
+                `;
+                startCompareBtn.disabled = true;
+            });
+        }
+        
+        // უკან ღილაკი შედარებიდან
+        if (backFromCompare) {
+            backFromCompare.addEventListener('click', function() {
+                if (compareDetails) compareDetails.style.display = 'none';
+                if (compareSelection) compareSelection.style.display = 'block';
+            });
+        }
+        
+        // ძებნის გაუქმების ღილაკი
+        if (cancelSearchBtn) {
+            cancelSearchBtn.addEventListener('click', function() {
+                if (searchResults) searchResults.style.display = 'none';
+                if (compareSelection) compareSelection.style.display = 'block';
+            });
         }
     });
     </script>
