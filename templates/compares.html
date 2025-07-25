@@ -182,6 +182,86 @@
             flex: 1;
         }
         
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            background: #3b82f6;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-success {
+            background: #22c55e;
+        }
+        
+        .btn-success:hover {
+            background: #16a34a;
+        }
+        
+        .btn-outline-danger {
+            background: transparent;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+        
+        .btn-outline-danger:hover {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #64748b;
+        }
+        
+        .btn-secondary:hover {
+            background: #475569;
+        }
+        
+        .input-group {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        
+        .form-control {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #334155;
+            border-radius: 6px 0 0 6px;
+            background: rgba(15, 23, 42, 0.5);
+            color: #e2e8f0;
+            font-size: 16px;
+        }
+        
+        .btn-outline-secondary {
+            padding: 12px 20px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid #334155;
+            border-left: none;
+            border-radius: 0 6px 6px 0;
+            color: #94a3b8;
+            cursor: pointer;
+        }
+        
+        .btn-outline-secondary:hover {
+            background: rgba(30, 41, 59, 0.8);
+        }
+        
         /* მობილური ვერსიის სტილები */
         @media (max-width: 768px) {
             body {
@@ -203,7 +283,7 @@
                 margin-top: 15px;
             }
             
-            .compare-controls button {
+            .compare-controls .btn {
                 width: 100%;
             }
             
@@ -271,7 +351,7 @@
     </style>
 </head>
 <body>
-    <div class="container mt-5">
+    <div class="container">
         <div id="mainContent">
             <!-- ტელეფონების არჩევა შედარებისთვის -->
             <div id="compareSelection" class="compare-selection mb-4">
@@ -377,7 +457,6 @@
         const compareDetails = document.getElementById('compareDetails');
         const startCompareBtn = document.getElementById('startCompareBtn');
         const clearCompareBtn = document.getElementById('clearCompareBtn');
-        const selectPhoneBtns = document.querySelectorAll('.select-phone-btn');
         const backFromCompare = document.getElementById('backFromCompare');
         const cancelSearchBtn = document.getElementById('cancelSearchBtn');
         const compareTitle1 = document.getElementById('compareTitle1');
@@ -403,6 +482,9 @@
         // ტელეფონების მონაცემთა ქეში
         let phoneCache = {};
         
+        // მიმდინარე არჩეული ტელეფონის ნომერი
+        let currentSelectingFor = null;
+        
         // ძებნა დაყოვნებით
         function debounce(func, wait) {
             let timeout;
@@ -425,27 +507,64 @@
                 </div>
             `;
             
-            // API-ის მოწოდება
-            fetch(`/compare/search?q=${encodeURIComponent(query)}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('ქსელის პასუხი არასწორია');
+            // API-ის მოწოდება (სიმულაცია)
+            setTimeout(() => {
+                const mockData = [
+                    {
+                        _id: "1",
+                        ბრენდი: "Apple",
+                        მოდელი: "iPhone 13 Pro",
+                        "გამოშვების წელი": "2021",
+                        "ოპერაციული სისტემა": "iOS 15",
+                        "ეკრანის ზომა": "6.1",
+                        "ბატარეის მოცულობა": "3095",
+                        "პროცესორი": "A15 Bionic",
+                        "RAM": "6 GB",
+                        "ROM": "128/256/512 GB/1 TB"
+                    },
+                    {
+                        _id: "2",
+                        ბრენდი: "Samsung",
+                        მოდელი: "Galaxy S22 Ultra",
+                        "გამოშვების წელი": "2022",
+                        "ოპერაციული სისტემა": "Android 12",
+                        "ეკრანის ზომა": "6.8",
+                        "ბატარეის მოცულობა": "5000",
+                        "პროცესორი": "Exynos 2200",
+                        "RAM": "8/12 GB",
+                        "ROM": "128/256/512 GB/1 TB"
+                    },
+                    {
+                        _id: "3",
+                        ბრენდი: "Xiaomi",
+                        მოდელი: "12 Pro",
+                        "გამოშვების წელი": "2021",
+                        "ოპერაციული სისტემა": "Android 12",
+                        "ეკრანის ზომა": "6.73",
+                        "ბატარეის მოცულობა": "4600",
+                        "პროცესორი": "Snapdragon 8 Gen 1",
+                        "RAM": "8/12 GB",
+                        "ROM": "128/256 GB"
+                    },
+                    {
+                        _id: "4",
+                        ბრენდი: "Google",
+                        მოდელი: "Pixel 6 Pro",
+                        "გამოშვების წელი": "2021",
+                        "ოპერაციული სისტემა": "Android 12",
+                        "ეკრანის ზომა": "6.7",
+                        "ბატარეის მოცულობა": "5003",
+                        "პროცესორი": "Google Tensor",
+                        "RAM": "12 GB",
+                        "ROM": "128/256 GB"
                     }
-                    return response.json();
-                })
-                .then(data => {
-                    displaySearchResults(data);
-                })
-                .catch(error => {
-                    phoneGrid.innerHTML = `
-                        <div class="text-center py-4">
-                            <i class="fas fa-exclamation-triangle text-danger mb-2"></i>
-                            <p>ძებნის შეცდომა</p>
-                            <small>${error.message}</small>
-                        </div>
-                    `;
-                    console.error('შეცდომა:', error);
-                });
+                ];
+                
+                displaySearchResults(mockData.filter(phone => {
+                    const searchStr = `${phone.ბრენდი} ${phone.მოდელი}`.toLowerCase();
+                    return searchStr.includes(query.toLowerCase());
+                }));
+            }, 800);
         }
 
         // ძიების შედეგების ჩვენება
@@ -467,7 +586,7 @@
                 // სურათის გზის ფორმირება
                 const brandFolder = brand.replace(/\s+/g, '_').toLowerCase();
                 const modelName = model.replace(/\s+/g, '_').toLowerCase();
-                const imagePath = `/static/img/phones/${brandFolder}/${modelName}.jpg`;
+                const imagePath = `https://via.placeholder.com/150/1e293b/e2e8f0?text=${brand}+${model}`;
                 
                 // ქეშში შენახვა
                 phoneCache[phone._id] = phone;
@@ -476,12 +595,12 @@
                     <div class="phone-card" data-id="${phone._id}">
                         <div class="text-center">
                             <img src="${imagePath}" alt="${brand} ${model}" 
-                                 class="phone-thumb" onerror="this.src='/static/placeholder.jpg'">
+                                 class="phone-thumb">
                         </div>
                         <div class="card-body text-center mt-3">
                             <h5>${brand} ${model}</h5>
                             <p>${year} • ${os}</p>
-                            <button class="btn btn-primary view-details-btn">
+                            <button class="btn btn-primary view-details-btn" data-id="${phone._id}">
                                 <i class="fas fa-check me-2"></i>არჩევა
                             </button>
                         </div>
@@ -494,10 +613,7 @@
             // დამამუშავებლების დამატება
             document.querySelectorAll('.view-details-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const phoneCard = this.closest('.phone-card');
-                    if (!phoneCard) return;
-                    
-                    const phoneId = phoneCard.getAttribute('data-id');
+                    const phoneId = this.getAttribute('data-id');
                     selectPhoneForComparison(phoneId);
                 });
             });
@@ -526,7 +642,7 @@
                 else if (lowerKey.includes('ბატარეა')) {
                     groups.battery.specs.push({ key, value });
                 } 
-                else if (['ბრენდი', 'მოდელი', 'ოპერაციული სისტემა', 'პროცესორი', 'RAM', 'ROM'].some(k => lowerKey.includes(k.toLowerCase()))) {
+                else if (['ბრენდი', 'მოდელი', 'ოპერაციული სისტემა', 'პროცესორი', 'ram', 'rom'].some(k => lowerKey.includes(k))) {
                     groups.general.specs.push({ key, value });
                 } 
                 else {
@@ -540,12 +656,9 @@
         // შედარებისთვის ტელეფონის არჩევა
         function selectPhoneForComparison(phoneId) {
             const phone = phoneCache[phoneId];
-            if (!phone) return;
+            if (!phone || !currentSelectingFor) return;
             
-            const selectingFor = sessionStorage.getItem('selectingFor');
-            if (!selectingFor) return;
-            
-            const phoneNum = parseInt(selectingFor);
+            const phoneNum = currentSelectingFor;
             selectedPhones[phoneNum] = phoneId;
             
             // პრევიუის განახლება
@@ -555,12 +668,12 @@
             
             const brandFolder = brand.replace(/\s+/g, '_').toLowerCase();
             const modelName = model.replace(/\s+/g, '_').toLowerCase();
-            const imagePath = `/static/img/phones/${brandFolder}/${modelName}.jpg`;
+            const imagePath = `https://via.placeholder.com/60/1e293b/e2e8f0?text=${brand.substring(0,1)}+${model.substring(0,1)}`;
             
             phonePreviews[phoneNum].innerHTML = `
                 <div class="selected-phone">
                     <img src="${imagePath}" alt="${brand} ${model}" 
-                         class="phone-thumb-sm" onerror="this.src='/static/placeholder.jpg'">
+                         class="phone-thumb-sm">
                     <div class="phone-info">
                         <strong>${brand} ${model}</strong>
                         <div>${year}</div>
@@ -569,8 +682,8 @@
             `;
             
             // ტელეფონების არჩევანზე დაბრუნება
-            if (compareSelection) compareSelection.style.display = 'block';
-            if (searchResults) searchResults.style.display = 'none';
+            compareSelection.style.display = 'block';
+            searchResults.style.display = 'none';
             
             // შედარების მზადყოფნის შემოწმება
             checkCompareReadiness();
@@ -578,9 +691,7 @@
         
         // შედარების მზადყოფნის შემოწმება
         function checkCompareReadiness() {
-            if (startCompareBtn) {
-                startCompareBtn.disabled = !(selectedPhones[1] && selectedPhones[2]);
-            }
+            startCompareBtn.disabled = !(selectedPhones[1] && selectedPhones[2]);
         }
         
         // შედარების დაწყება
@@ -588,32 +699,14 @@
             if (!selectedPhones[1] || !selectedPhones[2]) return;
             
             // ორივე ტელეფონის დეტალების ჩატვირთვა
-            Promise.all([
-                loadPhoneData(selectedPhones[1]),
-                loadPhoneData(selectedPhones[2])
-            ]).then(([phone1, phone2]) => {
+            const phone1 = phoneCache[selectedPhones[1]];
+            const phone2 = phoneCache[selectedPhones[2]];
+            
+            if (phone1 && phone2) {
                 displayComparison(phone1, phone2);
-            }).catch(error => {
-                console.error('შედარების შეცდომა:', error);
-                alert('შედარების დროს მოხდა შეცდომა');
-            });
-        }
-        
-        // ტელეფონის მონაცემების ჩატვირთვა
-        function loadPhoneData(phoneId) {
-            return new Promise((resolve, reject) => {
-                if (phoneCache[phoneId]) {
-                    resolve(phoneCache[phoneId]);
-                } else {
-                    fetch(`/compare/phone/${phoneId}`)
-                        .then(response => response.json())
-                        .then(phone => {
-                            phoneCache[phoneId] = phone;
-                            resolve(phone);
-                        })
-                        .catch(reject);
-                }
-            });
+            } else {
+                alert('ტელეფონის მონაცემები ვერ ჩაიტვირთა');
+            }
         }
         
         // შედარების ჩვენება
@@ -624,15 +717,8 @@
             const model2 = phone2.მოდელი || phone2.Model || 'უცნობი მოდელი';
             
             // სურათების დაყენება
-            const brandFolder1 = brand1.replace(/\s+/g, '_').toLowerCase();
-            const modelName1 = model1.replace(/\s+/g, '_').toLowerCase();
-            compareImage1.src = `/static/img/phones/${brandFolder1}/${modelName1}.jpg`;
-            compareImage1.onerror = function() { this.src = '/static/placeholder.jpg'; };
-            
-            const brandFolder2 = brand2.replace(/\s+/g, '_').toLowerCase();
-            const modelName2 = model2.replace(/\s+/g, '_').toLowerCase();
-            compareImage2.src = `/static/img/phones/${brandFolder2}/${modelName2}.jpg`;
-            compareImage2.onerror = function() { this.src = '/static/placeholder.jpg'; };
+            compareImage1.src = `https://via.placeholder.com/200/1e293b/e2e8f0?text=${brand1}+${model1}`;
+            compareImage2.src = `https://via.placeholder.com/200/1e293b/e2e8f0?text=${brand2}+${model2}`;
             
             // სათაურების დაყენება
             compareTitle1.textContent = `${brand1} ${model1}`;
@@ -662,6 +748,13 @@
                             ${brand2} ${model2} აქვს უფრო დიდი ეკრანი (${screen2}" vs ${screen1}")
                         </div>
                     `;
+                } else {
+                    resultsHTML += `
+                        <div class="comparison-winner">
+                            <i class="fas fa-equals"></i>
+                            ორივე ტელეფონს აქვს ერთი და იგივე ეკრანის ზომა (${screen1}")
+                        </div>
+                    `;
                 }
             }
             
@@ -681,6 +774,34 @@
                         <div class="comparison-winner">
                             <i class="fas fa-battery-full"></i>
                             ${brand2} ${model2} აქვს უფრო დიდი ბატარეა (${battery2}mAh vs ${battery1}mAh)
+                        </div>
+                    `;
+                } else {
+                    resultsHTML += `
+                        <div class="comparison-winner">
+                            <i class="fas fa-battery-full"></i>
+                            ორივე ტელეფონს აქვს ერთი და იგივე ბატარეის მოცულობა (${battery1}mAh)
+                        </div>
+                    `;
+                }
+            }
+            
+            if (phone1.RAM && phone2.RAM) {
+                const ram1 = phone1.RAM;
+                const ram2 = phone2.RAM;
+                
+                if (ram1 > ram2) {
+                    resultsHTML += `
+                        <div class="comparison-winner">
+                            <i class="fas fa-memory"></i>
+                            ${brand1} ${model1} აქვს მეტი RAM (${ram1} vs ${ram2})
+                        </div>
+                    `;
+                } else if (ram2 > ram1) {
+                    resultsHTML += `
+                        <div class="comparison-winner">
+                            <i class="fas fa-memory"></i>
+                            ${brand2} ${model2} აქვს მეტი RAM (${ram2} vs ${ram1})
                         </div>
                     `;
                 }
@@ -749,8 +870,8 @@
             compareSpecsContainer.innerHTML = specsHTML;
             
             // ინტერფეისის განახლება
-            if (compareSelection) compareSelection.style.display = 'none';
-            if (compareDetails) compareDetails.style.display = 'block';
+            compareSelection.style.display = 'none';
+            compareDetails.style.display = 'block';
         }
         
         // ძებნის ინიციალიზაცია
@@ -766,61 +887,55 @@
         }
         
         // ტელეფონის არჩევანის გახსნა
-        if (selectPhoneBtns) {
-            selectPhoneBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const phoneNum = this.getAttribute('data-phone');
-                    sessionStorage.setItem('selectingFor', phoneNum);
-                    
-                    if (phoneSearch) phoneSearch.value = '';
-                    if (searchResults) searchResults.style.display = 'block';
-                    if (compareSelection) compareSelection.style.display = 'none';
-                    if (phoneGrid) phoneGrid.innerHTML = '';
-                    if (phoneSearch) phoneSearch.focus();
-                });
+        document.querySelectorAll('.select-phone-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                currentSelectingFor = this.getAttribute('data-phone');
+                
+                phoneSearch.value = '';
+                searchResults.style.display = 'block';
+                compareSelection.style.display = 'none';
+                phoneGrid.innerHTML = '';
+                phoneSearch.focus();
             });
-        }
+        });
         
         // შედარების ღილაკის დამუშავება
-        if (startCompareBtn) {
-            startCompareBtn.addEventListener('click', startComparison);
-        }
+        startCompareBtn.addEventListener('click', startComparison);
         
         // გასუფთავების ღილაკი
-        if (clearCompareBtn) {
-            clearCompareBtn.addEventListener('click', function() {
-                selectedPhones = {1: null, 2: null};
-                phonePreviews[1].innerHTML = `
-                    <div class="placeholder">
-                        <i class="fas fa-plus"></i>
-                        <p>აირჩიეთ ტელეფონი</p>
-                    </div>
-                `;
-                phonePreviews[2].innerHTML = `
-                    <div class="placeholder">
-                        <i class="fas fa-plus"></i>
-                        <p>აირჩიეთ ტელეფონი</p>
-                    </div>
-                `;
-                startCompareBtn.disabled = true;
-            });
-        }
+        clearCompareBtn.addEventListener('click', function() {
+            selectedPhones = {1: null, 2: null};
+            phonePreviews[1].innerHTML = `
+                <div class="placeholder">
+                    <i class="fas fa-plus"></i>
+                    <p>აირჩიეთ ტელეფონი</p>
+                </div>
+            `;
+            phonePreviews[2].innerHTML = `
+                <div class="placeholder">
+                    <i class="fas fa-plus"></i>
+                    <p>აირჩიეთ ტელეფონი</p>
+                </div>
+            `;
+            startCompareBtn.disabled = true;
+        });
         
         // უკან ღილაკი შედარებიდან
-        if (backFromCompare) {
-            backFromCompare.addEventListener('click', function() {
-                if (compareDetails) compareDetails.style.display = 'none';
-                if (compareSelection) compareSelection.style.display = 'block';
-            });
-        }
+        backFromCompare.addEventListener('click', function() {
+            compareDetails.style.display = 'none';
+            compareSelection.style.display = 'block';
+        });
         
         // ძებნის გაუქმების ღილაკი
-        if (cancelSearchBtn) {
-            cancelSearchBtn.addEventListener('click', function() {
-                if (searchResults) searchResults.style.display = 'none';
-                if (compareSelection) compareSelection.style.display = 'block';
-            });
-        }
+        cancelSearchBtn.addEventListener('click', function() {
+            searchResults.style.display = 'none';
+            compareSelection.style.display = 'block';
+        });
+        
+        // დემო მონაცემების ინიციალიზაცია
+        setTimeout(() => {
+            searchPhones('phone');
+        }, 500);
     });
     </script>
 </body>
