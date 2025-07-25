@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Сравнение телефонов</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             box-sizing: border-box;
@@ -51,6 +52,7 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             width: 100%;
             max-width: 500px;
+            position: relative;
         }
         
         .search-header {
@@ -66,17 +68,101 @@
             color: #3498db;
         }
         
+        .search-input-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
         input {
             width: 100%;
             padding: 12px 15px;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 16px;
-            margin-bottom: 15px;
         }
         
-        button {
-            background-color: #3498db;
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 0 0 5px 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+        
+        .result-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .result-item:hover {
+            background-color: #f5f7fa;
+        }
+        
+        .result-item img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+        
+        .result-info {
+            flex: 1;
+        }
+        
+        .result-brand {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .result-model {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        .loader {
+            text-align: center;
+            padding: 10px;
+            color: #7f8c8d;
+        }
+        
+        .loader i {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .no-results {
+            padding: 10px 15px;
+            color: #7f8c8d;
+            text-align: center;
+        }
+        
+        .clear-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .compare-btn {
+            background-color: #2ecc71;
             color: white;
             border: none;
             padding: 12px 20px;
@@ -85,15 +171,6 @@
             font-size: 16px;
             font-weight: bold;
             transition: background-color 0.3s;
-            width: 100%;
-        }
-        
-        button:hover {
-            background-color: #2980b9;
-        }
-        
-        .compare-btn {
-            background-color: #2ecc71;
             max-width: 200px;
             margin: 20px auto;
             display: block;
@@ -101,6 +178,11 @@
         
         .compare-btn:hover {
             background-color: #27ae60;
+        }
+        
+        .compare-btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
         }
         
         .results-section {
@@ -181,6 +263,92 @@
             max-width: 200px;
             height: auto;
             border-radius: 5px;
+            object-fit: contain;
+        }
+        
+        /* Стили для результатов сравнения */
+        .comparison-result {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .score-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        
+        .score-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            width: 45%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .total-score {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .winner {
+            color: #27ae60;
+        }
+        
+        .loser {
+            color: #e74c3c;
+        }
+        
+        .category-scores {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .category {
+            width: 48%;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f1f2f6;
+            border-radius: 5px;
+        }
+        
+        .category-bar {
+            height: 10px;
+            background: #ddd;
+            border-radius: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .category-fill {
+            height: 100%;
+            border-radius: 5px;
+        }
+        
+        .winner-banner {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .draw-banner {
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 1.2rem;
         }
         
         @media (max-width: 768px) {
@@ -191,6 +359,20 @@
             
             .phone-card {
                 min-width: 100%;
+            }
+            
+            .score-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .score-card {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+            
+            .category {
+                width: 100%;
             }
         }
     </style>
@@ -208,9 +390,13 @@
                     <span class="phone-number">1</span>
                     <h2>Первый телефон</h2>
                 </div>
-                <input type="text" id="phone1-search" placeholder="Введите бренд или модель телефона...">
-                <div id="phone1-results"></div>
-                <button id="phone1-btn">Поиск</button>
+                <div class="search-input-container">
+                    <input type="text" id="phone1-search" placeholder="Введите бренд или модель телефона..." autocomplete="off">
+                    <button class="clear-btn" id="phone1-clear" style="display: none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="search-results" id="phone1-results"></div>
+                </div>
             </div>
             
             <div class="search-box">
@@ -218,9 +404,13 @@
                     <span class="phone-number">2</span>
                     <h2>Второй телефон</h2>
                 </div>
-                <input type="text" id="phone2-search" placeholder="Введите бренд или модель телефона...">
-                <div id="phone2-results"></div>
-                <button id="phone2-btn">Поиск</button>
+                <div class="search-input-container">
+                    <input type="text" id="phone2-search" placeholder="Введите бренд или модель телефона..." autocomplete="off">
+                    <button class="clear-btn" id="phone2-clear" style="display: none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="search-results" id="phone2-results"></div>
+                </div>
             </div>
         </div>
         
@@ -258,71 +448,182 @@
                     <tbody id="comparison-body"></tbody>
                 </table>
             </div>
+            
+            <div class="comparison-result" id="comparison-result" style="display: none;">
+                <h3>Результаты сравнения</h3>
+                
+                <div class="score-container">
+                    <div class="score-card" id="score-card1">
+                        <h4 id="phone1-title-score">Телефон 1</h4>
+                        <div class="total-score" id="phone1-score">0</div>
+                        <div>Общий балл</div>
+                    </div>
+                    
+                    <div class="score-card" id="score-card2">
+                        <h4 id="phone2-title-score">Телефон 2</h4>
+                        <div class="total-score" id="phone2-score">0</div>
+                        <div>Общий балл</div>
+                    </div>
+                </div>
+                
+                <div id="winner-banner" class="winner-banner" style="display: none;">
+                    <i class="fas fa-trophy"></i> 
+                    <span id="winner-name"></span> побеждает с отрывом в <span id="winner-diff"></span> баллов!
+                </div>
+                
+                <div id="draw-banner" class="draw-banner" style="display: none;">
+                    <i class="fas fa-handshake"></i> Телефоны набрали одинаковое количество баллов!
+                </div>
+                
+                <h4>Детализированные баллы</h4>
+                <div class="category-scores" id="category-scores"></div>
+            </div>
         </div>
     </div>
 
+    <script src="{{ url_for('static', filename='js/compares.js') }}"></script>
     <script>
         // Объекты для хранения данных о телефонах
         let phone1 = null;
         let phone2 = null;
         
+        // Таймеры для задержки поиска
+        let searchTimer1 = null;
+        let searchTimer2 = null;
+        
         // Элементы DOM
         const phone1Search = document.getElementById('phone1-search');
         const phone2Search = document.getElementById('phone2-search');
-        const phone1Btn = document.getElementById('phone1-btn');
-        const phone2Btn = document.getElementById('phone2-btn');
+        const phone1Results = document.getElementById('phone1-results');
+        const phone2Results = document.getElementById('phone2-results');
+        const phone1Clear = document.getElementById('phone1-clear');
+        const phone2Clear = document.getElementById('phone2-clear');
         const compareBtn = document.getElementById('compare-phones');
         const resultsSection = document.getElementById('results-section');
         
-        // Поиск телефона 1
-        phone1Btn.addEventListener('click', () => {
-            searchPhone(phone1Search.value, 1);
-        });
-        
-        // Поиск телефона 2
-        phone2Btn.addEventListener('click', () => {
-            searchPhone(phone2Search.value, 2);
-        });
-        
-        // Сравнение телефонов
+        // Обработчики событий
+        phone1Search.addEventListener('input', () => handleSearchInput(1));
+        phone2Search.addEventListener('input', () => handleSearchInput(2));
+        phone1Clear.addEventListener('click', () => clearPhoneSelection(1));
+        phone2Clear.addEventListener('click', () => clearPhoneSelection(2));
         compareBtn.addEventListener('click', comparePhones);
         
-        // Поиск телефона в базе данных
-        async function searchPhone(query, phoneNumber) {
-            if (!query.trim()) {
-                alert('Введите запрос для поиска');
+        // Обработка ввода в поле поиска
+        function handleSearchInput(phoneNumber) {
+            const input = phoneNumber === 1 ? phone1Search : phone2Search;
+            const resultsContainer = phoneNumber === 1 ? phone1Results : phone2Results;
+            const clearBtn = phoneNumber === 1 ? phone1Clear : phone2Clear;
+            
+            const query = input.value.trim();
+            clearBtn.style.display = query ? 'block' : 'none';
+            
+            // Очищаем предыдущий таймер
+            if (phoneNumber === 1) clearTimeout(searchTimer1);
+            else clearTimeout(searchTimer2);
+            
+            // Скрываем результаты, если запрос пустой
+            if (!query) {
+                resultsContainer.style.display = 'none';
                 return;
             }
+            
+            // Показываем загрузку
+            resultsContainer.innerHTML = '<div class="loader"><i class="fas fa-spinner"></i> Поиск...</div>';
+            resultsContainer.style.display = 'block';
+            
+            // Устанавливаем новый таймер для задержки запроса
+            const timer = setTimeout(() => {
+                searchPhones(query, phoneNumber);
+            }, 300);
+            
+            if (phoneNumber === 1) searchTimer1 = timer;
+            else searchTimer2 = timer;
+        }
+        
+        // Поиск телефонов в базе данных
+        async function searchPhones(query, phoneNumber) {
+            const resultsContainer = phoneNumber === 1 ? phone1Results : phone2Results;
             
             try {
                 const response = await fetch(`/api/search_phones?query=${encodeURIComponent(query)}`);
                 const data = await response.json();
                 
                 if (data.length === 0) {
-                    alert('Телефоны не найдены');
+                    resultsContainer.innerHTML = '<div class="no-results">Телефоны не найдены</div>';
                     return;
                 }
                 
-                // Для простоты берём первый результат
-                const phone = data[0];
+                let resultsHTML = '';
+                data.forEach(phone => {
+                    // Используем изображение из базы, если есть
+                    const imageUrl = phone.Изображение || 'https://via.placeholder.com/40x40?text=📱';
+                    
+                    resultsHTML += `
+                        <div class="result-item" data-id="${phone._id}" data-phone='${JSON.stringify(phone)}'>
+                            <img src="${imageUrl}" alt="${phone.Бренд} ${phone.Модель}">
+                            <div class="result-info">
+                                <div class="result-brand">${phone.Бренд}</div>
+                                <div class="result-model">${phone.Модель}</div>
+                            </div>
+                        </div>
+                    `;
+                });
                 
-                if (phoneNumber === 1) {
-                    phone1 = phone;
-                    displayPhoneDetails(phone, 1);
-                } else {
-                    phone2 = phone;
-                    displayPhoneDetails(phone, 2);
-                }
+                resultsContainer.innerHTML = resultsHTML;
                 
-                // Активируем кнопку сравнения если выбраны оба телефона
-                if (phone1 && phone2) {
-                    compareBtn.disabled = false;
-                }
-                
+                // Добавляем обработчики выбора
+                document.querySelectorAll(`#phone${phoneNumber}-results .result-item`).forEach(item => {
+                    item.addEventListener('click', () => selectPhone(item, phoneNumber));
+                });
             } catch (error) {
                 console.error('Ошибка поиска:', error);
-                alert('Произошла ошибка при поиске телефона');
+                resultsContainer.innerHTML = '<div class="no-results">Ошибка при поиске</div>';
             }
+        }
+        
+        // Выбор телефона из результатов поиска
+        function selectPhone(element, phoneNumber) {
+            const phone = JSON.parse(element.dataset.phone);
+            
+            if (phoneNumber === 1) {
+                phone1 = phone;
+                phone1Search.value = `${phone.Бренд} ${phone.Модель}`;
+                phone1Results.style.display = 'none';
+                phone1Clear.style.display = 'block';
+            } else {
+                phone2 = phone;
+                phone2Search.value = `${phone.Бренд} ${phone.Модель}`;
+                phone2Results.style.display = 'none';
+                phone2Clear.style.display = 'block';
+            }
+            
+            displayPhoneDetails(phone, phoneNumber);
+            
+            // Активируем кнопку сравнения если выбраны оба телефона
+            if (phone1 && phone2) {
+                compareBtn.disabled = false;
+            }
+        }
+        
+        // Очистка выбранного телефона
+        function clearPhoneSelection(phoneNumber) {
+            if (phoneNumber === 1) {
+                phone1 = null;
+                phone1Search.value = '';
+                phone1Clear.style.display = 'none';
+                document.getElementById('phone1-title').textContent = 'Телефон 1';
+                document.getElementById('phone1-specs').innerHTML = '';
+                document.getElementById('phone1-img').src = '';
+            } else {
+                phone2 = null;
+                phone2Search.value = '';
+                phone2Clear.style.display = 'none';
+                document.getElementById('phone2-title').textContent = 'Телефон 2';
+                document.getElementById('phone2-specs').innerHTML = '';
+                document.getElementById('phone2-img').src = '';
+            }
+            
+            compareBtn.disabled = !(phone1 && phone2);
         }
         
         // Отображение деталей телефона
@@ -333,19 +634,19 @@
             
             titleElement.textContent = `${phone.Бренд} ${phone.Модель}`;
             
-            // Заглушка для изображения (в реальном приложении URL будет из базы)
-            imgElement.src = 'https://via.placeholder.com/200x300?text=Phone+Image';
+            // Используем изображение из базы, если есть
+            imgElement.src = phone.Изображение || 'https://via.placeholder.com/200x300?text=📱';
             
             // Отображение основных характеристик
             let specsHTML = `
-                <p><strong>Год выпуска:</strong> ${phone['Год выпуска']}</p>
-                <p><strong>ОС:</strong> ${phone.ОС} ${phone['Версия ОС']}</p>
-                <p><strong>Экран:</strong> ${phone['Размер дисплея (дюймы)']}" ${phone['Тип дисплея']}</p>
-                <p><strong>Процессор:</strong> ${phone.Процессор}</p>
-                <p><strong>Память:</strong> ${phone['ОЗУ (ГБ)']} ГБ ОЗУ / ${phone['ПЗУ (ГБ)']} ГБ ПЗУ</p>
-                <p><strong>Камера:</strong> ${phone['Основная камера (Мп)']} Мп</p>
-                <p><strong>Батарея:</strong> ${phone['Емкость батареи (mAh)']} mAh</p>
-                <p><strong>Цена:</strong> ${phone['Текущая цена (руб)']} руб.</p>
+                <p><strong>Год выпуска:</strong> ${phone['Год выпуска'] || '-'}</p>
+                <p><strong>ОС:</strong> ${phone.ОС || '-'} ${phone['Версия ОС'] || ''}</p>
+                <p><strong>Экран:</strong> ${phone['Размер дисплея (дюймы)'] || '-'}" ${phone['Тип дисплея'] || ''}</p>
+                <p><strong>Процессор:</strong> ${phone.Процессор || '-'}</p>
+                <p><strong>Память:</strong> ${phone['ОЗУ (ГБ)'] || '-'} ГБ ОЗУ / ${phone['ПЗУ (ГБ)'] || '-'} ГБ ПЗУ</p>
+                <p><strong>Камера:</strong> ${phone['Основная камера (Мп)'] || '-'} Мп</p>
+                <p><strong>Батарея:</strong> ${phone['Емкость батареи (mAh)'] || '-'} mAh</p>
+                <p><strong>Цена:</strong> ${phone['Текущая цена (руб)'] || '-'} руб.</p>
             `;
             
             specsElement.innerHTML = specsHTML;
@@ -361,6 +662,34 @@
             // Показываем секцию с результатами
             resultsSection.style.display = 'block';
             
+            // Обновляем заголовки
+            document.getElementById('phone1-title').textContent = 
+                `${phone1.Бренд} ${phone1.Модель}`;
+                
+            document.getElementById('phone2-title').textContent = 
+                `${phone2.Бренд} ${phone2.Модель}`;
+                
+            document.getElementById('phone1-title-score').textContent = 
+                `${phone1.Бренд} ${phone1.Модель}`;
+                
+            document.getElementById('phone2-title-score').textContent = 
+                `${phone2.Бренд} ${phone2.Модель}`;
+            
+            // Сравниваем телефоны
+            const comparisonResult = PhoneComparer.comparePhones(phone1, phone2);
+            
+            // Отображаем таблицу характеристик
+            displayComparisonTable(comparisonResult);
+            
+            // Отображаем результаты балльной системы
+            displayComparisonResult(comparisonResult);
+            
+            // Прокрутка к результатам
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Отображение таблицы характеристик
+        function displayComparisonTable(result) {
             // Обновляем заголовки таблицы
             document.getElementById('phone1-table-title').textContent = 
                 `${phone1.Бренд} ${phone1.Модель}`;
@@ -370,36 +699,12 @@
             
             // Список характеристик для сравнения
             const specsToCompare = [
-                'Год выпуска',
-                'Квартал выпуска',
-                'ОС',
-                'Версия ОС',
-                'Оболочка ОС',
-                'Политика обновлений',
-                'Размер дисплея (дюймы)',
-                'Разрешение дисплея',
-                'Тип дисплея',
-                'Частота обновления (Гц)',
-                'Процессор',
-                'ОЗУ (ГБ)',
-                'Тип ОЗУ',
-                'ПЗУ (ГБ)',
-                'Тип ПЗУ',
-                'Основная камера (Мп)',
-                'Фронтальная камера (Мп)',
-                'Емкость батареи (mAh)',
-                'Быстрая зарядка',
-                'Беспроводная зарядка',
-                'Вес (г)',
-                'Защита от воды',
-                'Поддержка 5G',
-                'Wi-Fi',
-                'Bluetooth',
-                'NFC',
-                'Сканер отпечатков',
-                'Стартовая цена (руб)',
-                'Текущая цена (руб)',
-                'Гарантия (мес)'
+                'Год выпуска', 'Квартал выпуска', 'ОС', 'Версия ОС', 'Оболочка ОС', 'Политика обновлений',
+                'Размер дисплея (дюймы)', 'Разрешение дисплея', 'Тип дисплея', 'Частота обновления (Гц)',
+                'Процессор', 'ОЗУ (ГБ)', 'Тип ОЗУ', 'ПЗУ (ГБ)', 'Тип ПЗУ', 'Основная камера (Мп)', 
+                'Фронтальная камера (Мп)', 'Емкость батареи (mAh)', 'Быстрая зарядка', 'Беспроводная зарядка',
+                'Вес (г)', 'Защита от воды', 'Поддержка 5G', 'Wi-Fi', 'Bluetooth', 'NFC', 'Сканер отпечатков',
+                'Стартовая цена (руб)', 'Текущая цена (руб)', 'Гарантия (мес)'
             ];
             
             // Строим таблицу сравнения
@@ -434,6 +739,25 @@
                         if (num1 > num2) highlight1 = 'highlight';
                         if (num2 > num1) highlight2 = 'highlight';
                     }
+                } else if (spec === 'Защита от воды') {
+                    // Для защиты воды выше уровень - лучше
+                    const levels = ['IP68', 'IP67', 'IP65', 'IP54', 'Нет'];
+                    const index1 = levels.indexOf(value1);
+                    const index2 = levels.indexOf(value2);
+                    
+                    if (index1 > -1 && index2 > -1) {
+                        if (index1 < index2) highlight1 = 'highlight';
+                        if (index2 < index1) highlight2 = 'highlight';
+                    }
+                } else if (spec === 'Wi-Fi' || spec === 'Bluetooth') {
+                    // Для Wi-Fi и Bluetooth выше версия - лучше
+                    const version1 = parseFloat(value1.replace('Wi-Fi ', '').replace('Bluetooth ', ''));
+                    const version2 = parseFloat(value2.replace('Wi-Fi ', '').replace('Bluetooth ', ''));
+                    
+                    if (!isNaN(version1) && !isNaN(version2)) {
+                        if (version1 > version2) highlight1 = 'highlight';
+                        if (version2 > version1) highlight2 = 'highlight';
+                    }
                 }
                 
                 row.innerHTML = `
@@ -444,14 +768,121 @@
                 
                 comparisonBody.appendChild(row);
             });
+        }
+        
+        // Функция для отображения результатов сравнения
+        function displayComparisonResult(result) {
+            const resultSection = document.getElementById('comparison-result');
+            resultSection.style.display = 'block';
             
-            // Прокрутка к результатам
-            resultsSection.scrollIntoView({ behavior: 'smooth' });
+            // Отображаем общие баллы
+            document.getElementById('phone1-score').textContent = 
+                result.phone1.score.total;
+                
+            document.getElementById('phone2-score').textContent = 
+                result.phone2.score.total;
+            
+            // Добавляем классы победителя/проигравшего
+            const scoreCard1 = document.getElementById('score-card1');
+            const scoreCard2 = document.getElementById('score-card2');
+            
+            // Удаляем предыдущие классы
+            scoreCard1.classList.remove('winner', 'loser');
+            scoreCard2.classList.remove('winner', 'loser');
+            
+            if (result.winner) {
+                if (result.winner.phone === phone1) {
+                    scoreCard1.classList.add('winner');
+                    scoreCard2.classList.add('loser');
+                    
+                    document.getElementById('winner-name').textContent = 
+                        `${phone1.Бренд} ${phone1.Модель}`;
+                    document.getElementById('winner-diff').textContent = 
+                        result.winner.difference;
+                        
+                    document.getElementById('winner-banner').style.display = 'block';
+                    document.getElementById('draw-banner').style.display = 'none';
+                } else {
+                    scoreCard1.classList.add('loser');
+                    scoreCard2.classList.add('winner');
+                    
+                    document.getElementById('winner-name').textContent = 
+                        `${phone2.Бренд} ${phone2.Модель}`;
+                    document.getElementById('winner-diff').textContent = 
+                        result.winner.difference;
+                        
+                    document.getElementById('winner-banner').style.display = 'block';
+                    document.getElementById('draw-banner').style.display = 'none';
+                }
+            } else {
+                scoreCard1.classList.remove('winner', 'loser');
+                scoreCard2.classList.remove('winner', 'loser');
+                
+                document.getElementById('winner-banner').style.display = 'none';
+                document.getElementById('draw-banner').style.display = 'block';
+            }
+            
+            // Отображаем детализированные баллы
+            const categories = {
+                'Производительность': 'performance',
+                'Камера': 'camera',
+                'Батарея': 'battery',
+                'Экран': 'display',
+                'Связь': 'connectivity',
+                'Функции': 'features'
+            };
+            
+            let categoriesHTML = '';
+            
+            for (const [name, key] of Object.entries(categories)) {
+                const score1 = result.phone1.score.categories[key];
+                const score2 = result.phone2.score.categories[key];
+                
+                // Рассчитываем процент для отображения
+                const maxScore = Math.max(score1, score2, 1);
+                const percent1 = (score1 / maxScore) * 100;
+                const percent2 = (score2 / maxScore) * 100;
+                
+                // Определяем цвет для первого телефона
+                let color1 = '#3498db'; // Синий
+                if (score1 > score2) color1 = '#27ae60'; // Зеленый
+                else if (score1 < score2) color1 = '#e74c3c'; // Красный
+                
+                // Определяем цвет для второго телефона
+                let color2 = '#3498db'; // Синий
+                if (score2 > score1) color2 = '#27ae60'; // Зеленый
+                else if (score2 < score1) color2 = '#e74c3c'; // Красный
+                
+                categoriesHTML += `
+                    <div class="category">
+                        <div><strong>${name}</strong></div>
+                        <div>${phone1.Бренд}: ${score1.toFixed(1)}</div>
+                        <div class="category-bar">
+                            <div class="category-fill" 
+                                 style="width: ${percent1}%; background: ${color1};"></div>
+                        </div>
+                        
+                        <div>${phone2.Бренд}: ${score2.toFixed(1)}</div>
+                        <div class="category-bar">
+                            <div class="category-fill" 
+                                 style="width: ${percent2}%; background: ${color2};"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('category-scores').innerHTML = categoriesHTML;
         }
         
         // Инициализация
         document.addEventListener('DOMContentLoaded', () => {
-            // В реальном приложении здесь можно загружать популярные телефоны
+            // Обработчик клика вне области поиска
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.search-input-container')) {
+                    phone1Results.style.display = 'none';
+                    phone2Results.style.display = 'none';
+                }
+            });
         });
     </script>
 </body>
