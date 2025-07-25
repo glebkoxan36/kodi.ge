@@ -643,6 +643,7 @@
                 <p><strong>ОС:</strong> ${phone.ОС || '-'} ${phone['Версия ОС'] || ''}</p>
                 <p><strong>Экран:</strong> ${phone['Размер дисплея (дюймы)'] || '-'}" ${phone['Тип дисплея'] || ''}</p>
                 <p><strong>Процессор:</strong> ${phone.Процессор || '-'}</p>
+                <p><strong>Графика:</strong> ${phone['Графический процессор'] || '-'}</p>
                 <p><strong>Память:</strong> ${phone['ОЗУ (ГБ)'] || '-'} ГБ ОЗУ / ${phone['ПЗУ (ГБ)'] || '-'} ГБ ПЗУ</p>
                 <p><strong>Камера:</strong> ${phone['Основная камера (Мп)'] || '-'} Мп</p>
                 <p><strong>Батарея:</strong> ${phone['Емкость батареи (mAh)'] || '-'} mAh</p>
@@ -650,6 +651,23 @@
             `;
             
             specsElement.innerHTML = specsHTML;
+        }
+        
+        // Вспомогательная функция для получения баллов CPU/GPU
+        function getCpuGpuScore(spec, value) {
+            if (!value || value === '-') return 0;
+            
+            let dict;
+            if (spec === 'Процессор') {
+                dict = PhoneComparer.CPU_SCORES;
+            } else if (spec === 'Графический процессор') {
+                dict = PhoneComparer.GPU_SCORES;
+            } else {
+                return 0;
+            }
+            
+            const bestMatch = PhoneComparer.findBestMatch(value, dict, 0.7);
+            return bestMatch ? dict[bestMatch] : 0;
         }
         
         // Сравнение характеристик телефонов
@@ -701,10 +719,10 @@
             const specsToCompare = [
                 'Год выпуска', 'Квартал выпуска', 'ОС', 'Версия ОС', 'Оболочка ОС', 'Политика обновлений',
                 'Размер дисплея (дюймы)', 'Разрешение дисплея', 'Тип дисплея', 'Частота обновления (Гц)',
-                'Процессор', 'ОЗУ (ГБ)', 'Тип ОЗУ', 'ПЗУ (ГБ)', 'Тип ПЗУ', 'Основная камера (Мп)', 
-                'Фронтальная камера (Мп)', 'Емкость батареи (mAh)', 'Быстрая зарядка', 'Беспроводная зарядка',
-                'Вес (г)', 'Защита от воды', 'Поддержка 5G', 'Wi-Fi', 'Bluetooth', 'NFC', 'Сканер отпечатков',
-                'Стартовая цена (руб)', 'Текущая цена (руб)', 'Гарантия (мес)'
+                'Процессор', 'Графический процессор', 'ОЗУ (ГБ)', 'Тип ОЗУ', 'ПЗУ (ГБ)', 'Тип ПЗУ', 
+                'Основная камера (Мп)', 'Фронтальная камера (Мп)', 'Емкость батареи (mAh)', 'Быстрая зарядка', 
+                'Беспроводная зарядка', 'Вес (г)', 'Защита от воды', 'Поддержка 5G', 'Wi-Fi', 'Bluetooth', 
+                'NFC', 'Сканер отпечатков', 'Стартовая цена (руб)', 'Текущая цена (руб)', 'Гарантия (мес)'
             ];
             
             // Строим таблицу сравнения
@@ -721,7 +739,18 @@
                 let highlight1 = '';
                 let highlight2 = '';
                 
-                if (spec.includes('цена') || spec.includes('вес')) {
+                // Обработка CPU и GPU
+                if (spec === 'Процессор' || spec === 'Графический процессор') {
+                    const score1 = getCpuGpuScore(spec, value1);
+                    const score2 = getCpuGpuScore(spec, value2);
+                    
+                    if (score1 > score2) {
+                        highlight1 = 'highlight';
+                    } else if (score2 > score1) {
+                        highlight2 = 'highlight';
+                    }
+                } 
+                else if (spec.includes('цена') || spec.includes('вес')) {
                     // Для цены и веса меньше - лучше
                     const num1 = parseFloat(value1);
                     const num2 = parseFloat(value2);
@@ -730,7 +759,8 @@
                         if (num1 < num2) highlight1 = 'highlight';
                         if (num2 < num1) highlight2 = 'highlight';
                     }
-                } else if (spec.includes('емкость') || spec.includes('ОЗУ') || spec.includes('ПЗУ')) {
+                } 
+                else if (spec.includes('емкость') || spec.includes('ОЗУ') || spec.includes('ПЗУ')) {
                     // Для емкости и памяти больше - лучше
                     const num1 = parseFloat(value1);
                     const num2 = parseFloat(value2);
@@ -739,7 +769,8 @@
                         if (num1 > num2) highlight1 = 'highlight';
                         if (num2 > num1) highlight2 = 'highlight';
                     }
-                } else if (spec === 'Защита от воды') {
+                } 
+                else if (spec === 'Защита от воды') {
                     // Для защиты воды выше уровень - лучше
                     const levels = ['IP68', 'IP67', 'IP65', 'IP54', 'Нет'];
                     const index1 = levels.indexOf(value1);
@@ -749,7 +780,8 @@
                         if (index1 < index2) highlight1 = 'highlight';
                         if (index2 < index1) highlight2 = 'highlight';
                     }
-                } else if (spec === 'Wi-Fi' || spec === 'Bluetooth') {
+                } 
+                else if (spec === 'Wi-Fi' || spec === 'Bluetooth') {
                     // Для Wi-Fi и Bluetooth выше версия - лучше
                     const version1 = parseFloat(value1.replace('Wi-Fi ', '').replace('Bluetooth ', ''));
                     const version2 = parseFloat(value2.replace('Wi-Fi ', '').replace('Bluetooth ', ''));
