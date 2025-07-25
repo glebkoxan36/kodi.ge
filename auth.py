@@ -41,6 +41,10 @@ verification_storage = {}
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
+    # Если пользователь уже авторизован, перенаправляем на главную
+    if 'user_id' in session or 'admin_id' in session:
+        return redirect(url_for('index'))
+    
     logger.info(f"Register request: {request.method}")
     if request.method == 'POST':
         # Получение данных формы
@@ -233,6 +237,10 @@ def resend_verification():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    # Если пользователь уже авторизован, перенаправляем на главную
+    if 'user_id' in session or 'admin_id' in session:
+        return redirect(url_for('index'))
+    
     logger.info(f"Login request: {request.method}")
     if request.method == 'POST':
         identifier = request.form.get('identifier')
@@ -498,7 +506,7 @@ def logout():
         
         flash('თქვენ გამოხვედით სისტემიდან', 'success')
         logger.info(f"User logged out, admin session preserved: {session.get('admin_id')}")
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('index'))
     except Exception as e:
         logger.error(f"Logout error: {str(e)}")
         flash('Error during logout', 'danger')
