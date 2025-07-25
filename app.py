@@ -296,6 +296,21 @@ def admin_required(f):
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        # Список публичных страниц, не требующих авторизации
+        public_paths = [
+            '/', 
+            '/contacts', 
+            '/knowledge-base', 
+            '/politika', 
+            '/applecheck', 
+            '/androidcheck',
+            '/compare'
+        ]
+        
+        # Если запрос к публичной странице, пропускаем
+        if request.path in public_paths:
+            return f(*args, **kwargs)
+            
         if 'user_id' not in session and 'admin_id' not in session:
             logger.warning("Unauthorized access attempt")
             return redirect(url_for('auth.login', next=request.url))
@@ -315,7 +330,20 @@ def refresh_session():
 
 @app.before_request
 def check_session_timeout():
-    """Проверяет тайм-аут сессии"""
+    """Проверяет тайм-аут сессии только для авторизованных пользователей"""
+    # Разрешаем доступ к публичным страницам без проверки
+    public_paths = [
+        '/', 
+        '/contacts', 
+        '/knowledge-base', 
+        '/politika', 
+        '/applecheck', 
+        '/androidcheck',
+        '/compare'
+    ]
+    if request.path in public_paths:
+        return
+    
     last_activity = session.get('last_activity')
     if last_activity:
         try:
@@ -468,11 +496,15 @@ def index():
     # Добавляем получение карусельных слайдов
     carousel_slides = list(db.carousel_slides.find().sort("order", 1))
     
+    # Проверяем авторизацию пользователя
+    user_authenticated = 'user_id' in session or 'admin_id' in session
+    
     return render_template(
         'index.html',
         stripe_public_key=STRIPE_PUBLIC_KEY,
         carousel_slides=carousel_slides,
-        prices=prices
+        prices=prices,
+        user_authenticated=user_authenticated
     )
     
 @app.route('/contacts')
@@ -1200,4 +1232,4 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production'
-        )
+                )
