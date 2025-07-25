@@ -1,4 +1,32 @@
+// sidebar.js
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем глобальные стили для адаптивности
+    const globalStyles = document.createElement('style');
+    globalStyles.textContent = `
+        /* Основной контент */
+        #main-content {
+            transition: margin-left 0.4s ease;
+        }
+        
+        /* На ПК добавляем отступ для основного контента */
+        @media (min-width: 768px) {
+            #main-content {
+                margin-left: 240px;
+            }
+        }
+        
+        /* На мобильных растягиваем контент на всю ширину */
+        @media (max-width: 767px) {
+            #main-content {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+        }
+    `;
+    document.head.appendChild(globalStyles);
+
+    // HTML структура сайдбара
     const sidebarHTML = `
         <div class="sidebar">
             <style>
@@ -15,6 +43,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     overflow-y: auto;
                     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                }
+                
+                /* Скрываем сайдбар на мобильных устройствах */
+                @media (max-width: 767px) {
+                    .sidebar {
+                        display: none !important;
+                    }
                 }
                 
                 .sidebar:hover {
@@ -264,45 +299,49 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     `;
 
-    // Вставляем сайдбар в контейнер
-    const sidebarContainer = document.getElementById('sidebar-container');
-    if (sidebarContainer) {
-        sidebarContainer.innerHTML = sidebarHTML;
+    // Функция инициализации сайдбара
+    function initSidebar() {
+        const sidebarContainer = document.getElementById('sidebar-container');
+        if (!sidebarContainer) return;
         
-        // Добавляем обработчики событий после создания DOM
-        setupSidebar();
+        // Очищаем контейнер перед повторной инициализацией
+        sidebarContainer.innerHTML = '';
+        
+        // Вставляем сайдбар только на ПК
+        if (window.innerWidth >= 768) {
+            sidebarContainer.innerHTML = sidebarHTML;
+            setupSidebar();
+        }
     }
 
+    // Функция настройки поведения сайдбара
     function setupSidebar() {
-        // Функция для переключения подменю
+        // Переключение подменю
         const toggleSubmenu = (buttonClass, menuId) => {
             const button = document.querySelector(buttonClass);
             const menu = document.getElementById(menuId);
-            const icon = button.querySelector('.fa-chevron-down');
+            const icon = button?.querySelector('.fa-chevron-down');
             
-            if (button && menu) {
+            if (button && menu && icon) {
                 button.addEventListener('click', (e) => {
                     e.preventDefault();
                     
-                    // Закрываем все другие подменю
+                    // Закрываем другие подменю
                     document.querySelectorAll('.submenu').forEach(sub => {
                         if (sub !== menu && sub.classList.contains('show')) {
                             sub.classList.remove('show');
-                            const otherIcon = sub.closest('.nav-item').querySelector('.fa-chevron-down');
-                            if (otherIcon) otherIcon.classList.remove('rotate-icon');
+                            const otherIcon = sub.closest('.nav-item')?.querySelector('.fa-chevron-down');
+                            if (otherIcon) {
+                                otherIcon.classList.remove('rotate-icon');
+                                otherIcon.style.transform = 'rotate(0deg)';
+                            }
                         }
                     });
                     
                     // Переключаем текущее подменю
                     menu.classList.toggle('show');
                     icon.classList.toggle('rotate-icon');
-                    
-                    // Анимация иконки
-                    if (icon.classList.contains('rotate-icon')) {
-                        icon.style.transform = 'rotate(180deg)';
-                    } else {
-                        icon.style.transform = 'rotate(0deg)';
-                    }
+                    icon.style.transform = icon.classList.contains('rotate-icon') ? 'rotate(180deg)' : 'rotate(0deg)';
                 });
             }
         };
@@ -343,5 +382,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 link.classList.add('active');
             }
         });
+    }
+
+    // Инициализация при загрузке
+    initSidebar();
+    
+    // Обновление при изменении размера окна
+    window.addEventListener('resize', initSidebar);
+    
+    // Добавляем Font Awesome, если он еще не подключен
+    if (!document.querySelector('link[href*="font-awesome"]')) {
+        const fontAwesome = document.createElement('link');
+        fontAwesome.rel = 'stylesheet';
+        fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+        document.head.appendChild(fontAwesome);
     }
 });
