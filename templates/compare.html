@@ -279,6 +279,9 @@
             padding: 15px;
             width: 100%;
             max-width: 300px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
         .total-score {
@@ -306,6 +309,10 @@
         .category {
             width: 100%;
             padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
         }
         
         .category-bar {
@@ -340,27 +347,6 @@
             font-size: 1.2rem;
         }
         
-        /* Стили для спецификаций */
-        .phone-specs {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
-        }
-        
-        .phone-specs p {
-            margin-bottom: 10px;
-            padding: 8px;
-            background: #f8f9fa;
-            border-radius: 4px;
-        }
-        
-        .spec-title {
-            font-weight: bold;
-            color: #2c3e50;
-            display: block;
-            margin-bottom: 3px;
-        }
-        
         /* Группы спецификаций */
         .spec-group {
             margin-bottom: 20px;
@@ -372,6 +358,25 @@
             padding-bottom: 5px;
             border-bottom: 1px solid #eee;
             color: #3498db;
+        }
+        
+        .spec-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .spec-title {
+            font-weight: bold;
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 3px;
+        }
+        
+        .spec-value {
+            display: block;
+            color: #34495e;
         }
         
         /* Мобильная адаптация */
@@ -399,6 +404,22 @@
                 margin-right: -10px;
                 padding-left: 10px;
                 padding-right: 10px;
+                scrollbar-width: thin;
+                scrollbar-color: #3498db #f1f1f1;
+            }
+            
+            .results-container::-webkit-scrollbar {
+                height: 6px;
+            }
+            
+            .results-container::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 10px;
+            }
+            
+            .results-container::-webkit-scrollbar-thumb {
+                background: #3498db;
+                border-radius: 10px;
             }
             
             .phone-card {
@@ -441,14 +462,8 @@
                 border-bottom: 1px solid #ddd;
             }
             
-            .phone-specs {
-                grid-template-columns: 1fr;
-            }
-            
-            .phone-specs p {
-                margin-bottom: 8px;
-                padding: 10px;
-                background: #f0f4f8;
+            .spec-item {
+                padding: 8px;
             }
             
             /* Скрытие таблицы сравнения */
@@ -562,6 +577,8 @@
         </div>
     </div>
 
+    <!-- Восстановлен оригинальный скрипт сравнения -->
+    <script src="{{ url_for('static', filename='js/compares.js') }}"></script>
     <script>
         // Объекты для хранения данных о телефонах
         let phone1 = null;
@@ -782,10 +799,10 @@
                     group.specs.forEach(spec => {
                         if (spec.value && spec.value !== '-') {
                             specsHTML += `
-                                <p>
+                                <div class="spec-item">
                                     <span class="spec-title">${spec.name}</span>
-                                    ${spec.value}
-                                </p>
+                                    <span class="spec-value">${spec.value}</span>
+                                </div>
                             `;
                         }
                     });
@@ -837,7 +854,7 @@
             document.getElementById('phone2-title-score').textContent = 
                 `${phone2.Бренд} ${phone2.Модель}`;
             
-            // Сравниваем телефоны
+            // Сравниваем телефоны с помощью оригинальной логики
             const comparisonResult = PhoneComparer.comparePhones(phone1, phone2);
             
             // Отображаем таблицу характеристик
@@ -1041,4 +1058,4 @@
         });
     </script>
 </body>
-</html>не 
+                                                                             </html>
