@@ -462,7 +462,6 @@
                 padding-right: 10px;
                 scrollbar-width: thin;
                 scrollbar-color: #3498db #f1f1f1;
-                order: 2;
             }
             
             .results-container::-webkit-scrollbar {
@@ -535,10 +534,14 @@
             
             .mobile-specs {
                 display: block;
-                order: 3;
             }
             
-            /* Изменяем порядок элементов */
+            /* Скрываем изображения в мобильном режиме */
+            .phone-image {
+                display: none;
+            }
+            
+            /* Новый порядок отображения */
             #results-section {
                 display: flex;
                 flex-direction: column;
@@ -548,9 +551,12 @@
                 order: 1;
             }
             
-            /* Скрываем изображения в мобильном режиме */
-            .phone-image {
-                display: none;
+            .results-container {
+                order: 3;
+            }
+            
+            .mobile-specs {
+                order: 2;
             }
         }
     </style>
@@ -625,6 +631,11 @@
                 <div class="category-scores" id="category-scores"></div>
             </div>
             
+            <div class="mobile-specs" id="mobile-specs" style="display: none;">
+                <h3>Характеристики</h3>
+                <div class="mobile-specs-container" id="mobile-specs-container"></div>
+            </div>
+            
             <div class="results-container">
                 <div class="phone-card" id="phone1-card">
                     <h3 id="phone1-title">Телефон 1</h3>
@@ -656,14 +667,11 @@
                     <tbody id="comparison-body"></tbody>
                 </table>
             </div>
-            
-            <div class="mobile-specs" id="mobile-specs" style="display: none;">
-                <h3>Характеристики</h3>
-                <div class="mobile-specs-container" id="mobile-specs-container"></div>
-            </div>
         </div>
     </div>
 
+    <!-- Восстановлен оригинальный скрипт сравнения -->
+    <script src="{{ url_for('static', filename='js/compares.js') }}"></script>
     <script>
         // Объекты для хранения данных о телефонах
         let phone1 = null;
@@ -899,23 +907,6 @@
             specsElement.innerHTML = specsHTML;
         }
         
-        // Вспомогательная функция для получения баллов CPU/GPU
-        function getCpuGpuScore(spec, value) {
-            if (!value || value === '-') return 0;
-            
-            let dict;
-            if (spec === 'Процессор') {
-                dict = PhoneComparer.CPU_SCORES;
-            } else if (spec === 'Графический процессор') {
-                dict = PhoneComparer.GPU_SCORES;
-            } else {
-                return 0;
-            }
-            
-            const bestMatch = PhoneComparer.findBestMatch(value, dict, 0.7);
-            return bestMatch ? dict[bestMatch] : 0;
-        }
-        
         // Функция для отображения спецификаций в мобильном виде
         function displayMobileSpecs() {
             const container = document.getElementById('mobile-specs-container');
@@ -1018,7 +1009,7 @@
             container.innerHTML = specsHTML;
         }
 
-        // Сравнение характеристик телефонов
+        // Сравнение характеристик телефонов (используется оригинальная логика из compares.js)
         function comparePhones() {
             if (!phone1 || !phone2) {
                 alert('Выберите оба телефона для сравнения');
@@ -1041,14 +1032,14 @@
             document.getElementById('phone2-title-score').textContent = 
                 `${phone2.Бренд} ${phone2.Модель}`;
             
-            // Сравниваем телефоны с помощью оригинальной логики
+            // Сравниваем телефоны с помощью оригинальной логики из compares.js
             const comparisonResult = PhoneComparer.comparePhones(phone1, phone2);
-            
-            // Отображаем таблицу характеристик
-            displayComparisonTable(comparisonResult);
             
             // Отображаем результаты балльной системы
             displayComparisonResult(comparisonResult);
+            
+            // Отображаем таблицу характеристик
+            displayComparisonTable(comparisonResult);
             
             // Для мобильных: показываем спецификации в новом формате
             if (window.innerWidth <= 768) {
@@ -1092,36 +1083,11 @@
                 let highlight1 = '';
                 let highlight2 = '';
                 
-                // Обработка CPU и GPU
-                if (spec === 'Процессор' || spec === 'Графический процессор') {
-                    const score1 = getCpuGpuScore(spec, value1);
-                    const score2 = getCpuGpuScore(spec, value2);
-                    
-                    if (score1 > score2) {
-                        highlight1 = 'highlight';
-                    } else if (score2 > score1) {
-                        highlight2 = 'highlight';
-                    }
-                } 
-                else if (spec.includes('цена') || spec.includes('вес')) {
-                    // Для цены и веса меньше - лучше
-                    const num1 = parseFloat(value1);
-                    const num2 = parseFloat(value2);
-                    
-                    if (!isNaN(num1) && !isNaN(num2)) {
-                        if (num1 < num2) highlight1 = 'highlight';
-                        if (num2 < num1) highlight2 = 'highlight';
-                    }
-                } 
-                else if (spec.includes('емкость') || spec.includes('ОЗУ') || spec.includes('ПЗУ')) {
-                    // Для емкости и памяти больше - лучше
-                    const num1 = parseFloat(value1);
-                    const num2 = parseFloat(value2);
-                    
-                    if (!isNaN(num1) && !isNaN(num2)) {
-                        if (num1 > num2) highlight1 = 'highlight';
-                        if (num2 > num1) highlight2 = 'highlight';
-                    }
+                // Используем оригинальную логику сравнения характеристик
+                if (PhoneComparer.compareSpecs) {
+                    const comparison = PhoneComparer.compareSpecs(spec, value1, value2);
+                    if (comparison === 1) highlight1 = 'highlight';
+                    else if (comparison === 2) highlight2 = 'highlight';
                 }
                 
                 row.innerHTML = `
@@ -1250,4 +1216,4 @@
         });
     </script>
 </body>
-    </html>
+</html>
