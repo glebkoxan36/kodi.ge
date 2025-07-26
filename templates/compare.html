@@ -384,21 +384,10 @@
             }
             
             /* Горизонтальное расположение характеристик */
-            .results-container {
-                flex-direction: column;
-            }
-            
             .phone-specs {
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
                 gap: 15px;
-            }
-            
-            .phone-specs p {
-                margin-bottom: 8px;
-                background: #f8f9fa;
-                padding: 8px;
-                border-radius: 4px;
             }
         }
         
@@ -528,6 +517,7 @@
         </div>
     </div>
 
+    <script src="{{ url_for('static', filename='js/compares.js') }}"></script>
     <script>
         // Объекты для хранения данных о телефонах
         let phone1 = null;
@@ -591,68 +581,8 @@
             const resultsContainer = phoneNumber === 1 ? phone1Results : phone2Results;
             
             try {
-                // Заглушка для демонстрации
-                const mockData = [
-                    {
-                        _id: "1",
-                        Бренд: "Samsung",
-                        Модель: "Galaxy S21",
-                        Изображение: "https://via.placeholder.com/200x300?text=S21",
-                        "Год выпуска": "2021",
-                        "ОС": "Android",
-                        "Версия ОС": "11",
-                        "Размер дисплея (дюймы)": "6.2",
-                        "Тип дисплея": "Dynamic AMOLED",
-                        Процессор: "Exynos 2100",
-                        "Графический процессор": "Mali-G78",
-                        "ОЗУ (ГБ)": "8",
-                        "ПЗУ (ГБ)": "128",
-                        "Основная камера (Мп)": "64",
-                        "Емкость батареи (mAh)": "4000",
-                        "Текущая цена (руб)": "59990"
-                    },
-                    {
-                        _id: "2",
-                        Бренд: "Apple",
-                        Модель: "iPhone 12",
-                        Изображение: "https://via.placeholder.com/200x300?text=iPhone12",
-                        "Год выпуска": "2020",
-                        "ОС": "iOS",
-                        "Версия ОС": "14",
-                        "Размер дисплея (дюймы)": "6.1",
-                        "Тип дисплея": "Super Retina XDR",
-                        Процессор: "Apple A14 Bionic",
-                        "Графический процессор": "Apple GPU",
-                        "ОЗУ (ГБ)": "4",
-                        "ПЗУ (ГБ)": "64",
-                        "Основная камера (Мп)": "12",
-                        "Емкость батареи (mAh)": "2815",
-                        "Текущая цена (руб)": "64990"
-                    },
-                    {
-                        _id: "3",
-                        Бренд: "Xiaomi",
-                        Модель: "Mi 11",
-                        Изображение: "https://via.placeholder.com/200x300?text=Mi11",
-                        "Год выпуска": "2021",
-                        "ОС": "Android",
-                        "Версия ОС": "11",
-                        "Размер дисплея (дюймы)": "6.81",
-                        "Тип дисплея": "AMOLED",
-                        Процессор: "Snapdragon 888",
-                        "Графический процессор": "Adreno 660",
-                        "ОЗУ (ГБ)": "8",
-                        "ПЗУ (ГБ)": "128",
-                        "Основная камера (Мп)": "108",
-                        "Емкость батареи (mAh)": "4600",
-                        "Текущая цена (руб)": "49990"
-                    }
-                ];
-                
-                const data = mockData.filter(phone => 
-                    phone.Бренд.toLowerCase().includes(query.toLowerCase()) || 
-                    phone.Модель.toLowerCase().includes(query.toLowerCase())
-                );
+                const response = await fetch(`/api/search_phones?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
                 
                 if (data.length === 0) {
                     resultsContainer.innerHTML = '<div class="no-results">Телефоны не найдены</div>';
@@ -763,36 +693,17 @@
         function getCpuGpuScore(spec, value) {
             if (!value || value === '-') return 0;
             
-            // Упрощенная реализация для демонстрации
-            const cpuScores = {
-                "Exynos 2100": 85,
-                "Apple A14 Bionic": 95,
-                "Snapdragon 888": 90
-            };
-            
-            const gpuScores = {
-                "Mali-G78": 80,
-                "Apple GPU": 90,
-                "Adreno 660": 85
-            };
-            
             let dict;
             if (spec === 'Процессор') {
-                dict = cpuScores;
+                dict = PhoneComparer.CPU_SCORES;
             } else if (spec === 'Графический процессор') {
-                dict = gpuScores;
+                dict = PhoneComparer.GPU_SCORES;
             } else {
                 return 0;
             }
             
-            // Поиск наилучшего совпадения
-            for (const key in dict) {
-                if (value.includes(key)) {
-                    return dict[key];
-                }
-            }
-            
-            return 0;
+            const bestMatch = PhoneComparer.findBestMatch(value, dict, 0.7);
+            return bestMatch ? dict[bestMatch] : 0;
         }
         
         // Сравнение характеристик телефонов
@@ -818,49 +729,8 @@
             document.getElementById('phone2-title-score').textContent = 
                 `${phone2.Бренд} ${phone2.Модель}`;
             
-            // Сравниваем телефоны (упрощенная реализация)
-            const comparisonResult = {
-                phone1: {
-                    score: {
-                        total: Math.floor(Math.random() * 100) + 50,
-                        categories: {
-                            performance: Math.floor(Math.random() * 30) + 20,
-                            camera: Math.floor(Math.random() * 20) + 10,
-                            battery: Math.floor(Math.random() * 20) + 10,
-                            display: Math.floor(Math.random() * 15) + 5,
-                            connectivity: Math.floor(Math.random() * 10) + 5,
-                            features: Math.floor(Math.random() * 10) + 5
-                        }
-                    }
-                },
-                phone2: {
-                    score: {
-                        total: Math.floor(Math.random() * 100) + 50,
-                        categories: {
-                            performance: Math.floor(Math.random() * 30) + 20,
-                            camera: Math.floor(Math.random() * 20) + 10,
-                            battery: Math.floor(Math.random() * 20) + 10,
-                            display: Math.floor(Math.random() * 15) + 5,
-                            connectivity: Math.floor(Math.random() * 10) + 5,
-                            features: Math.floor(Math.random() * 10) + 5
-                        }
-                    }
-                }
-            };
-            
-            // Определяем победителя
-            const diff = Math.abs(comparisonResult.phone1.score.total - comparisonResult.phone2.score.total);
-            if (comparisonResult.phone1.score.total > comparisonResult.phone2.score.total) {
-                comparisonResult.winner = {
-                    phone: phone1,
-                    difference: diff
-                };
-            } else if (comparisonResult.phone2.score.total > comparisonResult.phone1.score.total) {
-                comparisonResult.winner = {
-                    phone: phone2,
-                    difference: diff
-                };
-            }
+            // Сравниваем телефоны
+            const comparisonResult = PhoneComparer.comparePhones(phone1, phone2);
             
             // Отображаем таблицу характеристик
             displayComparisonTable(comparisonResult);
