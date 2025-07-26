@@ -340,57 +340,6 @@
             font-size: 1.2rem;
         }
         
-        /* Мобильная адаптация */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 1.5rem;
-            }
-            
-            .search-section {
-                flex-direction: column;
-                align-items: center;
-                gap: 15px;
-            }
-            
-            .search-box {
-                max-width: 100%;
-            }
-            
-            .phone-card {
-                min-width: 100%;
-            }
-            
-            .score-container {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .score-card {
-                width: 100%;
-                margin-bottom: 15px;
-            }
-            
-            .category {
-                width: 100%;
-            }
-            
-            /* Адаптация таблицы для мобильных */
-            table {
-                min-width: 600px;
-            }
-            
-            .comparison-table {
-                overflow-x: auto;
-            }
-            
-            /* Горизонтальное расположение характеристик */
-            .phone-specs {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                gap: 15px;
-            }
-        }
-        
         /* Стили для спецификаций */
         .phone-specs {
             display: grid;
@@ -410,6 +359,102 @@
             color: #2c3e50;
             display: block;
             margin-bottom: 3px;
+        }
+        
+        /* Группы спецификаций */
+        .spec-group {
+            margin-bottom: 20px;
+        }
+        
+        .group-title {
+            font-size: 1.1rem;
+            margin: 15px 0 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+            color: #3498db;
+        }
+        
+        /* Мобильная адаптация */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .search-section {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+            
+            .search-box {
+                max-width: 100%;
+            }
+            
+            /* Горизонтальное расположение карточек телефонов */
+            .results-container {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: 10px;
+                margin-left: -10px;
+                margin-right: -10px;
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            
+            .phone-card {
+                min-width: 85vw;
+                flex: 0 0 auto;
+                margin-right: 15px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border-radius: 8px;
+                padding: 15px;
+                background: white;
+            }
+            
+            .phone-card:last-child {
+                margin-right: 0;
+            }
+            
+            .score-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .score-card {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+            
+            .category {
+                width: 100%;
+            }
+            
+            /* Группировка спецификаций */
+            .spec-group {
+                margin-bottom: 15px;
+            }
+            
+            .group-title {
+                font-size: 1.1rem;
+                margin: 10px 0 5px;
+                padding-bottom: 5px;
+                border-bottom: 1px solid #ddd;
+            }
+            
+            .phone-specs {
+                grid-template-columns: 1fr;
+            }
+            
+            .phone-specs p {
+                margin-bottom: 8px;
+                padding: 10px;
+                background: #f0f4f8;
+            }
+            
+            /* Скрытие таблицы сравнения */
+            .comparison-table {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -517,7 +562,6 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/compares.js') }}"></script>
     <script>
         // Объекты для хранения данных о телефонах
         let phone1 = null;
@@ -662,7 +706,7 @@
             compareBtn.disabled = !(phone1 && phone2);
         }
         
-        // Отображение деталей телефона
+        // Отображение деталей телефона с группировкой
         function displayPhoneDetails(phone, phoneNumber) {
             const titleElement = document.getElementById(`phone${phoneNumber}-title`);
             const imgElement = document.getElementById(`phone${phoneNumber}-img`);
@@ -673,18 +717,82 @@
             // Используем изображение из базы, если есть
             imgElement.src = phone.Изображение || 'https://via.placeholder.com/200x300?text=📱';
             
-            // Отображение основных характеристик
-            let specsHTML = `
-                <p><span class="spec-title">Год выпуска:</span> ${phone['Год выпуска'] || '-'}</p>
-                <p><span class="spec-title">ОС:</span> ${phone.ОС || '-'} ${phone['Версия ОС'] || ''}</p>
-                <p><span class="spec-title">Экран:</span> ${phone['Размер дисплея (дюймы)'] || '-'}" ${phone['Тип дисплея'] || ''}</p>
-                <p><span class="spec-title">Процессор:</span> ${phone.Процессор || '-'}</p>
-                <p><span class="spec-title">Графика:</span> ${phone['Графический процессор'] || '-'}</p>
-                <p><span class="spec-title">Память:</span> ${phone['ОЗУ (ГБ)'] || '-'} ГБ ОЗУ / ${phone['ПЗУ (ГБ)'] || '-'} ГБ ПЗУ</p>
-                <p><span class="spec-title">Камера:</span> ${phone['Основная камера (Мп)'] || '-'} Мп</p>
-                <p><span class="spec-title">Батарея:</span> ${phone['Емкость батареи (mAh)'] || '-'} mAh</p>
-                <p><span class="spec-title">Цена:</span> ${phone['Текущая цена (руб)'] || '-'} руб.</p>
-            `;
+            // Группировка характеристик
+            const groups = [
+                {
+                    title: "Основные характеристики",
+                    specs: [
+                        { name: "Год выпуска", value: phone['Год выпуска'] || '-' },
+                        { name: "ОС", value: phone.ОС || '-' },
+                        { name: "Версия ОС", value: phone['Версия ОС'] || '-' }
+                    ]
+                },
+                {
+                    title: "Дисплей",
+                    specs: [
+                        { name: "Размер дисплея (дюймы)", value: phone['Размер дисплея (дюймы)'] || '-' },
+                        { name: "Тип дисплея", value: phone['Тип дисплея'] || '-' }
+                    ]
+                },
+                {
+                    title: "Процессор",
+                    specs: [
+                        { name: "Процессор", value: phone.Процессор || '-' },
+                        { name: "Графический процессор", value: phone['Графический процессор'] || '-' }
+                    ]
+                },
+                {
+                    title: "Память",
+                    specs: [
+                        { name: "ОЗУ (ГБ)", value: phone['ОЗУ (ГБ)'] || '-' },
+                        { name: "ПЗУ (ГБ)", value: phone['ПЗУ (ГБ)'] || '-' }
+                    ]
+                },
+                {
+                    title: "Камера",
+                    specs: [
+                        { name: "Основная камера (Мп)", value: phone['Основная камера (Мп)'] || '-' }
+                    ]
+                },
+                {
+                    title: "Аккумулятор",
+                    specs: [
+                        { name: "Емкость батареи (mAh)", value: phone['Емкость батареи (mAh)'] || '-' }
+                    ]
+                },
+                {
+                    title: "Цена",
+                    specs: [
+                        { name: "Текущая цена (руб)", value: phone['Текущая цена (руб)'] || '-' }
+                    ]
+                }
+            ];
+            
+            // Генерация HTML с группами
+            let specsHTML = '';
+            
+            groups.forEach(group => {
+                // Проверяем, есть ли хотя бы одно значение в группе
+                const hasValues = group.specs.some(spec => spec.value && spec.value !== '-');
+                
+                if (hasValues) {
+                    specsHTML += `<div class="spec-group">`;
+                    specsHTML += `<h4 class="group-title">${group.title}</h4>`;
+                    
+                    group.specs.forEach(spec => {
+                        if (spec.value && spec.value !== '-') {
+                            specsHTML += `
+                                <p>
+                                    <span class="spec-title">${spec.name}</span>
+                                    ${spec.value}
+                                </p>
+                            `;
+                        }
+                    });
+                    
+                    specsHTML += `</div>`;
+                }
+            });
             
             specsElement.innerHTML = specsHTML;
         }
@@ -933,4 +1041,4 @@
         });
     </script>
 </body>
-</html>
+</html>не 
