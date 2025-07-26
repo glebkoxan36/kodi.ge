@@ -379,6 +379,62 @@
             color: #34495e;
         }
         
+        /* Стили для мобильных спецификаций */
+        .mobile-specs {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .spec-group-mobile {
+            margin-bottom: 20px;
+        }
+
+        .group-title-mobile {
+            font-size: 1.1rem;
+            margin: 15px 0 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        .spec-item-mobile {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .spec-name-mobile {
+            width: 100%;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .spec-value-container {
+            display: flex;
+            width: 100%;
+        }
+
+        .spec-phone {
+            width: 50%;
+            padding: 5px;
+        }
+
+        .spec-phone-title {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-bottom: 3px;
+        }
+
+        .spec-value-mobile {
+            color: #34495e;
+            font-size: 0.95rem;
+        }
+        
         /* Мобильная адаптация */
         @media (max-width: 768px) {
             h1 {
@@ -406,6 +462,7 @@
                 padding-right: 10px;
                 scrollbar-width: thin;
                 scrollbar-color: #3498db #f1f1f1;
+                order: 2;
             }
             
             .results-container::-webkit-scrollbar {
@@ -470,6 +527,31 @@
             .comparison-table {
                 display: none;
             }
+            
+            /* Скрываем обычные спецификации и показываем мобильные */
+            .phone-specs, .comparison-table {
+                display: none;
+            }
+            
+            .mobile-specs {
+                display: block;
+                order: 3;
+            }
+            
+            /* Изменяем порядок элементов */
+            #results-section {
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .comparison-result {
+                order: 1;
+            }
+            
+            /* Скрываем изображения в мобильном режиме */
+            .phone-image {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -513,6 +595,36 @@
         <button id="compare-phones" class="compare-btn" disabled>Сравнить телефоны</button>
         
         <div class="results-section" id="results-section">
+            <div class="comparison-result" id="comparison-result" style="display: none;">
+                <h3>Результаты сравнения</h3>
+                
+                <div class="score-container">
+                    <div class="score-card" id="score-card1">
+                        <h4 id="phone1-title-score">Телефон 1</h4>
+                        <div class="total-score" id="phone1-score">0</div>
+                        <div>Общий балл</div>
+                    </div>
+                    
+                    <div class="score-card" id="score-card2">
+                        <h4 id="phone2-title-score">Телефон 2</h4>
+                        <div class="total-score" id="phone2-score">0</div>
+                        <div>Общий балл</div>
+                    </div>
+                </div>
+                
+                <div id="winner-banner" class="winner-banner" style="display: none;">
+                    <i class="fas fa-trophy"></i> 
+                    <span id="winner-name"></span> побеждает с отрывом в <span id="winner-diff"></span> баллов!
+                </div>
+                
+                <div id="draw-banner" class="draw-banner" style="display: none;">
+                    <i class="fas fa-handshake"></i> Телефоны набрали одинаковое количество баллов!
+                </div>
+                
+                <h4>Детализированные баллы</h4>
+                <div class="category-scores" id="category-scores"></div>
+            </div>
+            
             <div class="results-container">
                 <div class="phone-card" id="phone1-card">
                     <h3 id="phone1-title">Телефон 1</h3>
@@ -545,40 +657,13 @@
                 </table>
             </div>
             
-            <div class="comparison-result" id="comparison-result" style="display: none;">
-                <h3>Результаты сравнения</h3>
-                
-                <div class="score-container">
-                    <div class="score-card" id="score-card1">
-                        <h4 id="phone1-title-score">Телефон 1</h4>
-                        <div class="total-score" id="phone1-score">0</div>
-                        <div>Общий балл</div>
-                    </div>
-                    
-                    <div class="score-card" id="score-card2">
-                        <h4 id="phone2-title-score">Телефон 2</h4>
-                        <div class="total-score" id="phone2-score">0</div>
-                        <div>Общий балл</div>
-                    </div>
-                </div>
-                
-                <div id="winner-banner" class="winner-banner" style="display: none;">
-                    <i class="fas fa-trophy"></i> 
-                    <span id="winner-name"></span> побеждает с отрывом в <span id="winner-diff"></span> баллов!
-                </div>
-                
-                <div id="draw-banner" class="draw-banner" style="display: none;">
-                    <i class="fas fa-handshake"></i> Телефоны набрали одинаковое количество баллов!
-                </div>
-                
-                <h4>Детализированные баллы</h4>
-                <div class="category-scores" id="category-scores"></div>
+            <div class="mobile-specs" id="mobile-specs" style="display: none;">
+                <h3>Характеристики</h3>
+                <div class="mobile-specs-container" id="mobile-specs-container"></div>
             </div>
         </div>
     </div>
 
-    <!-- Восстановлен оригинальный скрипт сравнения -->
-    <script src="{{ url_for('static', filename='js/compares.js') }}"></script>
     <script>
         // Объекты для хранения данных о телефонах
         let phone1 = null;
@@ -831,6 +916,108 @@
             return bestMatch ? dict[bestMatch] : 0;
         }
         
+        // Функция для отображения спецификаций в мобильном виде
+        function displayMobileSpecs() {
+            const container = document.getElementById('mobile-specs-container');
+            container.innerHTML = '';
+            
+            // Показываем контейнер
+            document.getElementById('mobile-specs').style.display = 'block';
+            
+            // Группы характеристик
+            const groups = [
+                {
+                    title: "Основные характеристики",
+                    specs: [
+                        { name: "Год выпуска", key: 'Год выпуска' },
+                        { name: "ОС", key: 'ОС' },
+                        { name: "Версия ОС", key: 'Версия ОС' }
+                    ]
+                },
+                {
+                    title: "Дисплей",
+                    specs: [
+                        { name: "Размер дисплея (дюймы)", key: 'Размер дисплея (дюймы)' },
+                        { name: "Тип дисплея", key: 'Тип дисплея' }
+                    ]
+                },
+                {
+                    title: "Процессор",
+                    specs: [
+                        { name: "Процессор", key: 'Процессор' },
+                        { name: "Графический процессор", key: 'Графический процессор' }
+                    ]
+                },
+                {
+                    title: "Память",
+                    specs: [
+                        { name: "ОЗУ (ГБ)", key: 'ОЗУ (ГБ)' },
+                        { name: "ПЗУ (ГБ)", key: 'ПЗУ (ГБ)' }
+                    ]
+                },
+                {
+                    title: "Камера",
+                    specs: [
+                        { name: "Основная камера (Мп)", key: 'Основная камера (Мп)' }
+                    ]
+                },
+                {
+                    title: "Аккумулятор",
+                    specs: [
+                        { name: "Емкость батареи (mAh)", key: 'Емкость батареи (mAh)' }
+                    ]
+                },
+                {
+                    title: "Цена",
+                    specs: [
+                        { name: "Текущая цена (руб)", key: 'Текущая цена (руб)' }
+                    ]
+                }
+            ];
+            
+            let specsHTML = '';
+            
+            groups.forEach(group => {
+                // Проверяем, есть ли хотя бы одно значение в группе
+                const hasValues = group.specs.some(spec => 
+                    (phone1[spec.key] && phone1[spec.key] !== '-') || 
+                    (phone2[spec.key] && phone2[spec.key] !== '-')
+                );
+                
+                if (hasValues) {
+                    specsHTML += `<div class="spec-group-mobile">`;
+                    specsHTML += `<h4 class="group-title-mobile">${group.title}</h4>`;
+                    
+                    group.specs.forEach(spec => {
+                        const value1 = phone1[spec.key] || '-';
+                        const value2 = phone2[spec.key] || '-';
+                        
+                        if (value1 !== '-' || value2 !== '-') {
+                            specsHTML += `
+                                <div class="spec-item-mobile">
+                                    <div class="spec-name-mobile">${spec.name}</div>
+                                    <div class="spec-value-container">
+                                        <div class="spec-phone">
+                                            <div class="spec-phone-title">${phone1.Бренд}</div>
+                                            <div class="spec-value-mobile">${value1}</div>
+                                        </div>
+                                        <div class="spec-phone">
+                                            <div class="spec-phone-title">${phone2.Бренд}</div>
+                                            <div class="spec-value-mobile">${value2}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                    
+                    specsHTML += `</div>`;
+                }
+            });
+            
+            container.innerHTML = specsHTML;
+        }
+
         // Сравнение характеристик телефонов
         function comparePhones() {
             if (!phone1 || !phone2) {
@@ -862,6 +1049,11 @@
             
             // Отображаем результаты балльной системы
             displayComparisonResult(comparisonResult);
+            
+            // Для мобильных: показываем спецификации в новом формате
+            if (window.innerWidth <= 768) {
+                displayMobileSpecs();
+            }
             
             // Прокрутка к результатам
             resultsSection.scrollIntoView({ behavior: 'smooth' });
@@ -1058,4 +1250,4 @@
         });
     </script>
 </body>
-                                                                             </html>
+    </html>
