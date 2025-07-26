@@ -5,20 +5,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const globalStyles = document.createElement('style');
     globalStyles.textContent = `
         /* Основной контент */
-        #main-content {
+        .main-content {
             transition: margin-left 0.4s ease;
         }
         
         /* На ПК добавляем отступ для основного контента */
         @media (min-width: 768px) {
-            #main-content {
+            body.has-sidebar .main-content {
                 margin-left: 240px;
+                width: calc(100% - 240px);
             }
         }
         
         /* На мобильных растягиваем контент на всю ширину */
         @media (max-width: 767px) {
-            #main-content {
+            .main-content {
                 margin-left: 0 !important;
                 width: 100% !important;
             }
@@ -38,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     position: fixed;
                     left: 0;
                     top: 0;
-                    z-index: 100;
+                    z-index: 1000;
                     box-shadow: 3px 0 15px rgba(0,0,0,0.6);
                     overflow-y: auto;
                     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
@@ -310,7 +311,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Вставляем сайдбар только на ПК
         if (window.innerWidth >= 768) {
             sidebarContainer.innerHTML = sidebarHTML;
+            document.body.classList.add('has-sidebar');
             setupSidebar();
+        } else {
+            document.body.classList.remove('has-sidebar');
         }
     }
 
@@ -388,7 +392,16 @@ document.addEventListener('DOMContentLoaded', function() {
     initSidebar();
     
     // Обновление при изменении размера окна
-    window.addEventListener('resize', initSidebar);
+    window.addEventListener('resize', function() {
+        initSidebar();
+        
+        // Обновляем класс body при изменении размера
+        if (window.innerWidth >= 768) {
+            document.body.classList.add('has-sidebar');
+        } else {
+            document.body.classList.remove('has-sidebar');
+        }
+    });
     
     // Добавляем Font Awesome, если он еще не подключен
     if (!document.querySelector('link[href*="font-awesome"]')) {
