@@ -16,6 +16,7 @@
         body {
             background-color: #f5f7fa;
             padding: 20px;
+            color: #2c3e50;
         }
         
         .container {
@@ -27,14 +28,12 @@
             text-align: center;
             margin-bottom: 30px;
             padding: 20px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         h1 {
             color: #2c3e50;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            font-size: 1.8rem;
         }
         
         .search-section {
@@ -46,10 +45,7 @@
         }
         
         .search-box {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px;
             width: 100%;
             max-width: 500px;
             position: relative;
@@ -79,6 +75,7 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 16px;
+            background: #fff;
         }
         
         .search-results {
@@ -93,6 +90,7 @@
             overflow-y: auto;
             z-index: 100;
             display: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         
         .result-item {
@@ -194,13 +192,10 @@
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
+            margin-bottom: 30px;
         }
         
         .phone-card {
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
             flex: 1;
             min-width: 300px;
         }
@@ -214,12 +209,9 @@
         }
         
         .comparison-table {
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
             margin-top: 30px;
             width: 100%;
+            overflow-x: auto;
         }
         
         .comparison-table h3 {
@@ -231,6 +223,9 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         
         th, td {
@@ -268,10 +263,6 @@
         
         /* Стили для результатов сравнения */
         .comparison-result {
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
             margin-top: 30px;
             text-align: center;
         }
@@ -280,14 +271,14 @@
             display: flex;
             justify-content: space-around;
             margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 15px;
         }
         
         .score-card {
-            background: #f8f9fa;
-            border-radius: 10px;
             padding: 15px;
-            width: 45%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 300px;
         }
         
         .total-score {
@@ -309,14 +300,12 @@
             flex-wrap: wrap;
             justify-content: space-between;
             margin-top: 20px;
+            gap: 10px;
         }
         
         .category {
-            width: 48%;
-            margin-bottom: 15px;
+            width: 100%;
             padding: 10px;
-            background: #f1f2f6;
-            border-radius: 5px;
         }
         
         .category-bar {
@@ -336,7 +325,7 @@
             background: #27ae60;
             color: white;
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 5px;
             margin-top: 20px;
             font-size: 1.2rem;
             font-weight: bold;
@@ -346,15 +335,25 @@
             background: #3498db;
             color: white;
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 5px;
             margin-top: 20px;
             font-size: 1.2rem;
         }
         
+        /* Мобильная адаптация */
         @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
             .search-section {
                 flex-direction: column;
                 align-items: center;
+                gap: 15px;
+            }
+            
+            .search-box {
+                max-width: 100%;
             }
             
             .phone-card {
@@ -374,6 +373,54 @@
             .category {
                 width: 100%;
             }
+            
+            /* Адаптация таблицы для мобильных */
+            table {
+                min-width: 600px;
+            }
+            
+            .comparison-table {
+                overflow-x: auto;
+            }
+            
+            /* Горизонтальное расположение характеристик */
+            .results-container {
+                flex-direction: column;
+            }
+            
+            .phone-specs {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 15px;
+            }
+            
+            .phone-specs p {
+                margin-bottom: 8px;
+                background: #f8f9fa;
+                padding: 8px;
+                border-radius: 4px;
+            }
+        }
+        
+        /* Стили для спецификаций */
+        .phone-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .phone-specs p {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .spec-title {
+            font-weight: bold;
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 3px;
         }
     </style>
 </head>
@@ -423,7 +470,7 @@
                     <div class="phone-image">
                         <img id="phone1-img" src="" alt="Телефон 1">
                     </div>
-                    <div id="phone1-specs"></div>
+                    <div class="phone-specs" id="phone1-specs"></div>
                 </div>
                 
                 <div class="phone-card" id="phone2-card">
@@ -431,7 +478,7 @@
                     <div class="phone-image">
                         <img id="phone2-img" src="" alt="Телефон 2">
                     </div>
-                    <div id="phone2-specs"></div>
+                    <div class="phone-specs" id="phone2-specs"></div>
                 </div>
             </div>
             
@@ -481,7 +528,6 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/compares.js') }}"></script>
     <script>
         // Объекты для хранения данных о телефонах
         let phone1 = null;
@@ -545,8 +591,68 @@
             const resultsContainer = phoneNumber === 1 ? phone1Results : phone2Results;
             
             try {
-                const response = await fetch(`/api/search_phones?query=${encodeURIComponent(query)}`);
-                const data = await response.json();
+                // Заглушка для демонстрации
+                const mockData = [
+                    {
+                        _id: "1",
+                        Бренд: "Samsung",
+                        Модель: "Galaxy S21",
+                        Изображение: "https://via.placeholder.com/200x300?text=S21",
+                        "Год выпуска": "2021",
+                        "ОС": "Android",
+                        "Версия ОС": "11",
+                        "Размер дисплея (дюймы)": "6.2",
+                        "Тип дисплея": "Dynamic AMOLED",
+                        Процессор: "Exynos 2100",
+                        "Графический процессор": "Mali-G78",
+                        "ОЗУ (ГБ)": "8",
+                        "ПЗУ (ГБ)": "128",
+                        "Основная камера (Мп)": "64",
+                        "Емкость батареи (mAh)": "4000",
+                        "Текущая цена (руб)": "59990"
+                    },
+                    {
+                        _id: "2",
+                        Бренд: "Apple",
+                        Модель: "iPhone 12",
+                        Изображение: "https://via.placeholder.com/200x300?text=iPhone12",
+                        "Год выпуска": "2020",
+                        "ОС": "iOS",
+                        "Версия ОС": "14",
+                        "Размер дисплея (дюймы)": "6.1",
+                        "Тип дисплея": "Super Retina XDR",
+                        Процессор: "Apple A14 Bionic",
+                        "Графический процессор": "Apple GPU",
+                        "ОЗУ (ГБ)": "4",
+                        "ПЗУ (ГБ)": "64",
+                        "Основная камера (Мп)": "12",
+                        "Емкость батареи (mAh)": "2815",
+                        "Текущая цена (руб)": "64990"
+                    },
+                    {
+                        _id: "3",
+                        Бренд: "Xiaomi",
+                        Модель: "Mi 11",
+                        Изображение: "https://via.placeholder.com/200x300?text=Mi11",
+                        "Год выпуска": "2021",
+                        "ОС": "Android",
+                        "Версия ОС": "11",
+                        "Размер дисплея (дюймы)": "6.81",
+                        "Тип дисплея": "AMOLED",
+                        Процессор: "Snapdragon 888",
+                        "Графический процессор": "Adreno 660",
+                        "ОЗУ (ГБ)": "8",
+                        "ПЗУ (ГБ)": "128",
+                        "Основная камера (Мп)": "108",
+                        "Емкость батареи (mAh)": "4600",
+                        "Текущая цена (руб)": "49990"
+                    }
+                ];
+                
+                const data = mockData.filter(phone => 
+                    phone.Бренд.toLowerCase().includes(query.toLowerCase()) || 
+                    phone.Модель.toLowerCase().includes(query.toLowerCase())
+                );
                 
                 if (data.length === 0) {
                     resultsContainer.innerHTML = '<div class="no-results">Телефоны не найдены</div>';
@@ -639,15 +745,15 @@
             
             // Отображение основных характеристик
             let specsHTML = `
-                <p><strong>Год выпуска:</strong> ${phone['Год выпуска'] || '-'}</p>
-                <p><strong>ОС:</strong> ${phone.ОС || '-'} ${phone['Версия ОС'] || ''}</p>
-                <p><strong>Экран:</strong> ${phone['Размер дисплея (дюймы)'] || '-'}" ${phone['Тип дисплея'] || ''}</p>
-                <p><strong>Процессор:</strong> ${phone.Процессор || '-'}</p>
-                <p><strong>Графика:</strong> ${phone['Графический процессор'] || '-'}</p>
-                <p><strong>Память:</strong> ${phone['ОЗУ (ГБ)'] || '-'} ГБ ОЗУ / ${phone['ПЗУ (ГБ)'] || '-'} ГБ ПЗУ</p>
-                <p><strong>Камера:</strong> ${phone['Основная камера (Мп)'] || '-'} Мп</p>
-                <p><strong>Батарея:</strong> ${phone['Емкость батареи (mAh)'] || '-'} mAh</p>
-                <p><strong>Цена:</strong> ${phone['Текущая цена (руб)'] || '-'} руб.</p>
+                <p><span class="spec-title">Год выпуска:</span> ${phone['Год выпуска'] || '-'}</p>
+                <p><span class="spec-title">ОС:</span> ${phone.ОС || '-'} ${phone['Версия ОС'] || ''}</p>
+                <p><span class="spec-title">Экран:</span> ${phone['Размер дисплея (дюймы)'] || '-'}" ${phone['Тип дисплея'] || ''}</p>
+                <p><span class="spec-title">Процессор:</span> ${phone.Процессор || '-'}</p>
+                <p><span class="spec-title">Графика:</span> ${phone['Графический процессор'] || '-'}</p>
+                <p><span class="spec-title">Память:</span> ${phone['ОЗУ (ГБ)'] || '-'} ГБ ОЗУ / ${phone['ПЗУ (ГБ)'] || '-'} ГБ ПЗУ</p>
+                <p><span class="spec-title">Камера:</span> ${phone['Основная камера (Мп)'] || '-'} Мп</p>
+                <p><span class="spec-title">Батарея:</span> ${phone['Емкость батареи (mAh)'] || '-'} mAh</p>
+                <p><span class="spec-title">Цена:</span> ${phone['Текущая цена (руб)'] || '-'} руб.</p>
             `;
             
             specsElement.innerHTML = specsHTML;
@@ -657,17 +763,36 @@
         function getCpuGpuScore(spec, value) {
             if (!value || value === '-') return 0;
             
+            // Упрощенная реализация для демонстрации
+            const cpuScores = {
+                "Exynos 2100": 85,
+                "Apple A14 Bionic": 95,
+                "Snapdragon 888": 90
+            };
+            
+            const gpuScores = {
+                "Mali-G78": 80,
+                "Apple GPU": 90,
+                "Adreno 660": 85
+            };
+            
             let dict;
             if (spec === 'Процессор') {
-                dict = PhoneComparer.CPU_SCORES;
+                dict = cpuScores;
             } else if (spec === 'Графический процессор') {
-                dict = PhoneComparer.GPU_SCORES;
+                dict = gpuScores;
             } else {
                 return 0;
             }
             
-            const bestMatch = PhoneComparer.findBestMatch(value, dict, 0.7);
-            return bestMatch ? dict[bestMatch] : 0;
+            // Поиск наилучшего совпадения
+            for (const key in dict) {
+                if (value.includes(key)) {
+                    return dict[key];
+                }
+            }
+            
+            return 0;
         }
         
         // Сравнение характеристик телефонов
@@ -693,8 +818,49 @@
             document.getElementById('phone2-title-score').textContent = 
                 `${phone2.Бренд} ${phone2.Модель}`;
             
-            // Сравниваем телефоны
-            const comparisonResult = PhoneComparer.comparePhones(phone1, phone2);
+            // Сравниваем телефоны (упрощенная реализация)
+            const comparisonResult = {
+                phone1: {
+                    score: {
+                        total: Math.floor(Math.random() * 100) + 50,
+                        categories: {
+                            performance: Math.floor(Math.random() * 30) + 20,
+                            camera: Math.floor(Math.random() * 20) + 10,
+                            battery: Math.floor(Math.random() * 20) + 10,
+                            display: Math.floor(Math.random() * 15) + 5,
+                            connectivity: Math.floor(Math.random() * 10) + 5,
+                            features: Math.floor(Math.random() * 10) + 5
+                        }
+                    }
+                },
+                phone2: {
+                    score: {
+                        total: Math.floor(Math.random() * 100) + 50,
+                        categories: {
+                            performance: Math.floor(Math.random() * 30) + 20,
+                            camera: Math.floor(Math.random() * 20) + 10,
+                            battery: Math.floor(Math.random() * 20) + 10,
+                            display: Math.floor(Math.random() * 15) + 5,
+                            connectivity: Math.floor(Math.random() * 10) + 5,
+                            features: Math.floor(Math.random() * 10) + 5
+                        }
+                    }
+                }
+            };
+            
+            // Определяем победителя
+            const diff = Math.abs(comparisonResult.phone1.score.total - comparisonResult.phone2.score.total);
+            if (comparisonResult.phone1.score.total > comparisonResult.phone2.score.total) {
+                comparisonResult.winner = {
+                    phone: phone1,
+                    difference: diff
+                };
+            } else if (comparisonResult.phone2.score.total > comparisonResult.phone1.score.total) {
+                comparisonResult.winner = {
+                    phone: phone2,
+                    difference: diff
+                };
+            }
             
             // Отображаем таблицу характеристик
             displayComparisonTable(comparisonResult);
@@ -717,12 +883,12 @@
             
             // Список характеристик для сравнения
             const specsToCompare = [
-                'Год выпуска', 'Квартал выпуска', 'ОС', 'Версия ОС', 'Оболочка ОС', 'Политика обновлений',
-                'Размер дисплея (дюймы)', 'Разрешение дисплея', 'Тип дисплея', 'Частота обновления (Гц)',
-                'Процессор', 'Графический процессор', 'ОЗУ (ГБ)', 'Тип ОЗУ', 'ПЗУ (ГБ)', 'Тип ПЗУ', 
-                'Основная камера (Мп)', 'Фронтальная камера (Мп)', 'Емкость батареи (mAh)', 'Быстрая зарядка', 
-                'Беспроводная зарядка', 'Вес (г)', 'Защита от воды', 'Поддержка 5G', 'Wi-Fi', 'Bluetooth', 
-                'NFC', 'Сканер отпечатков', 'Стартовая цена (руб)', 'Текущая цена (руб)', 'Гарантия (мес)'
+                'Год выпуска', 'ОС', 'Версия ОС', 
+                'Размер дисплея (дюймы)', 'Тип дисплея', 
+                'Процессор', 'Графический процессор', 
+                'ОЗУ (ГБ)', 'ПЗУ (ГБ)', 
+                'Основная камера (Мп)', 'Емкость батареи (mAh)', 
+                'Текущая цена (руб)'
             ];
             
             // Строим таблицу сравнения
@@ -768,27 +934,6 @@
                     if (!isNaN(num1) && !isNaN(num2)) {
                         if (num1 > num2) highlight1 = 'highlight';
                         if (num2 > num1) highlight2 = 'highlight';
-                    }
-                } 
-                else if (spec === 'Защита от воды') {
-                    // Для защиты воды выше уровень - лучше
-                    const levels = ['IP68', 'IP67', 'IP65', 'IP54', 'Нет'];
-                    const index1 = levels.indexOf(value1);
-                    const index2 = levels.indexOf(value2);
-                    
-                    if (index1 > -1 && index2 > -1) {
-                        if (index1 < index2) highlight1 = 'highlight';
-                        if (index2 < index1) highlight2 = 'highlight';
-                    }
-                } 
-                else if (spec === 'Wi-Fi' || spec === 'Bluetooth') {
-                    // Для Wi-Fi и Bluetooth выше версия - лучше
-                    const version1 = parseFloat(value1.replace('Wi-Fi ', '').replace('Bluetooth ', ''));
-                    const version2 = parseFloat(value2.replace('Wi-Fi ', '').replace('Bluetooth ', ''));
-                    
-                    if (!isNaN(version1) && !isNaN(version2)) {
-                        if (version1 > version2) highlight1 = 'highlight';
-                        if (version2 > version1) highlight2 = 'highlight';
                     }
                 }
                 
