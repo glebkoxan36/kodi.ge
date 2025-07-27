@@ -10,43 +10,75 @@
     <style>
         body.modal-open { overflow: hidden; position: fixed; width: 100%; }
         .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 2999; display: none; }
-        .result-modal, .payment-method-modal, .payment-status-modal { transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: translateY(-20px); display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; justify-content: center; align-items: center; }
-        .modal-content { background: #fff; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 95%; max-width: 800px; max-height: 90vh; overflow-y: auto; position: relative; }
-        .card-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .close-modal { background: none; border: none; font-size: 2rem; cursor: pointer; }
-        .card-body { padding: 20px; }
-        .card-footer { padding: 20px; text-align: center; border-top: 1px solid #eee; }
-        .status-error { color: #dc3545; }
-        .status-warning { color: #ffc107; }
-        .status-success { color: #28a745; }
-        .result-actions { display: flex; justify-content: center; margin: 20px 0; gap: 10px; }
-        .error-card { background: #f8d7da; border-radius: 12px; padding: 20px; margin-top: 20px; text-align: center; border-left: 4px solid #dc3545; }
-        .server-error-card { background: #f8d7da; border-left: 4px solid #dc3545; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .result-modal, .payment-method-modal, .payment-status-modal { transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: translateY(-20px); }
+        .status-error { color: var(--danger-color); }
+        .status-warning { color: var(--warning-color); }
+        .status-success { color: var(--success-color); }
+        .result-actions { display: flex; justify-content: center; margin: 20px 0; }
+        .card-footer { padding: 20px; }
+        .error-card { background: var(--danger-bg); border-radius: 12px; padding: 20px; margin-top: 20px; text-align: center; }
+        .error-card h4 { margin-bottom: 15px; color: var(--danger-color); }
+        .error-details { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin: 10px 0; font-size: 0.9em; }
         .android-error { display: flex; align-items: center; gap: 15px; padding: 15px; background: #f8d7da; border-radius: 8px; border-left: 4px solid #dc3545; }
-        .spinner-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 4000; justify-content: center; align-items: center; }
-        .spinner { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .balance-sufficient { color: #28a745; font-weight: bold; }
-        .balance-insufficient { color: #dc3545; font-weight: bold; }
-        .balance-error { color: #ffc107; font-weight: bold; }
-        .payment-option { display: flex; align-items: center; padding: 15px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; cursor: pointer; transition: all 0.3s; }
-        .payment-option:hover { background: #f9f9f9; border-color: #007bff; }
-        .payment-option i { font-size: 2rem; margin-right: 15px; color: #007bff; }
-        .status-icon { font-size: 4rem; text-align: center; margin: 20px 0; }
-        .status-icon.success { color: #28a745; }
-        .status-icon.error { color: #dc3545; }
-        .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
-        .error-message { color: #dc3545; display: none; margin-top: 5px; font-size: 0.9rem; }
-        .btn-primary { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: background 0.3s; }
-        .btn-primary:hover { background: #0069d9; }
-        .btn-secondary { background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: background 0.3s; }
-        .btn-secondary:hover { background: #5a6268; }
-        .btn-back { background: linear-gradient(135deg, var(--accent-color), #0066ff); color: white; box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2); border: none; border-radius: 8px; padding: 12px 20px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; text-align: center; margin-bottom: 20px; display: inline-block; }
-        .btn-primary:disabled { background: #cccccc; cursor: not-allowed; }
-        .result-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .result-label { font-weight: bold; }
-        .result-value { text-align: right; }
-        .service-card.selected { border: 2px solid #007bff; box-shadow: 0 0 10px rgba(0,123,255,0.3); }
+        .android-warning { display: flex; align-items: center; gap: 15px; max-width: 800px; margin: 20px auto; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107; }
+        .result-modal .modal-content { max-height: 90vh; overflow-y: auto; width: 95%; max-width: 800px; }
+        .balance-sufficient { color: var(--success-color); font-weight: bold; }
+        .balance-insufficient { color: var(--danger-color); font-weight: bold; }
+        .balance-error { color: var(--warning-color); font-weight: bold; }
+        @media (max-width: 768px) { .result-modal .modal-content { width: 100%; margin: 10px; } }
+        .btn-back {
+            background: linear-gradient(135deg, var(--accent-color), #0066ff);
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+        /* Исправленные стили для кнопки */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-color), #0066ff);
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 198, 255, 0.2);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            margin-top: 20px;
+            display: inline-block;
+            width: 100%;
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 198, 255, 0.3);
+        }
+        .btn-primary:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        /* Стили для сообщений об ошибках */
+        .error-message {
+            display: none;
+            color: #ff3860;
+            margin-top: 10px;
+            padding: 8px 12px;
+            background-color: #fff5f7;
+            border-radius: 6px;
+            border-left: 4px solid #ff3860;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
