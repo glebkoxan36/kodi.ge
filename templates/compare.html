@@ -39,6 +39,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
         }
         
         .subtitle {
@@ -46,6 +47,7 @@
             font-size: 1.1rem;
             max-width: 600px;
             margin: 0 auto;
+            text-align: center;
         }
         
         .search-section {
@@ -100,6 +102,7 @@
         .search-header h2 {
             font-size: 1.5rem;
             color: #2c3e50;
+            text-align: center;
         }
         
         .selected-phone {
@@ -226,6 +229,7 @@
         .modal-header h3 {
             font-size: 1.6rem;
             color: #2c3e50;
+            text-align: center;
         }
         
         .close-modal {
@@ -315,10 +319,9 @@
             font-size: 0.95em;
         }
         
-        .result-price {
-            color: #27ae60;
-            font-weight: bold;
-            font-size: 1.1rem;
+        .result-year {
+            color: #7f8c8d;
+            font-size: 0.95em;
             min-width: 90px;
             text-align: right;
         }
@@ -464,7 +467,7 @@
         
         th, td {
             padding: 15px 20px;
-            text-align: left;
+            text-align: center;
             border-bottom: 1px solid #eee;
         }
         
@@ -545,6 +548,7 @@
             margin-bottom: 15px;
             font-size: 1.3rem;
             color: #2c3e50;
+            text-align: center;
         }
         
         .total-score {
@@ -554,6 +558,7 @@
             background: linear-gradient(135deg, #3498db, #2ecc71);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            text-align: center;
         }
         
         .winner .total-score {
@@ -567,6 +572,7 @@
         .score-label {
             color: #7f8c8d;
             font-size: 1.1rem;
+            text-align: center;
         }
         
         .winner {
@@ -614,6 +620,7 @@
             color: #2c3e50;
             margin-bottom: 15px;
             font-size: 1.2rem;
+            text-align: center;
         }
         
         .category-bar {
@@ -673,6 +680,7 @@
             border-bottom: 2px solid #e0e7ff;
             color: #3498db;
             font-weight: bold;
+            text-align: center;
         }
         
         .spec-item {
@@ -717,6 +725,7 @@
             border-bottom: 2px solid #e0e7ff;
             color: #3498db;
             font-weight: bold;
+            text-align: center;
         }
 
         .spec-item-mobile {
@@ -751,12 +760,14 @@
             color: #7f8c8d;
             margin-bottom: 5px;
             font-weight: 500;
+            text-align: center;
         }
 
         .spec-value-mobile {
             color: #34495e;
             font-size: 1.05rem;
             font-weight: 500;
+            text-align: center;
         }
         
         /* Мобильная адаптация */
@@ -929,7 +940,7 @@
             </div>
         </div>
         
-        <div class="results-section" id="results-section">
+        <div class="results-section" id="results-section" style="display: none;">
             <h2 class="section-title">Результаты сравнения</h2>
             
             <div class="comparison-result" id="comparison-result" style="display: none;">
@@ -1098,8 +1109,7 @@
                 data.forEach(phone => {
                     // Используем изображение из базы, если есть
                     const imageUrl = phone.Изображение || 'https://via.placeholder.com/50x50?text=📱';
-                    const price = phone['Текущая цена (руб)'] ? 
-                        `${parseInt(phone['Текущая цена (руб)']).toLocaleString('ru-RU')} руб.` : 'Цена не указана';
+                    const year = phone['Год выпуска'] || '-';
                     
                     resultsHTML += `
                         <div class="result-item" data-id="${phone._id}" data-phone='${JSON.stringify(phone)}'>
@@ -1108,7 +1118,7 @@
                                 <div class="result-brand">${phone.Бренд}</div>
                                 <div class="result-model">${phone.Модель}</div>
                             </div>
-                            <div class="result-price">${price}</div>
+                            <div class="result-year">${year}</div>
                         </div>
                     `;
                 });
@@ -1208,8 +1218,8 @@
                 {
                     title: "Процессор",
                     specs: [
-                        { name: "Процессор", value: phone.Процессор || '-' },
-                        { name: "Графический процессор", value: phone['Графический процессор'] || '-' }
+                        { name: "Процессор (CPU)", value: phone.Процессор || '-' },
+                        { name: "Графический процессор (GPU)", value: phone['Графический процессор'] || '-' }
                     ]
                 },
                 {
@@ -1222,13 +1232,15 @@
                 {
                     title: "Камера",
                     specs: [
-                        { name: "Основная камера (Мп)", value: phone['Основная камера (Мп)'] || '-' }
+                        { name: "Основная камера (Мп)", value: phone['Основная камера (Мп)'] || '-' },
+                        { name: "Фронтальная камера (Мп)", value: phone['Фронтальная камера (Мп)'] || '-' }
                     ]
                 },
                 {
                     title: "Аккумулятор",
                     specs: [
-                        { name: "Емкость батареи (mAh)", value: phone['Емкость батареи (mAh)'] || '-' }
+                        { name: "Емкость батареи (mAh)", value: phone['Емкость батареи (mAh)'] || '-' },
+                        { name: "Время работы", value: phone['Время работы'] || '-' }
                     ]
                 },
                 {
@@ -1297,8 +1309,8 @@
                 {
                     title: "Процессор",
                     specs: [
-                        { name: "Процессор", key: 'Процессор' },
-                        { name: "Графический процессор", key: 'Графический процессор' }
+                        { name: "Процессор (CPU)", key: 'Процессор' },
+                        { name: "Графический процессор (GPU)", key: 'Графический процессор' }
                     ]
                 },
                 {
@@ -1311,13 +1323,15 @@
                 {
                     title: "Камера",
                     specs: [
-                        { name: "Основная камера (Мп)", key: 'Основная камера (Мп)' }
+                        { name: "Основная камера (Мп)", key: 'Основная камера (Мп)' },
+                        { name: "Фронтальная камера (Мп)", key: 'Фронтальная камера (Мп)' }
                     ]
                 },
                 {
                     title: "Аккумулятор",
                     specs: [
-                        { name: "Емкость батареи (mAh)", key: 'Емкость батареи (mAh)' }
+                        { name: "Емкость батареи (mAh)", key: 'Емкость батареи (mAh)' },
+                        { name: "Время работы", key: 'Время работы' }
                     ]
                 },
                 {
@@ -1402,7 +1416,13 @@
             document.getElementById('phone2-title-score').textContent = 
                 `${phone2.Бренд} ${phone2.Модель}`;
             
-            // Сравниваем телефоны с помощью оригинальной логики из compares.js
+            // Проверяем доступность функции сравнения
+            if (typeof PhoneComparer === 'undefined' || typeof PhoneComparer.comparePhones !== 'function') {
+                alert('Система сравнения недоступна. Пожалуйста, попробуйте позже.');
+                return;
+            }
+            
+            // Сравниваем телефоны с помощью логики из compares.js
             const comparisonResult = PhoneComparer.comparePhones(phone1, phone2);
             
             // Отображаем результаты балльной системы
@@ -1435,7 +1455,8 @@
                 'Размер дисплея (дюймы)', 'Тип дисплея', 
                 'Процессор', 'Графический процессор', 
                 'ОЗУ (ГБ)', 'ПЗУ (ГБ)', 
-                'Основная камера (Мп)', 'Емкость батареи (mAh)', 
+                'Основная камера (Мп)', 'Фронтальная камера (Мп)',
+                'Емкость батареи (mAh)', 'Время работы',
                 'Текущая цена (руб)'
             ];
             
@@ -1461,8 +1482,8 @@
                 let highlight1 = '';
                 let highlight2 = '';
                 
-                // Используем оригинальную логику сравнения характеристик
-                if (PhoneComparer.compareSpecs) {
+                // Используем логику сравнения из compares.js
+                if (typeof PhoneComparer.compareSpecs === 'function') {
                     const comparison = PhoneComparer.compareSpecs(spec, value1, value2);
                     if (comparison === 1) highlight1 = 'highlight';
                     else if (comparison === 2) highlight2 = 'highlight';
