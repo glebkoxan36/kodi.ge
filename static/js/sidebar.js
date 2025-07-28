@@ -165,29 +165,93 @@ document.addEventListener('DOMContentLoaded', function() {
                 .nav-item:nth-child(9) { animation-delay: 0.9s; }
                 .nav-item:nth-child(10) { animation-delay: 1.0s; }
                 
-                .logo-area {
+                /* Обновленный блок пользователя */
+                .user-area {
                     padding: 25px 20px 15px;
                     text-align: center;
                     border-bottom: 1px solid rgba(80, 80, 80, 0.5);
                     margin-bottom: 15px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 10px;
                 }
                 
-                .logo-text {
-                    font-size: 22px;
-                    font-weight: 700;
-                    background: linear-gradient(90deg, #a0c4ff, #407ec9);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    letter-spacing: 1px;
+                .sidebar-avatar {
+                    width: 80px;
+                    height: 80px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #1a2138, #0e1321);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    border: 2px solid #407ec9;
+                    box-shadow: 0 0 10px rgba(64, 126, 201, 0.5);
+                    overflow: hidden;
+                }
+                
+                .sidebar-avatar-placeholder {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 50%;
+                    font-weight: bold;
+                    font-size: 1.2rem;
+                    text-shadow: 0 0 8px rgba(64, 126, 201, 0.8);
+                }
+                
+                .user-details {
+                    text-align: center;
+                    cursor: pointer;
+                }
+                
+                .user-name {
+                    font-weight: 600;
+                    color: #e0e0e0;
+                    font-size: 16px;
+                    margin-bottom: 3px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: 200px;
+                }
+                
+                .user-balance {
+                    font-weight: 500;
+                    color: #a0c4ff;
+                    font-size: 14px;
+                }
+                
+                .user-login-text {
+                    font-weight: 600;
+                    color: #e0e0e0;
+                    font-size: 16px;
+                    text-shadow: 0 0 5px #00c6ff, 0 0 10px #00c6ff;
+                    margin-top: 8px;
+                }
+                
+                .admin-badge {
+                    font-weight: 500;
+                    color: #ffcc00;
+                    font-size: 14px;
+                    margin-top: 3px;
                 }
             </style>
             
-            <div class="logo-area">
-                <div class="logo-text">ჩექ-მობაილი</div>
+            <!-- Обновленный блок пользователя -->
+            <div class="user-area" id="sidebarUserArea">
+                <div class="sidebar-avatar" id="sidebarAvatar"></div>
+                <div class="user-details" id="userDetails"></div>
             </div>
             
             <ul class="nav flex-column">
-                <!-- მთავარი გვერდი -->
+                <!-- Меню (без изменений) -->
                 <li class="nav-item">
                     <a class="nav-link active" href="/">
                         <i class="fas fa-home"></i>
@@ -195,7 +259,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </a>
                 </li>
                 
-                <!-- Apple -->
                 <li class="nav-item">
                     <a class="nav-link apple-toggle" href="#">
                         <i class="fab fa-apple"></i>
@@ -227,7 +290,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </li>
                 
-                <!-- Android -->
                 <li class="nav-item">
                     <a class="nav-link android-toggle" href="#">
                         <i class="fab fa-android"></i>
@@ -259,7 +321,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </li>
                 
-                <!-- სხვა მენიუს პუნქტები -->
                 <li class="nav-item">
                     <a class="nav-link" href="#">
                         <i class="fas fa-unlock"></i>
@@ -305,16 +366,66 @@ document.addEventListener('DOMContentLoaded', function() {
         const sidebarContainer = document.getElementById('sidebar-container');
         if (!sidebarContainer) return;
         
-        // Очищаем контейнер перед повторной инициализацией
         sidebarContainer.innerHTML = '';
         
-        // Вставляем сайдбар только на ПК
         if (window.innerWidth >= 768) {
             sidebarContainer.innerHTML = sidebarHTML;
             document.body.classList.add('has-sidebar');
             setupSidebar();
+            updateUserInfo(); // Инициализация информации о пользователе
         } else {
             document.body.classList.remove('has-sidebar');
+        }
+    }
+
+    // Функция обновления информации о пользователе
+    function updateUserInfo() {
+        const userData = window.currentUser || {};
+        const avatarEl = document.getElementById('sidebarAvatar');
+        const detailsEl = document.getElementById('userDetails');
+        
+        if (!avatarEl || !detailsEl) return;
+        
+        // Очищаем предыдущее содержимое
+        avatarEl.innerHTML = '';
+        detailsEl.innerHTML = '';
+        
+        if (userData.first_name && userData.last_name) {
+            // Пользователь авторизован
+            const initials = `${userData.first_name.charAt(0)}${userData.last_name.charAt(0)}`;
+            const avatarColor = userData.avatar_color || '#1a2138';
+            const balance = userData.balance ? userData.balance.toFixed(2) : '0.00';
+            
+            // Создаем аватар
+            avatarEl.innerHTML = `
+                <div class="sidebar-avatar-placeholder" style="background: ${avatarColor}">
+                    ${initials}
+                </div>
+            `;
+            
+            // Создаем информацию о пользователе
+            detailsEl.innerHTML = `
+                <div class="user-name">${userData.first_name} ${userData.last_name}</div>
+                <div class="user-balance">ბალანსი: ${balance}₾</div>
+                ${userData.is_admin ? '<div class="admin-badge">ადმინისტრატორი</div>' : ''}
+            `;
+            
+            // Добавляем обработчики
+            avatarEl.onclick = () => window.location.href = "/user/dashboard";
+            detailsEl.onclick = () => window.location.href = "/user/dashboard";
+        } else {
+            // Пользователь не авторизован
+            avatarEl.innerHTML = `
+                <div class="sidebar-avatar-placeholder">KODI.GE</div>
+            `;
+            
+            detailsEl.innerHTML = `
+                <div class="user-login-text">ლოგინი | რეგისტრაცია</div>
+            `;
+            
+            // Добавляем обработчики
+            avatarEl.onclick = () => window.location.href = "/login";
+            detailsEl.onclick = () => window.location.href = "/login";
         }
     }
 
@@ -395,7 +506,6 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('resize', function() {
         initSidebar();
         
-        // Обновляем класс body при изменении размера
         if (window.innerWidth >= 768) {
             document.body.classList.add('has-sidebar');
         } else {
@@ -410,4 +520,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
         document.head.appendChild(fontAwesome);
     }
+    
+    // Обновляем информацию при изменении статуса авторизации
+    window.addEventListener('userAuthChange', updateUserInfo);
 });
