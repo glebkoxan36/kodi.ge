@@ -54,7 +54,7 @@
         avatarCache.set(avatarUrl, img);
     }
     
-    // Стили меню (с исправлениями для кликабельной области)
+    // Стили меню (с исправлениями для кликабельности)
     const style = document.createElement('style');
     style.id = 'kodi-mobile-menu-styles';
     style.textContent = `
@@ -76,10 +76,11 @@
             transform: translateY(0);
             transition: transform 0.4s ease;
             display: block;
-            height: 80px;
+            height: 70px;
             display: flex;
             align-items: center;
             justify-content: center;
+            pointer-events: none; /* Разрешаем клики сквозь контейнер */
         }
         
         .kodi-menu-bottom.hidden {
@@ -105,7 +106,7 @@
             }
         }
         
-        /* Расширенная кликабельная область */
+        /* Только кнопка кликабельна */
         .kodi-menu-btn-container {
             position: relative;
             display: flex;
@@ -113,6 +114,7 @@
             justify-content: center;
             width: 100%;
             height: 100%;
+            pointer-events: none; /* Разрешаем клики сквозь контейнер */
         }
         
         .kodi-menu-btn-wrapper {
@@ -120,17 +122,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-        
-        .kodi-menu-btn-wrapper::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100vw;
-            height: 80px;
-            z-index: 1;
+            pointer-events: auto; /* Включаем клики только для кнопки */
         }
         
         .kodi-menu-btn {
@@ -148,6 +140,7 @@
             justify-content: center;
             position: relative;
             z-index: 2;
+            pointer-events: auto; /* Включаем клики для кнопки */
         }
         
         .kodi-menu-modal {
@@ -706,7 +699,7 @@
         const isDashboard = window.location.pathname.includes('dashboard');
         const userHTML = isDashboard ? '' : generateUserHTML();
 
-        // Создаем кнопку меню с расширенной областью клика
+        // Создаем кнопку меню (только сама кнопка кликабельна)
         let menuBottom = getElement('kodiMenuBottom');
         if (!menuBottom) {
             menuBottom = document.createElement('div');
@@ -1010,10 +1003,10 @@
         
         createMobileMenuStructure();
         
-        // Menu button setup
-        const menuContainer = getElement('kodiMenuBottom');
-        if (menuContainer) {
-            menuContainer.addEventListener('click', kodiOpenMenu);
+        // Menu button setup - обработчик ТОЛЬКО на саму кнопку
+        const menuBtn = getElement('kodiMenuBtn');
+        if (menuBtn) {
+            menuBtn.addEventListener('click', kodiOpenMenu);
         }
 
         // Close menu when clicking outside
@@ -1021,23 +1014,23 @@
             const mainMenu = getElement('kodiMainMenu');
             const appleMenu = getElement('kodiAppleMenu');
             const androidMenu = getElement('kodiAndroidMenu');
-            const menuContainer = getElement('kodiMenuBottom');
+            const menuBtn = getElement('kodiMenuBtn');
             
             if (mainMenu && mainMenu.classList.contains('open') && 
                 !mainMenu.contains(e.target) && 
-                !menuContainer.contains(e.target)) {
+                e.target !== menuBtn) {
                 kodiCloseMenu();
             }
             
             if (appleMenu && appleMenu.classList.contains('open') && 
                 !appleMenu.contains(e.target) && 
-                !menuContainer.contains(e.target)) {
+                e.target !== menuBtn) {
                 kodiCloseAppleMenu();
             }
             
             if (androidMenu && androidMenu.classList.contains('open') && 
                 !androidMenu.contains(e.target) && 
-                !menuContainer.contains(e.target)) {
+                e.target !== menuBtn) {
                 kodiCloseAndroidMenu();
             }
         });
