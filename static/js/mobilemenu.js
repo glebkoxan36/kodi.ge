@@ -792,10 +792,10 @@
                             <i class="fas fa-exchange-alt"></i>
                             <span>შედარება</span>
                         </a>
-                        <a class="kodi-menu-item" href="/knowledge-base">
-                            <i class="fas fa-book"></i>
-                            <span>ცოდნის ბაზა</span>
-                        </a>
+                        <div class="kodi-menu-item" onclick="kodiCloseMenu()">
+                            <i class="fas fa-tools"></i>
+                            <span>AI რემონტერი</span>
+                        </div>
                         <a class="kodi-menu-item" href="/contacts">
                             <i class="fas fa-address-card"></i>
                             <span>კონტაქტი</span>
@@ -804,10 +804,10 @@
                             <i class="fas fa-shield-alt"></i>
                             <span>კონფიდენციალურობა</span>
                         </div>
-                        <div class="kodi-menu-item" onclick="kodiCloseMenu()">
-                            <i class="fas fa-undo"></i>
-                            <span>დაბრუნება</span>
-                        </div>
+                        <a class="kodi-menu-item" href="/knowledge-base">
+                            <i class="fas fa-book"></i>
+                            <span>ცოდნის ბაზა</span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -823,11 +823,6 @@
                 
                 <div class="kodi-modal-body">
                     <div class="kodi-menu-grid">
-                        <a class="kodi-menu-item" href="/applecheck?type=free">
-                            <img src="static/ico/8f1197c9-19f4-4923-8030-4f7b88c9d697_20250627_012614_0000.png" 
-                                 class="kodi-menu-icon-img">
-                            <span>უფასო შემოწმება</span>
-                        </a>
                         <a class="kodi-menu-item" href="/applecheck?type=fmi">
                             <img src="static/ico/f9a07c0e-e427-4a1a-aab9-948ba60f1b6a_20250627_012716_0000.png" 
                                  class="kodi-menu-icon-img">
@@ -857,6 +852,11 @@
                             <img src="static/ico/874fae5b-c0f5-42d8-9c37-679aa86360e6_20250627_013030_0000.png" 
                                  class="kodi-menu-icon-img">
                             <span>MacBook</span>
+                        </a>
+                        <a class="kodi-menu-item" href="/applecheck?type=free">
+                            <img src="static/ico/8f1197c9-19f4-4923-8030-4f7b88c9d697_20250627_012614_0000.png" 
+                                 class="kodi-menu-icon-img">
+                            <span>შემოწმება IMEI-ით</span>
                         </a>
                         <div class="kodi-menu-item" onclick="kodiCloseAppleMenu()">
                             <i class="fas fa-arrow-left"></i>
