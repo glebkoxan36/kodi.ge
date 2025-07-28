@@ -54,7 +54,7 @@
         avatarCache.set(avatarUrl, img);
     }
     
-    // Стили меню (добавлен важный background-color)
+    // Стили меню (с исправлениями для кликабельной области)
     const style = document.createElement('style');
     style.id = 'kodi-mobile-menu-styles';
     style.textContent = `
@@ -76,6 +76,10 @@
             transform: translateY(0);
             transition: transform 0.4s ease;
             display: block;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .kodi-menu-bottom.hidden {
@@ -101,6 +105,34 @@
             }
         }
         
+        /* Расширенная кликабельная область */
+        .kodi-menu-btn-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .kodi-menu-btn-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .kodi-menu-btn-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vw;
+            height: 80px;
+            z-index: 1;
+        }
+        
         .kodi-menu-btn {
             background: var(--accent-color);
             color: white;
@@ -114,8 +146,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: auto;
-            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
         }
         
         .kodi-menu-modal {
@@ -674,16 +706,20 @@
         const isDashboard = window.location.pathname.includes('dashboard');
         const userHTML = isDashboard ? '' : generateUserHTML();
 
-        // Создаем кнопку меню
+        // Создаем кнопку меню с расширенной областью клика
         let menuBottom = getElement('kodiMenuBottom');
         if (!menuBottom) {
             menuBottom = document.createElement('div');
             menuBottom.id = 'kodiMenuBottom';
             menuBottom.className = 'kodi-menu-bottom';
             menuBottom.innerHTML = `
-                <button class="kodi-menu-btn" id="kodiMenuBtn">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <div class="kodi-menu-btn-container">
+                    <div class="kodi-menu-btn-wrapper">
+                        <button class="kodi-menu-btn" id="kodiMenuBtn">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
+                </div>
             `;
             document.body.appendChild(menuBottom);
         }
@@ -975,9 +1011,9 @@
         createMobileMenuStructure();
         
         // Menu button setup
-        const menuBtn = getElement('kodiMenuBtn');
-        if (menuBtn) {
-            menuBtn.addEventListener('click', kodiOpenMenu);
+        const menuContainer = getElement('kodiMenuBottom');
+        if (menuContainer) {
+            menuContainer.addEventListener('click', kodiOpenMenu);
         }
 
         // Close menu when clicking outside
@@ -985,23 +1021,23 @@
             const mainMenu = getElement('kodiMainMenu');
             const appleMenu = getElement('kodiAppleMenu');
             const androidMenu = getElement('kodiAndroidMenu');
-            const menuBtn = getElement('kodiMenuBtn');
+            const menuContainer = getElement('kodiMenuBottom');
             
             if (mainMenu && mainMenu.classList.contains('open') && 
                 !mainMenu.contains(e.target) && 
-                e.target !== menuBtn) {
+                !menuContainer.contains(e.target)) {
                 kodiCloseMenu();
             }
             
             if (appleMenu && appleMenu.classList.contains('open') && 
                 !appleMenu.contains(e.target) && 
-                e.target !== menuBtn) {
+                !menuContainer.contains(e.target)) {
                 kodiCloseAppleMenu();
             }
             
             if (androidMenu && androidMenu.classList.contains('open') && 
                 !androidMenu.contains(e.target) && 
-                e.target !== menuBtn) {
+                !menuContainer.contains(e.target)) {
                 kodiCloseAndroidMenu();
             }
         });
