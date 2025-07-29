@@ -70,17 +70,20 @@
             bottom: 0;
             left: 0;
             right: 0;
-            text-align: center;
             z-index: 1050;
             padding-bottom: env(safe-area-inset-bottom, 5px);
             transform: translateY(0);
             transition: transform 0.4s ease;
-            display: block;
-            height: 70px;
             display: flex;
-            align-items: center;
+            height: 70px;
+            pointer-events: none;
+        }
+        
+        .kodi-menu-center-container {
+            display: flex;
+            width: 100%;
             justify-content: center;
-            pointer-events: none; /* Разрешаем клики сквозь контейнер */
+            align-items: center;
         }
         
         .kodi-menu-bottom.hidden {
@@ -114,7 +117,7 @@
             justify-content: center;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* Разрешаем клики сквозь контейнер */
+            pointer-events: none;
         }
         
         .kodi-menu-btn-wrapper {
@@ -122,7 +125,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            pointer-events: auto; /* Включаем клики только для кнопки */
+            pointer-events: auto;
         }
         
         .kodi-menu-btn {
@@ -140,7 +143,7 @@
             justify-content: center;
             position: relative;
             z-index: 2;
-            pointer-events: auto; /* Включаем клики для кнопки */
+            pointer-events: auto;
         }
         
         .kodi-menu-modal {
@@ -706,11 +709,13 @@
             menuBottom.id = 'kodiMenuBottom';
             menuBottom.className = 'kodi-menu-bottom';
             menuBottom.innerHTML = `
-                <div class="kodi-menu-btn-container">
-                    <div class="kodi-menu-btn-wrapper">
-                        <button class="kodi-menu-btn" id="kodiMenuBtn">
-                            <i class="fas fa-bars"></i>
-                        </button>
+                <div class="kodi-menu-center-container">
+                    <div class="kodi-menu-btn-container">
+                        <div class="kodi-menu-btn-wrapper">
+                            <button class="kodi-menu-btn" id="kodiMenuBtn">
+                                <i class="fas fa-bars"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -917,7 +922,7 @@
 
     // Menu functions
     window.kodiOpenMenu = function() {
-        preloadAvatars(); // Предзагрузка аватаров
+        preloadAvatars();
         updateUserInMenus();
         const modal = getElement('kodiMainMenu');
         if (modal) {
@@ -942,7 +947,7 @@
     }
 
     window.kodiOpenAppleMenu = function() {
-        preloadAvatars(); // Предзагрузка аватаров
+        preloadAvatars();
         kodiCloseMenu();
         setTimeout(() => {
             const appleModal = getElement('kodiAppleMenu');
@@ -966,7 +971,7 @@
     }
 
     window.kodiOpenAndroidMenu = function() {
-        preloadAvatars(); // Предзагрузка аватаров
+        preloadAvatars();
         kodiCloseMenu();
         setTimeout(() => {
             const androidModal = getElement('kodiAndroidMenu');
@@ -998,7 +1003,6 @@
 
     // Initialize menu
     document.addEventListener('DOMContentLoaded', () => {
-        // Предзагрузка аватаров при загрузке страницы
         preloadAvatars();
         
         createMobileMenuStructure();
