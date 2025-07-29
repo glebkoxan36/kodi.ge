@@ -221,8 +221,25 @@
     <div class="spinner-container" id="spinner">
         <div class="spinner"></div>
     </div>
-    
+    <script
+     window.currentUser = {% if currentUser %}{
+            id: "{{ currentUser.id }}",
+            first_name: "{{ currentUser.first_name }}",
+            last_name: "{{ currentUser.last_name }}",
+            balance: {{ currentUser.balance }},
+            avatar_color: "{{ currentUser.avatar_color }}",
+            avatar_url: "{{ currentUser.avatar_url }}",
+            is_admin: {% if currentUser.is_admin %}true{% else %}false{% endif %},
+            is_impersonation: {% if currentUser.is_impersonation %}true{% else %}false{% endif %},
+            username: "{{ currentUser.username }}",
+            role: "{{ currentUser.role }}",
+            admin_role: "{{ currentUser.admin_role }}",
+            admin_username: "{{ currentUser.admin_username }}"
+        }{% else %}undefined{% endif %};
+        
     <script src="https://js.stripe.com/v3/"></script>
+    <script src="static/js/mobilemenu.js"></script>
+    <script src="static/js/sidebar.js"></script>
     <script>
         function getCSRFToken() {
             return document.querySelector('meta[name="csrf-token"]').content;
