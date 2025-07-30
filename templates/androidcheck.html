@@ -79,6 +79,10 @@
             border-left: 4px solid #ff3860;
             font-size: 0.9rem;
         }
+        /* Добавлено: скрываем контейнер выбранного сервиса по умолчанию */
+        #selected-service-container { 
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -225,8 +229,13 @@
     <div class="spinner-container" id="spinner">
         <div class="spinner"></div>
     </div>
+    
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="static/js/mobilemenu.js"></script>
+    <script src="static/js/sidebar.js"></script>
     <script>
-     window.currentUser = {% if currentUser %}{
+        // Инициализация текущего пользователя
+        window.currentUser = {% if currentUser %}{
             id: "{{ currentUser.id }}",
             first_name: "{{ currentUser.first_name }}",
             last_name: "{{ currentUser.last_name }}",
@@ -239,12 +248,8 @@
             role: "{{ currentUser.role }}",
             admin_role: "{{ currentUser.admin_role }}",
             admin_username: "{{ currentUser.admin_username }}"
-        }{% else %}undefined{% endif %};
+        }{% else %}null{% endif %};
         
-    <script src="https://js.stripe.com/v3/"></script>
-    <script src="static/js/mobilemenu.js"></script>
-    <script src="static/js/sidebar.js"></script>
-    <script>
         function getCSRFToken() {
             return document.querySelector('meta[name="csrf-token"]').content;
         }
@@ -286,8 +291,7 @@
             const container = document.getElementById('services-container');
             if (!container) return;
             
-            container.innerHTML = '';
-            
+            // Убрано очищение контейнера сервисов
             const paidServices = services.filter(service => service.price !== 'უფასო');
             
             if (!paidServices || paidServices.length === 0) {
@@ -295,22 +299,7 @@
                 return;
             }
             
-            paidServices.forEach(service => {
-                const card = document.createElement('div');
-                card.className = 'service-card';
-                card.setAttribute('data-service', service.id);
-                card.innerHTML = `
-                    <div class="service-icon">
-                        <i class="fas ${service.icon}"></i>
-                    </div>
-                    <div class="service-title">${service.title}</div>
-                    <div class="service-description">${service.description}</div>
-                    <div class="service-price">${service.price}</div>
-                    <div class="service-action">არჩევა</div>
-                `;
-                container.appendChild(card);
-            });
-            
+            // Инициализация сервисов
             setupEventListeners();
             
             const urlParams = new URLSearchParams(window.location.search);
@@ -320,9 +309,13 @@
             
             if (serviceParam && paidServices.some(s => s.id === serviceParam)) {
                 selectService(serviceParam);
+            } else {
+                // Всегда показывать сервисы при загрузке
+                document.getElementById('services-container').style.display = 'grid';
             }
             
-            if (imeiParam && sessionParam) {
+            // Проверка авторизации перед запросом результата
+            if (imeiParam && sessionParam && window.currentUser) {
                 currentImei = imeiParam;
                 currentServiceType = serviceParam;
                 document.getElementById('spinner').style.display = 'flex';
@@ -439,36 +432,39 @@
             currentServiceType = serviceType;
             checkBtn.disabled = true;
             
-            if (window.currentUser) {
-                fetchUserBalance()
-                    .then(balance => {
-                        const service = services.find(s => s.id === serviceType);
-                        const priceText = service.price;
-                        const price = parseFloat(priceText.replace('₾', '').trim());
-                        
-                        document.getElementById('user-balance').textContent = balance.toFixed(2);
-                        
-                        if (balance >= price) {
-                            document.getElementById('balance-status').innerHTML = 
-                                `<span class="balance-sufficient">ბალანსი საკმარისია</span>`;
-                        } else {
-                            document.getElementById('balance-status').innerHTML = 
-                                `<span class="balance-insufficient">არასაკმარისი თანხა</span>`;
-                        }
-                        
-                        openModal('payment-method-modal');
-                    })
-                    .catch(error => {
-                        console.error('Error fetching balance:', error);
-                        errorElement.textContent = 'ბალანსის მონაცემების მიღება ვერ მოხერხდა. სცადეთ ხელახლა.';
-                        errorElement.style.display = 'block';
-                    })
-                    .finally(() => {
-                        checkBtn.disabled = false;
-                    });
-            } else {
+            // Для неавторизованных пользователей сразу переходим к оплате
+            if (!window.currentUser) {
                 processPayment(false);
+                return;
             }
+            
+            // Для авторизованных - проверяем баланс
+            fetchUserBalance()
+                .then(balance => {
+                    const service = services.find(s => s.id === serviceType);
+                    const priceText = service.price;
+                    const price = parseFloat(priceText.replace('₾', '').trim());
+                    
+                    document.getElementById('user-balance').textContent = balance.toFixed(2);
+                    
+                    if (balance >= price) {
+                        document.getElementById('balance-status').innerHTML = 
+                            `<span class="balance-sufficient">ბალანსი საკმარისია</span>`;
+                    } else {
+                        document.getElementById('balance-status').innerHTML = 
+                            `<span class="balance-insufficient">არასაკმარისი თანხა</span>`;
+                    }
+                    
+                    openModal('payment-method-modal');
+                })
+                .catch(error => {
+                    console.error('Error fetching balance:', error);
+                    errorElement.textContent = 'ბალანსის მონაცემების მიღება ვერ მოხერხდა. სცადეთ ხელახლა.';
+                    errorElement.style.display = 'block';
+                })
+                .finally(() => {
+                    checkBtn.disabled = false;
+                });
         }
         
         function fetchUserBalance() {
@@ -740,12 +736,6 @@
             resultContent.innerHTML = resultsHTML;
             openModal('result-modal');
         }
-        
-        window.currentUser = {% if currentUser %}{
-            id: "{{ currentUser.id }}",
-            username: "{{ currentUser.username }}",
-            balance: {{ currentUser.balance }}
-        {% else %}null{% endif %};
     </script>
 </body>
-    </html>
+</html>
