@@ -54,7 +54,7 @@
         avatarCache.set(avatarUrl, img);
     }
     
-    // Стили меню (с исправлениями для кликабельности)
+    // Стили меню (с исправлениями для центрирования кнопки)
     const style = document.createElement('style');
     style.id = 'kodi-mobile-menu-styles';
     style.textContent = `
@@ -79,11 +79,16 @@
             pointer-events: none;
         }
         
+        /* ИСПРАВЛЕНИЕ: Центрирование кнопки */
         .kodi-menu-center-container {
             display: flex;
             width: 100%;
+            height: 100%;
             justify-content: center;
             align-items: center;
+            position: absolute;
+            bottom: 0;
+            left: 0;
         }
         
         .kodi-menu-bottom.hidden {
@@ -97,7 +102,6 @@
             will-change: transform, box-shadow;
         }
         
-        /* Остальные стили остаются без изменений */
         .html, body {
           margin: 0;
           padding: 0;
