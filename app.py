@@ -598,7 +598,7 @@ def apple_check():
     )
 
 # ======================================
-# Роут для страницы проверки Android IMEI
+# Роут для страницы проверки Android IMEI (ИСПРАВЛЕННЫЙ)
 # ======================================
 
 @app.route('/androidcheck')
@@ -608,18 +608,31 @@ def android_check():
     service_type = request.args.get('type', '')
     service_prices = get_android_services_data()
 
+    # Создаем плоский список сервисов
     services_data = [
+        # Samsung
         { 
-            'id': 'samsung', 
-            'title': 'Samsung', 
+            'id': 'samsung_v1', 
+            'title': 'Samsung V1', 
             'icon': 'fa-mobile', 
-            'description': 'Samsung მოწყობილობების შემოწმება',
-            'versions': [
-                {'id': 'samsung_v1', 'name': 'სერვისი V1', 'price': service_prices['samsung_v1']},
-                {'id': 'samsung_v2', 'name': 'სერვისი V2', 'price': service_prices['samsung_v2']},
-                {'id': 'samsung_knox', 'name': 'Knox სტატუსი', 'price': service_prices['samsung_knox']}
-            ]
+            'description': 'Samsung მოწყობილობების შემოწმება - სერვისი V1',
+            'price': service_prices['samsung_v1'] 
         },
+        { 
+            'id': 'samsung_v2', 
+            'title': 'Samsung V2', 
+            'icon': 'fa-mobile', 
+            'description': 'Samsung მოწყობილობების შემოწმება - სერვისი V2',
+            'price': service_prices['samsung_v2'] 
+        },
+        { 
+            'id': 'samsung_knox', 
+            'title': 'Samsung Knox', 
+            'icon': 'fa-shield', 
+            'description': 'Samsung Knox სტატუსის შემოწმება',
+            'price': service_prices['samsung_knox'] 
+        },
+        # Xiaomi
         { 
             'id': 'xiaomi', 
             'title': 'Xiaomi', 
@@ -627,6 +640,7 @@ def android_check():
             'description': 'Xiaomi მოწყობილობების შემოწმება', 
             'price': service_prices['xiaomi'] 
         },
+        # Google Pixel
         { 
             'id': 'google_pixel', 
             'title': 'Google Pixel', 
@@ -634,16 +648,22 @@ def android_check():
             'description': 'Google Pixel მოწყობილობების შემოწმება', 
             'price': service_prices['google_pixel'] 
         },
+        # Huawei
         { 
-            'id': 'huawei', 
-            'title': 'Huawei', 
+            'id': 'huawei_v1', 
+            'title': 'Huawei V1', 
             'icon': 'fa-mobile', 
-            'description': 'Huawei მოწყობილობების შემოწმება',
-            'versions': [
-                {'id': 'huawei_v1', 'name': 'სერვისი V1', 'price': service_prices['huawei_v1']},
-                {'id': 'huawei_v2', 'name': 'სერვისი V2', 'price': service_prices['huawei_v2']}
-            ]
+            'description': 'Huawei მოწყობილობების შემოწმება - სერვისი V1',
+            'price': service_prices['huawei_v1'] 
         },
+        { 
+            'id': 'huawei_v2', 
+            'title': 'Huawei V2', 
+            'icon': 'fa-mobile', 
+            'description': 'Huawei მოწყობილობების შემოწმება - სერვისი V2',
+            'price': service_prices['huawei_v2'] 
+        },
+        # Motorola
         { 
             'id': 'motorola', 
             'title': 'Motorola', 
@@ -651,6 +671,7 @@ def android_check():
             'description': 'Motorola მოწყობილობების შემოწმება', 
             'price': service_prices['motorola'] 
         },
+        # Oppo
         { 
             'id': 'oppo', 
             'title': 'Oppo', 
@@ -658,6 +679,7 @@ def android_check():
             'description': 'Oppo მოწყობილობების შემოწმება', 
             'price': service_prices['oppo'] 
         },
+        # FRP Lock
         { 
             'id': 'frp', 
             'title': 'FRP Lock', 
@@ -665,6 +687,7 @@ def android_check():
             'description': 'Google ანგარიშის ბლოკირების შემოწმება', 
             'price': service_prices['frp'] 
         },
+        # SIM Lock
         { 
             'id': 'sim_lock_android', 
             'title': 'SIM Lock Status', 
@@ -1232,4 +1255,4 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production'
-                )
+)
