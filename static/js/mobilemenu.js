@@ -77,18 +77,8 @@
             display: flex;
             height: 70px;
             pointer-events: none;
-        }
-        
-        /* ИСПРАВЛЕНИЕ: Центрирование кнопки */
-        .kodi-menu-center-container {
-            display: flex;
-            width: 100%;
-            height: 100%;
             justify-content: center;
             align-items: center;
-            position: absolute;
-            bottom: 0;
-            left: 0;
         }
         
         .kodi-menu-bottom.hidden {
@@ -109,18 +99,13 @@
         
         @media (max-width: 1024px) {
             .kodi-menu-bottom {
-                display: block;
+                display: flex;
             }
         }
         
         /* Только кнопка кликабельна */
         .kodi-menu-btn-container {
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
             pointer-events: none;
         }
         
@@ -713,13 +698,11 @@
             menuBottom.id = 'kodiMenuBottom';
             menuBottom.className = 'kodi-menu-bottom';
             menuBottom.innerHTML = `
-                <div class="kodi-menu-center-container">
-                    <div class="kodi-menu-btn-container">
-                        <div class="kodi-menu-btn-wrapper">
-                            <button class="kodi-menu-btn" id="kodiMenuBtn">
-                                <i class="fas fa-bars"></i>
-                            </button>
-                        </div>
+                <div class="kodi-menu-btn-container">
+                    <div class="kodi-menu-btn-wrapper">
+                        <button class="kodi-menu-btn" id="kodiMenuBtn">
+                            <i class="fas fa-bars"></i>
+                        </button>
                     </div>
                 </div>
             `;
