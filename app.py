@@ -236,9 +236,9 @@ def inject_user():
                     'is_impersonation': is_impersonation,
                     'username': user.get('username', '')
                 }
-        except (TypeError, InvalidId):
+        except (TypeError, InvalidId) as e:
             session.pop('user_id', None)
-            logger.warning("Invalid user ID in session - cleared")
+            logger.warning(f"Invalid user ID in session - cleared: {str(e)}")
         except Exception as e:
             logger.exception(f"Error getting user: {str(e)}")
     
@@ -1255,4 +1255,4 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production'
-)
+    )
