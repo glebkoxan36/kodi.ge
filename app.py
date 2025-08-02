@@ -38,6 +38,8 @@ from utilities import (
     generate_avatar_color, 
     get_apple_services_data, 
     get_android_services_data,
+    send_telegram_message,
+    format_support_message
 )
 
 # Настройка корневого логгера
@@ -1232,6 +1234,46 @@ def health_check():
     
     return jsonify(status), 200 if status['status'] == 'OK' else 500
 
+# ======================================
+# New route for support requests
+# ======================================
+
+@app.route('/submit_support_request', methods=['POST'])
+def submit_support_request():
+    try:
+        data = {
+            'name': request.form.get('name'),
+            'email': request.form.get('email'),
+            'phone': request.form.get('phone'),
+            'message': request.form.get('message')
+        }
+        
+        # Валидация данных
+        if not data['name'] or not data['email'] or not data['message']:
+            return jsonify({
+                'success': False,
+                'error': 'სახელი, ელ. ფოსტა და შეტყობინება სავალდებულოა'
+            })
+        
+        # Форматирование сообщения
+        formatted_message = format_support_message(data)
+        
+        # Отправка в Telegram
+        if send_telegram_message(formatted_message):
+            return jsonify({'success': True})
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'შეტყობინების გაგზავნა ვერ მოხერხდა'
+            })
+            
+    except Exception as e:
+        logger.error(f"Support request error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'სისტემური შეცდომა'
+        })
+
 # Создание индексов при запуске
 def create_indexes():
     if client:
@@ -1240,7 +1282,7 @@ def create_indexes():
             checks_collection.create_index([("stripe_session_id", 1)])
             checks_collection.create_index([("user_id", 1)])
             checks_collection.create_index([("timestamp", -1)])
-            phonebase_collection.create_index([("Бренд", "text"), ("Модель", "text")])
+            phonebase_collection.create_index([("Бренд", "text"), ("Мodel", "text")])
             logger.info("Database indexes created")
         except Exception as e:
             logger.error(f"Error creating indexes: {str(e)}")
@@ -1255,4 +1297,4 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production'
-    )
+)
