@@ -87,6 +87,9 @@
                     </div>
                     <div class="card-body">
                         <form id="liveSupportForm">
+                            <!-- Добавлено CSRF-токен -->
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            
                             <div class="mb-3">
                                 <label class="form-label">სახელი</label>
                                 <input type="text" class="form-control" name="name" placeholder="შეიყვანეთ თქვენი სახელი" required>
