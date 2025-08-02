@@ -270,3 +270,67 @@ def verify_code(email, code, storage):
     
     logger.warning(f"Invalid code for {email}")
     return False, "არასწორი კოდი"
+
+# ======================================
+# 7. Telegram Support Functions
+# ======================================
+
+def get_telegram_config():
+    """Получает конфигурацию Telegram из базы данных"""
+    try:
+        from db import db
+        config = db.telegram_config.find_one()
+        if config:
+            return {
+                'bot_token': config.get('bot_token'),
+                'chat_id': config.get('chat_id'),
+                'enabled': config.get('enabled', False)
+            }
+        return None
+    except Exception as e:
+        logger.error(f"Error getting Telegram config: {str(e)}")
+        return None
+
+def send_telegram_message(message):
+    """Отправляет сообщение в Telegram через бота"""
+    config = get_telegram_config()
+    
+    if not config or not config['enabled']:
+        logger.warning("Telegram notifications are disabled")
+        return False
+    
+    bot_token = config.get('bot_token')
+    chat_id = config.get('chat_id')
+    
+    if not bot_token or not chat_id:
+        logger.error("Telegram bot token or chat ID not configured")
+        return False
+    
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    
+    try:
+        response = requests.post(url, json={
+            'chat_id': chat_id,
+            'text': message,
+            'parse_mode': 'HTML'
+        })
+        
+        if response.status_code == 200:
+            logger.info("Message sent to Telegram successfully")
+            return True
+        else:
+            logger.error(f"Telegram API error: {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        logger.error(f"Error sending Telegram message: {str(e)}")
+        return False
+
+def format_support_message(data):
+    """Форматирует сообщение поддержки для Telegram"""
+    return (
+        f"<b>📩 ახალი შეტყობინება ლაივ მხარდაჭერიდან</b>\n\n"
+        f"<b>👤 სახელი:</b> {data.get('name', 'N/A')}\n"
+        f"<b>📧 Email:</b> {data.get('email', 'N/A')}\n"
+        f"<b>📞 ტელეფონი:</b> {data.get('phone', 'N/A')}\n"
+        f"<b>💬 შეტყობინება:</b>\n{data.get('message', 'N/A')}"
+)
