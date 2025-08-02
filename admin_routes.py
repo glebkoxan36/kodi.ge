@@ -1169,3 +1169,70 @@ def switch_back():
         current_app.logger.error(f"Switch back error: {str(e)}")
         flash(f'Error: {str(e)}', 'danger')
         return redirect(url_for('user_dashboard.dashboard'))
+
+# ======================================
+# Telegram Management
+# ======================================
+
+@admin_bp.route('/telegram', methods=['GET', 'POST'])
+@admin_required
+def manage_telegram():
+    """Управление настройками Telegram"""
+    try:
+        # Получаем текущие настройки
+        config = db.telegram_config.find_one()
+        
+        if request.method == 'POST':
+            # Обновление настроек
+            bot_token = request.form.get('bot_token')
+            chat_id = request.form.get('chat_id')
+            enabled = request.form.get('enabled') == 'on'
+            
+            update_data = {
+                'bot_token': bot_token,
+                'chat_id': chat_id,
+                'enabled': enabled,
+                'updated_at': datetime.utcnow()
+            }
+            
+            # Сохраняем в базу
+            if config:
+                db.telegram_config.update_one(
+                    {'_id': config['_id']},
+                    {'$set': update_data}
+                )
+            else:
+                db.telegram_config.insert_one(update_data)
+            
+            flash('Telegram settings updated successfully', 'success')
+            return redirect(url_for('admin.manage_telegram'))
+        
+        return render_template(
+            'admin/manage_telegram.html',
+            active_section='telegram',
+            config=config
+        )
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('admin.admin_dashboard'))
+
+@admin_bp.route('/test_telegram', methods=['POST'])
+@admin_required
+def test_telegram():
+    """Отправка тестового сообщения в Telegram"""
+    try:
+        from utilities import send_telegram_message
+        
+        test_message = (
+            "🔔 <b>Telegram Test Notification</b>\n\n"
+            "This is a test message from your IMEI Checker admin panel. "
+            "If you're seeing this, your Telegram integration is working correctly!"
+        )
+        
+        if send_telegram_message(test_message):
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to send message'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
