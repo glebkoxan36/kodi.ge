@@ -159,7 +159,8 @@ app.config.update(
         'get_check_result',
         'health',
         'auth.facebook_callback',
-        'scan_imei'
+        'scan_imei',
+        'submit_support_request'  # Добавлено исключение для формы поддержки
     ]
 )
 Session(app)
@@ -1297,4 +1298,4 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production'
-)
+        )
