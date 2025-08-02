@@ -13,6 +13,8 @@
             --dark-bg: #0a0e17;
             --dark-card: rgba(18, 26, 43, 0.9);
             --accent: rgba(0, 198, 255, 0.2);
+            --danger: #ff4d6d;
+            --success: #2ecc71;
         }
         
         * {
@@ -31,7 +33,7 @@
             justify-content: center;
             padding: 20px;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
         }
         
         /* Анимированный фон */
@@ -87,7 +89,7 @@
         }
         
         .error-container {
-            max-width: 700px;
+            max-width: 800px;
             width: 100%;
             text-align: center;
             padding: 40px;
@@ -98,6 +100,16 @@
             backdrop-filter: blur(10px);
             position: relative;
             z-index: 2;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.8s ease forwards;
+        }
+        
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .error-header {
@@ -130,9 +142,11 @@
         .error-details {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
-            padding: 20px;
+            padding: 25px;
             margin: 30px 0;
             text-align: left;
+            position: relative;
+            overflow: hidden;
         }
         
         .error-id {
@@ -162,6 +176,7 @@
             gap: 10px;
             cursor: pointer;
             transition: all 0.3s;
+            position: relative;
         }
         
         .error-id-value:hover {
@@ -181,9 +196,42 @@
         
         .error-description {
             margin-top: 20px;
-            font-size: 1rem;
+            font-size: 1.1rem;
             opacity: 0.9;
             line-height: 1.6;
+        }
+        
+        .error-solutions {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .solution-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+        }
+        
+        .solution-list {
+            padding-left: 25px;
+        }
+        
+        .solution-list li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+            position: relative;
+        }
+        
+        .solution-list li::before {
+            content: "•";
+            color: var(--primary);
+            font-weight: bold;
+            position: absolute;
+            left: -20px;
         }
         
         .actions {
@@ -206,6 +254,25 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .home-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(to right, rgba(0, 198, 255, 0.1), transparent);
+            transition: width 0.5s ease;
+            z-index: -1;
+        }
+        
+        .home-btn:hover::before {
+            width: 100%;
         }
         
         .home-btn:hover {
@@ -223,11 +290,31 @@
             font-size: 1rem;
             transition: all 0.3s;
             text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .support-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: width 0.5s ease;
+            z-index: -1;
+        }
+        
+        .support-btn:hover::before {
+            width: 100%;
         }
         
         .support-btn:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
         }
         
         .toast {
@@ -239,7 +326,7 @@
             padding: 15px 25px;
             border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            border-left: 4px solid var(--primary);
+            border-left: 4px solid var(--success);
             display: flex;
             align-items: center;
             gap: 10px;
@@ -254,28 +341,167 @@
             opacity: 1;
         }
         
+        .toast i {
+            color: var(--success);
+        }
+        
+        .error-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .error-btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            padding: 8px 15px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .error-btn:hover {
+            background: rgba(0, 198, 255, 0.2);
+            color: white;
+        }
+        
+        .error-btn.active {
+            background: rgba(0, 198, 255, 0.3);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 0 10px rgba(0, 198, 255, 0.3);
+        }
+        
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
         }
         
-        @media (max-width: 576px) {
+        .error-tips {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+            border-left: 3px solid var(--primary);
+        }
+        
+        .error-tips-title {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+        }
+        
+        .tips-list {
+            padding-left: 20px;
+        }
+        
+        .tips-list li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 768px) {
             .error-container {
                 padding: 25px 20px;
             }
             
             .error-code {
-                font-size: 4rem;
+                font-size: 4.5rem;
             }
             
             .error-message {
-                font-size: 1.4rem;
+                font-size: 1.5rem;
             }
             
             .error-id {
                 flex-direction: column;
             }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .error-selector {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .error-code {
+                font-size: 3.5rem;
+            }
+            
+            .error-message {
+                font-size: 1.3rem;
+            }
+            
+            .error-description {
+                font-size: 1rem;
+            }
+            
+            .home-btn, .support-btn {
+                width: 100%;
+                padding: 12px;
+            }
+        }
+        
+        .error-timeline {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .timeline-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .timeline-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 24px;
+            right: -22px;
+            width: 20px;
+            height: 2px;
+            background: var(--primary);
+            z-index: 0;
+        }
+        
+        .step-number {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--dark-card);
+            border: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .step-text {
+            font-size: 0.9rem;
+            text-align: center;
+            max-width: 120px;
         }
     </style>
 </head>
@@ -292,23 +518,66 @@
             <div class="error-icon">
                 <i class="fas fa-exclamation-triangle"></i>
             </div>
-            <div class="error-code">404</div>
-            <h1 class="error-message">გვერდი ვერ მოიძებნა</h1>
+            <div class="error-code" id="errorCodeDisplay">404</div>
+            <h1 class="error-message" id="errorMessage">გვერდი ვერ მოიძებნა</h1>
+        </div>
+        
+        <div class="error-selector" id="errorSelector">
+            <button class="error-btn active" data-error="400">400</button>
+            <button class="error-btn" data-error="401">401</button>
+            <button class="error-btn" data-error="403">403</button>
+            <button class="error-btn" data-error="404">404</button>
+            <button class="error-btn" data-error="500">500</button>
+            <button class="error-btn" data-error="503">503</button>
+        </div>
+        
+        <div class="error-timeline">
+            <div class="timeline-step">
+                <div class="step-number">1</div>
+                <div class="step-text">შეცდომის იდენტიფიკაცია</div>
+            </div>
+            <div class="timeline-step">
+                <div class="step-number">2</div>
+                <div class="step-text">შემოწმება</div>
+            </div>
+            <div class="timeline-step">
+                <div class="step-number">3</div>
+                <div class="step-text">გადაწყვეტა</div>
+            </div>
         </div>
         
         <div class="error-details">
             <div class="error-id">
                 <span class="error-id-label">შეცდომის კოდი:</span>
                 <div class="error-id-value" id="errorCode" onclick="copyErrorCode()">
-                    <span>KODI-404-A</span>
+                    <span id="errorCodeValue">KODI-404-A</span>
                     <i class="fas fa-copy copy-icon"></i>
                 </div>
             </div>
             
-            <div class="error-description">
+            <div class="error-description" id="errorDescription">
                 ეს შეცდომის კოდი დაეხმარება ჩვენს გუნდს სწრაფად გამოიკვლიოს პრობლემა. 
                 გთხოვთ, გადააკოპიროთ იგი და გამოიყენოთ მხარდაჭერასთან დაკავშირებისას.
             </div>
+            
+            <div class="error-solutions">
+                <h3 class="solution-title"><i class="fas fa-lightbulb"></i> როგორ მოვაგვაროთ პრობლემა:</h3>
+                <ul class="solution-list" id="solutionList">
+                    <li>შეამოწმეთ URL მისამართი სწორად არის აკრეფილი</li>
+                    <li>გადადით მთავარ გვერდზე და სცადეთ იპოვოთ ინფორმაცია იქიდან</li>
+                    <li>დაუკავშირდით მხარდაჭერას, თუ პრობლემა განმეორდება</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="error-tips">
+            <h3 class="error-tips-title"><i class="fas fa-info-circle"></i> სასარგებლო რჩევები:</h3>
+            <ul class="tips-list">
+                <li>გადაამოწმეთ ინტერნეტ კავშირი</li>
+                <li>გაასუფთავეთ ბრაუზერის ქეში</li>
+                <li>სცადეთ სხვა ბრაუზერის გამოყენება</li>
+                <li>გადაამოწმეთ თქვენი ანტივირუსი ან Firewall პარამეტრები</li>
+            </ul>
         </div>
         
         <div class="actions">
@@ -327,43 +596,79 @@
     </div>
     
     <script>
-        // Словарь ошибок
+        // Словарь ошибок с дополненной информацией
         const errorDictionary = {
             "400": {
                 "codes": ["KODI-400-A", "KODI-400-B", "KODI-400-C"],
                 "message": "არასწორი მოთხოვნა",
-                "description": "თქვენი მოთხოვნა შეიცავს არასწორ ან არასრულ ინფორმაციას."
+                "description": "თქვენი მოთხოვნა შეიცავს არასწორ ან არასრულ ინფორმაციას.",
+                "solutions": [
+                    "შეამოწმეთ შეყვანილი მონაცემების სისწორე",
+                    "გაასუფთავეთ ბრაუზერის ქეში და cookies",
+                    "სცადეთ გვერდის განახლება",
+                    "დაუკავშირდით მხარდაჭერას, თუ პრობლემა განმეორდება"
+                ]
             },
             "401": {
                 "codes": ["KODI-401-A", "KODI-401-B"],
                 "message": "არაავტორიზებული",
-                "description": "თქვენ არ გაქვთ ავტორიზაცია ამ რესურსზე წვდომისთვის."
+                "description": "თქვენ არ გაქვთ ავტორიზაცია ამ რესურსზე წვდომისთვის.",
+                "solutions": [
+                    "დარწმუნდით, რომ სწორად გაქვთ შესული სისტემაში",
+                    "შეამოწმეთ თქვენი ანგარიშის უფლებები",
+                    "თუ საჭიროა, მოითხოვეთ წვდომა ადმინისტრატორისგან",
+                    "დაუკავშირდით მხარდაჭერას დამატებითი დახმარებისთვის"
+                ]
             },
             "403": {
                 "codes": ["KODI-403-A", "KODI-403-B", "KODI-403-C"],
                 "message": "აკრძალული",
-                "description": "თქვენ არ გაქვთ ნებართვა ამ რესურსის სანახავად."
+                "description": "თქვენ არ გაქვთ ნებართვა ამ რესურსის სანახავად.",
+                "solutions": [
+                    "დარწმუნდით, რომ გაქვთ საჭირო უფლებები ამ რესურსზე წვდომისთვის",
+                    "შეამოწმეთ თქვენი ანგარიშის პარამეტრები",
+                    "თუ საჭიროა, მიმართეთ ადმინისტრატორს წვდომის მოთხოვნით",
+                    "დაუკავშირდით მხარდაჭერას დამატებითი დახმარებისთვის"
+                ]
             },
             "404": {
                 "codes": ["KODI-404-A", "KODI-404-B"],
                 "message": "გვერდი ვერ მოიძებნა",
-                "description": "მოთხოვნილი გვერდი არ არსებობს ან მისამართი შეიცვალა."
+                "description": "მოთხოვნილი გვერდი არ არსებობს ან მისამართი შეიცვალა.",
+                "solutions": [
+                    "შეამოწმეთ URL მისამართი სწორად არის აკრეფილი",
+                    "გადადით მთავარ გვერდზე და სცადეთ იპოვოთ ინფორმაცია იქიდან",
+                    "გამოიყენეთ საიტის საძიებო სისტემა",
+                    "დაუკავშირდით მხარდაჭერას, თუ პრობლემა განმეორდება"
+                ]
             },
             "500": {
                 "codes": ["KODI-500-A", "KODI-500-B"],
                 "message": "სერვერზე შეცდომა მოხდა",
-                "description": "შიდა სერვერის შეცდომა. გთხოვთ სცადოთ მოგვიანებით."
+                "description": "შიდა სერვერის შეცდომა. გთხოვთ სცადოთ მოგვიანებით.",
+                "solutions": [
+                    "განაახლეთ გვერდი რამდენიმე წუთის შემდეგ",
+                    "სცადეთ სერვისის გამოყენება მოგვიანებით",
+                    "გაასუფთავეთ ბრაუზერის ქეში",
+                    "დაუკავშირდით მხარდაჭერას და მოგვახსენეთ პრობლემის შესახებ"
+                ]
             },
             "503": {
                 "codes": ["KODI-503-A"],
                 "message": "სერვისი დროებით მიუწვდომელია",
-                "description": "სერვერი დროებით მიუწვდომელია გადატვირთვის ან მოვლის გამო."
+                "description": "სერვერი დროებით მიუწვდომელია გადატვირთვის ან მოვლის გამო.",
+                "solutions": [
+                    "სცადეთ სერვისის გამოყენება რამდენიმე წუთის შემდეგ",
+                    "გადაამოწმეთ სერვისის სტატუსი ჩვენს სოციალურ ქსელებში",
+                    "განაახლეთ გვერდი რამდენიმე წუთის შემდეგ",
+                    "დაუკავშირდით მხარდაჭერას, თუ პრობლემა გაგრძელდება"
+                ]
             }
         };
         
         // Функция для копирования кода ошибки
         function copyErrorCode() {
-            const errorCode = document.getElementById('errorCode').textContent.trim();
+            const errorCode = document.getElementById('errorCodeValue').textContent;
             navigator.clipboard.writeText(errorCode).then(() => {
                 showToast('შეცდომის კოდი კოპირებულია!');
             });
@@ -380,22 +685,49 @@
             }, 3000);
         }
         
-        // Автоматически установить ошибку на основе URL
-        document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const errorType = urlParams.get('error') || '404';
-            
+        // Установить ошибку по типу
+        function setError(errorType) {
             if (errorDictionary[errorType]) {
                 const error = errorDictionary[errorType];
                 const randomCode = error.codes[Math.floor(Math.random() * error.codes.length)];
                 
-                document.querySelector('.error-code').textContent = errorType;
-                document.querySelector('.error-message').textContent = error.message;
-                document.getElementById('errorCode').innerHTML = 
-                    `<span>${randomCode}</span><i class="fas fa-copy copy-icon"></i>`;
+                document.getElementById('errorCodeDisplay').textContent = errorType;
+                document.getElementById('errorMessage').textContent = error.message;
+                document.getElementById('errorCodeValue').textContent = randomCode;
+                document.getElementById('errorDescription').textContent = error.description;
                 
-                document.querySelector('.error-description').textContent = error.description;
+                // Заполняем решения
+                const solutionList = document.getElementById('solutionList');
+                solutionList.innerHTML = '';
+                error.solutions.forEach(solution => {
+                    const li = document.createElement('li');
+                    li.textContent = solution;
+                    solutionList.appendChild(li);
+                });
+                
+                // Обновляем активную кнопку
+                document.querySelectorAll('.error-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`.error-btn[data-error="${errorType}"]`).classList.add('active');
             }
+        }
+        
+        // Автоматически установить ошибку на основе URL
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorType = urlParams.get('error') || '404';
+            setError(errorType);
+            
+            // Добавляем обработчики для кнопок выбора ошибки
+            document.querySelectorAll('.error-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    setError(btn.dataset.error);
+                });
+            });
+            
+            // Добавляем анимацию при загрузке
+            document.querySelector('.error-container').style.animationDelay = "0.2s";
         });
     </script>
 </body>
