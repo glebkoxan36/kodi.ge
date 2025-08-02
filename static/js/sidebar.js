@@ -36,14 +36,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     height: 100vh;
                     background: #121212;
                     color: #e0e0e0;
-                    position: fixed;
+                    position: sticky;
                     left: 0;
                     top: 0;
                     z-index: 1000;
                     box-shadow: 3px 0 15px rgba(0,0,0,0.6);
-                    overflow-y: auto;
+                    overflow-y: hidden;
                     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+                
+                .sidebar::-webkit-scrollbar {
+                    display: none;
                 }
                 
                 /* Скрываем сайдбар на мобильных устройствах */
@@ -59,6 +65,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 .nav {
                     padding: 20px 0;
+                    height: 100%;
+                    overflow-y: auto;
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+                
+                .nav::-webkit-scrollbar {
+                    display: none;
                 }
                 
                 .nav-item {
