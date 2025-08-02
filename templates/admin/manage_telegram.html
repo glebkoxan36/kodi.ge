@@ -1,0 +1,67 @@
+{% extends "admin.html" %}
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-telegram me-2"></i>Telegram Notification Settings</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Bot Token</label>
+                <input type="text" class="form-control" name="bot_token" 
+                    value="{{ config.bot_token if config else '' }}" required>
+                <div class="form-text">
+                    Get token from <a href="https://t.me/BotFather" target="_blank">@BotFather</a>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Chat ID</label>
+                <input type="text" class="form-control" name="chat_id" 
+                    value="{{ config.chat_id if config else '' }}" required>
+                <div class="form-text">
+                    Use @getmyid_bot to find your chat ID
+                </div>
+            </div>
+            
+            <div class="mb-3 form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="enabled" 
+                    id="enabledSwitch" {{ 'checked' if config and config.enabled else '' }}>
+                <label class="form-check-label" for="enabledSwitch">
+                    Enable Telegram Notifications
+                </label>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i> Save Settings
+                </button>
+                
+                {% if config and config.enabled %}
+                <button type="button" class="btn btn-success ms-2" id="testButton">
+                    <i class="bi bi-send-check me-1"></i> Send Test Message
+                </button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if config and config.enabled %}
+<script>
+document.getElementById('testButton').addEventListener('click', function() {
+    fetch('/admin/test_telegram', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Test message sent successfully!');
+        } else {
+            alert('Error sending test message: ' + (data.error || 'Unknown error'));
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}
