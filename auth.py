@@ -41,9 +41,13 @@ verification_storage = {}
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    # Если пользователь уже авторизован, перенаправляем на главную
-    if 'user_id' in session or 'admin_id' in session:
-        return redirect(url_for('index'))
+    # Если пользователь уже авторизован, перенаправляем в личный кабинет
+    if 'user_id' in session:
+        return redirect(url_for('user_dashboard.dashboard'))
+    
+    # Если администратор авторизован, но не в режиме пользователя
+    if 'admin_id' in session and 'user_id' not in session:
+        return redirect(url_for('admin.admin_dashboard'))
     
     logger.info(f"Register request: {request.method}")
     if request.method == 'POST':
@@ -237,9 +241,13 @@ def resend_verification():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    # Если пользователь уже авторизован, перенаправляем на главную
-    if 'user_id' in session or 'admin_id' in session:
-        return redirect(url_for('index'))
+    # Если пользователь уже авторизован, перенаправляем в личный кабинет
+    if 'user_id' in session:
+        return redirect(url_for('user_dashboard.dashboard'))
+    
+    # Если администратор авторизован, но не в режиме пользователя
+    if 'admin_id' in session and 'user_id' not in session:
+        return redirect(url_for('admin.admin_dashboard'))
     
     logger.info(f"Login request: {request.method}")
     if request.method == 'POST':
