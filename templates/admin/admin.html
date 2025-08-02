@@ -114,6 +114,12 @@
                                     <i class="bi bi-send"></i> Webhooks
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'admin.manage_telegram' %}active{% endif %}" 
+                                   href="{{ url_for('admin.manage_telegram') }}">
+                                    <i class="bi bi-telegram"></i> Telegram
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -182,6 +188,12 @@
                         <a class="nav-link {% if request.endpoint == 'admin.manage_webhooks' %}active{% endif %}" 
                                    href="{{ url_for('admin.manage_webhooks') }}">
                             <i class="bi bi-send"></i> Webhooks
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin.manage_telegram' %}active{% endif %}" 
+                                   href="{{ url_for('admin.manage_telegram') }}">
+                            <i class="bi bi-telegram"></i> Telegram
                         </a>
                     </li>
                 </ul>
