@@ -93,6 +93,7 @@ parser_logs_collection = None
 audit_logs_collection = None
 api_keys_collection = None
 webhooks_collection = None
+counters_collection = None  # Добавлена коллекция счетчиков
 
 # Инициализация коллекций
 try:
@@ -112,9 +113,20 @@ try:
         audit_logs_collection = db['audit_logs']
         api_keys_collection = db['api_keys']
         webhooks_collection = db['webhooks']
+        counters_collection = db['counters']  # Коллекция для счетчиков
         
         # Инициализация данных
         init_admin_user(db)
+        
+        # Инициализация счетчиков, если их нет
+        if counters_collection.count_documents({}) == 0:
+            counters_collection.insert_one({
+                'daily': 125,
+                'weekly': 875,
+                'monthly': 3750,
+                'last_updated': datetime.utcnow()
+            })
+            logger.info("Counters initialized")
     else:
         raise Exception("MongoDB connection failed")
         
@@ -133,6 +145,7 @@ except PyMongoError as e:
     audit_logs_collection = None
     api_keys_collection = None
     webhooks_collection = None
+    counters_collection = None
     
 except Exception as e:
     logger.error(f"Unexpected initialization error: {str(e)}")
@@ -149,3 +162,4 @@ except Exception as e:
     audit_logs_collection = None
     api_keys_collection = None
     webhooks_collection = None
+    counters_collection = None
