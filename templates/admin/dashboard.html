@@ -30,4 +30,29 @@
         </div>
     </div>
 </div>
+
+<!-- ========================================== -->
+<!-- Counters Reset Section -->
+<!-- ========================================== -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-sync-alt me-2"></i>Counters Management
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.admin_reset_counters') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="alert alert-warning">
+                        <strong>Warning!</strong> This action will reset all check counters to initial values. 
+                        This action cannot be undone.
+                    </div>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-sync-alt me-1"></i> Reset Counters
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
