@@ -333,4 +333,69 @@ def format_support_message(data):
         f"<b>📧 Email:</b> {data.get('email', 'N/A')}\n"
         f"<b>📞 ტელეფონი:</b> {data.get('phone', 'N/A')}\n"
         f"<b>💬 შეტყობინება:</b>\n{data.get('message', 'N/A')}"
-)
+    )
+
+# ======================================
+# 8. Функции для работы со счетчиками проверок
+# ======================================
+
+def increment_counters():
+    """Увеличивает все счетчики проверок на 1"""
+    try:
+        from db import counters_collection
+        if counters_collection:
+            counters_collection.update_one(
+                {},
+                {'$inc': {'daily': 1, 'weekly': 1, 'monthly': 1},
+                 '$set': {'last_updated': datetime.utcnow()}}
+            )
+            return True
+        return False
+    except Exception as e:
+        logger.error(f"Error incrementing counters: {str(e)}")
+        return False
+
+def get_counters():
+    """Возвращает текущие значения счетчиков"""
+    try:
+        from db import counters_collection
+        if counters_collection:
+            counters = counters_collection.find_one({})
+            if counters:
+                return {
+                    'daily': counters.get('daily', 125),
+                    'weekly': counters.get('weekly', 875),
+                    'monthly': counters.get('monthly', 3750)
+                }
+        return {
+            'daily': 125,
+            'weekly': 875,
+            'monthly': 3750
+        }
+    except Exception as e:
+        logger.error(f"Error getting counters: {str(e)}")
+        return {
+            'daily': 125,
+            'weekly': 875,
+            'monthly': 3750
+        }
+
+def reset_counters():
+    """Сбрасывает счетчики к начальным значениям"""
+    try:
+        from db import counters_collection
+        if counters_collection:
+            counters_collection.update_one(
+                {},
+                {'$set': {
+                    'daily': 125,
+                    'weekly': 875,
+                    'monthly': 3750,
+                    'last_updated': datetime.utcnow()
+                }}
+            )
+            return True
+        return False
+    except Exception as e:
+        logger.error(f"Error resetting counters: {str(e)}")
+        return False
