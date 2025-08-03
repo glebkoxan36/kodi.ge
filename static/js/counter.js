@@ -1,3 +1,4 @@
+// static/js/counter.js
 document.addEventListener('DOMContentLoaded', () => {
     // Создаем стили для счетчиков
     const style = document.createElement('style');
@@ -123,33 +124,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Инициализация счетчиков
-    const dailyCounter = new Counter('daily-checks', 125);
-    const weeklyCounter = new Counter('weekly-checks', 875);
-    const monthlyCounter = new Counter('monthly-checks', 3750);
+    const dailyCounter = new Counter('daily-checks', 0);
+    const weeklyCounter = new Counter('weekly-checks', 0);
+    const monthlyCounter = new Counter('monthly-checks', 0);
 
-    // Функция для обновления всех счетчиков
-    function incrementCounters() {
-        dailyCounter.increment();
-        weeklyCounter.increment();
-        monthlyCounter.increment();
-        
-        // Сохранение в localStorage
-        localStorage.setItem('statsData', JSON.stringify({
-            daily: dailyCounter.value,
-            weekly: weeklyCounter.value,
-            monthly: monthlyCounter.value
-        }));
+    // Функция для обновления счетчиков
+    function updateCounters() {
+        fetch('/api/get_counters')
+            .then(response => response.json())
+            .then(data => {
+                dailyCounter.setValue(data.daily);
+                weeklyCounter.setValue(data.weekly);
+                monthlyCounter.setValue(data.monthly);
+            })
+            .catch(error => console.error('Error loading counters:', error));
     }
 
-    // Загружаем сохраненные значения
-    const savedStats = localStorage.getItem('statsData');
-    if (savedStats) {
-        const stats = JSON.parse(savedStats);
-        dailyCounter.setValue(stats.daily);
-        weeklyCounter.setValue(stats.weekly);
-        monthlyCounter.setValue(stats.monthly);
-    }
-
-    // Обновляем счетчики каждые 5 секунд
-    setInterval(incrementCounters, 5000);
+    // Первоначальное обновление
+    updateCounters();
+    
+    // Обновляем каждые 30 секунд
+    setInterval(updateCounters, 30000);
 });
