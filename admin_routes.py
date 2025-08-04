@@ -13,7 +13,7 @@ from db import (
     payments_collection
 )
 from price import get_current_prices, DEFAULT_PRICES
-from utilities import upload_carousel_image  # Импорт новой функции
+from utilities import upload_carousel_image, reset_counters  # Добавлен импорт reset_counters
 import cloudinary.uploader
 
 admin_bp = Blueprint('admin', __name__)
@@ -1169,6 +1169,23 @@ def switch_back():
         current_app.logger.error(f"Switch back error: {str(e)}")
         flash(f'Error: {str(e)}', 'danger')
         return redirect(url_for('user_dashboard.dashboard'))
+
+# ======================================
+# Reset Counters
+# ======================================
+
+@admin_bp.route('/reset_counters', methods=['POST'])
+@admin_required
+def admin_reset_counters():
+    """Сброс счетчиков системы"""
+    try:
+        if reset_counters():
+            flash('Counters reset successfully!', 'success')
+        else:
+            flash('Failed to reset counters', 'danger')
+    except Exception as e:
+        flash(f'Error resetting counters: {str(e)}', 'danger')
+    return redirect(url_for('admin.admin_dashboard'))
 
 # ======================================
 # Telegram Management
