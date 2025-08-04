@@ -29,7 +29,7 @@ import requests
 from auth import auth_bp
 from user_dashboard import user_bp
 from ifreeapi import perform_api_check
-from db import client, db, regular_users_collection, checks_collection, payments_collection, refunds_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection, phonebase_collection
+from db import client, db, regular_users_collection, checks_collection, payments_collection, refunds_collection, prices_collection, admin_users_collection, parser_logs_collection, audit_logs_collection, api_keys_collection, webhooks_collection, phonebase_collection, counters_collection
 from stripepay import StripePayment
 from admin_routes import admin_bp
 from price import get_current_prices, get_service_price, init_prices
@@ -39,7 +39,10 @@ from utilities import (
     get_apple_services_data, 
     get_android_services_data,
     send_telegram_message,
-    format_support_message
+    format_support_message,
+    increment_counters,
+    get_counters,
+    reset_counters
 )
 
 # Настройка корневого логгера
@@ -160,7 +163,8 @@ app.config.update(
         'health',
         'auth.facebook_callback',
         'scan_imei',
-        'submit_support_request'  # Добавлено исключение для формы поддержки
+        'submit_support_request',  # Добавлено исключение для формы поддержки
+        'api_get_counters'
     ]
 )
 Session(app)
@@ -877,6 +881,9 @@ def payment_success():
                 checks_collection.insert_one(record)
                 logger.info(f"Payment recorded: {session_id}")
             
+            # Увеличиваем счетчики для платных проверок
+            increment_counters()
+            
             # Запуск фоновой задачи через Celery
             background_check_task.delay(imei, service_type, session_id)
             
@@ -960,6 +967,10 @@ def perform_check():
             return jsonify({'error': 'IMEI-ის არასწორი ფორმატი'}), 400
         
         result = perform_api_check(imei, service_type)
+        
+        # Увеличиваем счетчики при успешной проверке
+        if result.get('success'):
+            increment_counters()
         
         if client:
             record = {
@@ -1275,6 +1286,29 @@ def submit_support_request():
             'error': 'სისტემური შეცდომა'
         })
 
+# ======================================
+# API для получения счетчиков проверок
+# ======================================
+
+@app.route('/api/get_counters')
+@csrf.exempt
+def api_get_counters():
+    """Возвращает текущие значения счетчиков проверок"""
+    try:
+        counters = get_counters()
+        return jsonify({
+            'daily': counters.get('daily', 125),
+            'weekly': counters.get('weekly', 875),
+            'monthly': counters.get('monthly', 3750)
+        })
+    except Exception as e:
+        logger.error(f"Error getting counters: {str(e)}")
+        return jsonify({
+            'daily': 125,
+            'weekly': 875,
+            'monthly': 3750
+        })
+
 # Создание индексов при запуске
 def create_indexes():
     if client:
@@ -1298,4 +1332,4 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=port,
         debug=os.getenv('FLASK_ENV') != 'production'
-        )
+)
