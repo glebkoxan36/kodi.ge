@@ -10,10 +10,10 @@ from db import (
     client, checks_collection, prices_collection, phonebase_collection, 
     parser_logs_collection, admin_users_collection, audit_logs_collection, 
     api_keys_collection, webhooks_collection, db, regular_users_collection,
-    payments_collection
+    payments_collection, email_counters_collection  # Добавлена новая коллекция
 )
 from price import get_current_prices, DEFAULT_PRICES
-from utilities import upload_carousel_image, reset_counters  # Добавлен импорт reset_counters
+from utilities import upload_carousel_image, reset_counters
 import cloudinary.uploader
 
 admin_bp = Blueprint('admin', __name__)
@@ -111,6 +111,11 @@ def admin_dashboard():
         total_phones = phonebase_collection.count_documents({}) if phonebase_collection is not None else 0
         brands = phonebase_collection.distinct("brand") if phonebase_collection is not None else []
         
+        # Статистика писем
+        email_stats = email_counters_collection.find_one({}) if email_counters_collection is not None else {}
+        daily_emails = email_stats.get('daily', 0) if email_stats else 0
+        monthly_emails = email_stats.get('monthly', 0) if email_stats else 0
+        
         return render_template(
             'admin/dashboard.html',
             total_checks=total_checks,
@@ -120,6 +125,8 @@ def admin_dashboard():
             parser_logs=parser_logs,
             total_phones=total_phones,
             brands=brands,
+            daily_emails=daily_emails,
+            monthly_emails=monthly_emails,
             active_section='admin_dashboard'
         )
     except Exception as e:
@@ -1185,6 +1192,31 @@ def admin_reset_counters():
             flash('Failed to reset counters', 'danger')
     except Exception as e:
         flash(f'Error resetting counters: {str(e)}', 'danger')
+    return redirect(url_for('admin.admin_dashboard'))
+
+# ======================================
+# Reset Email Counters
+# ======================================
+
+@admin_bp.route('/reset_email_counters', methods=['POST'])
+@admin_required
+def reset_email_counters():
+    """Сброс счетчиков отправленных писем"""
+    try:
+        if email_counters_collection:
+            email_counters_collection.update_one(
+                {},
+                {'$set': {
+                    'daily': 0,
+                    'monthly': 0,
+                    'last_updated': datetime.utcnow()
+                }}
+            )
+            flash('Email counters reset successfully!', 'success')
+        else:
+            flash('Email counters collection not available', 'danger')
+    except Exception as e:
+        flash(f'Error resetting email counters: {str(e)}', 'danger')
     return redirect(url_for('admin.admin_dashboard'))
 
 # ======================================
