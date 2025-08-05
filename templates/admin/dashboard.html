@@ -29,6 +29,20 @@
             <div class="stat-label">Total Revenue</div>
         </div>
     </div>
+    
+    <!-- New email counters -->
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="stat-value text-info">{{ daily_emails }}</div>
+            <div class="stat-label">Emails Sent Today</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="stat-value text-info">{{ monthly_emails }}</div>
+            <div class="stat-label">Emails Sent This Month</div>
+        </div>
+    </div>
 </div>
 
 <!-- ========================================== -->
@@ -38,7 +52,7 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header bg-danger text-white">
-                <i class="fas fa-sync-alt me-2"></i>Counters Management
+                <i class="fas fa-sync-alt me-2"></i>Check Counters Management
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('admin.admin_reset_counters') }}">
@@ -48,7 +62,33 @@
                         This action cannot be undone.
                     </div>
                     <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-sync-alt me-1"></i> Reset Counters
+                        <i class="fas fa-sync-alt me-1"></i> Reset Check Counters
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- Email Counters Management -->
+<!-- ========================================== -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="fas fa-envelope me-2"></i>Email Counters Management
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.reset_email_counters') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="alert alert-info">
+                        <strong>Email Statistics:</strong><br>
+                        Today: {{ daily_emails }} emails<br>
+                        This Month: {{ monthly_emails }} emails
+                    </div>
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-sync-alt me-1"></i> Reset Email Counters
                     </button>
                 </form>
             </div>
