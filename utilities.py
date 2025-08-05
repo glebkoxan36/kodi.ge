@@ -226,6 +226,9 @@ def send_verification_email(email, verification_code):
     try:
         api_response = api_instance.send_transac_email(send_smtp_email)
         logger.info(f"Verification email sent to {email}: {api_response}")
+        
+        # Обновляем счетчики писем
+        update_email_counters()
         return True
     except ApiException as e:
         logger.error(f"Exception when sending email: {e}")
@@ -398,4 +401,43 @@ def reset_counters():
         return False
     except Exception as e:
         logger.error(f"Error resetting counters: {str(e)}")
+        return False
+
+# ======================================
+# 9. Функции для работы со счетчиками email
+# ======================================
+
+def update_email_counters():
+    """Обновляет счетчики отправленных email"""
+    try:
+        from db import email_counters_collection
+        if email_counters_collection:
+            today = datetime.utcnow().date()
+            counter = email_counters_collection.find_one({})
+            last_updated = counter['last_updated'].date() if counter else None
+            
+            update_data = {}
+            
+            # Сброс дневного счетчика если новый день
+            if last_updated != today:
+                update_data['daily'] = 0
+            
+            # Сброс месячного счетчика если новый месяц
+            if not last_updated or last_updated.month != today.month:
+                update_data['monthly'] = 0
+            
+            # Обновление счетчиков
+            email_counters_collection.update_one(
+                {},
+                {
+                    '$inc': {'daily': 1, 'monthly': 1},
+                    '$set': {'last_updated': datetime.utcnow(), **update_data}
+                },
+                upsert=True
+            )
+            logger.info("Email counters updated")
+            return True
+        return False
+    except Exception as e:
+        logger.error(f"Error updating email counters: {str(e)}")
         return False
