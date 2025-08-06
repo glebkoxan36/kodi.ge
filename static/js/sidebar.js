@@ -36,12 +36,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     height: 100vh;
                     background: #121212;
                     color: #e0e0e0;
-                    position: sticky;
+                    position: fixed;
                     left: 0;
                     top: 0;
                     z-index: 1000;
                     box-shadow: 3px 0 15px rgba(0,0,0,0.6);
-                    overflow-y: hidden;
+                    overflow-y: auto;
                     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                     -ms-overflow-style: none;
